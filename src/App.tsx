@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { APP_NAME, APP_SLOGAN, APP_VERSION } from "./brand";
 import { Icon, type IconName } from "./components/Icon";
+import { SegmentNav, type SegmentItem } from "./components/SegmentNav";
 import { createId, loadData, saveData } from "./data/storage";
 import { getActiveUser, getInitials } from "./domain/profile";
 import type {
@@ -14,16 +15,25 @@ import type {
   UserProfile,
 } from "./domain/types";
 import { AnalysisView } from "./views/AnalysisView";
+import { BoatComparisonView } from "./views/BoatComparisonView";
+import { CompetitionResultsView } from "./views/CompetitionResultsView";
+import { CompetitionVideosView } from "./views/CompetitionVideosView";
 import { CompetitionsView } from "./views/CompetitionsView";
 import { DashboardView } from "./views/DashboardView";
 import { EquipmentView } from "./views/EquipmentView";
 import { GoalsView } from "./views/GoalsView";
-import { MoreView } from "./views/MoreView";
 import { PlanView } from "./views/PlanView";
 import { ProfileView } from "./views/ProfileView";
 import { RecordsView } from "./views/RecordsView";
 import { SeasonView } from "./views/SeasonView";
+import { SettingsView } from "./views/SettingsView";
+import { TrainingJournalView } from "./views/TrainingJournalView";
 import { TrainingView } from "./views/TrainingView";
+
+type TrainingSegment = "plan" | "sessions" | "journal";
+type CompetitionSegment = "races" | "results" | "videos";
+type AnalysisSegment = "overview" | "boats" | "season";
+type MoreSegment = "profile" | "equipment" | "goals" | "records" | "settings";
 
 const navItems: Array<{ id: PageId; label: string; icon: IconName }> = [
   { id: "dashboard", label: "Home", icon: "home" },
@@ -33,7 +43,40 @@ const navItems: Array<{ id: PageId; label: string; icon: IconName }> = [
   { id: "more", label: "Mehr", icon: "more" },
 ];
 
-const moreAreaPages = new Set<PageId>(["profile", "equipment", "goals", "records", "season", "plan"]);
+const navPageByPage: Partial<Record<PageId, PageId>> = {
+  plan: "training",
+  season: "analysis",
+  profile: "more",
+  equipment: "more",
+  goals: "more",
+  records: "more",
+};
+
+const trainingSegments: SegmentItem<TrainingSegment>[] = [
+  { id: "plan", label: "Plan" },
+  { id: "sessions", label: "Einheiten" },
+  { id: "journal", label: "Journal" },
+];
+
+const competitionSegments: SegmentItem<CompetitionSegment>[] = [
+  { id: "races", label: "Rennen" },
+  { id: "results", label: "Ergebnisse" },
+  { id: "videos", label: "Videos" },
+];
+
+const analysisSegments: SegmentItem<AnalysisSegment>[] = [
+  { id: "overview", label: "Uebersicht" },
+  { id: "boats", label: "K1/C1" },
+  { id: "season", label: "Saison" },
+];
+
+const moreSegments: SegmentItem<MoreSegment>[] = [
+  { id: "profile", label: "Profil" },
+  { id: "equipment", label: "Material" },
+  { id: "goals", label: "Ziele" },
+  { id: "records", label: "Rekorde" },
+  { id: "settings", label: "Einstellungen" },
+];
 
 const pageTitles: Record<PageId, string> = {
   dashboard: "Dashboard",
@@ -53,9 +96,13 @@ const getTimestamp = (): string => new Date().toISOString();
 
 function App() {
   const [activePage, setActivePage] = useState<PageId>("dashboard");
+  const [trainingSegment, setTrainingSegment] = useState<TrainingSegment>("plan");
+  const [competitionSegment, setCompetitionSegment] = useState<CompetitionSegment>("races");
+  const [analysisSegment, setAnalysisSegment] = useState<AnalysisSegment>("overview");
+  const [moreSegment, setMoreSegment] = useState<MoreSegment>("profile");
   const [data, setData] = useState<PaddleMotionData>(() => loadData());
   const activeUser = getActiveUser(data.users, data.activeUserId);
-  const activeNavPage = moreAreaPages.has(activePage) ? "more" : activePage;
+  const activeNavPage = navPageByPage[activePage] ?? activePage;
 
   useEffect(() => {
     saveData(data);
@@ -249,45 +296,17 @@ function App() {
     }));
   };
 
-  const openProfileSettings = () => {
-    setActivePage("profile");
-    window.setTimeout(() => {
-      document.getElementById("profile-settings")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 0);
+  const updateProfileSettings = (
+    settings: Pick<UserProfile, "profileImageDataUrl" | "darkMode" | "measurementUnit" | "language">,
+  ) => {
+    updateProfile({
+      ...activeUser.profile,
+      ...settings,
+    });
   };
 
-  const renderPage = () => {
-    switch (activePage) {
-      case "dashboard":
-        return <DashboardView data={data} user={activeUser} onNavigate={setActivePage} />;
-      case "training":
-        return (
-          <TrainingView
-            sessions={data.training}
-            journal={data.journal}
-            onSave={upsertTraining}
-            onDelete={deleteTraining}
-            onSaveJournal={upsertJournalEntry}
-          />
-        );
-      case "competitions":
-        return (
-          <CompetitionsView
-            competitions={data.competitions}
-            onSave={upsertCompetition}
-            onDelete={deleteCompetition}
-          />
-        );
-      case "analysis":
-        return <AnalysisView competitions={data.competitions} training={data.training} plan={data.plan} />;
-      case "more":
-        return <MoreView onNavigate={setActivePage} onOpenSettings={openProfileSettings} />;
-      case "goals":
-        return <GoalsView user={activeUser} competitions={data.competitions} training={data.training} />;
-      case "records":
-        return <RecordsView competitions={data.competitions} training={data.training} />;
-      case "season":
-        return <SeasonView competitions={data.competitions} training={data.training} plan={data.plan} />;
+  const renderTrainingContent = (segment: TrainingSegment) => {
+    switch (segment) {
       case "plan":
         return (
           <PlanView
@@ -297,6 +316,96 @@ function App() {
             onToggleDone={togglePlanEntryDone}
           />
         );
+      case "journal":
+        return <TrainingJournalView sessions={data.training} journal={data.journal} />;
+      case "sessions":
+      default:
+        return (
+          <TrainingView
+            sessions={data.training}
+            journal={data.journal}
+            onSave={upsertTraining}
+            onDelete={deleteTraining}
+            onSaveJournal={upsertJournalEntry}
+          />
+        );
+    }
+  };
+
+  const renderTrainingArea = (segment: TrainingSegment = trainingSegment) => (
+    <div className="category-shell">
+      <SegmentNav
+        label="Training Kategorien"
+        items={trainingSegments}
+        activeId={segment}
+        onChange={(nextSegment) => {
+          setTrainingSegment(nextSegment);
+          setActivePage("training");
+        }}
+      />
+      <div className="segment-content">{renderTrainingContent(segment)}</div>
+    </div>
+  );
+
+  const renderCompetitionContent = (segment: CompetitionSegment) => {
+    switch (segment) {
+      case "results":
+        return <CompetitionResultsView competitions={data.competitions} />;
+      case "videos":
+        return <CompetitionVideosView />;
+      case "races":
+      default:
+        return (
+          <CompetitionsView
+            competitions={data.competitions}
+            onSave={upsertCompetition}
+            onDelete={deleteCompetition}
+          />
+        );
+    }
+  };
+
+  const renderCompetitionArea = () => (
+    <div className="category-shell">
+      <SegmentNav
+        label="Wettkampf Kategorien"
+        items={competitionSegments}
+        activeId={competitionSegment}
+        onChange={setCompetitionSegment}
+      />
+      <div className="segment-content">{renderCompetitionContent(competitionSegment)}</div>
+    </div>
+  );
+
+  const renderAnalysisContent = (segment: AnalysisSegment) => {
+    switch (segment) {
+      case "boats":
+        return <BoatComparisonView competitions={data.competitions} />;
+      case "season":
+        return <SeasonView competitions={data.competitions} training={data.training} plan={data.plan} />;
+      case "overview":
+      default:
+        return <AnalysisView competitions={data.competitions} training={data.training} plan={data.plan} />;
+    }
+  };
+
+  const renderAnalysisArea = (segment: AnalysisSegment = analysisSegment) => (
+    <div className="category-shell">
+      <SegmentNav
+        label="Analyse Kategorien"
+        items={analysisSegments}
+        activeId={segment}
+        onChange={(nextSegment) => {
+          setAnalysisSegment(nextSegment);
+          setActivePage("analysis");
+        }}
+      />
+      <div className="segment-content">{renderAnalysisContent(segment)}</div>
+    </div>
+  );
+
+  const renderMoreContent = (segment: MoreSegment) => {
+    switch (segment) {
       case "equipment":
         return (
           <EquipmentView
@@ -305,8 +414,71 @@ function App() {
             onDelete={deleteMaterial}
           />
         );
+      case "goals":
+        return <GoalsView user={activeUser} competitions={data.competitions} training={data.training} />;
+      case "records":
+        return <RecordsView competitions={data.competitions} training={data.training} />;
+      case "settings":
+        return <SettingsView user={activeUser} onSave={updateProfileSettings} />;
       case "profile":
+      default:
         return <ProfileView user={activeUser} onSave={updateProfile} />;
+    }
+  };
+
+  const renderMoreArea = (segment: MoreSegment = moreSegment) => (
+    <div className="category-shell">
+      <SegmentNav
+        label="Mehr Kategorien"
+        items={moreSegments}
+        activeId={segment}
+        onChange={(nextSegment) => {
+          setMoreSegment(nextSegment);
+          setActivePage("more");
+        }}
+      />
+      <div className="segment-content">{renderMoreContent(segment)}</div>
+    </div>
+  );
+
+  const openDirectPage = (page: PageId) => {
+    switch (page) {
+      case "plan":
+        return renderTrainingArea("plan");
+      case "season":
+        return renderAnalysisArea("season");
+      case "equipment":
+        return renderMoreArea("equipment");
+      case "goals":
+        return renderMoreArea("goals");
+      case "records":
+        return renderMoreArea("records");
+      case "profile":
+        return renderMoreArea("profile");
+      default:
+        return null;
+    }
+  };
+
+  const renderPage = () => {
+    switch (activePage) {
+      case "dashboard":
+        return <DashboardView data={data} user={activeUser} onNavigate={setActivePage} />;
+      case "training":
+        return renderTrainingArea();
+      case "competitions":
+        return renderCompetitionArea();
+      case "analysis":
+        return renderAnalysisArea();
+      case "more":
+        return renderMoreArea();
+      case "goals":
+      case "records":
+      case "season":
+      case "plan":
+      case "equipment":
+      case "profile":
+        return openDirectPage(activePage);
       default:
         return null;
     }
