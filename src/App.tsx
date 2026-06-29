@@ -18,6 +18,7 @@ import { CompetitionsView } from "./views/CompetitionsView";
 import { DashboardView } from "./views/DashboardView";
 import { EquipmentView } from "./views/EquipmentView";
 import { GoalsView } from "./views/GoalsView";
+import { MoreView } from "./views/MoreView";
 import { PlanView } from "./views/PlanView";
 import { ProfileView } from "./views/ProfileView";
 import { RecordsView } from "./views/RecordsView";
@@ -29,16 +30,17 @@ const navItems: Array<{ id: PageId; label: string; icon: IconName }> = [
   { id: "training", label: "Training", icon: "training" },
   { id: "competitions", label: "Wettkampf", icon: "trophy" },
   { id: "analysis", label: "Analyse", icon: "chart" },
-  { id: "profile", label: "Profil", icon: "user" },
+  { id: "more", label: "Mehr", icon: "more" },
 ];
 
-const profileAreaPages = new Set<PageId>(["equipment", "goals", "records", "season", "plan"]);
+const moreAreaPages = new Set<PageId>(["profile", "equipment", "goals", "records", "season", "plan"]);
 
 const pageTitles: Record<PageId, string> = {
   dashboard: "Dashboard",
   training: "Training",
   competitions: "Wettkaempfe",
   analysis: "Analyse",
+  more: "Mehr",
   goals: "Ziele",
   records: "Rekorde",
   season: "Saison",
@@ -53,7 +55,7 @@ function App() {
   const [activePage, setActivePage] = useState<PageId>("dashboard");
   const [data, setData] = useState<PaddleMotionData>(() => loadData());
   const activeUser = getActiveUser(data.users, data.activeUserId);
-  const activeNavPage = profileAreaPages.has(activePage) ? "profile" : activePage;
+  const activeNavPage = moreAreaPages.has(activePage) ? "more" : activePage;
 
   useEffect(() => {
     saveData(data);
@@ -247,6 +249,13 @@ function App() {
     }));
   };
 
+  const openProfileSettings = () => {
+    setActivePage("profile");
+    window.setTimeout(() => {
+      document.getElementById("profile-settings")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 0);
+  };
+
   const renderPage = () => {
     switch (activePage) {
       case "dashboard":
@@ -271,6 +280,8 @@ function App() {
         );
       case "analysis":
         return <AnalysisView competitions={data.competitions} training={data.training} plan={data.plan} />;
+      case "more":
+        return <MoreView onNavigate={setActivePage} onOpenSettings={openProfileSettings} />;
       case "goals":
         return <GoalsView user={activeUser} competitions={data.competitions} training={data.training} />;
       case "records":
@@ -295,7 +306,7 @@ function App() {
           />
         );
       case "profile":
-        return <ProfileView user={activeUser} onSave={updateProfile} onNavigate={setActivePage} />;
+        return <ProfileView user={activeUser} onSave={updateProfile} />;
       default:
         return null;
     }

@@ -9,7 +9,8 @@ export type IconName =
   | "target"
   | "timer"
   | "bolt"
-  | "boat";
+  | "boat"
+  | "more";
 
 type IconProps = {
   name: IconName;
@@ -28,6 +29,7 @@ const paths: Record<IconName, string[]> = {
   timer: ["M10 2h4", "M12 6a8 8 0 1 0 0 16 8 8 0 0 0 0-16Z", "M12 10v4l3 2"],
   bolt: ["M13 2 4 14h7l-1 8 9-12h-7l1-8Z"],
   boat: ["M4 15c2 3 14 3 16 0", "M6 12h12l-2 4H8l-2-4Z", "M12 4v8"],
+  more: ["M5 12h.01", "M12 12h.01", "M19 12h.01"],
 };
 
 export function Icon({ name, className }: IconProps) {

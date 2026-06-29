@@ -222,6 +222,7 @@ export type PageId =
   | "training"
   | "competitions"
   | "analysis"
+  | "more"
   | "goals"
   | "records"
   | "season"

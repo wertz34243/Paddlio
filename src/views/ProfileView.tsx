@@ -4,7 +4,6 @@ import type {
   AppLanguage,
   Gender,
   MeasurementUnit,
-  PageId,
   PaddleSide,
   ProfileBoatClass,
   User,
@@ -14,7 +13,6 @@ import type {
 type ProfileViewProps = {
   user: User;
   onSave: (profile: UserProfile) => void;
-  onNavigate: (page: PageId) => void;
 };
 
 const profileBoatClasses: ProfileBoatClass[] = ["K1", "C1", "C2"];
@@ -38,44 +36,11 @@ const languages: Array<{ value: AppLanguage; label: string }> = [
   { value: "en", label: "English" },
 ];
 
-const profileAreas: Array<{ page: PageId; title: string; description: string; eyebrow: string }> = [
-  {
-    page: "equipment",
-    title: "Material",
-    description: "Boote, Paddel und Zubehoer verwalten.",
-    eyebrow: "Setup",
-  },
-  {
-    page: "goals",
-    title: "Ziele",
-    description: "Saisonziele und Fortschritt pruefen.",
-    eyebrow: "Fokus",
-  },
-  {
-    page: "records",
-    title: "Rekorde",
-    description: "Persoenliche Bestleistungen ansehen.",
-    eyebrow: "Bestwerte",
-  },
-  {
-    page: "season",
-    title: "Saison",
-    description: "Monate, Belastung und Entwicklung auswerten.",
-    eyebrow: "Uebersicht",
-  },
-  {
-    page: "plan",
-    title: "Trainingsplan",
-    description: "Geplante Einheiten der Woche organisieren.",
-    eyebrow: "Planung",
-  },
-];
-
 const toNumber = (value: FormDataEntryValue | null): number => Number(value ?? 0);
 
 const getString = (formData: FormData, key: keyof UserProfile): string => String(formData.get(key) ?? "").trim();
 
-export function ProfileView({ user, onSave, onNavigate }: ProfileViewProps) {
+export function ProfileView({ user, onSave }: ProfileViewProps) {
   const [profileImageDataUrl, setProfileImageDataUrl] = useState(user.profile.profileImageDataUrl);
   const [additionalBoatClasses, setAdditionalBoatClasses] = useState<ProfileBoatClass[]>(user.profile.additionalBoatClasses);
   const [savedMessage, setSavedMessage] = useState("");
@@ -148,38 +113,6 @@ export function ProfileView({ user, onSave, onNavigate }: ProfileViewProps) {
           <p className="eyebrow">Athletenprofil</p>
           <h2>{getDisplayName(user.profile)}</h2>
           <span>{user.profile.club || "Kein Verein"} - {getBoatClassSummary(user.profile)}</span>
-        </div>
-      </section>
-
-      <section className="section-block">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Mehr</p>
-            <h3>Weitere Bereiche</h3>
-          </div>
-        </div>
-        <div className="profile-more-grid">
-          {profileAreas.map((area) => (
-            <button
-              className="profile-more-card"
-              key={area.page}
-              type="button"
-              onClick={() => onNavigate(area.page)}
-            >
-              <span>{area.eyebrow}</span>
-              <strong>{area.title}</strong>
-              <small>{area.description}</small>
-            </button>
-          ))}
-          <button
-            className="profile-more-card"
-            type="button"
-            onClick={() => document.getElementById("profile-settings")?.scrollIntoView({ behavior: "smooth", block: "start" })}
-          >
-            <span>App</span>
-            <strong>Einstellungen</strong>
-            <small>Profilbild, Sprache, Einheiten und Dark Mode.</small>
-          </button>
         </div>
       </section>
 
