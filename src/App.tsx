@@ -27,15 +27,12 @@ import { TrainingView } from "./views/TrainingView";
 const navItems: Array<{ id: PageId; label: string; icon: IconName }> = [
   { id: "dashboard", label: "Home", icon: "home" },
   { id: "training", label: "Training", icon: "training" },
-  { id: "competitions", label: "Wettkaempfe", icon: "trophy" },
+  { id: "competitions", label: "Wettkampf", icon: "trophy" },
   { id: "analysis", label: "Analyse", icon: "chart" },
-  { id: "goals", label: "Ziele", icon: "target" },
-  { id: "records", label: "Rekorde", icon: "target" },
-  { id: "season", label: "Saison", icon: "chart" },
-  { id: "plan", label: "Plan", icon: "calendar" },
-  { id: "equipment", label: "Material", icon: "wallet" },
   { id: "profile", label: "Profil", icon: "user" },
 ];
+
+const profileAreaPages = new Set<PageId>(["equipment", "goals", "records", "season", "plan"]);
 
 const pageTitles: Record<PageId, string> = {
   dashboard: "Dashboard",
@@ -56,6 +53,7 @@ function App() {
   const [activePage, setActivePage] = useState<PageId>("dashboard");
   const [data, setData] = useState<PaddleMotionData>(() => loadData());
   const activeUser = getActiveUser(data.users, data.activeUserId);
+  const activeNavPage = profileAreaPages.has(activePage) ? "profile" : activePage;
 
   useEffect(() => {
     saveData(data);
@@ -297,7 +295,7 @@ function App() {
           />
         );
       case "profile":
-        return <ProfileView user={activeUser} onSave={updateProfile} />;
+        return <ProfileView user={activeUser} onSave={updateProfile} onNavigate={setActivePage} />;
       default:
         return null;
     }
@@ -332,11 +330,11 @@ function App() {
       <nav className="bottom-nav" aria-label="Hauptnavigation">
         {navItems.map((item) => (
           <button
-            className={activePage === item.id ? "nav-item active" : "nav-item"}
+            className={activeNavPage === item.id ? "nav-item active" : "nav-item"}
             key={item.id}
             type="button"
             onClick={() => setActivePage(item.id)}
-            aria-current={activePage === item.id ? "page" : undefined}
+            aria-current={activeNavPage === item.id ? "page" : undefined}
           >
             <span className="nav-icon" aria-hidden="true">
               <Icon name={item.icon} />
