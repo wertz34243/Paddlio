@@ -5,6 +5,7 @@ import type { AppLanguage, MeasurementUnit, User, UserProfile } from "../domain/
 type SettingsViewProps = {
   user: User;
   onSave: (settings: Pick<UserProfile, "profileImageDataUrl" | "darkMode" | "measurementUnit" | "language">) => void;
+  onLogout: () => void;
 };
 
 const measurementUnits: Array<{ value: MeasurementUnit; label: string }> = [
@@ -17,7 +18,7 @@ const languages: Array<{ value: AppLanguage; label: string }> = [
   { value: "en", label: "English" },
 ];
 
-export function SettingsView({ user, onSave }: SettingsViewProps) {
+export function SettingsView({ user, onSave, onLogout }: SettingsViewProps) {
   const [profileImageDataUrl, setProfileImageDataUrl] = useState(user.profile.profileImageDataUrl);
   const [savedMessage, setSavedMessage] = useState("");
 
@@ -108,6 +109,19 @@ export function SettingsView({ user, onSave }: SettingsViewProps) {
         </button>
         {savedMessage ? <span>{savedMessage}</span> : null}
       </div>
+
+      <section className="section-block account-actions">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Account</p>
+            <h3>Sitzung</h3>
+          </div>
+        </div>
+        <p className="card-note">Melde dich ab, wenn du Paddlio auf einem geteilten Geraet nutzt.</p>
+        <button className="danger-button" type="button" onClick={onLogout}>
+          Logout
+        </button>
+      </section>
     </form>
   );
 }

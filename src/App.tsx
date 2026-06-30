@@ -14,7 +14,7 @@ import {
   type LoginInput,
   type RegisterInput,
 } from "./data/storage";
-import { getActiveUser, getInitials } from "./domain/profile";
+import { getActiveUser } from "./domain/profile";
 import type {
   Competition,
   AuthSession,
@@ -503,7 +503,7 @@ function App() {
       case "records":
         return <RecordsView competitions={data.competitions} training={data.training} />;
       case "settings":
-        return <SettingsView user={activeUser} onSave={updateProfileSettings} />;
+        return <SettingsView user={activeUser} onSave={updateProfileSettings} onLogout={handleLogout} />;
       case "profile":
       default:
         return <ProfileView user={activeUser} onSave={updateProfile} />;
@@ -575,32 +575,22 @@ function App() {
     }
   };
 
+  const isHome = activePage === "dashboard";
+
   return (
-    <div className="app-shell">
-      <header className="app-header">
-        <div className="brand-lockup">
-          <p className="app-brand">{APP_NAME}</p>
-          <p className="brand-slogan">{APP_SLOGAN}</p>
-          <p className="eyebrow">Version {APP_VERSION}</p>
-          <h1>{pageTitles[activePage]}</h1>
-        </div>
-        <div className="profile-chip">
-          <span>
-            {activeUser.profile.profileImageDataUrl ? (
-              <img src={activeUser.profile.profileImageDataUrl} alt="" />
-            ) : (
-              getInitials(activeUser.profile)
-            )}
-          </span>
-          <div>
-            <strong>{activeUser.profile.nickname || activeUser.profile.firstName || "Athlet"}</strong>
-            <small>{activeUser.profile.club || "Kein Verein"}</small>
+    <div className={isHome ? "app-shell app-shell-home" : "app-shell"}>
+      {!isHome ? (
+        <header className="app-header app-header-compact">
+          <div className="brand-lockup">
+            <p className="app-brand">{APP_NAME}</p>
+            <p className="brand-slogan">{APP_SLOGAN}</p>
           </div>
-        </div>
-        <button className="logout-button" type="button" onClick={handleLogout}>
-          Logout
-        </button>
-      </header>
+          <div className="page-title-lockup">
+            <span>Version {APP_VERSION}</span>
+            <h1>{pageTitles[activePage]}</h1>
+          </div>
+        </header>
+      ) : null}
 
       <main className="page-content">{renderPage()}</main>
 
