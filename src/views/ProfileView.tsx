@@ -44,10 +44,16 @@ const getString = (formData: FormData, key: keyof UserProfile): string => String
 export function ProfileView({ user, onSave }: ProfileViewProps) {
   const [profileImageDataUrl, setProfileImageDataUrl] = useState(user.profile.profileImageDataUrl);
   const [boatClasses, setBoatClasses] = useState<BoatClass[]>(user.profile.boatClasses.length > 0 ? user.profile.boatClasses : ["K1"]);
+  const [paddleSide, setPaddleSide] = useState<PaddleSide | "">(user.profile.boatClasses.includes("C1") ? user.profile.paddleSide : "");
   const [savedMessage, setSavedMessage] = useState("");
   const [formError, setFormError] = useState("");
   const age = getAge(user.profile.birthDate);
   const hasC1 = boatClasses.includes("C1");
+  const previewProfile: UserProfile = {
+    ...user.profile,
+    boatClasses,
+    paddleSide: hasC1 && paddleSide ? paddleSide : "rechts",
+  };
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -72,6 +78,9 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
         }
 
         setFormError("");
+        if (boatClass === "C1") {
+          setPaddleSide("");
+        }
         return current.filter((item) => item !== boatClass);
       }
 
@@ -83,17 +92,18 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const nextPaddleSide = String(formData.get("paddleSide") ?? "") as PaddleSide;
 
     if (boatClasses.length === 0) {
       setFormError("Mindestens eine Bootsklasse muss ausgewaehlt sein.");
       return;
     }
 
-    if (boatClasses.includes("C1") && nextPaddleSide !== "links" && nextPaddleSide !== "rechts") {
+    if (boatClasses.includes("C1") && paddleSide !== "links" && paddleSide !== "rechts") {
       setFormError("Bitte waehle fuer C1 eine Paddelseite aus.");
       return;
     }
+
+    const savedPaddleSide: PaddleSide = boatClasses.includes("C1") ? (paddleSide as PaddleSide) : "rechts";
 
     onSave({
       firstName: getString(formData, "firstName"),
@@ -109,7 +119,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
       licenseNumber: getString(formData, "licenseNumber"),
       boatClasses,
       ageClass: String(formData.get("ageClass") ?? "") as AgeClass | "",
-      paddleSide: boatClasses.includes("C1") ? nextPaddleSide : "rechts",
+      paddleSide: savedPaddleSide,
       trainingYears: toNumber(formData.get("trainingYears")),
       competitionExperience: getString(formData, "competitionExperience"),
       longTermGoal: getString(formData, "longTermGoal"),
@@ -136,7 +146,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
           <p className="eyebrow">Athletenprofil</p>
           <h2>{getDisplayName(user.profile)}</h2>
           <span>{user.profile.club || "Kein Verein"}</span>
-          <span>{getSportProfileSummary(user.profile)}</span>
+          <span>{getSportProfileSummary(previewProfile)}</span>
         </div>
       </section>
 
@@ -227,7 +237,16 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
           {hasC1 ? (
             <label>
               Paddelseite
-              <select name="paddleSide" defaultValue={user.profile.paddleSide}>
+              <select
+                name="paddleSide"
+                value={paddleSide}
+                onChange={(event) => {
+                  setPaddleSide(event.target.value as PaddleSide | "");
+                  setFormError("");
+                }}
+                required
+              >
+                <option value="">Bitte waehlen</option>
                 {paddleSides.map((side) => (
                   <option key={side.value} value={side.value}>
                     {side.label}
@@ -243,17 +262,19 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
         </div>
         <div className="choice-group">
           <span>Bootsklassen</span>
-          <div className="segmented-row">
+          <div className="boat-class-grid">
             {profileBoatClasses.map((boatClass) => (
-              <button
-                className={boatClasses.includes(boatClass) ? "segment active" : "segment"}
+              <label
+                className={boatClasses.includes(boatClass) ? "boat-class-option active" : "boat-class-option"}
                 key={boatClass}
-                type="button"
-                onClick={() => toggleBoatClass(boatClass)}
-                aria-pressed={boatClasses.includes(boatClass)}
               >
+                <input
+                  checked={boatClasses.includes(boatClass)}
+                  onChange={() => toggleBoatClass(boatClass)}
+                  type="checkbox"
+                />
                 {boatClass}
-              </button>
+              </label>
             ))}
           </div>
           {formError ? <small className="form-error">{formError}</small> : null}

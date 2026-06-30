@@ -30,6 +30,13 @@ Version 1.0 richtet sich an Athletinnen und Athleten. Paddlio kombiniert Trainin
 - Mobile Abstaende, Home-Hero und Sticky-Aktionen wurden fuer mehr sichtbaren Inhalt gestrafft
 - Athletenprofil fachlich fuer Kanuslalom geschaerft: K1/C1-Auswahl, Altersklasse, C1-Paddelseite und Migration alter Profildaten
 
+## Version 1.8 - Profil QA & Mobile Feinschliff
+
+- Bootsklassen im Profil sind echte Checkbox-Karten fuer K1, C1 und K1 + C1
+- C1-Profile muessen explizit eine Paddelseite Links/Rechts speichern, K1-only blendet das Feld aus
+- Profilkarte, Altersklasse und Bootsklassen-Anzeige wurden fuer iPhone, iPad und Desktop gehaertet
+- Speichern-Bereich und Formularfelder haben mehr Luft zur Bottom Navigation und Safe Area
+
 ## Paddlio auf iPhone/iPad installieren
 
 1. Paddlio in Safari oeffnen.
