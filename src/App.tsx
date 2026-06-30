@@ -2,10 +2,22 @@ import { useEffect, useState } from "react";
 import { APP_NAME, APP_SLOGAN, APP_VERSION } from "./brand";
 import { Icon, type IconName } from "./components/Icon";
 import { SegmentNav, type SegmentItem } from "./components/SegmentNav";
-import { createId, loadData, saveData } from "./data/storage";
+import {
+  clearSession,
+  createId,
+  loadData,
+  loadSession,
+  loginLocalUser,
+  registerLocalUser,
+  saveData,
+  type AuthResult,
+  type LoginInput,
+  type RegisterInput,
+} from "./data/storage";
 import { getActiveUser, getInitials } from "./domain/profile";
 import type {
   Competition,
+  AuthSession,
   MaterialItem,
   PageId,
   PaddleMotionData,
@@ -15,6 +27,7 @@ import type {
   UserProfile,
 } from "./domain/types";
 import { AnalysisView } from "./views/AnalysisView";
+import { AuthView } from "./views/AuthView";
 import { BoatComparisonView } from "./views/BoatComparisonView";
 import { CompetitionResultsView } from "./views/CompetitionResultsView";
 import { CompetitionVideosView } from "./views/CompetitionVideosView";
@@ -95,23 +108,62 @@ const pageTitles: Record<PageId, string> = {
 const getTimestamp = (): string => new Date().toISOString();
 
 function App() {
+  const [session, setSession] = useState<AuthSession | null>(() => loadSession());
   const [activePage, setActivePage] = useState<PageId>("dashboard");
   const [trainingSegment, setTrainingSegment] = useState<TrainingSegment>("plan");
   const [competitionSegment, setCompetitionSegment] = useState<CompetitionSegment>("races");
   const [analysisSegment, setAnalysisSegment] = useState<AnalysisSegment>("overview");
   const [moreSegment, setMoreSegment] = useState<MoreSegment>("profile");
-  const [data, setData] = useState<PaddleMotionData>(() => loadData());
-  const activeUser = getActiveUser(data.users, data.activeUserId);
-  const activeNavPage = navPageByPage[activePage] ?? activePage;
+  const [data, setData] = useState<PaddleMotionData | null>(() => {
+    const currentSession = loadSession();
+    return currentSession ? loadData(currentSession.userId) : null;
+  });
 
   useEffect(() => {
-    saveData(data);
-  }, [data]);
+    if (session && data) {
+      saveData(session.userId, data);
+    }
+  }, [data, session]);
+
+  const activateSession = (result: AuthResult): AuthResult => {
+    if (result.ok) {
+      setSession(result.session);
+      setData(loadData(result.session.userId));
+      setActivePage("dashboard");
+      setTrainingSegment("plan");
+      setCompetitionSegment("races");
+      setAnalysisSegment("overview");
+      setMoreSegment("profile");
+    }
+
+    return result;
+  };
+
+  const handleLogin = (input: LoginInput): AuthResult => activateSession(loginLocalUser(input));
+
+  const handleRegister = (input: RegisterInput): AuthResult => activateSession(registerLocalUser(input));
+
+  const handleLogout = () => {
+    clearSession();
+    setSession(null);
+    setData(null);
+    setActivePage("dashboard");
+  };
+
+  if (!session || !data) {
+    return <AuthView onLogin={handleLogin} onRegister={handleRegister} />;
+  }
+
+  const activeUser = getActiveUser(data.users, data.activeUserId);
+  const activeNavPage = navPageByPage[activePage] ?? activePage;
+  const updateData = (updater: (current: PaddleMotionData) => PaddleMotionData) => {
+    setData((current) => (current ? updater(current) : current));
+  };
 
   const upsertCompetition = (competition: Omit<Competition, "id" | "athleteId" | "createdAt" | "updatedAt"> & { id?: string }) => {
     const timestamp = getTimestamp();
 
-    setData((current) => {
+    updateData((current) => {
       const existing = competition.id
         ? current.competitions.find((item) => item.id === competition.id)
         : undefined;
@@ -133,7 +185,7 @@ function App() {
   };
 
   const deleteCompetition = (id: string) => {
-    setData((current) => ({
+    updateData((current) => ({
       ...current,
       competitions: current.competitions.filter((competition) => competition.id !== id),
     }));
@@ -142,7 +194,7 @@ function App() {
   const upsertTraining = (session: Omit<TrainingSession, "id" | "athleteId" | "createdAt" | "updatedAt"> & { id?: string }) => {
     const timestamp = getTimestamp();
 
-    setData((current) => {
+    updateData((current) => {
       const existing = session.id ? current.training.find((item) => item.id === session.id) : undefined;
       const nextSession: TrainingSession = {
         ...session,
@@ -162,7 +214,7 @@ function App() {
   };
 
   const deleteTraining = (id: string) => {
-    setData((current) => ({
+    updateData((current) => ({
       ...current,
       training: current.training.filter((session) => session.id !== id),
       journal: current.journal.filter((entry) => entry.trainingId !== id),
@@ -174,7 +226,7 @@ function App() {
   ) => {
     const timestamp = getTimestamp();
 
-    setData((current) => {
+    updateData((current) => {
       const existing = entry.id
         ? current.journal.find((item) => item.id === entry.id)
         : current.journal.find((item) => item.trainingId === entry.trainingId);
@@ -198,7 +250,7 @@ function App() {
   const upsertMaterial = (item: Omit<MaterialItem, "id" | "athleteId" | "createdAt" | "updatedAt"> & { id?: string }) => {
     const timestamp = getTimestamp();
 
-    setData((current) => {
+    updateData((current) => {
       const existing = item.id ? current.material.find((material) => material.id === item.id) : undefined;
       const nextItem: MaterialItem = {
         ...item,
@@ -218,7 +270,7 @@ function App() {
   };
 
   const deleteMaterial = (id: string) => {
-    setData((current) => ({
+    updateData((current) => ({
       ...current,
       material: current.material.filter((item) => item.id !== id),
     }));
@@ -231,7 +283,7 @@ function App() {
   ) => {
     const timestamp = getTimestamp();
 
-    setData((current) => {
+    updateData((current) => {
       const existing = entry.id ? current.plan.find((item) => item.id === entry.id) : undefined;
       const nextEntry: PlanEntry = {
         ...entry,
@@ -253,14 +305,14 @@ function App() {
   };
 
   const deletePlanEntry = (id: string) => {
-    setData((current) => ({
+    updateData((current) => ({
       ...current,
       plan: current.plan.filter((entry) => entry.id !== id),
     }));
   };
 
   const togglePlanEntryDone = (id: string) => {
-    setData((current) => ({
+    updateData((current) => ({
       ...current,
       plan: current.plan.map((entry) =>
         entry.id === id
@@ -277,7 +329,7 @@ function App() {
   const updateProfile = (profile: UserProfile) => {
     const timestamp = getTimestamp();
 
-    setData((current) => ({
+    updateData((current) => ({
       ...current,
       users: current.users.map((user) =>
         user.id === current.activeUserId
@@ -506,6 +558,9 @@ function App() {
             <small>{activeUser.profile.club || "Kein Verein"}</small>
           </div>
         </div>
+        <button className="logout-button" type="button" onClick={handleLogout}>
+          Logout
+        </button>
       </header>
 
       <main className="page-content">{renderPage()}</main>

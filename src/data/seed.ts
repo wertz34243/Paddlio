@@ -7,6 +7,7 @@ export const seedData: PaddleMotionData = {
   users: [
     {
       id: "user-tobias",
+      userId: "user-tobias",
       role: "athlete",
       profile: {
         firstName: "Tobias",

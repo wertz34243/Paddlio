@@ -23,6 +23,20 @@ export type MeasurementUnit = "metrisch" | "imperial";
 
 export type AppLanguage = "de" | "en";
 
+export type AuthUser = {
+  userId: string;
+  email: string;
+  displayName: string;
+  passwordHash: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AuthSession = {
+  userId: string;
+  createdAt: string;
+};
+
 export type UserProfile = {
   firstName: string;
   lastName: string;
@@ -52,6 +66,7 @@ export type UserProfile = {
 
 export type User = {
   id: string;
+  userId: string;
   role: "athlete";
   profile: UserProfile;
   createdAt: string;

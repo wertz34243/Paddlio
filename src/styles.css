@@ -52,6 +52,99 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
+.auth-shell {
+  display: grid;
+  min-height: 100vh;
+  padding: 24px 14px;
+  place-items: center;
+}
+
+.auth-card {
+  display: grid;
+  width: min(100%, 440px);
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid rgba(144, 224, 239, 0.16);
+  border-radius: 28px;
+  background:
+    linear-gradient(145deg, rgba(0, 180, 216, 0.14), rgba(255, 255, 255, 0.03)),
+    rgba(30, 41, 59, 0.9);
+  box-shadow: var(--shadow);
+}
+
+.auth-brand {
+  display: grid;
+  gap: 8px;
+}
+
+.auth-brand span {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.auth-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.68);
+}
+
+.auth-tabs button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.auth-tabs button.active {
+  background: linear-gradient(135deg, rgba(0, 180, 216, 0.9), rgba(144, 224, 239, 0.76));
+  color: #06121f;
+}
+
+.auth-form {
+  display: grid;
+  gap: 13px;
+}
+
+.auth-form label {
+  display: grid;
+  gap: 7px;
+  color: #dbeafe;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.auth-form input {
+  width: 100%;
+  border: 1px solid rgba(144, 224, 239, 0.16);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.72);
+  color: var(--text);
+  font-size: 16px;
+  outline: none;
+  padding: 12px 13px;
+}
+
+.auth-form input:focus {
+  border-color: rgba(144, 224, 239, 0.68);
+  box-shadow: 0 0 0 4px rgba(0, 180, 216, 0.12);
+}
+
+.auth-message {
+  padding: 11px 13px;
+  border: 1px solid rgba(239, 68, 68, 0.26);
+  border-radius: 14px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #fecaca;
+  font-size: 14px;
+  font-weight: 800;
+}
+
 .app-shell {
   width: min(100%, 920px);
   min-height: 100vh;
@@ -184,6 +277,28 @@ p {
 .card-note,
 .empty-state {
   color: var(--muted);
+}
+
+.logout-button {
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid rgba(144, 224, 239, 0.14);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.64);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.logout-button:active {
+  transform: scale(0.97);
+}
+
+.logout-button:hover {
+  border-color: rgba(144, 224, 239, 0.32);
+  background: rgba(0, 180, 216, 0.12);
 }
 
 .page-content,
