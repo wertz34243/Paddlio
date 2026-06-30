@@ -50,8 +50,14 @@ export const getAge = (birthDate: string, referenceDate = new Date()): number | 
 };
 
 export const getBoatClassSummary = (profile: UserProfile): string => {
-  const classes = [profile.mainBoatClass, ...profile.additionalBoatClasses.filter((boatClass) => boatClass !== profile.mainBoatClass)];
+  const classes = profile.boatClasses;
   return classes.length > 0 ? classes.join(", ") : "Keine Bootsklasse";
+};
+
+export const getSportProfileSummary = (profile: UserProfile): string => {
+  const ageClass = profile.ageClass || "Keine Altersklasse";
+  const boats = profile.boatClasses.length > 0 ? profile.boatClasses.join(" + ") : "Keine Bootsklasse";
+  return `${ageClass} • ${boats}`;
 };
 
 const toLocalDateKey = (date: Date): string => date.toISOString().slice(0, 10);
@@ -87,4 +93,3 @@ export const getGreeting = (name: string, date = new Date()): string => {
 
   return `Guten Abend ${name}`;
 };
-

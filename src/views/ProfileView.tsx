@@ -1,11 +1,12 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
-import { getAge, getBoatClassSummary, getDisplayName, getInitials } from "../domain/profile";
+import { getAge, getDisplayName, getInitials, getSportProfileSummary } from "../domain/profile";
 import type {
+  AgeClass,
   AppLanguage,
+  BoatClass,
   Gender,
   MeasurementUnit,
   PaddleSide,
-  ProfileBoatClass,
   User,
   UserProfile,
 } from "../domain/types";
@@ -15,7 +16,8 @@ type ProfileViewProps = {
   onSave: (profile: UserProfile) => void;
 };
 
-const profileBoatClasses: ProfileBoatClass[] = ["K1", "C1", "C2"];
+const profileBoatClasses: BoatClass[] = ["K1", "C1"];
+const ageClasses: AgeClass[] = ["U10", "U12", "U14", "U16", "U18", "U23", "Leistungsklasse", "Masters"];
 const genders: Array<{ value: Gender; label: string }> = [
   { value: "keine_angabe", label: "Keine Angabe" },
   { value: "weiblich", label: "Weiblich" },
@@ -23,9 +25,8 @@ const genders: Array<{ value: Gender; label: string }> = [
   { value: "divers", label: "Divers" },
 ];
 const paddleSides: Array<{ value: PaddleSide; label: string }> = [
-  { value: "rechts", label: "Rechts" },
   { value: "links", label: "Links" },
-  { value: "wechselnd", label: "Wechselnd" },
+  { value: "rechts", label: "Rechts" },
 ];
 const measurementUnits: Array<{ value: MeasurementUnit; label: string }> = [
   { value: "metrisch", label: "Metrisch" },
@@ -42,9 +43,11 @@ const getString = (formData: FormData, key: keyof UserProfile): string => String
 
 export function ProfileView({ user, onSave }: ProfileViewProps) {
   const [profileImageDataUrl, setProfileImageDataUrl] = useState(user.profile.profileImageDataUrl);
-  const [additionalBoatClasses, setAdditionalBoatClasses] = useState<ProfileBoatClass[]>(user.profile.additionalBoatClasses);
+  const [boatClasses, setBoatClasses] = useState<BoatClass[]>(user.profile.boatClasses.length > 0 ? user.profile.boatClasses : ["K1"]);
   const [savedMessage, setSavedMessage] = useState("");
+  const [formError, setFormError] = useState("");
   const age = getAge(user.profile.birthDate);
+  const hasC1 = boatClasses.includes("C1");
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -60,17 +63,37 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
     reader.readAsDataURL(file);
   };
 
-  const toggleBoatClass = (boatClass: ProfileBoatClass) => {
-    setAdditionalBoatClasses((current) =>
-      current.includes(boatClass)
-        ? current.filter((item) => item !== boatClass)
-        : [...current, boatClass],
-    );
+  const toggleBoatClass = (boatClass: BoatClass) => {
+    setBoatClasses((current) => {
+      if (current.includes(boatClass)) {
+        if (current.length === 1) {
+          setFormError("Mindestens eine Bootsklasse muss ausgewaehlt sein.");
+          return current;
+        }
+
+        setFormError("");
+        return current.filter((item) => item !== boatClass);
+      }
+
+      setFormError("");
+      return [...current, boatClass];
+    });
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const nextPaddleSide = String(formData.get("paddleSide") ?? "") as PaddleSide;
+
+    if (boatClasses.length === 0) {
+      setFormError("Mindestens eine Bootsklasse muss ausgewaehlt sein.");
+      return;
+    }
+
+    if (boatClasses.includes("C1") && nextPaddleSide !== "links" && nextPaddleSide !== "rechts") {
+      setFormError("Bitte waehle fuer C1 eine Paddelseite aus.");
+      return;
+    }
 
     onSave({
       firstName: getString(formData, "firstName"),
@@ -84,10 +107,9 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
       federation: getString(formData, "federation"),
       coach: getString(formData, "coach"),
       licenseNumber: getString(formData, "licenseNumber"),
-      mainBoatClass: String(formData.get("mainBoatClass")) as ProfileBoatClass,
-      additionalBoatClasses,
-      performanceClass: getString(formData, "performanceClass"),
-      paddleSide: String(formData.get("paddleSide")) as PaddleSide,
+      boatClasses,
+      ageClass: String(formData.get("ageClass") ?? "") as AgeClass | "",
+      paddleSide: boatClasses.includes("C1") ? nextPaddleSide : "rechts",
       trainingYears: toNumber(formData.get("trainingYears")),
       competitionExperience: getString(formData, "competitionExperience"),
       longTermGoal: getString(formData, "longTermGoal"),
@@ -99,6 +121,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
       language: String(formData.get("language")) as AppLanguage,
     });
 
+    setFormError("");
     setSavedMessage("Profil gespeichert");
     window.setTimeout(() => setSavedMessage(""), 2200);
   };
@@ -112,7 +135,8 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
         <div>
           <p className="eyebrow">Athletenprofil</p>
           <h2>{getDisplayName(user.profile)}</h2>
-          <span>{user.profile.club || "Kein Verein"} - {getBoatClassSummary(user.profile)}</span>
+          <span>{user.profile.club || "Kein Verein"}</span>
+          <span>{getSportProfileSummary(user.profile)}</span>
         </div>
       </section>
 
@@ -190,48 +214,49 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
         </div>
         <div className="form-grid">
           <label>
-            Hauptboot
-            <select name="mainBoatClass" defaultValue={user.profile.mainBoatClass}>
-              {profileBoatClasses.map((boatClass) => (
-                <option key={boatClass} value={boatClass}>
-                  {boatClass}
+            Altersklasse
+            <select name="ageClass" defaultValue={user.profile.ageClass}>
+              <option value="">Bitte waehlen</option>
+              {ageClasses.map((ageClass) => (
+                <option key={ageClass} value={ageClass}>
+                  {ageClass}
                 </option>
               ))}
             </select>
           </label>
-          <label>
-            Leistungsklasse
-            <input name="performanceClass" defaultValue={user.profile.performanceClass} />
-          </label>
-          <label>
-            Paddelseite
-            <select name="paddleSide" defaultValue={user.profile.paddleSide}>
-              {paddleSides.map((side) => (
-                <option key={side.value} value={side.value}>
-                  {side.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          {hasC1 ? (
+            <label>
+              Paddelseite
+              <select name="paddleSide" defaultValue={user.profile.paddleSide}>
+                {paddleSides.map((side) => (
+                  <option key={side.value} value={side.value}>
+                    {side.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
           <label>
             Trainingsjahre
             <input name="trainingYears" type="number" min="0" step="1" defaultValue={user.profile.trainingYears || ""} />
           </label>
         </div>
         <div className="choice-group">
-          <span>Weitere Bootsklassen</span>
+          <span>Bootsklassen</span>
           <div className="segmented-row">
             {profileBoatClasses.map((boatClass) => (
               <button
-                className={additionalBoatClasses.includes(boatClass) ? "segment active" : "segment"}
+                className={boatClasses.includes(boatClass) ? "segment active" : "segment"}
                 key={boatClass}
                 type="button"
                 onClick={() => toggleBoatClass(boatClass)}
+                aria-pressed={boatClasses.includes(boatClass)}
               >
                 {boatClass}
               </button>
             ))}
           </div>
+          {formError ? <small className="form-error">{formError}</small> : null}
         </div>
         <label>
           Wettkampferfahrung

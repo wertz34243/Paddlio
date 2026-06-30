@@ -28,6 +28,7 @@ Version 1.0 richtet sich an Athletinnen und Athleten. Paddlio kombiniert Trainin
 - Logout ist in die Einstellungen verschoben und nicht mehr prominent auf dem Dashboard
 - Bottom Navigation ist flacher, sicherer fuer iPhone-Safe-Areas und verdeckt weniger Inhalt
 - Mobile Abstaende, Home-Hero und Sticky-Aktionen wurden fuer mehr sichtbaren Inhalt gestrafft
+- Athletenprofil fachlich fuer Kanuslalom geschaerft: K1/C1-Auswahl, Altersklasse, C1-Paddelseite und Migration alter Profildaten
 
 ## Paddlio auf iPhone/iPad installieren
 

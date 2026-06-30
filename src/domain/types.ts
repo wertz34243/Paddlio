@@ -1,6 +1,6 @@
 export type BoatClass = "K1" | "C1";
 
-export type ProfileBoatClass = "K1" | "C1" | "C2";
+export type AgeClass = "U10" | "U12" | "U14" | "U16" | "U18" | "U23" | "Leistungsklasse" | "Masters";
 
 export type TrainingType =
   | "K1"
@@ -17,7 +17,7 @@ export type MaterialStatus = "bereit" | "pruefen" | "wartung" | "defekt";
 
 export type Gender = "weiblich" | "maennlich" | "divers" | "keine_angabe";
 
-export type PaddleSide = "links" | "rechts" | "wechselnd";
+export type PaddleSide = "links" | "rechts";
 
 export type MeasurementUnit = "metrisch" | "imperial";
 
@@ -49,9 +49,8 @@ export type UserProfile = {
   federation: string;
   coach: string;
   licenseNumber: string;
-  mainBoatClass: ProfileBoatClass;
-  additionalBoatClasses: ProfileBoatClass[];
-  performanceClass: string;
+  boatClasses: BoatClass[];
+  ageClass: AgeClass | "";
   paddleSide: PaddleSide;
   trainingYears: number;
   competitionExperience: string;

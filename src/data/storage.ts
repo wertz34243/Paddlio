@@ -1,9 +1,11 @@
 import { seedData } from "./seed";
 import { getWeekdayFromDate } from "../domain/trainingPlan";
 import type {
+  AgeClass,
   Athlete,
   AuthSession,
   AuthUser,
+  BoatClass,
   Competition,
   MaterialItem,
   PaddleMotionData,
@@ -146,6 +148,77 @@ const removeStorage = (key: string): void => {
 const normalizeBrandValue = (value: string): string =>
   value === "PaddleMotion" || value === "PaddeleMotion" ? "Paddlio" : value;
 
+const ageClasses: AgeClass[] = ["U10", "U12", "U14", "U16", "U18", "U23", "Leistungsklasse", "Masters"];
+
+const isBoatClass = (value: unknown): value is BoatClass => value === "K1" || value === "C1";
+
+type LegacyProfileFields = Partial<UserProfile> & {
+  mainBoatClass?: unknown;
+  additionalBoatClasses?: unknown;
+  performanceClass?: unknown;
+};
+
+const migrateBoatClasses = (profile: LegacyProfileFields): BoatClass[] => {
+  const classes = new Set<BoatClass>();
+
+  if (Array.isArray(profile.boatClasses)) {
+    profile.boatClasses.filter(isBoatClass).forEach((boatClass) => classes.add(boatClass));
+  }
+
+  if (isBoatClass(profile.mainBoatClass)) {
+    classes.add(profile.mainBoatClass);
+  }
+
+  if (Array.isArray(profile.additionalBoatClasses)) {
+    profile.additionalBoatClasses.filter(isBoatClass).forEach((boatClass) => classes.add(boatClass));
+  }
+
+  return classes.size > 0 ? [...classes] : ["K1"];
+};
+
+const migrateAgeClass = (profile: LegacyProfileFields): AgeClass | "" => {
+  const value = typeof profile.ageClass === "string" ? profile.ageClass : profile.performanceClass;
+  return ageClasses.includes(value as AgeClass) ? (value as AgeClass) : "";
+};
+
+const migratePaddleSide = (profile: LegacyProfileFields, boatClasses: BoatClass[]): UserProfile["paddleSide"] => {
+  if (!boatClasses.includes("C1")) {
+    return "rechts";
+  }
+
+  return profile.paddleSide === "links" ? "links" : "rechts";
+};
+
+const normalizeProfile = (profile: LegacyProfileFields): UserProfile => {
+  const boatClasses = migrateBoatClasses(profile);
+
+  return {
+    firstName: profile.firstName ?? "",
+    lastName: profile.lastName ?? "",
+    nickname: profile.nickname ?? "",
+    birthDate: profile.birthDate ?? "",
+    gender: profile.gender ?? "keine_angabe",
+    heightCm: profile.heightCm ?? 0,
+    weightKg: profile.weightKg ?? 0,
+    club: normalizeBrandValue(profile.club ?? ""),
+    federation: profile.federation ?? "",
+    coach: profile.coach ?? "",
+    licenseNumber: profile.licenseNumber ?? "",
+    boatClasses,
+    ageClass: migrateAgeClass(profile),
+    paddleSide: migratePaddleSide(profile, boatClasses),
+    trainingYears: profile.trainingYears ?? 0,
+    competitionExperience: profile.competitionExperience ?? "",
+    longTermGoal: profile.longTermGoal ?? "",
+    seasonGoal: profile.seasonGoal ?? "",
+    personalNotes: profile.personalNotes ?? "",
+    profileImageDataUrl: profile.profileImageDataUrl ?? "",
+    darkMode: profile.darkMode ?? true,
+    measurementUnit: profile.measurementUnit ?? "metrisch",
+    language: profile.language ?? "de",
+  };
+};
+
 const normalizeBrandData = (data: PaddleMotionData): PaddleMotionData => ({
   ...data,
   athlete: {
@@ -155,10 +228,7 @@ const normalizeBrandData = (data: PaddleMotionData): PaddleMotionData => ({
   users: data.users.map((user) => ({
     ...user,
     userId: user.userId ?? user.id,
-    profile: {
-      ...user.profile,
-      club: normalizeBrandValue(user.profile.club),
-    },
+    profile: normalizeProfile(user.profile),
   })),
 });
 
@@ -358,9 +428,8 @@ const createUserFromAthlete = (athlete: Athlete): User => {
       federation: "",
       coach: "",
       licenseNumber: "",
-      mainBoatClass: "K1",
-      additionalBoatClasses: ["C1"],
-      performanceClass: "",
+      boatClasses: ["K1", "C1"],
+      ageClass: "",
       paddleSide: "rechts",
       trainingYears: 0,
       competitionExperience: "",
@@ -392,9 +461,8 @@ const createProfileForAuthUser = (authUser: AuthUser): UserProfile => {
     federation: "",
     coach: "",
     licenseNumber: "",
-    mainBoatClass: "K1",
-    additionalBoatClasses: [],
-    performanceClass: "",
+    boatClasses: ["K1"],
+    ageClass: "",
     paddleSide: "rechts",
     trainingYears: 0,
     competitionExperience: "",

@@ -149,6 +149,12 @@ button {
   font-weight: 800;
 }
 
+.form-error {
+  color: #fecaca;
+  font-size: 12px;
+  font-weight: 850;
+}
+
 .app-shell {
   width: min(100%, 920px);
   min-height: 100vh;
