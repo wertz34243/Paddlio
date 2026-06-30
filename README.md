@@ -37,6 +37,13 @@ Version 1.0 richtet sich an Athletinnen und Athleten. Paddlio kombiniert Trainin
 - Profilkarte, Altersklasse und Bootsklassen-Anzeige wurden fuer iPhone, iPad und Desktop gehaertet
 - Speichern-Bereich und Formularfelder haben mehr Luft zur Bottom Navigation und Safe Area
 
+## Version 2.0 - Coach Foundation
+
+- Rollen-System fuer Athlete, Coach, TeamAdmin und Admin mit automatischer Admin-Rolle fuer `T.Kanu@outlook.com`
+- Einladungscodes fuer Coach, TeamAdmin und Athlete im lokalen Demo-Auth-System
+- Erster Coach/Admin-Bereich mit Dashboard, Sportlerverwaltung, Gruppenverwaltung, Trainingszuweisung und Sportler-Vorschau
+- Coach-Daten werden pro eingeloggtem Nutzer im bestehenden `paddlio_data_<userId>` LocalStorage getrennt gespeichert
+
 ## Paddlio auf iPhone/iPad installieren
 
 1. Paddlio in Safari oeffnen.

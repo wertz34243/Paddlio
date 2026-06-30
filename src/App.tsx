@@ -32,6 +32,7 @@ import { BoatComparisonView } from "./views/BoatComparisonView";
 import { CompetitionResultsView } from "./views/CompetitionResultsView";
 import { CompetitionVideosView } from "./views/CompetitionVideosView";
 import { CompetitionsView } from "./views/CompetitionsView";
+import { CoachView } from "./views/CoachView";
 import { DashboardView, type DashboardQuickAction } from "./views/DashboardView";
 import { EquipmentView } from "./views/EquipmentView";
 import { GoalsView } from "./views/GoalsView";
@@ -46,7 +47,7 @@ import { TrainingView } from "./views/TrainingView";
 type TrainingSegment = "plan" | "sessions" | "journal";
 type CompetitionSegment = "races" | "results" | "videos";
 type AnalysisSegment = "overview" | "boats" | "season";
-type MoreSegment = "profile" | "equipment" | "goals" | "records" | "settings";
+type MoreSegment = "profile" | "equipment" | "goals" | "records" | "coach" | "settings";
 
 const navItems: Array<{ id: PageId; label: string; icon: IconName }> = [
   { id: "dashboard", label: "Home", icon: "home" },
@@ -83,7 +84,7 @@ const analysisSegments: SegmentItem<AnalysisSegment>[] = [
   { id: "season", label: "Saison" },
 ];
 
-const moreSegments: SegmentItem<MoreSegment>[] = [
+const baseMoreSegments: SegmentItem<MoreSegment>[] = [
   { id: "profile", label: "Profil" },
   { id: "equipment", label: "Material" },
   { id: "goals", label: "Ziele" },
@@ -106,6 +107,8 @@ const pageTitles: Record<PageId, string> = {
 };
 
 const getTimestamp = (): string => new Date().toISOString();
+
+const canUseCoachArea = (role: string): boolean => role === "coach" || role === "teamAdmin" || role === "admin";
 
 function App() {
   const [session, setSession] = useState<AuthSession | null>(() => loadSession());
@@ -159,6 +162,13 @@ function App() {
 
   const activeUser = getActiveUser(data.users, data.activeUserId);
   const activeNavPage = navPageByPage[activePage] ?? activePage;
+  const moreSegments = canUseCoachArea(activeUser.role)
+    ? [
+        ...baseMoreSegments.slice(0, 4),
+        { id: "coach" as const, label: activeUser.role === "admin" ? "Admin" : "Coach" },
+        baseMoreSegments[4],
+      ]
+    : baseMoreSegments;
   const updateData = (updater: (current: PaddleMotionData) => PaddleMotionData) => {
     setData((current) => (current ? updater(current) : current));
   };
@@ -502,6 +512,8 @@ function App() {
         return <GoalsView user={activeUser} competitions={data.competitions} training={data.training} />;
       case "records":
         return <RecordsView competitions={data.competitions} training={data.training} />;
+      case "coach":
+        return <CoachView data={data} user={activeUser} onDataChange={updateData} />;
       case "settings":
         return <SettingsView user={activeUser} onSave={updateProfileSettings} onLogout={handleLogout} />;
       case "profile":

@@ -23,11 +23,14 @@ export type MeasurementUnit = "metrisch" | "imperial";
 
 export type AppLanguage = "de" | "en";
 
+export type UserRole = "athlete" | "coach" | "teamAdmin" | "admin";
+
 export type AuthUser = {
   userId: string;
   email: string;
   displayName: string;
   passwordHash: string;
+  role: UserRole;
   createdAt: string;
   updatedAt: string;
 };
@@ -66,7 +69,7 @@ export type UserProfile = {
 export type User = {
   id: string;
   userId: string;
-  role: "athlete";
+  role: UserRole;
   profile: UserProfile;
   createdAt: string;
   updatedAt: string;
@@ -221,6 +224,47 @@ export type Athlete = {
   goals: string[];
 };
 
+export type InvitationCode = {
+  id: string;
+  code: string;
+  role: Exclude<UserRole, "admin">;
+  createdByUserId: string;
+  usedByUserId: string;
+  createdAt: string;
+  usedAt: string;
+};
+
+export type CoachAthleteStatus = "aktiv" | "pausiert";
+
+export type CoachAthlete = {
+  id: string;
+  coachUserId: string;
+  name: string;
+  birthDate: string;
+  ageClass: AgeClass | "";
+  club: string;
+  boatClasses: BoatClass[];
+  paddleSide: PaddleSide;
+  groupId: string;
+  goals: string;
+  notes: string;
+  status: CoachAthleteStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CoachGroup = {
+  id: string;
+  coachUserId: string;
+  name: string;
+  description: string;
+  ageRange: string;
+  trainingFocus: string;
+  athleteIds: string[];
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type PaddleMotionData = {
   activeUserId: string;
   users: User[];
@@ -230,6 +274,8 @@ export type PaddleMotionData = {
   journal: TrainingJournalEntry[];
   material: MaterialItem[];
   plan: PlanEntry[];
+  coachAthletes: CoachAthlete[];
+  coachGroups: CoachGroup[];
 };
 
 export type PageId =

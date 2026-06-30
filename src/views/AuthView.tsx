@@ -34,6 +34,7 @@ export function AuthView({ onLogin, onRegister }: AuthViewProps) {
       lastName: String(formData.get("lastName") ?? ""),
       email: String(formData.get("email") ?? ""),
       password: String(formData.get("password") ?? ""),
+      invitationCode: String(formData.get("invitationCode") ?? ""),
     });
 
     if (!result.ok) {
@@ -97,6 +98,10 @@ export function AuthView({ onLogin, onRegister }: AuthViewProps) {
             <label>
               Passwort
               <input name="password" type="password" autoComplete="new-password" minLength={4} required />
+            </label>
+            <label>
+              Einladungscode optional
+              <input name="invitationCode" autoComplete="off" placeholder="z. B. COACH-ABC123" />
             </label>
             <button className="save-button" type="submit">
               Konto erstellen

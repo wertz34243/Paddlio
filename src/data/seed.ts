@@ -251,4 +251,6 @@ export const seedData: PaddleMotionData = {
       updatedAt: now,
     },
   ],
+  coachAthletes: [],
+  coachGroups: [],
 };
