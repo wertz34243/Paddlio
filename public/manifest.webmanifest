@@ -1,0 +1,61 @@
+{
+  "name": "Paddlio",
+  "short_name": "Paddlio",
+  "description": "Paddlio ist eine moderne Trainings- und Wettkampfplattform fuer Kanuslalom.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "portrait-primary",
+  "theme_color": "#0F172A",
+  "background_color": "#0F172A",
+  "categories": ["sports", "health", "productivity"],
+  "lang": "de",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icons/paddlio-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/paddlio-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/paddlio-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Training",
+      "short_name": "Training",
+      "description": "Training und Journal oeffnen",
+      "url": "/?shortcut=training",
+      "icons": [
+        {
+          "src": "/icons/paddlio-icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Analyse",
+      "short_name": "Analyse",
+      "description": "Analyse und Fortschritt oeffnen",
+      "url": "/?shortcut=analysis",
+      "icons": [
+        {
+          "src": "/icons/paddlio-icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

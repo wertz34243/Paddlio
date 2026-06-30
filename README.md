@@ -14,6 +14,38 @@ Version 1.0 richtet sich an Athletinnen und Athleten. Paddlio kombiniert Trainin
 - Mobile Layout-Haertung fuer Header, Bottom Navigation, Safe Area, Karten, lange Texte und kleine Screens
 - Sichtbare Beispiel-/Alttexte weiter bereinigt, damit neue Nutzer eine leere, eigene App sehen
 
+## Version 1.6 - Cross-Platform PWA
+
+- Web App Manifest fuer iPhone, iPad, Android, Windows und moderne Desktop-Browser
+- Standalone-Display, Dark-Mode Theme Color, maskable Icon, Apple Touch Icon und Windows Tile-Metadaten
+- Service Worker als Offline-Grundlage fuer App-Shell und Offline-Fallback
+- Verbesserte Safe-Area-Unterstuetzung fuer installierte iOS/iPadOS Apps
+
+## Paddlio auf iPhone/iPad installieren
+
+1. Paddlio in Safari oeffnen.
+2. Teilen-Button antippen.
+3. `Zum Home-Bildschirm` waehlen.
+4. Name `Paddlio` bestaetigen und `Hinzufuegen` antippen.
+
+Paddlio startet danach als eigenstaendige App im Dark-Mode Look mit iOS-Statusleiste.
+
+## Paddlio auf Android installieren
+
+1. Paddlio in Chrome oeffnen.
+2. Im Browsermenue `App installieren` oder `Zum Startbildschirm hinzufuegen` waehlen.
+3. Installation bestaetigen.
+
+Chrome nutzt das Manifest, die 192x192-/512x512-Icons und den Standalone-Modus.
+
+## Paddlio auf Windows installieren
+
+1. Paddlio in Microsoft Edge oeffnen.
+2. In der Adressleiste oder im Menue `Apps` die Option `Diese Website als App installieren` waehlen.
+3. Installation bestaetigen.
+
+Edge verwendet Manifest, Theme Color und Windows Tile-Metadaten.
+
 ## Milestone 1.0
 
 - Athlete Intelligence Dashboard mit Tagesfokus, Trainingsserie, Athletenstatus und Countdown
