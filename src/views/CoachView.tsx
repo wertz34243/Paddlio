@@ -1,10 +1,13 @@
 import { useMemo, useState, type FormEvent } from "react";
 import {
   createId,
-  createInvitationCode,
+  createUserInvitation,
+  deleteAuthUser,
   loadInvitationCodes,
   loadUsers,
+  updateAuthUserProfileFields,
   updateAuthUserRole,
+  updateAuthUserStatus,
 } from "../data/storage";
 import { getWeekdayFromDate } from "../domain/trainingPlan";
 import type {
@@ -45,6 +48,7 @@ const intensities: TrainingIntensity[] = ["locker", "mittel", "hart", "maximal"]
 
 const canUseCoach = (role: UserRole): boolean => role === "coach" || role === "teamAdmin" || role === "admin";
 const canManageAdmin = (role: UserRole): boolean => role === "admin";
+const canInviteUsers = (role: UserRole): boolean => role === "admin" || role === "coach" || role === "teamAdmin";
 
 const todayKey = (): string => new Date().toISOString().slice(0, 10);
 
@@ -86,12 +90,52 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
   const [selectedPreviewAthleteId, setSelectedPreviewAthleteId] = useState("");
   const [authUsers, setAuthUsers] = useState<AuthUser[]>(() => loadUsers());
   const [codes, setCodes] = useState<InvitationCode[]>(() => loadInvitationCodes());
+  const [userSearch, setUserSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<UserRole | "all">("all");
+  const [sortBy, setSortBy] = useState<"name" | "email" | "role" | "club">("name");
   const [message, setMessage] = useState("");
 
-  const ownAthletes = data.coachAthletes.filter((athlete) => athlete.coachUserId === user.userId);
-  const ownGroups = data.coachGroups.filter((group) => group.coachUserId === user.userId);
-  const coachPlan = data.plan.filter((entry) => entry.createdByUserId === user.userId);
+  const isAdmin = user.role === "admin";
+  const userClub = user.profile.club.trim().toLowerCase();
+  const ownGroups = isAdmin ? data.coachGroups : data.coachGroups.filter((group) => group.coachUserId === user.userId);
+  const ownGroupIds = new Set(ownGroups.map((group) => group.id));
+  const canSeeAthlete = (athlete: CoachAthlete): boolean =>
+    isAdmin ||
+    athlete.coachUserId === user.userId ||
+    (Boolean(userClub) && athlete.club.trim().toLowerCase() === userClub) ||
+    ownGroupIds.has(athlete.groupId);
+  const ownAthletes = data.coachAthletes.filter(canSeeAthlete);
+  const coachPlan = isAdmin ? data.plan : data.plan.filter((entry) => entry.createdByUserId === user.userId);
   const visibleCodes = user.role === "admin" ? codes : codes.filter((code) => code.createdByUserId === user.userId);
+  const visibleAuthUsers = useMemo(() => {
+    const ownGroupIdList = new Set(ownGroups.map((group) => group.id));
+    const scoped = isAdmin
+      ? authUsers
+      : authUsers.filter((authUser) =>
+          authUser.role === "athlete" &&
+          ((Boolean(userClub) && authUser.club.trim().toLowerCase() === userClub) ||
+            ownGroupIdList.has(authUser.trainingGroupId) ||
+            authUser.coachId === user.userId),
+        );
+    const query = userSearch.trim().toLowerCase();
+
+    return scoped
+      .filter((authUser) => roleFilter === "all" || authUser.role === roleFilter)
+      .filter((authUser) => {
+        if (!query) {
+          return true;
+        }
+        return [authUser.displayName, authUser.email, authUser.club, authUser.trainingGroupId]
+          .join(" ")
+          .toLowerCase()
+          .includes(query);
+      })
+      .sort((a, b) => {
+        const valueA = sortBy === "name" ? a.displayName : sortBy === "email" ? a.email : sortBy === "role" ? a.role : a.club;
+        const valueB = sortBy === "name" ? b.displayName : sortBy === "email" ? b.email : sortBy === "role" ? b.role : b.club;
+        return valueA.localeCompare(valueB);
+      });
+  }, [authUsers, isAdmin, ownGroups, roleFilter, sortBy, user.userId, userClub, userSearch]);
   const previewAthlete = ownAthletes.find((athlete) => athlete.id === selectedPreviewAthleteId) ?? ownAthletes[0];
   const previewPlan = previewAthlete
     ? coachPlan.filter((entry) => entry.assignedAthleteId === previewAthlete.id || (entry.assignedGroupId && entry.assignedGroupId === previewAthlete.groupId))
@@ -243,16 +287,56 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
     }));
   };
 
-  const createCode = (event: FormEvent<HTMLFormElement>) => {
+  const createInvitation = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const role = String(new FormData(event.currentTarget).get("role") ?? "athlete") as Exclude<UserRole, "admin">;
-    const code = createInvitationCode(role, user.userId);
+    const formData = new FormData(event.currentTarget);
+    const firstName = String(formData.get("firstName") ?? "").trim();
+    const email = String(formData.get("email") ?? "").trim();
+    const role = String(formData.get("role") ?? "athlete") as "athlete" | "coach";
+
+    if (!firstName || !email) {
+      setMessage("Vorname und E-Mail sind fuer eine Einladung erforderlich.");
+      return;
+    }
+
+    if (!isAdmin && role === "coach") {
+      setMessage("Nur Admins koennen Coach-Einladungen erstellen.");
+      return;
+    }
+
+    const code = createUserInvitation({
+      firstName,
+      lastName: String(formData.get("lastName") ?? "").trim(),
+      email,
+      club: String(formData.get("club") ?? user.profile.club).trim(),
+      role,
+      trainingGroupId: String(formData.get("trainingGroupId") ?? ""),
+      createdByUserId: user.userId,
+      coachId: role === "athlete" ? user.userId : "",
+    });
     setCodes(loadInvitationCodes());
-    setMessage(`Einladungscode erstellt: ${code.code}`);
+    setMessage(`Einladung erstellt: ${code.invitationCode}`);
   };
 
   const changeRole = (targetUserId: string, role: UserRole) => {
     setAuthUsers(updateAuthUserRole(targetUserId, role));
+  };
+
+  const changeStatus = (targetUserId: string, status: "active" | "inactive") => {
+    setAuthUsers(updateAuthUserStatus(targetUserId, status));
+  };
+
+  const changeTrainingGroup = (targetUserId: string, trainingGroupId: string) => {
+    setAuthUsers(updateAuthUserProfileFields(targetUserId, { trainingGroupId, coachId: user.userId }));
+  };
+
+  const removeUser = (targetUserId: string) => {
+    if (targetUserId === user.userId) {
+      setMessage("Du kannst dein eigenes Konto hier nicht loeschen.");
+      return;
+    }
+
+    setAuthUsers(deleteAuthUser(targetUserId));
   };
 
   const athleteFormValue = editingAthlete ?? defaultAthlete(user.userId);
@@ -292,45 +376,128 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
         </div>
       </section>
 
-      {canManageAdmin(user.role) ? (
+      {canInviteUsers(user.role) ? (
         <section className="section-block">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Admin</p>
-              <h3>Einladungen und Rollen</h3>
+              <p className="eyebrow">{isAdmin ? "Admin" : "Coach"}</p>
+              <h3>Benutzer einladen</h3>
             </div>
           </div>
-          <form className="entry-form compact-form" onSubmit={createCode}>
-            <label>
-              Einladung fuer
-              <select name="role" defaultValue="coach">
-                <option value="coach">Coach</option>
-                <option value="teamAdmin">TeamAdmin</option>
+          <form className="entry-form compact-form" onSubmit={createInvitation}>
+            <div className="form-grid">
+              <label>Vorname<input name="firstName" required /></label>
+              <label>Nachname<input name="lastName" /></label>
+              <label>E-Mail<input name="email" type="email" required /></label>
+              <label>Verein<input name="club" defaultValue={user.profile.club} required /></label>
+              <label>
+                Rolle
+                <select name="role" defaultValue="athlete">
                 <option value="athlete">Athlete</option>
+                  {isAdmin ? <option value="coach">Coach</option> : null}
               </select>
             </label>
-            <button className="save-button" type="submit">Code erstellen</button>
+              <label>
+                Trainingsgruppe optional
+                <select name="trainingGroupId" defaultValue="">
+                  <option value="">Keine Gruppe</option>
+                  {ownGroups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}
+                </select>
+              </label>
+            </div>
+            <button className="save-button" type="submit">Einladung erstellen</button>
           </form>
           <div className="tag-row">
             {visibleCodes.slice(0, 8).map((code) => (
-              <small key={code.id}>{code.code} - {roleLabels[code.role]}{code.usedByUserId ? " - genutzt" : ""}</small>
-            ))}
-          </div>
-          <div className="result-list">
-            {authUsers.map((authUser) => (
-              <article className="summary-strip" key={authUser.userId}>
-                <span>{authUser.email}</span>
-                <select value={authUser.role} onChange={(event) => changeRole(authUser.userId, event.target.value as UserRole)}>
-                  <option value="athlete">Athlete</option>
-                  <option value="coach">Coach</option>
-                  <option value="teamAdmin">TeamAdmin</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </article>
+              <small key={code.invitationId}>
+                {code.invitationCode} - {code.firstName || "Einladung"} - {roleLabels[code.role]} - {code.status}
+              </small>
             ))}
           </div>
         </section>
       ) : null}
+
+      <section className="section-block">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">{isAdmin ? "Admin" : "Coach"}</p>
+            <h3>Benutzer</h3>
+          </div>
+        </div>
+        <div className="entry-form compact-form">
+          <div className="form-grid">
+            <label>Suche<input value={userSearch} onChange={(event) => setUserSearch(event.target.value)} placeholder="Name, E-Mail, Verein" /></label>
+            <label>
+              Rolle
+              <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value as UserRole | "all")}>
+                <option value="all">Alle Rollen</option>
+                <option value="athlete">Athlete</option>
+                {isAdmin ? <option value="coach">Coach</option> : null}
+                {isAdmin ? <option value="teamAdmin">TeamAdmin</option> : null}
+                {isAdmin ? <option value="admin">Admin</option> : null}
+              </select>
+            </label>
+            <label>
+              Sortierung
+              <select value={sortBy} onChange={(event) => setSortBy(event.target.value as "name" | "email" | "role" | "club")}>
+                <option value="name">Name</option>
+                <option value="email">E-Mail</option>
+                <option value="club">Verein</option>
+                <option value="role">Rolle</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div className="result-list">
+          {visibleAuthUsers.length > 0 ? visibleAuthUsers.map((authUser) => (
+            <article className="user-admin-card" key={authUser.userId}>
+              <div>
+                <strong>{authUser.displayName || `${authUser.firstName} ${authUser.lastName}`.trim() || authUser.email}</strong>
+                <span>{authUser.email}</span>
+                <small>{authUser.club || "ohne Verein"} - {roleLabels[authUser.role]} - {authUser.status === "active" ? "aktiv" : "deaktiviert"}</small>
+              </div>
+              <div className="form-grid">
+                {isAdmin ? (
+                  <label>
+                    Rolle
+                    <select value={authUser.role} onChange={(event) => changeRole(authUser.userId, event.target.value as UserRole)}>
+                      <option value="athlete">Athlete</option>
+                      <option value="coach">Coach</option>
+                      <option value="teamAdmin">TeamAdmin</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </label>
+                ) : null}
+                <label>
+                  Trainingsgruppe
+                  <select
+                    value={authUser.trainingGroupId}
+                    onChange={(event) => changeTrainingGroup(authUser.userId, event.target.value)}
+                    disabled={!isAdmin && authUser.role !== "athlete"}
+                  >
+                    <option value="">Keine Gruppe</option>
+                    {ownGroups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}
+                  </select>
+                </label>
+                {isAdmin ? (
+                  <label>
+                    Status
+                    <select value={authUser.status} onChange={(event) => changeStatus(authUser.userId, event.target.value as "active" | "inactive")}>
+                      <option value="active">aktiv</option>
+                      <option value="inactive">deaktiviert</option>
+                    </select>
+                  </label>
+                ) : null}
+              </div>
+              {isAdmin ? (
+                <div className="card-actions full-width">
+                  <button type="button" onClick={() => removeUser(authUser.userId)}>Benutzer loeschen</button>
+                </div>
+              ) : null}
+            </article>
+          )) : <p className="empty-state">Keine Benutzer fuer deinen Zugriff gefunden.</p>}
+        </div>
+      </section>
 
       <section className="section-block">
         <div className="section-heading">

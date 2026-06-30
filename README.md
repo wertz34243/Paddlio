@@ -44,6 +44,15 @@ Version 1.0 richtet sich an Athletinnen und Athleten. Paddlio kombiniert Trainin
 - Erster Coach/Admin-Bereich mit Dashboard, Sportlerverwaltung, Gruppenverwaltung, Trainingszuweisung und Sportler-Vorschau
 - Coach-Daten werden pro eingeloggtem Nutzer im bestehenden `paddlio_data_<userId>` LocalStorage getrennt gespeichert
 
+## Version 2.1 - Benutzerverwaltung & Einladungen
+
+- Oeffentliche Registrierung entfernt: neue Nutzer aktivieren ihr Konto nur noch mit Einladungscode und Passwort
+- Admins und berechtigte Coaches koennen Einladungen fuer Athlete und Coach erstellen; echte E-Mail-Zustellung ist architektonisch vorbereitet
+- Einladungen werden lokal mit Status `offen`, `angenommen` oder `abgelaufen` gespeichert und beim Annehmen automatisch in Benutzerkonten migriert
+- Neue Admin-/Coach-Benutzerverwaltung mit Suche, Rollenfilter, Sortierung, Gruppen-Zuweisung, Statusverwaltung und Admin-Loeschfunktion
+- Datenschutzregeln geschaerft: Athleten sehen eigene Daten, Coaches nur Athleten aus Verein/Gruppen, Admins alle lokalen Benutzer
+- LocalStorage-Struktur: `paddlio_users`, `paddlio_session`, `paddlio_invitation_codes`, `paddlio_data_<userId>`
+
 ## Paddlio auf iPhone/iPad installieren
 
 1. Paddlio in Safari oeffnen.

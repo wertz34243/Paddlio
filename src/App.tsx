@@ -5,10 +5,10 @@ import { SegmentNav, type SegmentItem } from "./components/SegmentNav";
 import {
   clearSession,
   createId,
+  acceptInvitationLocalUser,
   loadData,
   loadSession,
   loginLocalUser,
-  registerLocalUser,
   saveData,
   type AuthResult,
   type LoginInput,
@@ -147,7 +147,7 @@ function App() {
 
   const handleLogin = (input: LoginInput): AuthResult => activateSession(loginLocalUser(input));
 
-  const handleRegister = (input: RegisterInput): AuthResult => activateSession(registerLocalUser(input));
+  const handleAcceptInvitation = (input: RegisterInput): AuthResult => activateSession(acceptInvitationLocalUser(input));
 
   const handleLogout = () => {
     clearSession();
@@ -157,7 +157,7 @@ function App() {
   };
 
   if (!session || !data) {
-    return <AuthView onLogin={handleLogin} onRegister={handleRegister} />;
+    return <AuthView onLogin={handleLogin} onAcceptInvitation={handleAcceptInvitation} />;
   }
 
   const activeUser = getActiveUser(data.users, data.activeUserId);

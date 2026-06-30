@@ -10,6 +10,7 @@ import type {
   CoachGroup,
   Competition,
   InvitationCode,
+  InvitationRole,
   MaterialItem,
   PaddleMotionData,
   PlanEntry,
@@ -18,6 +19,7 @@ import type {
   User,
   UserProfile,
   UserRole,
+  UserStatus,
 } from "../domain/types";
 
 const STORAGE_KEY = "paddlemotion:v0.6:data";
@@ -83,16 +85,24 @@ type LegacyPlanEntry = Partial<PlanEntry> & {
 };
 
 export type RegisterInput = {
-  firstName: string;
-  lastName: string;
-  email: string;
   password: string;
-  invitationCode?: string;
+  invitationCode: string;
 };
 
 export type LoginInput = {
   email: string;
   password: string;
+};
+
+export type InviteUserInput = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  club: string;
+  role: InvitationRole;
+  trainingGroupId: string;
+  createdByUserId: string;
+  coachId: string;
 };
 
 export type AuthResult =
@@ -301,6 +311,14 @@ const parseStoredData = (value: string | null): unknown => {
 
 const normalizeEmail = (email: string): string => email.trim().toLowerCase();
 
+const splitDisplayName = (displayName: string): { firstName: string; lastName: string } => {
+  const [firstName = "", ...lastNameParts] = displayName.trim().split(/\s+/).filter(Boolean);
+  return {
+    firstName,
+    lastName: lastNameParts.join(" "),
+  };
+};
+
 const getRoleForEmail = (email: string, fallback: UserRole = "athlete"): UserRole =>
   normalizeEmail(email) === ADMIN_EMAIL ? "admin" : fallback;
 
@@ -328,6 +346,12 @@ const isAuthUser = (value: unknown): value is AuthUser => {
 const normalizeAuthUser = (user: AuthUser): AuthUser => ({
   ...user,
   email: normalizeEmail(user.email),
+  firstName: user.firstName ?? splitDisplayName(user.displayName).firstName,
+  lastName: user.lastName ?? splitDisplayName(user.displayName).lastName,
+  club: normalizeBrandValue(user.club ?? ""),
+  trainingGroupId: user.trainingGroupId ?? "",
+  coachId: user.coachId ?? "",
+  status: user.status ?? "active",
   role: getRoleForEmail(user.email, user.role ?? "athlete"),
   updatedAt: user.updatedAt ?? now(),
 });
@@ -347,26 +371,102 @@ const saveUsers = (users: AuthUser[]): void => {
 
 export const loadInvitationCodes = (): InvitationCode[] => {
   const value = parseStoredData(readStorage(INVITATION_CODES_KEY));
-  return Array.isArray(value) ? value.filter((item): item is InvitationCode => Boolean(item && typeof item === "object" && typeof (item as InvitationCode).code === "string")) : [];
+  const codes = Array.isArray(value)
+    ? value
+        .filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object"))
+        .map(normalizeInvitationCode)
+        .filter((item): item is InvitationCode => Boolean(item))
+    : [];
+
+  if (codes.length > 0) {
+    saveInvitationCodes(codes);
+  }
+  return codes;
 };
 
 const saveInvitationCodes = (codes: InvitationCode[]): void => {
   writeStorage(INVITATION_CODES_KEY, JSON.stringify(codes));
 };
 
-export const createInvitationCode = (role: Exclude<UserRole, "admin">, createdByUserId: string): InvitationCode => {
-  const code: InvitationCode = {
-    id: createId("invite"),
-    code: `${role.toUpperCase()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
-    role,
-    createdByUserId,
-    usedByUserId: "",
-    createdAt: now(),
-    usedAt: "",
+const normalizeInvitationStatus = (invite: Record<string, unknown>, expiresAt: string): InvitationCode["status"] => {
+  const status = invite.status;
+  if (status === "offen" || status === "angenommen" || status === "abgelaufen") {
+    if (status === "offen" && new Date(expiresAt).getTime() < Date.now()) {
+      return "abgelaufen";
+    }
+    return status;
+  }
+
+  if (typeof invite.usedByUserId === "string" && invite.usedByUserId) {
+    return "angenommen";
+  }
+
+  return new Date(expiresAt).getTime() < Date.now() ? "abgelaufen" : "offen";
+};
+
+const normalizeInvitationRole = (role: unknown): InvitationRole =>
+  role === "coach" ? "coach" : "athlete";
+
+const normalizeInvitationCode = (invite: Record<string, unknown>): InvitationCode | null => {
+  const invitationCode = typeof invite.invitationCode === "string"
+    ? invite.invitationCode
+    : typeof invite.code === "string"
+      ? invite.code
+      : "";
+
+  if (!invitationCode) {
+    return null;
+  }
+
+  const createdAt = typeof invite.createdAt === "string" ? invite.createdAt : now();
+  const expiresAt = typeof invite.expiresAt === "string"
+    ? invite.expiresAt
+    : new Date(new Date(createdAt).getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
+
+  return {
+    invitationId: typeof invite.invitationId === "string" ? invite.invitationId : typeof invite.id === "string" ? invite.id : createId("invite"),
+    firstName: typeof invite.firstName === "string" ? invite.firstName : "",
+    lastName: typeof invite.lastName === "string" ? invite.lastName : "",
+    email: typeof invite.email === "string" ? normalizeEmail(invite.email) : "",
+    club: typeof invite.club === "string" ? normalizeBrandValue(invite.club) : "",
+    role: normalizeInvitationRole(invite.role),
+    trainingGroupId: typeof invite.trainingGroupId === "string" ? invite.trainingGroupId : "",
+    coachId: typeof invite.coachId === "string" ? invite.coachId : "",
+    invitationCode: invitationCode.toUpperCase(),
+    status: normalizeInvitationStatus(invite, expiresAt),
+    expiresAt,
+    createdByUserId: typeof invite.createdByUserId === "string" ? invite.createdByUserId : "",
+    acceptedByUserId: typeof invite.acceptedByUserId === "string" ? invite.acceptedByUserId : typeof invite.usedByUserId === "string" ? invite.usedByUserId : "",
+    createdAt,
+    acceptedAt: typeof invite.acceptedAt === "string" ? invite.acceptedAt : typeof invite.usedAt === "string" ? invite.usedAt : "",
+  };
+};
+
+const generateInvitationCode = (role: InvitationRole): string =>
+  `${role.toUpperCase()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+
+export const createUserInvitation = (input: InviteUserInput): InvitationCode => {
+  const timestamp = now();
+  const invitation: InvitationCode = {
+    invitationId: createId("invite"),
+    firstName: input.firstName.trim(),
+    lastName: input.lastName.trim(),
+    email: normalizeEmail(input.email),
+    club: normalizeBrandValue(input.club.trim()),
+    role: input.role,
+    trainingGroupId: input.trainingGroupId,
+    coachId: input.coachId,
+    invitationCode: generateInvitationCode(input.role),
+    status: "offen",
+    expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+    createdByUserId: input.createdByUserId,
+    acceptedByUserId: "",
+    createdAt: timestamp,
+    acceptedAt: "",
   };
 
-  saveInvitationCodes([code, ...loadInvitationCodes()]);
-  return code;
+  saveInvitationCodes([invitation, ...loadInvitationCodes()]);
+  return invitation;
 };
 
 export const updateAuthUserRole = (userId: string, role: UserRole): AuthUser[] => {
@@ -383,6 +483,47 @@ export const updateAuthUserRole = (userId: string, role: UserRole): AuthUser[] =
   return users;
 };
 
+export const updateAuthUserStatus = (userId: string, status: UserStatus): AuthUser[] => {
+  const users = loadUsers().map((user) =>
+    user.userId === userId
+      ? {
+          ...user,
+          status,
+          updatedAt: now(),
+        }
+      : user,
+  );
+  saveUsers(users);
+  return users;
+};
+
+export const updateAuthUserProfileFields = (
+  userId: string,
+  fields: Partial<Pick<AuthUser, "firstName" | "lastName" | "club" | "trainingGroupId" | "coachId">>,
+): AuthUser[] => {
+  const users = loadUsers().map((user) =>
+    user.userId === userId
+      ? {
+          ...user,
+          ...fields,
+          displayName: `${fields.firstName ?? user.firstName} ${fields.lastName ?? user.lastName}`.trim() || user.displayName,
+          updatedAt: now(),
+        }
+      : user,
+  );
+  saveUsers(users);
+  return users;
+};
+
+export const deleteAuthUser = (userId: string): AuthUser[] => {
+  const users = loadUsers().filter((user) => user.userId !== userId);
+  saveUsers(users);
+  if (loadSession()?.userId === userId) {
+    clearSession();
+  }
+  return users;
+};
+
 export const loadSession = (): AuthSession | null => {
   const value = parseStoredData(window.localStorage.getItem(SESSION_KEY));
 
@@ -392,8 +533,9 @@ export const loadSession = (): AuthSession | null => {
 
   const candidate = value as Partial<AuthSession>;
   const users = loadUsers();
+  const sessionUser = users.find((user) => user.userId === candidate.userId);
 
-  if (typeof candidate.userId !== "string" || !users.some((user) => user.userId === candidate.userId)) {
+  if (typeof candidate.userId !== "string" || !sessionUser || sessionUser.status === "inactive") {
     return null;
   }
 
@@ -421,59 +563,69 @@ const createSession = (userId: string): AuthSession => {
   return session;
 };
 
-export const registerLocalUser = (input: RegisterInput): AuthResult => {
-  const email = normalizeEmail(input.email);
-  const firstName = input.firstName.trim();
-  const lastName = input.lastName.trim();
+export const acceptInvitationLocalUser = (input: RegisterInput): AuthResult => {
+  const invitationCode = input.invitationCode.trim().toUpperCase();
   const password = input.password.trim();
 
-  if (!firstName || !email || !password) {
-    return { ok: false, message: "Vorname, E-Mail und Passwort sind erforderlich." };
+  if (!invitationCode || !password) {
+    return { ok: false, message: "Einladungscode und Passwort sind erforderlich." };
   }
 
   if (password.length < 4) {
     return { ok: false, message: "Das Passwort braucht mindestens 4 Zeichen." };
   }
 
+  const codes = loadInvitationCodes();
+  const invite = codes.find((code) => code.invitationCode.toUpperCase() === invitationCode);
+  if (!invite || invite.status !== "offen") {
+    return { ok: false, message: "Einladungscode ist ungueltig oder wurde bereits verwendet." };
+  }
+
+  if (new Date(invite.expiresAt).getTime() < Date.now()) {
+    saveInvitationCodes(codes.map((code) => code.invitationId === invite.invitationId ? { ...code, status: "abgelaufen" } : code));
+    return { ok: false, message: "Diese Einladung ist abgelaufen." };
+  }
+
+  if (!invite.email || !invite.firstName) {
+    return { ok: false, message: "Diese Einladung ist unvollstaendig. Bitte den Admin um eine neue Einladung." };
+  }
+
+  const email = normalizeEmail(invite.email);
   const users = loadUsers();
   if (users.some((user) => user.email === email)) {
     return { ok: false, message: "Diese E-Mail ist bereits registriert." };
   }
 
   const timestamp = now();
-  const displayName = `${firstName} ${lastName}`.trim();
-  const invitationCode = input.invitationCode?.trim().toUpperCase() ?? "";
-  const codes = loadInvitationCodes();
-  const invite = invitationCode
-    ? codes.find((code) => code.code.toUpperCase() === invitationCode && !code.usedByUserId)
-    : undefined;
-
-  if (invitationCode && !invite) {
-    return { ok: false, message: "Einladungscode ist ungueltig oder wurde bereits verwendet." };
-  }
+  const displayName = `${invite.firstName} ${invite.lastName}`.trim();
 
   const user: AuthUser = {
     userId: createId("user"),
     email,
     displayName,
     passwordHash: hashPassword(password),
-    role: getRoleForEmail(email, invite?.role ?? "athlete"),
+    role: getRoleForEmail(email, invite.role),
+    firstName: invite.firstName,
+    lastName: invite.lastName,
+    club: invite.club,
+    trainingGroupId: invite.trainingGroupId,
+    coachId: invite.coachId,
+    status: "active",
     createdAt: timestamp,
     updatedAt: timestamp,
   };
 
   saveUsers([...users, user]);
-  if (invite) {
-    saveInvitationCodes(codes.map((code) =>
-      code.id === invite.id
-        ? {
-            ...code,
-            usedByUserId: user.userId,
-            usedAt: timestamp,
-          }
-        : code,
-    ));
-  }
+  saveInvitationCodes(codes.map((code) =>
+    code.invitationId === invite.invitationId
+      ? {
+          ...code,
+          status: "angenommen",
+          acceptedByUserId: user.userId,
+          acceptedAt: timestamp,
+        }
+      : code,
+  ));
   const session = createSession(user.userId);
   return { ok: true, session, user };
 };
@@ -489,9 +641,11 @@ export const loginLocalUser = (input: LoginInput): AuthResult => {
   }
 
   const normalizedUser = normalizeAuthUser(user);
-  if (normalizedUser.role !== user.role) {
-    saveUsers(users.map((item) => (item.userId === user.userId ? normalizedUser : item)));
+  if (normalizedUser.status === "inactive") {
+    return { ok: false, message: "Dieses Konto ist deaktiviert." };
   }
+
+  saveUsers(users.map((item) => (item.userId === user.userId ? normalizedUser : item)));
 
   const session = createSession(normalizedUser.userId);
   return { ok: true, session, user: normalizedUser };
@@ -536,17 +690,19 @@ const createUserFromAthlete = (athlete: Athlete): User => {
 };
 
 const createProfileForAuthUser = (authUser: AuthUser): UserProfile => {
-  const [firstName = authUser.displayName || "Athlet", ...lastNameParts] = authUser.displayName.split(" ");
+  const names = splitDisplayName(authUser.displayName);
+  const firstName = authUser.firstName || names.firstName || "Athlet";
+  const lastName = authUser.lastName || names.lastName;
 
   return {
     firstName,
-    lastName: lastNameParts.join(" "),
+    lastName,
     nickname: firstName,
     birthDate: "",
     gender: "keine_angabe",
     heightCm: 0,
     weightKg: 0,
-    club: "",
+    club: authUser.club,
     federation: "",
     coach: "",
     licenseNumber: "",
@@ -585,7 +741,7 @@ const createEmptyDataForUser = (authUser: AuthUser): PaddleMotionData => {
     athlete: {
       id: athleteId,
       name: profile.nickname || profile.firstName || authUser.displayName || "Athlet",
-      club: "",
+      club: profile.club,
       goals: [],
     },
     competitions: [],
@@ -767,6 +923,12 @@ const getAuthUser = (userId: string): AuthUser => {
     displayName: "Athlet",
     passwordHash: "",
     role: "athlete",
+    firstName: "Athlet",
+    lastName: "",
+    club: "",
+    trainingGroupId: "",
+    coachId: "",
+    status: "active",
     createdAt: timestamp,
     updatedAt: timestamp,
   };
@@ -780,6 +942,12 @@ const bindDataToUser = (data: PaddleMotionData, authUser: AuthUser): PaddleMotio
     id: authUser.userId,
     userId: authUser.userId,
     role: authUser.role,
+    profile: normalizeProfile({
+      ...(user ?? fallback.users[0]).profile,
+      firstName: (user ?? fallback.users[0]).profile.firstName || authUser.firstName,
+      lastName: (user ?? fallback.users[0]).profile.lastName || authUser.lastName,
+      club: (user ?? fallback.users[0]).profile.club || authUser.club,
+    }),
   };
   const athlete = {
     ...fallback.athlete,

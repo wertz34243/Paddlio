@@ -25,12 +25,20 @@ export type AppLanguage = "de" | "en";
 
 export type UserRole = "athlete" | "coach" | "teamAdmin" | "admin";
 
+export type UserStatus = "active" | "inactive";
+
 export type AuthUser = {
   userId: string;
   email: string;
   displayName: string;
   passwordHash: string;
   role: UserRole;
+  firstName: string;
+  lastName: string;
+  club: string;
+  trainingGroupId: string;
+  coachId: string;
+  status: UserStatus;
   createdAt: string;
   updatedAt: string;
 };
@@ -224,14 +232,26 @@ export type Athlete = {
   goals: string[];
 };
 
+export type InvitationStatus = "offen" | "angenommen" | "abgelaufen";
+
+export type InvitationRole = "athlete" | "coach";
+
 export type InvitationCode = {
-  id: string;
-  code: string;
-  role: Exclude<UserRole, "admin">;
+  invitationId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  club: string;
+  role: InvitationRole;
+  trainingGroupId: string;
+  coachId: string;
+  invitationCode: string;
+  status: InvitationStatus;
+  expiresAt: string;
   createdByUserId: string;
-  usedByUserId: string;
+  acceptedByUserId: string;
   createdAt: string;
-  usedAt: string;
+  acceptedAt: string;
 };
 
 export type CoachAthleteStatus = "aktiv" | "pausiert";
