@@ -138,45 +138,49 @@ export function EquipmentView({ material, onSave, onDelete }: EquipmentViewProps
         ) : null}
 
         <div className="wallet-list">
-          {material.map((item) => (
-            <article className={`wallet-card category-${item.category.toLowerCase()}`} key={item.id}>
-              <div className="wallet-image">
-                {item.imageDataUrl ? <img src={item.imageDataUrl} alt="" /> : <span>{item.category.slice(0, 1)}</span>}
-              </div>
-              <div className="wallet-content">
-                <div className="wallet-topline">
-                  <div>
-                    <span>{item.category}</span>
-                    <h4>{item.name}</h4>
-                  </div>
-                  <b className={`status-pill ${item.status}`}>{statusLabel[item.status]}</b>
+          {material.length > 0 ? (
+            material.map((item) => (
+              <article className={`wallet-card category-${item.category.toLowerCase()}`} key={item.id}>
+                <div className="wallet-image">
+                  {item.imageDataUrl ? <img src={item.imageDataUrl} alt="" /> : <span>{item.category.slice(0, 1)}</span>}
                 </div>
-                <div className="wallet-stats">
-                  <div>
-                    <span>Gewicht</span>
-                    <strong>{item.weightKg > 0 ? `${item.weightKg} kg` : "--"}</strong>
+                <div className="wallet-content">
+                  <div className="wallet-topline">
+                    <div>
+                      <span>{item.category}</span>
+                      <h4>{item.name}</h4>
+                    </div>
+                    <b className={`status-pill ${item.status}`}>{statusLabel[item.status]}</b>
                   </div>
-                  <div>
-                    <span>Laenge</span>
-                    <strong>{item.lengthCm > 0 ? `${item.lengthCm} cm` : "--"}</strong>
+                  <div className="wallet-stats">
+                    <div>
+                      <span>Gewicht</span>
+                      <strong>{item.weightKg > 0 ? `${item.weightKg} kg` : "--"}</strong>
+                    </div>
+                    <div>
+                      <span>Laenge</span>
+                      <strong>{item.lengthCm > 0 ? `${item.lengthCm} cm` : "--"}</strong>
+                    </div>
+                    <div>
+                      <span>Rating</span>
+                      <strong>{item.rating}/10</strong>
+                    </div>
                   </div>
-                  <div>
-                    <span>Rating</span>
-                    <strong>{item.rating}/10</strong>
+                  <p>{item.note || "Keine Notiz gespeichert."}</p>
+                  <div className="card-actions">
+                    <button className="edit-button" type="button" onClick={() => startEdit(item)}>
+                      Bearbeiten
+                    </button>
+                    <button className="delete-button" type="button" onClick={() => onDelete(item.id)}>
+                      Loeschen
+                    </button>
                   </div>
                 </div>
-                <p>{item.note || "Keine Notiz gespeichert."}</p>
-                <div className="card-actions">
-                  <button className="edit-button" type="button" onClick={() => startEdit(item)}>
-                    Bearbeiten
-                  </button>
-                  <button className="delete-button" type="button" onClick={() => onDelete(item.id)}>
-                    Loeschen
-                  </button>
-                </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            ))
+          ) : (
+            <p className="empty-state">Noch kein Material gespeichert. Fuege Boote, Paddel oder Zubehoer ueber den Plus-Button hinzu.</p>
+          )}
         </div>
       </section>
     </div>

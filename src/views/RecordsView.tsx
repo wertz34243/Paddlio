@@ -24,7 +24,7 @@ export function RecordsView({ competitions, training }: RecordsViewProps) {
     <div className="stack">
       <section className="section-block intelligence-hero">
         <p className="eyebrow">Persoenliche Rekorde</p>
-        <h2>Alles, was Tobias bisher gesetzt hat.</h2>
+        <h2>Alles, was du bisher gesetzt hast.</h2>
         <p>Rekorde werden automatisch aus Training und Wettkaempfen berechnet.</p>
       </section>
 

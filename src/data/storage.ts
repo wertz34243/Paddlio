@@ -90,9 +90,58 @@ export type AuthResult =
   | { ok: true; session: AuthSession; user: AuthUser }
   | { ok: false; message: string };
 
+const memoryStorage = new Map<string, string>();
+
 const now = (): string => new Date().toISOString();
 
 const dataKey = (userId: string): string => `paddlio_data_${userId}`;
+
+const getStorage = (): Storage | null => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+};
+
+const readStorage = (key: string): string | null => {
+  const storage = getStorage();
+  return storage?.getItem(key) ?? memoryStorage.get(key) ?? null;
+};
+
+const writeStorage = (key: string, value: string): void => {
+  memoryStorage.set(key, value);
+
+  const storage = getStorage();
+  if (!storage) {
+    return;
+  }
+
+  try {
+    storage.setItem(key, value);
+  } catch {
+    // Keep the in-memory fallback alive when browser storage is unavailable or full.
+  }
+};
+
+const removeStorage = (key: string): void => {
+  memoryStorage.delete(key);
+
+  const storage = getStorage();
+  if (!storage) {
+    return;
+  }
+
+  try {
+    storage.removeItem(key);
+  } catch {
+    // Nothing to do; the fallback map has already been cleared.
+  }
+};
 
 const normalizeBrandValue = (value: string): string =>
   value === "PaddleMotion" || value === "PaddeleMotion" ? "Paddlio" : value;
@@ -152,8 +201,8 @@ const normalizeDataShape = (data: PaddleMotionData): PaddleMotionData => ({
 });
 
 export const createId = (prefix: string): string => {
-  if ("crypto" in window && "randomUUID" in window.crypto) {
-    return `${prefix}-${window.crypto.randomUUID()}`;
+  if (globalThis.crypto?.randomUUID) {
+    return `${prefix}-${globalThis.crypto.randomUUID()}`;
   }
 
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -174,7 +223,9 @@ const parseStoredData = (value: string | null): unknown => {
 const normalizeEmail = (email: string): string => email.trim().toLowerCase();
 
 const hashPassword = (password: string): string => {
-  const encoded = window.btoa(unescape(encodeURIComponent(password)));
+  const encoded = globalThis.btoa
+    ? globalThis.btoa(unescape(encodeURIComponent(password)))
+    : encodeURIComponent(password);
   return `local-demo:${encoded}`;
 };
 
@@ -193,12 +244,12 @@ const isAuthUser = (value: unknown): value is AuthUser => {
 };
 
 export const loadUsers = (): AuthUser[] => {
-  const value = parseStoredData(window.localStorage.getItem(USERS_KEY));
+  const value = parseStoredData(readStorage(USERS_KEY));
   return Array.isArray(value) ? value.filter(isAuthUser) : [];
 };
 
 const saveUsers = (users: AuthUser[]): void => {
-  window.localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  writeStorage(USERS_KEY, JSON.stringify(users));
 };
 
 export const loadSession = (): AuthSession | null => {
@@ -222,11 +273,11 @@ export const loadSession = (): AuthSession | null => {
 };
 
 const saveSession = (session: AuthSession): void => {
-  window.localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  writeStorage(SESSION_KEY, JSON.stringify(session));
 };
 
 export const clearSession = (): void => {
-  window.localStorage.removeItem(SESSION_KEY);
+  removeStorage(SESSION_KEY);
 };
 
 const createSession = (userId: string): AuthSession => {
@@ -565,21 +616,49 @@ const bindDataToUser = (data: PaddleMotionData, authUser: AuthUser): PaddleMotio
     id: authUser.userId,
     userId: authUser.userId,
   };
+  const athlete = {
+    ...fallback.athlete,
+    ...data.athlete,
+    id: fallback.athlete.id,
+  };
 
-  return normalizeDataShape(normalizeBrandData({
+  const normalized = normalizeDataShape(normalizeBrandData({
     ...data,
     activeUserId: authUser.userId,
     users: [normalizedUser],
-    athlete: {
-      ...fallback.athlete,
-      ...data.athlete,
-    },
+    athlete,
   }));
+
+  return {
+    ...normalized,
+    competitions: normalized.competitions.map((competition) => ({
+      ...competition,
+      athleteId: athlete.id,
+    })),
+    training: normalized.training.map((session) => ({
+      ...session,
+      athleteId: athlete.id,
+    })),
+    journal: normalized.journal.map((entry) => ({
+      ...entry,
+      athleteId: athlete.id,
+    })),
+    material: normalized.material.map((item) => ({
+      ...item,
+      athleteId: athlete.id,
+    })),
+    plan: normalized.plan.map((entry) => ({
+      ...entry,
+      athleteId: athlete.id,
+      assignedAthleteId: athlete.id,
+      createdByUserId: authUser.userId,
+    })),
+  };
 };
 
 export const loadData = (userId: string): PaddleMotionData => {
   const authUser = getAuthUser(userId);
-  const storedData = parseStoredData(window.localStorage.getItem(dataKey(userId)));
+  const storedData = parseStoredData(readStorage(dataKey(userId)));
 
   if (isV05Data(storedData)) {
     const normalizedData = bindDataToUser(storedData, authUser);
@@ -593,5 +672,5 @@ export const loadData = (userId: string): PaddleMotionData => {
 };
 
 export const saveData = (userId: string, data: PaddleMotionData): void => {
-  window.localStorage.setItem(dataKey(userId), JSON.stringify(bindDataToUser(data, getAuthUser(userId))));
+  writeStorage(dataKey(userId), JSON.stringify(bindDataToUser(data, getAuthUser(userId))));
 };

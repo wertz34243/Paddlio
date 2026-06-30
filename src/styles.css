@@ -92,7 +92,7 @@ button {
 }
 
 .auth-tabs button {
-  min-height: 42px;
+  min-height: 44px;
   border: 0;
   border-radius: 999px;
   background: transparent;
@@ -157,6 +157,7 @@ button {
   top: 0;
   z-index: 10;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
@@ -280,7 +281,7 @@ p {
 }
 
 .logout-button {
-  min-height: 38px;
+  min-height: 44px;
   padding: 0 13px;
   border: 1px solid rgba(144, 224, 239, 0.14);
   border-radius: 999px;
@@ -443,16 +444,23 @@ p {
   display: flex;
   align-items: flex-start;
   gap: 12px;
+  min-width: 0;
+}
+
+.app-card-head > div {
+  min-width: 0;
 }
 
 .app-card-head h3 {
   font-size: 16px;
+  overflow-wrap: anywhere;
 }
 
 .app-card-head p {
   margin-top: 4px;
   color: var(--muted);
   font-size: 13px;
+  overflow-wrap: anywhere;
 }
 
 .app-card-icon,
@@ -480,6 +488,7 @@ p {
   align-self: end;
   font-size: 28px;
   line-height: 1;
+  overflow-wrap: anywhere;
 }
 
 .section-block,
@@ -910,7 +919,7 @@ p {
 }
 
 .filter-tabs button {
-  min-height: 38px;
+  min-height: 44px;
   border-radius: 999px;
   background: transparent;
   color: var(--muted);
@@ -947,7 +956,7 @@ p {
 .segment-button {
   flex: 0 0 auto;
   min-width: max-content;
-  min-height: 42px;
+  min-height: 44px;
   padding: 0 17px;
   border: 0;
   border-radius: 999px;
@@ -1000,6 +1009,25 @@ p {
   cursor: pointer;
 }
 
+.fitness-card-main > div,
+.competition-summary > div,
+.wallet-topline > div,
+.plan-card-head > div {
+  min-width: 0;
+}
+
+.fitness-card-main strong,
+.fitness-card-main p,
+.competition-summary h4,
+.competition-summary small,
+.wallet-topline h4,
+.plan-card h4,
+.plan-card p,
+.result-row strong,
+.result-row span {
+  overflow-wrap: anywhere;
+}
+
 .activity-ring,
 .competition-logo {
   display: grid;
@@ -1023,6 +1051,7 @@ p {
 .fitness-card-main b,
 .competition-summary strong {
   justify-self: end;
+  white-space: nowrap;
 }
 
 .fitness-details,
@@ -1245,7 +1274,7 @@ p {
 
 .sticky-save {
   position: sticky;
-  bottom: 90px;
+  bottom: calc(94px + env(safe-area-inset-bottom));
   display: grid;
   gap: 8px;
   padding: 10px;
@@ -1265,7 +1294,7 @@ p {
 .bottom-nav {
   position: fixed;
   right: 12px;
-  bottom: 10px;
+  bottom: max(10px, env(safe-area-inset-bottom));
   left: 12px;
   z-index: 20;
   display: grid;
@@ -1352,6 +1381,7 @@ p {
   color: #e0f2fe;
   font-size: 17px;
   font-weight: 850;
+  line-height: 1.45;
   box-shadow: var(--shadow);
 }
 
@@ -1716,11 +1746,15 @@ p {
   }
 
   .app-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
     align-items: flex-start;
   }
 
   .profile-chip {
-    max-width: 46%;
+    grid-column: 1 / -1;
+    justify-self: start;
+    max-width: min(100%, 360px);
   }
 
   .home-profile-card,
@@ -1771,6 +1805,17 @@ p {
 
   .profile-chip {
     display: none;
+  }
+
+  .competition-summary,
+  .fitness-card-main {
+    grid-template-columns: auto 1fr;
+  }
+
+  .competition-summary strong,
+  .fitness-card-main b {
+    grid-column: 1 / -1;
+    justify-self: start;
   }
 
   .bottom-nav {

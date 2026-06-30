@@ -163,65 +163,69 @@ export function CompetitionsView({ competitions, onSave, onDelete, openNewSignal
         ) : null}
 
         <div className="competition-timeline">
-          {sortedCompetitions.map((competition) => {
-            const isOpen = openId === competition.id;
-            const penalty = getCompetitionAveragePenalty(competition);
+          {sortedCompetitions.length > 0 ? (
+            sortedCompetitions.map((competition) => {
+              const isOpen = openId === competition.id;
+              const penalty = getCompetitionAveragePenalty(competition);
 
-            return (
-              <article className={`competition-timeline-item tone-${competition.boatClass.toLowerCase()}`} key={competition.id}>
-                <div className="competition-logo">{competition.boatClass}</div>
-                <button className="competition-summary" type="button" onClick={() => setOpenId(isOpen ? "" : competition.id)}>
-                  <div>
-                    <span>{new Date(competition.date).toLocaleDateString("de-DE")}</span>
-                    <h4>{competition.location}</h4>
-                    <small>
-                      Platz {competition.rank} - {penalty.toLocaleString("de-DE", { maximumFractionDigits: 1 })} Strafsek.
-                    </small>
-                  </div>
-                  <strong>{formatSeconds(getBestTotalTime(competition))}</strong>
-                </button>
-                {isOpen ? (
-                  <div className="competition-details">
-                    <div className="split-grid">
-                      <div>
-                        <span>Lauf 1 Total</span>
-                        <b>{formatSeconds(getRun1Total(competition))}</b>
+              return (
+                <article className={`competition-timeline-item tone-${competition.boatClass.toLowerCase()}`} key={competition.id}>
+                  <div className="competition-logo">{competition.boatClass}</div>
+                  <button className="competition-summary" type="button" onClick={() => setOpenId(isOpen ? "" : competition.id)}>
+                    <div>
+                      <span>{new Date(competition.date).toLocaleDateString("de-DE")}</span>
+                      <h4>{competition.location}</h4>
+                      <small>
+                        Platz {competition.rank} - {penalty.toLocaleString("de-DE", { maximumFractionDigits: 1 })} Strafsek.
+                      </small>
+                    </div>
+                    <strong>{formatSeconds(getBestTotalTime(competition))}</strong>
+                  </button>
+                  {isOpen ? (
+                    <div className="competition-details">
+                      <div className="split-grid">
+                        <div>
+                          <span>Lauf 1 Total</span>
+                          <b>{formatSeconds(getRun1Total(competition))}</b>
+                        </div>
+                        <div>
+                          <span>Lauf 2 Total</span>
+                          <b>{formatSeconds(getRun2Total(competition))}</b>
+                        </div>
+                        <div>
+                          <span>Beste Fahrzeit</span>
+                          <b>{formatSeconds(getBestDriveTime(competition))}</b>
+                        </div>
+                        <div>
+                          <span>Abstand Sieger</span>
+                          <b>{formatSeconds(competition.gapToWinnerSeconds)}</b>
+                        </div>
+                        <div>
+                          <span>Gefuehl</span>
+                          <b>{competition.feeling}/10</b>
+                        </div>
+                        <div>
+                          <span>Boot</span>
+                          <b>{competition.boatClass}</b>
+                        </div>
                       </div>
-                      <div>
-                        <span>Lauf 2 Total</span>
-                        <b>{formatSeconds(getRun2Total(competition))}</b>
-                      </div>
-                      <div>
-                        <span>Beste Fahrzeit</span>
-                        <b>{formatSeconds(getBestDriveTime(competition))}</b>
-                      </div>
-                      <div>
-                        <span>Abstand Sieger</span>
-                        <b>{formatSeconds(competition.gapToWinnerSeconds)}</b>
-                      </div>
-                      <div>
-                        <span>Gefuehl</span>
-                        <b>{competition.feeling}/10</b>
-                      </div>
-                      <div>
-                        <span>Boot</span>
-                        <b>{competition.boatClass}</b>
+                      {competition.note ? <p className="card-note">{competition.note}</p> : null}
+                      <div className="card-actions">
+                        <button className="edit-button" type="button" onClick={() => startEdit(competition)}>
+                          Bearbeiten
+                        </button>
+                        <button className="delete-button" type="button" onClick={() => onDelete(competition.id)}>
+                          Loeschen
+                        </button>
                       </div>
                     </div>
-                    {competition.note ? <p className="card-note">{competition.note}</p> : null}
-                    <div className="card-actions">
-                      <button className="edit-button" type="button" onClick={() => startEdit(competition)}>
-                        Bearbeiten
-                      </button>
-                      <button className="delete-button" type="button" onClick={() => onDelete(competition.id)}>
-                        Loeschen
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-              </article>
-            );
-          })}
+                  ) : null}
+                </article>
+              );
+            })
+          ) : (
+            <p className="empty-state">Noch keine Wettkaempfe gespeichert. Lege deinen ersten Start ueber den Plus-Button an.</p>
+          )}
         </div>
       </section>
     </div>
