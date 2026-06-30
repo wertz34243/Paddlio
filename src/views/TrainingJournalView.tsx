@@ -28,6 +28,9 @@ export function TrainingJournalView({ journal, sessions }: TrainingJournalViewPr
                 <div>
                   <strong>{session?.focus || session?.type || "Training"}</strong>
                   <span>{new Date(entry.date).toLocaleDateString("de-DE")}</span>
+                  <span>
+                    Gefuehl {entry.feeling}/10 - Muedigkeit {entry.fatigue}/10 - Schlaf {entry.sleep}/10 - Motivation {entry.motivation}/10
+                  </span>
                   {entry.notes ? <small>{entry.notes}</small> : null}
                 </div>
                 <b>{entry.trainingRating}/10</b>

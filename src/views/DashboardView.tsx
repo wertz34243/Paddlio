@@ -1,7 +1,13 @@
 import type { CSSProperties } from "react";
 import { APP_SLOGAN } from "../brand";
 import { AppCard } from "../components/AppCard";
-import { formatSeconds, getBestTotalTime, getLastCompetition } from "../domain/metrics";
+import {
+  formatSeconds,
+  getBestTotalTime,
+  getLastCompetition,
+  getLastTrainingSession,
+  getSeasonGoalProgress,
+} from "../domain/metrics";
 import { getDisplayName, getGreeting, getInitials } from "../domain/profile";
 import { getAthleteRecords } from "../domain/records";
 import { getTrainingIntelligence } from "../domain/intelligence";
@@ -11,7 +17,10 @@ type DashboardViewProps = {
   data: PaddleMotionData;
   user: User;
   onNavigate: (page: PageId) => void;
+  onQuickAction: (action: DashboardQuickAction) => void;
 };
+
+export type DashboardQuickAction = "training" | "competition" | "journal" | "material";
 
 const todayText = (): string =>
   `Heute ist ${new Date().toLocaleDateString("de-DE", { weekday: "long" })}.`;
@@ -33,12 +42,14 @@ const getDaysUntil = (date?: string): number | undefined => {
   return Math.max(0, Math.round((target.getTime() - today.getTime()) / 86400000));
 };
 
-export function DashboardView({ data, user, onNavigate }: DashboardViewProps) {
+export function DashboardView({ data, user, onNavigate, onQuickAction }: DashboardViewProps) {
   const displayName = getDisplayName(user.profile);
   const intelligence = getTrainingIntelligence(data.competitions, data.training, data.plan, data.journal);
   const records = getAthleteRecords(data.competitions, data.training);
   const nextCompetition = getNextCompetition(data.competitions);
   const lastCompetition = getLastCompetition(data.competitions);
+  const lastTraining = getLastTrainingSession(data.training);
+  const seasonGoals = getSeasonGoalProgress(data.competitions, data.training);
   const daysUntilRace = getDaysUntil(nextCompetition?.date);
   const raceRing = daysUntilRace === undefined ? 0 : Math.max(8, Math.min(100, 100 - daysUntilRace * 3));
 
@@ -54,13 +65,29 @@ export function DashboardView({ data, user, onNavigate }: DashboardViewProps) {
         </div>
         <div>
           <p className="eyebrow">{todayText()}</p>
-          <h2>{getGreeting(displayName)} 👋</h2>
+          <h2>{getGreeting(displayName)}</h2>
           <p className="hero-slogan">{APP_SLOGAN}</p>
         </div>
       </section>
 
       <section className="daily-motivation">
+        <span>Motivation des Tages</span>
         <p>{intelligence.motivation}</p>
+      </section>
+
+      <section className="today-training-card">
+        <div>
+          <p className="eyebrow">Heute trainieren</p>
+          <h3>{intelligence.todayTraining?.trainingType ?? "Regeneration"}</h3>
+          <span>
+            {intelligence.todayTraining
+              ? `${intelligence.todayTraining.time || "ohne Uhrzeit"} - ${intelligence.todayTraining.goal || intelligence.todayTraining.area}`
+              : "Kein Training geplant. Nutze den Tag bewusst fuer Erholung oder eine lockere Einheit."}
+          </span>
+        </div>
+        <button className="save-button" type="button" onClick={() => onQuickAction("training")}>
+          Training eintragen
+        </button>
       </section>
 
       <section className="dashboard-card-grid">
@@ -113,6 +140,44 @@ export function DashboardView({ data, user, onNavigate }: DashboardViewProps) {
       <section className="section-block smart-coach-card">
         <div className="section-heading">
           <div>
+            <p className="eyebrow">Saisonziele</p>
+            <h3>Dein Fortschritt</h3>
+          </div>
+        </div>
+        <div className="goal-card-grid">
+          {seasonGoals.map((goal) => (
+            <article className={`goal-mini-card tone-${goal.tone}`} key={goal.id}>
+              <div>
+                <strong>{goal.label}</strong>
+                <span>{goal.valueLabel}</span>
+              </div>
+              <b>{goal.status}</b>
+              <div className="progress-track">
+                <span style={{ width: `${goal.progress}%` }} />
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="quick-actions">
+        <button type="button" onClick={() => onQuickAction("training")}>
+          Training eintragen
+        </button>
+        <button type="button" onClick={() => onQuickAction("competition")}>
+          Wettkampf eintragen
+        </button>
+        <button type="button" onClick={() => onQuickAction("journal")}>
+          Journal ausfuellen
+        </button>
+        <button type="button" onClick={() => onQuickAction("material")}>
+          Material pruefen
+        </button>
+      </section>
+
+      <section className="section-block smart-coach-card">
+        <div className="section-heading">
+          <div>
             <p className="eyebrow">{intelligence.coachAdvice.title}</p>
             <h3>{intelligence.coachAdvice.recommendation}</h3>
           </div>
@@ -146,6 +211,16 @@ export function DashboardView({ data, user, onNavigate }: DashboardViewProps) {
           value={lastCompetition ? `${formatSeconds(getBestTotalTime(lastCompetition))} s` : "--"}
           tone="warning"
         />
+
+        <AppCard
+          icon="training"
+          title="Letzter Trainingseintrag"
+          subtitle={lastTraining ? new Date(lastTraining.date).toLocaleDateString("de-DE") : "Noch kein Training"}
+          value={lastTraining ? `${lastTraining.durationMinutes} min` : "--"}
+          tone="success"
+        >
+          <p className="card-note">{lastTraining?.focus || "Dokumentiere deine erste Einheit."}</p>
+        </AppCard>
 
         <AppCard icon="boat" title="Wetter Vorbereitung" subtitle="Demnaechst" value="Bereit" tone="accent">
           <div className="weather-placeholder">

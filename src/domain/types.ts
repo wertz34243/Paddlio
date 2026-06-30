@@ -173,6 +173,7 @@ export type TrainingJournalEntry = {
   feeling: number;
   fatigue: number;
   sleep: number;
+  motivation: number;
   notes: string;
   createdAt: string;
   updatedAt: string;

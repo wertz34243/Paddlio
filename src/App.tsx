@@ -32,7 +32,7 @@ import { BoatComparisonView } from "./views/BoatComparisonView";
 import { CompetitionResultsView } from "./views/CompetitionResultsView";
 import { CompetitionVideosView } from "./views/CompetitionVideosView";
 import { CompetitionsView } from "./views/CompetitionsView";
-import { DashboardView } from "./views/DashboardView";
+import { DashboardView, type DashboardQuickAction } from "./views/DashboardView";
 import { EquipmentView } from "./views/EquipmentView";
 import { GoalsView } from "./views/GoalsView";
 import { PlanView } from "./views/PlanView";
@@ -114,6 +114,9 @@ function App() {
   const [competitionSegment, setCompetitionSegment] = useState<CompetitionSegment>("races");
   const [analysisSegment, setAnalysisSegment] = useState<AnalysisSegment>("overview");
   const [moreSegment, setMoreSegment] = useState<MoreSegment>("profile");
+  const [newTrainingSignal, setNewTrainingSignal] = useState(0);
+  const [newCompetitionSignal, setNewCompetitionSignal] = useState(0);
+  const [journalSignal, setJournalSignal] = useState(0);
   const [data, setData] = useState<PaddleMotionData | null>(() => {
     const currentSession = loadSession();
     return currentSession ? loadData(currentSession.userId) : null;
@@ -158,6 +161,32 @@ function App() {
   const activeNavPage = navPageByPage[activePage] ?? activePage;
   const updateData = (updater: (current: PaddleMotionData) => PaddleMotionData) => {
     setData((current) => (current ? updater(current) : current));
+  };
+
+  const handleDashboardQuickAction = (action: DashboardQuickAction) => {
+    if (action === "training") {
+      setTrainingSegment("sessions");
+      setActivePage("training");
+      setNewTrainingSignal((value) => value + 1);
+      return;
+    }
+
+    if (action === "competition") {
+      setCompetitionSegment("races");
+      setActivePage("competitions");
+      setNewCompetitionSignal((value) => value + 1);
+      return;
+    }
+
+    if (action === "journal") {
+      setTrainingSegment("sessions");
+      setActivePage("training");
+      setJournalSignal((value) => value + 1);
+      return;
+    }
+
+    setMoreSegment("equipment");
+    setActivePage("more");
   };
 
   const upsertCompetition = (competition: Omit<Competition, "id" | "athleteId" | "createdAt" | "updatedAt"> & { id?: string }) => {
@@ -379,6 +408,8 @@ function App() {
             onSave={upsertTraining}
             onDelete={deleteTraining}
             onSaveJournal={upsertJournalEntry}
+            openNewSignal={newTrainingSignal}
+            openJournalSignal={journalSignal}
           />
         );
     }
@@ -412,6 +443,7 @@ function App() {
             competitions={data.competitions}
             onSave={upsertCompetition}
             onDelete={deleteCompetition}
+            openNewSignal={newCompetitionSignal}
           />
         );
     }
@@ -515,7 +547,14 @@ function App() {
   const renderPage = () => {
     switch (activePage) {
       case "dashboard":
-        return <DashboardView data={data} user={activeUser} onNavigate={setActivePage} />;
+        return (
+          <DashboardView
+            data={data}
+            user={activeUser}
+            onNavigate={setActivePage}
+            onQuickAction={handleDashboardQuickAction}
+          />
+        );
       case "training":
         return renderTrainingArea();
       case "competitions":

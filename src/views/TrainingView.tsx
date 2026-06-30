@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { getTrainingLoad, isDateInCurrentWeek } from "../domain/metrics";
 import type { TrainingJournalEntry, TrainingSession, TrainingType } from "../domain/types";
 
@@ -13,6 +13,8 @@ type TrainingViewProps = {
   onSaveJournal: (
     entry: Omit<TrainingJournalEntry, "id" | "athleteId" | "createdAt" | "updatedAt"> & { id?: string },
   ) => void;
+  openNewSignal?: number;
+  openJournalSignal?: number;
 };
 
 const trainingTypes: TrainingType[] = ["K1", "C1", "Ausdauer", "Kraft", "Technik", "Kindertraining", "Pause"];
@@ -37,10 +39,39 @@ const intensityFromRpe = (rpe: number): string => {
   return "locker";
 };
 
-export function TrainingView({ sessions, journal, onSave, onDelete, onSaveJournal }: TrainingViewProps) {
+export function TrainingView({
+  sessions,
+  journal,
+  onSave,
+  onDelete,
+  onSaveJournal,
+  openNewSignal = 0,
+  openJournalSignal = 0,
+}: TrainingViewProps) {
   const [draft, setDraft] = useState<TrainingDraft | null>(null);
   const [filter, setFilter] = useState<TrainingFilter>("week");
   const [openId, setOpenId] = useState<string>("");
+  const latestSession = useMemo(
+    () => [...sessions].sort((a, b) => b.date.localeCompare(a.date) || b.updatedAt.localeCompare(a.updatedAt))[0],
+    [sessions],
+  );
+
+  useEffect(() => {
+    if (openNewSignal > 0) {
+      setDraft({ ...emptyDraft, date: todayKey() });
+    }
+  }, [openNewSignal]);
+
+  useEffect(() => {
+    if (openJournalSignal > 0) {
+      setFilter("all");
+      if (latestSession) {
+        setOpenId(latestSession.id);
+      } else {
+        setDraft({ ...emptyDraft, date: todayKey() });
+      }
+    }
+  }, [latestSession, openJournalSignal]);
 
   const journalByTraining = useMemo(
     () => new Map(journal.map((entry) => [entry.trainingId, entry])),
@@ -91,6 +122,7 @@ export function TrainingView({ sessions, journal, onSave, onDelete, onSaveJourna
       feeling: toNumber(formData.get("feeling")),
       fatigue: toNumber(formData.get("fatigue")),
       sleep: toNumber(formData.get("sleep")),
+      motivation: toNumber(formData.get("motivation")),
       notes: String(formData.get("notes")).trim(),
     });
   };
@@ -263,6 +295,10 @@ export function TrainingView({ sessions, journal, onSave, onDelete, onSaveJourna
                           <label>
                             Wie war dein Schlaf?
                             <input name="sleep" type="number" min="1" max="10" defaultValue={journalEntry?.sleep ?? 7} />
+                          </label>
+                          <label>
+                            Motivation
+                            <input name="motivation" type="number" min="1" max="10" defaultValue={journalEntry?.motivation ?? 7} />
                           </label>
                         </div>
                         <label>

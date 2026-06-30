@@ -129,9 +129,25 @@ const normalizeMaterialItems = (items: Array<Partial<MaterialItem> & Pick<Materi
     updatedAt: item.updatedAt ?? now(),
   }));
 
+const normalizeJournalEntries = (items: Array<Partial<TrainingJournalEntry> & Pick<TrainingJournalEntry, "id" | "trainingId" | "date">>): TrainingJournalEntry[] =>
+  items.map((item) => ({
+    id: item.id,
+    athleteId: item.athleteId ?? seedData.athlete.id,
+    trainingId: item.trainingId,
+    date: item.date,
+    trainingRating: item.trainingRating ?? 7,
+    feeling: item.feeling ?? 7,
+    fatigue: item.fatigue ?? 4,
+    sleep: item.sleep ?? 7,
+    motivation: item.motivation ?? item.feeling ?? 7,
+    notes: item.notes ?? "",
+    createdAt: item.createdAt ?? now(),
+    updatedAt: item.updatedAt ?? now(),
+  }));
+
 const normalizeDataShape = (data: PaddleMotionData): PaddleMotionData => ({
   ...data,
-  journal: Array.isArray(data.journal) ? data.journal : [],
+  journal: Array.isArray(data.journal) ? normalizeJournalEntries(data.journal) : [],
   material: normalizeMaterialItems(data.material),
 });
 

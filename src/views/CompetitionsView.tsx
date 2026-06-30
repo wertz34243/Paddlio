@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   formatSeconds,
   getBestDriveTime,
@@ -15,6 +15,7 @@ type CompetitionsViewProps = {
   competitions: Competition[];
   onSave: (competition: Omit<Competition, "id" | "athleteId" | "createdAt" | "updatedAt"> & { id?: string }) => void;
   onDelete: (id: string) => void;
+  openNewSignal?: number;
 };
 
 const emptyDraft: CompetitionDraft = {
@@ -34,10 +35,16 @@ const emptyDraft: CompetitionDraft = {
 
 const toNumber = (value: FormDataEntryValue | null): number => Number(value ?? 0);
 
-export function CompetitionsView({ competitions, onSave, onDelete }: CompetitionsViewProps) {
+export function CompetitionsView({ competitions, onSave, onDelete, openNewSignal = 0 }: CompetitionsViewProps) {
   const [draft, setDraft] = useState<CompetitionDraft | null>(null);
   const [openId, setOpenId] = useState<string>("");
   const sortedCompetitions = [...competitions].sort((a, b) => b.date.localeCompare(a.date) || a.location.localeCompare(b.location));
+
+  useEffect(() => {
+    if (openNewSignal > 0) {
+      setDraft({ ...emptyDraft, date: new Date().toISOString().slice(0, 10) });
+    }
+  }, [openNewSignal]);
 
   const closeForm = () => setDraft(null);
 
