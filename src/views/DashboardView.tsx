@@ -6,8 +6,8 @@ import {
   getBestTotalTime,
   getLastCompetition,
   getLastTrainingSession,
-  getSeasonGoalProgress,
 } from "../domain/metrics";
+import { getGoalProgressList } from "../domain/goalProgress";
 import { getDisplayName, getGreeting, getInitials } from "../domain/profile";
 import { getAthleteRecords } from "../domain/records";
 import { getTrainingIntelligence } from "../domain/intelligence";
@@ -49,7 +49,7 @@ export function DashboardView({ data, user, onNavigate, onQuickAction }: Dashboa
   const nextCompetition = getNextCompetition(data.competitions);
   const lastCompetition = getLastCompetition(data.competitions);
   const lastTraining = getLastTrainingSession(data.training);
-  const seasonGoals = getSeasonGoalProgress(data.competitions, data.training);
+  const seasonGoals = getGoalProgressList(data.goals, data.competitions, data.training).filter((goal) => goal.goal.status !== "archived");
   const daysUntilRace = getDaysUntil(nextCompetition?.date);
   const raceRing = daysUntilRace === undefined ? 0 : Math.max(8, Math.min(100, 100 - daysUntilRace * 3));
 
@@ -145,18 +145,26 @@ export function DashboardView({ data, user, onNavigate, onQuickAction }: Dashboa
           </div>
         </div>
         <div className="goal-card-grid">
-          {seasonGoals.map((goal) => (
-            <article className={`goal-mini-card tone-${goal.tone}`} key={goal.id}>
+          {seasonGoals.length > 0 ? seasonGoals.slice(0, 4).map(({ goal, currentLabel, progress, statusLabel }) => (
+            <article className={`goal-mini-card tone-${goal.category === "training" ? "training" : goal.category === "penalty" ? "penalty" : goal.metric === "bestC1Total" ? "c1" : "k1"}`} key={goal.id}>
               <div>
-                <strong>{goal.label}</strong>
-                <span>{goal.valueLabel}</span>
+                <strong>{goal.title}</strong>
+                <span>{currentLabel}</span>
               </div>
-              <b>{goal.status}</b>
+              <b>{statusLabel}</b>
               <div className="progress-track">
-                <span style={{ width: `${goal.progress}%` }} />
+                <span style={{ width: `${progress}%` }} />
               </div>
             </article>
-          ))}
+          )) : (
+            <article className="goal-mini-card tone-training">
+              <div>
+                <strong>Noch keine Saisonziele</strong>
+                <span>Erstelle dein erstes Ziel im Bereich Ziele.</span>
+              </div>
+              <button type="button" onClick={() => onNavigate("goals")}>Ziele oeffnen</button>
+            </article>
+          )}
         </div>
       </section>
 

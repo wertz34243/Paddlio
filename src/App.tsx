@@ -22,6 +22,7 @@ import type {
   PageId,
   PaddleMotionData,
   PlanEntry,
+  SeasonGoal,
   TrainingJournalEntry,
   TrainingSession,
   UserProfile,
@@ -350,6 +351,38 @@ function App() {
     }));
   };
 
+  const upsertGoal = (
+    goal: Omit<SeasonGoal, "id" | "athleteId" | "ownerUserId" | "createdAt" | "updatedAt"> & { id?: string },
+  ) => {
+    const timestamp = getTimestamp();
+
+    updateData((current) => {
+      const existing = goal.id ? current.goals.find((item) => item.id === goal.id) : undefined;
+      const nextGoal: SeasonGoal = {
+        ...goal,
+        id: goal.id ?? createId("goal"),
+        athleteId: current.athlete.id,
+        ownerUserId: current.activeUserId,
+        createdAt: existing?.createdAt ?? timestamp,
+        updatedAt: timestamp,
+      };
+
+      return {
+        ...current,
+        goals: existing
+          ? current.goals.map((item) => (item.id === nextGoal.id ? nextGoal : item))
+          : [nextGoal, ...current.goals],
+      };
+    });
+  };
+
+  const deleteGoal = (id: string) => {
+    updateData((current) => ({
+      ...current,
+      goals: current.goals.filter((goal) => goal.id !== id),
+    }));
+  };
+
   const togglePlanEntryDone = (id: string) => {
     updateData((current) => ({
       ...current,
@@ -509,7 +542,16 @@ function App() {
           />
         );
       case "goals":
-        return <GoalsView user={activeUser} competitions={data.competitions} training={data.training} />;
+        return (
+          <GoalsView
+            user={activeUser}
+            goals={data.goals}
+            competitions={data.competitions}
+            training={data.training}
+            onSave={upsertGoal}
+            onDelete={deleteGoal}
+          />
+        );
       case "records":
         return <RecordsView competitions={data.competitions} training={data.training} />;
       case "coach":

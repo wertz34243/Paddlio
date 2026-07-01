@@ -252,6 +252,45 @@ export type Athlete = {
   goals: string[];
 };
 
+export type SeasonGoalCategory = "performance" | "training" | "penalty" | "technical" | "personal";
+
+export type SeasonGoalMetric =
+  | "bestK1Total"
+  | "bestC1Total"
+  | "averagePenalty"
+  | "trainingCount"
+  | "trainingMinutes"
+  | "manual";
+
+export type SeasonGoalDirection = "under" | "over" | "equal";
+
+export type SeasonGoalStatus = "active" | "paused" | "achieved" | "archived";
+
+export type SeasonGoalPriority = "low" | "medium" | "high";
+
+export type SeasonGoal = {
+  id: string;
+  athleteId: string;
+  ownerUserId: string;
+  assignedByUserId: string;
+  title: string;
+  description: string;
+  category: SeasonGoalCategory;
+  metric: SeasonGoalMetric;
+  direction: SeasonGoalDirection;
+  targetValue: number;
+  unit: string;
+  startDate: string;
+  dueDate: string;
+  status: SeasonGoalStatus;
+  priority: SeasonGoalPriority;
+  currentValueOverride: number | "";
+  coachNote: string;
+  athleteNote: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type InvitationStatus = "offen" | "angenommen" | "abgelaufen";
 
 export type InvitationRole = "athlete" | "coach";
@@ -314,6 +353,7 @@ export type PaddleMotionData = {
   journal: TrainingJournalEntry[];
   material: MaterialItem[];
   plan: PlanEntry[];
+  goals: SeasonGoal[];
   coachAthletes: CoachAthlete[];
   coachGroups: CoachGroup[];
 };

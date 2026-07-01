@@ -63,6 +63,15 @@ Version 1.0 richtet sich an Athletinnen und Athleten. Paddlio kombiniert Trainin
 - Benutzerverwaltung zeigt Rollen, Status und Verein; Adminrechte koennen nicht per UI vergeben werden
 - LocalStorage vorbereitet fuer Plattformbetrieb: `paddlio_users`, `paddlio_sessions`, `paddlio_trainer_requests`, `paddlio_data_<userId>`
 
+## Version 2.3 - Individuelle Saisonziele & Leistungsentwicklung
+
+- Saisonziele sind nicht mehr fest im Code hinterlegt, sondern werden pro Nutzer in `paddlio_data_<userId>` gespeichert
+- Neue Zielverwaltung mit Erstellen, Bearbeiten, Loeschen, Status, Prioritaet, Zeitraum, Kategorie und Notizen
+- Automatische Fortschrittsberechnung fuer K1-Bestzeit, C1-Bestzeit, Strafschnitt, Trainingseinheiten und Trainingsminuten
+- Manuelle Ziele fuer Technik, persoenliche Entwicklung und Coach-Feedback vorbereitet
+- Dashboard zeigt individuelle Ziele oder einen leeren Zustand, wenn noch keine Ziele angelegt wurden
+- Datenmodell `SeasonGoal` enthaelt `ownerUserId` und `assignedByUserId` als Grundlage fuer Coach-, Team- und Cloud-Funktionen
+
 ## Paddlio auf iPhone/iPad installieren
 
 1. Paddlio in Safari oeffnen.

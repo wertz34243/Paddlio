@@ -14,6 +14,7 @@ import type {
   MaterialItem,
   PaddleMotionData,
   PlanEntry,
+  SeasonGoal,
   TrainingJournalEntry,
   TrainerRequest,
   TrainerRequestStatus,
@@ -73,15 +74,17 @@ type LegacyData = {
   equipment?: LegacyEquipment[];
 };
 
-type V02Data = Omit<PaddleMotionData, "plan" | "journal"> & {
+type V02Data = Omit<PaddleMotionData, "plan" | "journal" | "goals"> & {
   plan?: PlanEntry[];
   journal?: TrainingJournalEntry[];
+  goals?: SeasonGoal[];
 };
 
-type V03Data = Omit<PaddleMotionData, "activeUserId" | "users" | "journal"> & {
+type V03Data = Omit<PaddleMotionData, "activeUserId" | "users" | "journal" | "goals"> & {
   activeUserId?: string;
   users?: User[];
   journal?: TrainingJournalEntry[];
+  goals?: SeasonGoal[];
 };
 
 type LegacyPlanEntry = Partial<PlanEntry> & {
@@ -310,9 +313,38 @@ const normalizeDataShape = (data: PaddleMotionData): PaddleMotionData => ({
   ...data,
   journal: Array.isArray(data.journal) ? normalizeJournalEntries(data.journal) : [],
   material: normalizeMaterialItems(data.material),
+  goals: Array.isArray(data.goals) ? normalizeSeasonGoals(data.goals, data.athlete.id, data.activeUserId) : [],
   coachAthletes: Array.isArray(data.coachAthletes) ? data.coachAthletes : [],
   coachGroups: Array.isArray(data.coachGroups) ? data.coachGroups : [],
 });
+
+const normalizeSeasonGoals = (
+  items: Array<Partial<SeasonGoal> & Pick<SeasonGoal, "id" | "title">>,
+  athleteId: string,
+  userId: string,
+): SeasonGoal[] =>
+  items.map((goal) => ({
+    id: goal.id,
+    athleteId: goal.athleteId ?? athleteId,
+    ownerUserId: goal.ownerUserId ?? userId,
+    assignedByUserId: goal.assignedByUserId ?? userId,
+    title: goal.title,
+    description: goal.description ?? "",
+    category: goal.category ?? "personal",
+    metric: goal.metric ?? "manual",
+    direction: goal.direction ?? "over",
+    targetValue: goal.targetValue ?? 1,
+    unit: goal.unit ?? "",
+    startDate: goal.startDate ?? now().slice(0, 10),
+    dueDate: goal.dueDate ?? "",
+    status: goal.status ?? "active",
+    priority: goal.priority ?? "medium",
+    currentValueOverride: goal.currentValueOverride ?? "",
+    coachNote: goal.coachNote ?? "",
+    athleteNote: goal.athleteNote ?? "",
+    createdAt: goal.createdAt ?? now(),
+    updatedAt: goal.updatedAt ?? now(),
+  }));
 
 export const createId = (prefix: string): string => {
   if (globalThis.crypto?.randomUUID) {
@@ -982,6 +1014,7 @@ const createEmptyDataForUser = (authUser: AuthUser): PaddleMotionData => {
     journal: [],
     material: [],
     plan: [],
+    goals: [],
     coachAthletes: [],
     coachGroups: [],
   };
@@ -1000,6 +1033,7 @@ const withUsers = (data: V03Data): PaddleMotionData => {
     journal: data.journal ?? [],
     material: normalizeMaterialItems(data.material),
     plan: normalizePlanEntries(data.plan ?? seedData.plan, data.athlete.id, data.activeUserId ?? users[0].id),
+    goals: data.goals ?? [],
     coachAthletes: data.coachAthletes ?? [],
     coachGroups: data.coachGroups ?? [],
   };
@@ -1137,6 +1171,7 @@ const migrateLegacyData = (legacy: LegacyData): PaddleMotionData => {
     journal: [],
     material: material.length > 0 ? material : seedData.material,
     plan: seedData.plan,
+    goals: [],
     coachAthletes: [],
     coachGroups: [],
   };
@@ -1219,6 +1254,11 @@ const bindDataToUser = (data: PaddleMotionData, authUser: AuthUser): PaddleMotio
       athleteId: athlete.id,
       assignedAthleteId: athlete.id,
       createdByUserId: authUser.userId,
+    })),
+    goals: normalized.goals.map((goal) => ({
+      ...goal,
+      athleteId: athlete.id,
+      ownerUserId: authUser.userId,
     })),
   };
 };
