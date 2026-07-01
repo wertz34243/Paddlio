@@ -6,6 +6,8 @@ import {
   getBestTotalTime,
   getLastCompetition,
   getLastTrainingSession,
+  getNextPlannedEntry,
+  getWeeklyPlanSummary,
 } from "../domain/metrics";
 import { getGoalProgressList } from "../domain/goalProgress";
 import { getDisplayName, getGreeting, getInitials } from "../domain/profile";
@@ -50,6 +52,12 @@ export function DashboardView({ data, user, onNavigate, onQuickAction }: Dashboa
   const lastCompetition = getLastCompetition(data.competitions);
   const lastTraining = getLastTrainingSession(data.training);
   const seasonGoals = getGoalProgressList(data.goals, data.competitions, data.training).filter((goal) => goal.goal.status !== "archived");
+  const nextTraining = getNextPlannedEntry(data.plan);
+  const weeklyPlan = getWeeklyPlanSummary(data.plan);
+  const openFeedback = data.plan.filter((entry) =>
+    (entry.status === "done" || entry.status === "erledigt") &&
+    !data.trainingFeedback.some((feedback) => feedback.trainingId === entry.id),
+  ).length;
   const daysUntilRace = getDaysUntil(nextCompetition?.date);
   const raceRing = daysUntilRace === undefined ? 0 : Math.max(8, Math.min(100, 100 - daysUntilRace * 3));
 
@@ -111,6 +119,20 @@ export function DashboardView({ data, user, onNavigate, onQuickAction }: Dashboa
           </div>
           <div className="progress-track large">
             <span style={{ width: `${intelligence.trainingQuote}%` }} />
+          </div>
+        </AppCard>
+
+        <AppCard
+          icon="training"
+          title="Naechstes Training"
+          subtitle={nextTraining ? `${nextTraining.date} - ${nextTraining.startTime || nextTraining.time || "ohne Uhrzeit"}` : "Noch kein Training geplant"}
+          value={nextTraining?.title || nextTraining?.trainingType || "Planen"}
+          tone="primary"
+        >
+          <div className="smart-detail-grid">
+            <span>{weeklyPlan.completedCount} erledigt diese Woche</span>
+            <span>{weeklyPlan.minutes} Trainingsminuten</span>
+            {user.role === "coach" || user.role === "teamAdmin" || user.role === "admin" ? <span>{openFeedback} offene Rueckmeldungen</span> : null}
           </div>
         </AppCard>
 

@@ -19,6 +19,7 @@ import type {
   PaddleMotionData,
   PlanEntry,
   SeasonGoal,
+  TrainingFeedback,
   TrainingJournalEntry,
   TrainerRequest,
   TrainerRequestStatus,
@@ -397,6 +398,23 @@ const normalizeCoachAthletes = (items: Array<Partial<CoachAthlete> & Pick<CoachA
     };
   });
 
+const normalizeTrainingFeedback = (items: Array<Partial<TrainingFeedback> & Pick<TrainingFeedback, "id" | "trainingId">>): TrainingFeedback[] =>
+  items.map((feedback) => ({
+    id: feedback.id,
+    trainingId: feedback.trainingId,
+    athleteUserId: feedback.athleteUserId ?? "",
+    coachUserId: feedback.coachUserId ?? "",
+    status: feedback.status ?? "done",
+    feeling: feedback.feeling ?? 7,
+    difficulty: feedback.difficulty ?? 5,
+    fatigue: feedback.fatigue ?? 5,
+    motivation: feedback.motivation ?? 7,
+    sleep: feedback.sleep ?? 7,
+    reason: feedback.reason ?? "",
+    comment: feedback.comment ?? "",
+    completedAt: feedback.completedAt ?? now(),
+  }));
+
 const normalizeDataShape = (data: PaddleMotionData): PaddleMotionData => ({
   ...data,
   journal: Array.isArray(data.journal) ? normalizeJournalEntries(data.journal) : [],
@@ -404,6 +422,7 @@ const normalizeDataShape = (data: PaddleMotionData): PaddleMotionData => ({
   goals: Array.isArray(data.goals) ? normalizeSeasonGoals(data.goals, data.athlete.id, data.activeUserId) : [],
   coachAthletes: Array.isArray(data.coachAthletes) ? normalizeCoachAthletes(data.coachAthletes, data.athlete.club, "") : [],
   coachGroups: Array.isArray(data.coachGroups) ? normalizeCoachGroups(data.coachGroups, "") : [],
+  trainingFeedback: Array.isArray(data.trainingFeedback) ? normalizeTrainingFeedback(data.trainingFeedback) : [],
 });
 
 const normalizeSeasonGoals = (
@@ -1322,6 +1341,7 @@ const createEmptyDataForUser = (authUser: AuthUser): PaddleMotionData => {
     journal: [],
     material: [],
     plan: [],
+    trainingFeedback: [],
     goals: [],
     coachAthletes: [],
     coachGroups: [],
@@ -1341,6 +1361,7 @@ const withUsers = (data: V03Data): PaddleMotionData => {
     journal: data.journal ?? [],
     material: normalizeMaterialItems(data.material),
     plan: normalizePlanEntries(data.plan ?? seedData.plan, data.athlete.id, data.activeUserId ?? users[0].id),
+    trainingFeedback: data.trainingFeedback ?? [],
     goals: data.goals ?? [],
     coachAthletes: data.coachAthletes ?? [],
     coachGroups: data.coachGroups ?? [],
@@ -1355,17 +1376,31 @@ const normalizePlanEntries = (entries: LegacyPlanEntry[], athleteId: string, use
 
     return {
       id: entry.id ?? `plan-migrated-${index}`,
+      ownerUserId: entry.ownerUserId ?? userId,
       athleteId: entry.athleteId ?? athleteId,
+      clubId: entry.clubId ?? "",
+      assignedType: entry.assignedType ?? (entry.assignedGroupId ? "group" : entry.assignedAthleteId ? "athlete" : "self"),
+      assignedAthleteIds: Array.isArray(entry.assignedAthleteIds) ? entry.assignedAthleteIds : [entry.assignedAthleteId ?? entry.athleteId ?? athleteId].filter(Boolean),
+      assignedGroupIds: Array.isArray(entry.assignedGroupIds) ? entry.assignedGroupIds : [entry.assignedGroupId ?? ""].filter(Boolean),
+      title: entry.title ?? entry.trainingType ?? fallback.trainingType,
       date,
       weekday: entry.weekday ?? getWeekdayFromDate(date),
       time: entry.time ?? fallback.time,
+      startTime: entry.startTime ?? entry.time ?? fallback.time,
+      endTime: entry.endTime ?? "",
       durationMinutes: entry.durationMinutes ?? fallback.durationMinutes,
       area: entry.area ?? (oldType === "Pause" ? "Regeneration" : fallback.area),
       trainingType: entry.trainingType ?? fallback.trainingType,
+      boatClass: entry.boatClass ?? (String(entry.trainingType ?? fallback.trainingType).includes("C1") ? "C1" : String(entry.trainingType ?? fallback.trainingType).includes("K1") ? "K1" : "none"),
       goal: entry.goal ?? entry.note ?? fallback.goal,
+      focus: entry.focus ?? entry.goal ?? entry.note ?? fallback.goal,
+      description: entry.description ?? "",
       intensity: entry.intensity ?? fallback.intensity,
       note: entry.note ?? "",
-      status: entry.status ?? "geplant",
+      notes: entry.notes ?? entry.note ?? "",
+      status: entry.status ?? "planned",
+      repeat: entry.repeat ?? "none",
+      repeatUntil: entry.repeatUntil ?? "",
       createdByUserId: entry.createdByUserId ?? userId,
       assignedAthleteId: entry.assignedAthleteId ?? entry.athleteId ?? athleteId,
       assignedGroupId: entry.assignedGroupId ?? "",
@@ -1417,7 +1452,8 @@ const isLegacyV02Data = (value: unknown): value is V02Data => {
 
 const migrateV02Data = (data: V02Data): PaddleMotionData => withUsers({
   ...data,
-  plan: data.plan ?? seedData.plan,
+  plan: normalizePlanEntries(data.plan ?? seedData.plan, data.athlete.id, data.activeUserId ?? data.users?.[0]?.id ?? ""),
+  trainingFeedback: data.trainingFeedback ?? [],
 });
 
 const migrateLegacyData = (legacy: LegacyData): PaddleMotionData => {
@@ -1478,7 +1514,8 @@ const migrateLegacyData = (legacy: LegacyData): PaddleMotionData => {
     training: training.length > 0 ? training : seedData.training,
     journal: [],
     material: material.length > 0 ? material : seedData.material,
-    plan: seedData.plan,
+    plan: normalizePlanEntries(seedData.plan, athlete.id, "legacy-user"),
+    trainingFeedback: [],
     goals: [],
     coachAthletes: [],
     coachGroups: [],
@@ -1560,10 +1597,14 @@ const bindDataToUser = (data: PaddleMotionData, authUser: AuthUser): PaddleMotio
     })),
     plan: normalized.plan.map((entry) => ({
       ...entry,
+      ownerUserId: entry.ownerUserId || authUser.userId,
       athleteId: athlete.id,
-      assignedAthleteId: athlete.id,
+      clubId: entry.clubId || authUser.clubId,
+      assignedAthleteId: entry.assignedAthleteId || athlete.id,
+      assignedAthleteIds: entry.assignedAthleteIds.length > 0 ? entry.assignedAthleteIds : [athlete.id],
       createdByUserId: authUser.userId,
     })),
+    trainingFeedback: normalized.trainingFeedback,
     goals: normalized.goals.map((goal) => ({
       ...goal,
       athleteId: athlete.id,

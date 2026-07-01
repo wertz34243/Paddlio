@@ -15,6 +15,7 @@ import {
   type RegisterInput,
 } from "./data/storage";
 import { getActiveUser } from "./domain/profile";
+import { getWeekdayFromDate, isDoneStatus } from "./domain/trainingPlan";
 import type {
   Competition,
   AuthSession,
@@ -22,6 +23,7 @@ import type {
   PageId,
   PaddleMotionData,
   PlanEntry,
+  TrainingFeedback,
   SeasonGoal,
   TrainingJournalEntry,
   TrainingSession,
@@ -317,7 +319,7 @@ function App() {
   };
 
   const upsertPlanEntry = (
-    entry: Omit<PlanEntry, "id" | "athleteId" | "createdAt" | "updatedAt" | "createdByUserId" | "assignedAthleteId"> & {
+    entry: Omit<PlanEntry, "id" | "athleteId" | "createdAt" | "updatedAt" | "createdByUserId"> & {
       id?: string;
     },
   ) => {
@@ -325,21 +327,40 @@ function App() {
 
     updateData((current) => {
       const existing = entry.id ? current.plan.find((item) => item.id === entry.id) : undefined;
-      const nextEntry: PlanEntry = {
+      const repeat = entry.repeat ?? "none";
+      const startDate = new Date(`${entry.date}T00:00:00`);
+      const repeatUntil = entry.repeatUntil ? new Date(`${entry.repeatUntil}T00:00:00`) : startDate;
+      const dates: string[] = [];
+      const cursor = new Date(startDate);
+
+      while (dates.length === 0 || (repeat !== "none" && cursor <= repeatUntil && dates.length < 90)) {
+        dates.push(cursor.toISOString().slice(0, 10));
+        if (repeat === "daily") cursor.setDate(cursor.getDate() + 1);
+        else if (repeat === "weekly") cursor.setDate(cursor.getDate() + 7);
+        else if (repeat === "monthly") cursor.setMonth(cursor.getMonth() + 1);
+        else break;
+      }
+
+      const createdEntries = dates.map((date, index): PlanEntry => ({
         ...entry,
-        id: entry.id ?? createId("plan"),
+        id: index === 0 && entry.id ? entry.id : createId("plan"),
+        ownerUserId: entry.ownerUserId || current.activeUserId,
         athleteId: current.athlete.id,
+        clubId: entry.clubId || activeUser.profile.club,
+        date,
+        weekday: getWeekdayFromDate(date),
+        time: entry.startTime || entry.time,
+        startTime: entry.startTime || entry.time,
         createdByUserId: current.activeUserId,
-        assignedAthleteId: current.athlete.id,
-        createdAt: existing?.createdAt ?? timestamp,
+        createdAt: index === 0 ? existing?.createdAt ?? timestamp : timestamp,
         updatedAt: timestamp,
-      };
+      }));
 
       return {
         ...current,
         plan: existing
-          ? current.plan.map((item) => (item.id === nextEntry.id ? nextEntry : item))
-          : [...current.plan, nextEntry],
+          ? current.plan.map((item) => (item.id === createdEntries[0].id ? createdEntries[0] : item))
+          : [...current.plan, ...createdEntries],
       };
     });
   };
@@ -349,6 +370,30 @@ function App() {
       ...current,
       plan: current.plan.filter((entry) => entry.id !== id),
     }));
+  };
+
+  const saveTrainingFeedback = (feedback: Omit<TrainingFeedback, "id" | "completedAt"> & { id?: string }) => {
+    updateData((current) => {
+      const timestamp = getTimestamp();
+      const existing = feedback.id ? current.trainingFeedback.find((item) => item.id === feedback.id) : undefined;
+      const nextFeedback: TrainingFeedback = {
+        ...feedback,
+        id: feedback.id ?? createId("feedback"),
+        completedAt: existing?.completedAt ?? timestamp,
+      };
+
+      return {
+        ...current,
+        trainingFeedback: existing
+          ? current.trainingFeedback.map((item) => (item.id === nextFeedback.id ? nextFeedback : item))
+          : [nextFeedback, ...current.trainingFeedback],
+        plan: current.plan.map((entry) =>
+          entry.id === feedback.trainingId
+            ? { ...entry, status: feedback.status, feedbackNote: feedback.comment ?? feedback.reason ?? "", updatedAt: timestamp }
+            : entry,
+        ),
+      };
+    });
   };
 
   const upsertGoal = (
@@ -390,7 +435,7 @@ function App() {
         entry.id === id
           ? {
               ...entry,
-              status: entry.status === "erledigt" ? "geplant" : "erledigt",
+              status: isDoneStatus(entry.status) ? "planned" : "done",
               updatedAt: getTimestamp(),
             }
           : entry,
@@ -434,10 +479,13 @@ function App() {
       case "plan":
         return (
           <PlanView
+            data={data}
             entries={data.plan}
+            user={activeUser}
             onSave={upsertPlanEntry}
             onDelete={deletePlanEntry}
             onToggleDone={togglePlanEntryDone}
+            onFeedbackSave={saveTrainingFeedback}
           />
         );
       case "journal":
@@ -512,7 +560,7 @@ function App() {
         return <SeasonView competitions={data.competitions} training={data.training} plan={data.plan} />;
       case "overview":
       default:
-        return <AnalysisView competitions={data.competitions} training={data.training} plan={data.plan} />;
+        return <AnalysisView competitions={data.competitions} training={data.training} plan={data.plan} feedback={data.trainingFeedback} />;
     }
   };
 

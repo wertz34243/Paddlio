@@ -90,6 +90,16 @@ Version 1.0 richtet sich an Athletinnen und Athleten. Paddlio kombiniert Trainin
 - Bestehende Coach-Gruppen und Coach-Sportler werden beim Laden in die neue 2.5-Struktur migriert
 - Coaches sehen weiterhin nur Sportler und Gruppen ihres Vereins; Admins sehen alles
 
+## Version 2.6 - Trainingsplanung & Kalender
+
+- Trainingsplan ist jetzt ein Kalender mit Tagesansicht, Wochenansicht, Monatsuebersicht und Listenansicht
+- Trainings koennen fuer sich selbst, einzelne Sportler oder Trainingsgruppen geplant werden
+- PlanItem-Datenmodell erweitert um Owner, Club, Zuweisungstyp, Sportler-/Gruppenlisten, Bootsklasse, Wiederholung und neue Statuswerte
+- Wiederkehrende Trainings erzeugen beim Speichern mehrere einzelne Kalendereintraege bis zum Wiederholungsdatum
+- Sportler koennen Trainings erledigen, auslassen und Feedback mit Gefuehl, Schwierigkeit, Muedigkeit, Motivation, Schlaf und Kommentar speichern
+- Kalenderfilter fuer Zeitraum, Bereich, Bootsklasse, Intensitaet, Status, Sportler und Gruppe
+- Dashboard und Analyse nutzen die neue Planstruktur weiterhin aus `paddlio_data_<userId>`, ohne bestehende Daten zu loeschen
+
 ## Paddlio auf iPhone/iPad installieren
 
 1. Paddlio in Safari oeffnen.

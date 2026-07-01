@@ -5,6 +5,7 @@ import {
   getTrainingSessionsForCurrentWeek,
 } from "./metrics";
 import { getLongestTrainingStreak } from "./records";
+import { isDoneStatus } from "./trainingPlan";
 import type { Competition, PlanEntry, TrainingJournalEntry, TrainingSession } from "./types";
 
 export type AthleteStatus = {
@@ -78,11 +79,11 @@ const getTrainingQuote = (plan: PlanEntry[], referenceDate = new Date()): number
     return 0;
   }
 
-  return Math.round((currentWeek.filter((entry) => entry.status === "erledigt").length / currentWeek.length) * 100);
+  return Math.round((currentWeek.filter((entry) => isDoneStatus(entry.status)).length / currentWeek.length) * 100);
 };
 
 const getHardPlanCount = (plan: PlanEntry[]): number =>
-  plan.filter((entry) => entry.status === "erledigt" && (entry.intensity === "hart" || entry.intensity === "maximal")).length;
+  plan.filter((entry) => isDoneStatus(entry.status) && (entry.intensity === "hart" || entry.intensity === "maximal")).length;
 
 const getDaysSinceLastTraining = (sessions: TrainingSession[], referenceDate = new Date()): number | undefined => {
   const last = [...sessions].sort((a, b) => b.date.localeCompare(a.date))[0];

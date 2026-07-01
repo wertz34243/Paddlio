@@ -139,7 +139,13 @@ export type User = {
   updatedAt: string;
 };
 
-export type PlanStatus = "geplant" | "erledigt" | "ausgelassen";
+export type PlanStatus = "planned" | "done" | "skipped" | "cancelled" | "geplant" | "erledigt" | "ausgelassen";
+
+export type TrainingAssignedType = "self" | "athlete" | "group";
+
+export type TrainingRepeat = "none" | "daily" | "weekly" | "monthly";
+
+export type TrainingBoatClass = "K1" | "C1" | "K1+C1" | "none";
 
 export type TrainingIntensity = "locker" | "mittel" | "hart" | "maximal";
 
@@ -162,12 +168,14 @@ export type TrainingPlanType =
   | "Kehrwassertraining"
   | "Linienwahl"
   | "Bootskontrolle"
+  | "neues Paddel testen"
   | "GA1"
   | "GA2"
   | "Intervalle"
   | "Rhein-Ausdauer"
   | "Regeneration"
   | "Grundlagentraining"
+  | "30-Minuten-Test"
   | "Kraftausdauer"
   | "Maximalkraft"
   | "Explosivkraft"
@@ -188,7 +196,8 @@ export type TrainingPlanType =
   | "C1 Rennen"
   | "Mannschaft"
   | "Streckenbesichtigung"
-  | "Warmfahren";
+  | "Warmfahren"
+  | "Wettkampftag";
 
 export type Weekday =
   | "Montag"
@@ -262,23 +271,53 @@ export type MaterialItem = {
 
 export type PlanEntry = {
   id: string;
+  ownerUserId: string;
   athleteId: string;
+  clubId: string;
+  assignedType: TrainingAssignedType;
+  assignedAthleteIds: string[];
+  assignedGroupIds: string[];
+  title: string;
   date: string;
   weekday: Weekday;
   time: string;
+  startTime: string;
+  endTime: string;
   durationMinutes: number;
   area: TrainingArea;
   trainingType: TrainingPlanType;
+  boatClass: TrainingBoatClass;
   goal: string;
+  focus: string;
+  description: string;
   intensity: TrainingIntensity;
   note: string;
+  notes: string;
   status: PlanStatus;
+  repeat: TrainingRepeat;
+  repeatUntil: string;
   createdByUserId: string;
   assignedAthleteId: string;
   assignedGroupId: string;
   feedbackNote: string;
   createdAt: string;
   updatedAt: string;
+};
+
+export type TrainingFeedback = {
+  id: string;
+  trainingId: string;
+  athleteUserId: string;
+  coachUserId?: string;
+  status: "done" | "skipped";
+  feeling: number;
+  difficulty: number;
+  fatigue: number;
+  motivation: number;
+  sleep?: number;
+  reason?: string;
+  comment?: string;
+  completedAt: string;
 };
 
 export type Athlete = {
@@ -408,6 +447,7 @@ export type PaddleMotionData = {
   journal: TrainingJournalEntry[];
   material: MaterialItem[];
   plan: PlanEntry[];
+  trainingFeedback: TrainingFeedback[];
   goals: SeasonGoal[];
   coachAthletes: CoachAthlete[];
   coachGroups: CoachGroup[];

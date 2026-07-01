@@ -1,4 +1,4 @@
-import { getTodayKey, isPauseEntry, sortPlanEntries } from "./trainingPlan";
+import { getTodayKey, isDoneStatus, isPauseEntry, isPlannedStatus, isSkippedStatus, sortPlanEntries } from "./trainingPlan";
 import type { BoatClass, Competition, PlanEntry, TrainingArea, TrainingIntensity, TrainingSession } from "./types";
 
 export type BoatClassDifference = {
@@ -185,7 +185,7 @@ export const getNextPlannedEntry = (entries: PlanEntry[], referenceDate = new Da
   const nowTime = referenceDate.toTimeString().slice(0, 5);
 
   return sortPlanEntries(entries).find((entry) => {
-    if (entry.status !== "geplant") {
+    if (!isPlannedStatus(entry.status)) {
       return false;
     }
 
@@ -195,9 +195,9 @@ export const getNextPlannedEntry = (entries: PlanEntry[], referenceDate = new Da
 
 export const getWeeklyPlanSummary = (entries: PlanEntry[], referenceDate = new Date()): WeeklyPlanSummary => {
   const weekEntries = getPlanEntriesForCurrentWeek(entries, referenceDate);
-  const completedEntries = weekEntries.filter((entry) => entry.status === "erledigt");
-  const plannedEntries = weekEntries.filter((entry) => entry.status === "geplant");
-  const skippedEntries = weekEntries.filter((entry) => entry.status === "ausgelassen");
+  const completedEntries = weekEntries.filter((entry) => isDoneStatus(entry.status));
+  const plannedEntries = weekEntries.filter((entry) => isPlannedStatus(entry.status));
+  const skippedEntries = weekEntries.filter((entry) => isSkippedStatus(entry.status));
   const totalCount = weekEntries.length;
   const completedCount = completedEntries.length;
 
@@ -214,7 +214,7 @@ export const getWeeklyPlanSummary = (entries: PlanEntry[], referenceDate = new D
 };
 
 export const getNextFocus = (entries: PlanEntry[], referenceDate = new Date()): string => {
-  const todayFocus = getTodayPlanEntries(entries, referenceDate).find((entry) => entry.status === "geplant" && entry.goal.trim());
+  const todayFocus = getTodayPlanEntries(entries, referenceDate).find((entry) => isPlannedStatus(entry.status) && entry.goal.trim());
   const nextEntry = todayFocus ?? getNextPlannedEntry(entries, referenceDate);
   return nextEntry?.goal || nextEntry?.trainingType || "Noch kein Fokus geplant";
 };
@@ -235,7 +235,7 @@ export const getPlanWeekStats = (entries: PlanEntry[]): PlanWeekStats[] => {
 
   return [...grouped.entries()]
     .map(([weekLabel, weekEntries]) => {
-      const completed = weekEntries.filter((entry) => entry.status === "erledigt");
+      const completed = weekEntries.filter((entry) => isDoneStatus(entry.status));
 
       return {
         weekLabel,
@@ -248,7 +248,7 @@ export const getPlanWeekStats = (entries: PlanEntry[]): PlanWeekStats[] => {
 };
 
 export const getTrainingPauseRatio = (entries: PlanEntry[]): { training: number; pause: number } => {
-  const completedEntries = entries.filter((entry) => entry.status === "erledigt");
+  const completedEntries = entries.filter((entry) => isDoneStatus(entry.status));
   const pause = completedEntries.filter(isPauseEntry).length;
 
   return {
@@ -261,7 +261,7 @@ const getDistribution = <T extends string>(
   entries: PlanEntry[],
   getKey: (entry: PlanEntry) => T,
 ): DistributionItem<T>[] => {
-  const completedEntries = entries.filter((entry) => entry.status === "erledigt");
+  const completedEntries = entries.filter((entry) => isDoneStatus(entry.status));
   const totalMinutes = completedEntries.reduce((sum, entry) => sum + entry.durationMinutes, 0);
   const grouped = new Map<T, { count: number; minutes: number }>();
 

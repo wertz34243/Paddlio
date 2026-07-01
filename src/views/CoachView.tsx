@@ -208,7 +208,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
       })
     : [];
   const todaysPreviewTraining = previewPlan.find((entry) => entry.date === todayKey());
-  const openFeedback = coachPlan.filter((entry) => entry.status === "erledigt" && !entry.feedbackNote).length;
+  const openFeedback = coachPlan.filter((entry) => (entry.status === "done" || entry.status === "erledigt") && !entry.feedbackNote).length;
   const weeklyTrainingCount = coachPlan.filter((entry) => isThisWeek(entry.date)).length;
 
   const metrics = useMemo(() => [
@@ -364,22 +364,39 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
     const target = String(formData.get("target") ?? "self");
     const date = String(formData.get("date") ?? todayKey());
     const timestamp = new Date().toISOString();
+    const assignedType = target.startsWith("athlete:") ? "athlete" : target.startsWith("group:") ? "group" : "self";
+    const assignedAthleteId = target.startsWith("athlete:") ? target.replace("athlete:", "") : target === "self" ? data.athlete.id : "";
+    const assignedGroupId = target.startsWith("group:") ? target.replace("group:", "") : "";
     const entry: PlanEntry = {
       id: createId("coach-plan"),
+      ownerUserId: user.userId,
       athleteId: data.athlete.id,
+      clubId: userClubId,
+      assignedType,
+      assignedAthleteIds: assignedAthleteId ? [assignedAthleteId] : [],
+      assignedGroupIds: assignedGroupId ? [assignedGroupId] : [],
+      title: String(formData.get("trainingType") ?? "K1 Technik"),
       date,
       weekday: getWeekdayFromDate(date),
       time: String(formData.get("time") ?? ""),
+      startTime: String(formData.get("time") ?? ""),
+      endTime: "",
       durationMinutes: Number(formData.get("durationMinutes") ?? 0),
       area: String(formData.get("area") ?? "Wassertraining") as TrainingArea,
       trainingType: String(formData.get("trainingType") ?? "K1 Technik") as TrainingPlanType,
+      boatClass: String(formData.get("trainingType") ?? "").includes("C1") ? "C1" : String(formData.get("trainingType") ?? "").includes("K1") ? "K1" : "none",
       goal: String(formData.get("goal") ?? "").trim(),
+      focus: String(formData.get("goal") ?? "").trim(),
+      description: "",
       intensity: String(formData.get("intensity") ?? "locker") as TrainingIntensity,
       note: String(formData.get("note") ?? "").trim(),
-      status: "geplant",
+      notes: String(formData.get("note") ?? "").trim(),
+      status: "planned",
+      repeat: "none",
+      repeatUntil: "",
       createdByUserId: user.userId,
-      assignedAthleteId: target.startsWith("athlete:") ? target.replace("athlete:", "") : target === "self" ? data.athlete.id : "",
-      assignedGroupId: target.startsWith("group:") ? target.replace("group:", "") : "",
+      assignedAthleteId,
+      assignedGroupId,
       feedbackNote: "",
       createdAt: timestamp,
       updatedAt: timestamp,

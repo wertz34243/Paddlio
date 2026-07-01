@@ -11,12 +11,13 @@ import {
   getTrainingPauseRatio,
   getWeeklyPlanSummary,
 } from "../domain/metrics";
-import type { BoatClass, Competition, PlanEntry, TrainingSession } from "../domain/types";
+import type { BoatClass, Competition, PlanEntry, TrainingFeedback, TrainingSession } from "../domain/types";
 
 type AnalysisViewProps = {
   competitions: Competition[];
   training: TrainingSession[];
   plan: PlanEntry[];
+  feedback: TrainingFeedback[];
 };
 
 const formatMaybeSeconds = (value?: number): string => (value === undefined ? "--" : formatSeconds(value));
@@ -44,7 +45,7 @@ const ChartPanel = ({
 const boatData = (competitions: Competition[], boatClass: BoatClass) =>
   getCompetitionsSortedByDate(competitions).filter((competition) => competition.boatClass === boatClass);
 
-export function AnalysisView({ competitions, training, plan }: AnalysisViewProps) {
+export function AnalysisView({ competitions, training, plan, feedback }: AnalysisViewProps) {
   const k1Stats = getBoatClassStats(competitions, "K1");
   const c1Stats = getBoatClassStats(competitions, "C1");
   const differences = getBoatClassDifferences(competitions);
@@ -54,6 +55,10 @@ export function AnalysisView({ competitions, training, plan }: AnalysisViewProps
   const areaDistribution = getTrainingAreaDistribution(plan);
   const intensityDistribution = getIntensityDistribution(plan);
   const weekStats = getPlanWeekStats(plan);
+  const doneCount = plan.filter((entry) => entry.status === "done" || entry.status === "erledigt").length;
+  const plannedCount = plan.filter((entry) => entry.status === "planned" || entry.status === "geplant").length;
+  const skippedCount = plan.filter((entry) => entry.status === "skipped" || entry.status === "ausgelassen").length;
+  const feedbackQuote = doneCount === 0 ? 0 : Math.round((feedback.length / doneCount) * 100);
   const k1Series = boatData(competitions, "K1");
   const c1Series = boatData(competitions, "C1");
 
@@ -170,6 +175,16 @@ export function AnalysisView({ competitions, training, plan }: AnalysisViewProps
             <span>Trainingstagebuch</span>
             <strong>{training.length}</strong>
             <small>dokumentierte Einheiten</small>
+          </article>
+          <article className="metric-card tone-training">
+            <span>Statusverteilung</span>
+            <strong>{doneCount}/{plannedCount}/{skippedCount}</strong>
+            <small>erledigt / geplant / ausgelassen</small>
+          </article>
+          <article className="metric-card tone-success">
+            <span>Rueckmeldungsquote</span>
+            <strong>{feedbackQuote}%</strong>
+            <small>{feedback.length} Rueckmeldungen</small>
           </article>
         </section>
       </ChartPanel>

@@ -4,7 +4,7 @@ export const weekdays: Weekday[] = ["Montag", "Dienstag", "Mittwoch", "Donnersta
 
 export const trainingIntensities: TrainingIntensity[] = ["locker", "mittel", "hart", "maximal"];
 
-export const planStatuses: PlanStatus[] = ["geplant", "erledigt", "ausgelassen"];
+export const planStatuses: PlanStatus[] = ["planned", "done", "skipped", "cancelled"];
 
 export const trainingTypeGroups: Record<TrainingArea, TrainingPlanType[]> = {
   Wassertraining: [
@@ -18,8 +18,9 @@ export const trainingTypeGroups: Record<TrainingArea, TrainingPlanType[]> = {
     "Kehrwassertraining",
     "Linienwahl",
     "Bootskontrolle",
+    "neues Paddel testen",
   ],
-  Ausdauer: ["GA1", "GA2", "Intervalle", "Rhein-Ausdauer", "Regeneration", "Grundlagentraining"],
+  Ausdauer: ["GA1", "GA2", "Intervalle", "Rhein-Ausdauer", "Regeneration", "Grundlagentraining", "30-Minuten-Test"],
   Krafttraining: [
     "Kraftausdauer",
     "Maximalkraft",
@@ -31,7 +32,7 @@ export const trainingTypeGroups: Record<TrainingArea, TrainingPlanType[]> = {
   ],
   Trainerarbeit: ["Kindertraining", "Technikbetreuung", "Anfaengertraining", "Gruppenbetreuung"],
   Regeneration: ["Pause", "Mobilitaet", "Dehnen", "Spaziergang", "Schlaf/Erholung"],
-  Wettkampf: ["K1 Rennen", "C1 Rennen", "Mannschaft", "Streckenbesichtigung", "Warmfahren"],
+  Wettkampf: ["K1 Rennen", "C1 Rennen", "Mannschaft", "Streckenbesichtigung", "Warmfahren", "Wettkampftag"],
 };
 
 export const trainingAreas = Object.keys(trainingTypeGroups) as TrainingArea[];
@@ -58,3 +59,8 @@ export const isPauseEntry = (entry: PlanEntry): boolean =>
 
 export const getTodayKey = (date = new Date()): string => date.toISOString().slice(0, 10);
 
+export const isPlannedStatus = (status: PlanStatus): boolean => status === "planned" || status === "geplant";
+
+export const isDoneStatus = (status: PlanStatus): boolean => status === "done" || status === "erledigt";
+
+export const isSkippedStatus = (status: PlanStatus): boolean => status === "skipped" || status === "ausgelassen";

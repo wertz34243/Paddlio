@@ -294,6 +294,133 @@ button {
   line-height: 1.45;
 }
 
+.calendar-shell {
+  gap: 16px;
+}
+
+.calendar-view-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 0 12px;
+  scrollbar-width: none;
+}
+
+.calendar-view-tabs button {
+  min-height: 42px;
+  min-width: 86px;
+  border: 1px solid rgba(144, 224, 239, 0.16);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.56);
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.calendar-view-tabs button.active {
+  border-color: rgba(0, 180, 216, 0.72);
+  background: rgba(0, 180, 216, 0.18);
+  color: var(--accent);
+}
+
+.calendar-list,
+.calendar-week-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.calendar-week-grid {
+  display: flex;
+  max-width: 100%;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scroll-snap-type: x proximity;
+}
+
+.calendar-day-column {
+  flex: 0 0 250px;
+  min-width: 250px;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-height: 180px;
+  padding: 12px;
+  border: 1px solid rgba(144, 224, 239, 0.12);
+  border-radius: var(--radius);
+  background: rgba(15, 23, 42, 0.38);
+  scroll-snap-align: start;
+}
+
+.calendar-training-card {
+  display: grid;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid rgba(0, 180, 216, 0.28);
+  border-left: 4px solid var(--primary);
+  border-radius: var(--radius);
+  background: rgba(30, 41, 59, 0.72);
+  box-shadow: var(--shadow);
+}
+
+.calendar-training-card.status-done {
+  border-left-color: var(--success);
+}
+
+.calendar-training-card.status-skipped {
+  border-left-color: var(--warning);
+}
+
+.calendar-training-card.status-cancelled {
+  border-left-color: #94a3b8;
+}
+
+.calendar-training-card p,
+.calendar-training-card span,
+.calendar-training-card small,
+.calendar-training-card h4 {
+  overflow-wrap: anywhere;
+}
+
+.feedback-list {
+  display: grid;
+  gap: 6px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.calendar-month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.calendar-month-grid button {
+  display: grid;
+  gap: 5px;
+  min-height: 76px;
+  padding: 9px;
+  border: 1px solid rgba(144, 224, 239, 0.12);
+  border-radius: 14px;
+  background: rgba(30, 41, 59, 0.62);
+  color: var(--text);
+  text-align: left;
+}
+
+.calendar-month-grid button.has-training {
+  border-color: rgba(0, 180, 216, 0.62);
+  background: rgba(0, 180, 216, 0.12);
+}
+
+.calendar-month-grid span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.feedback-modal {
+  border-color: rgba(34, 197, 94, 0.32);
+}
+
 .auth-form {
   display: grid;
   gap: 13px;
@@ -340,7 +467,8 @@ button {
 }
 
 .app-shell {
-  width: min(100%, 920px);
+  width: 100%;
+  max-width: 920px;
   min-height: 100vh;
   min-height: 100dvh;
   margin: 0 auto;
@@ -1168,6 +1296,7 @@ p {
 .category-shell {
   display: grid;
   gap: 16px;
+  min-width: 0;
 }
 
 .segment-nav {
@@ -1179,6 +1308,7 @@ p {
   border: 1px solid rgba(144, 224, 239, 0.12);
   border-radius: 999px;
   background: rgba(15, 23, 42, 0.62);
+  min-width: 0;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
@@ -1216,6 +1346,7 @@ p {
 
 .segment-content {
   animation: soft-enter 260ms ease both;
+  min-width: 0;
 }
 
 .segment-panel {
@@ -2024,6 +2155,19 @@ p {
 
   .athlete-row {
     align-items: stretch;
+  }
+
+  .calendar-week-grid {
+    display: flex;
+  }
+
+  .calendar-day-column {
+    flex-basis: 82vw;
+    min-width: 260px;
+  }
+
+  .calendar-month-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .today-training-card {
