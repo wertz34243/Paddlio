@@ -6,6 +6,10 @@ import type {
   AuthSession,
   AuthUser,
   BoatClass,
+  Club,
+  ClubRequest,
+  ClubRequestStatus,
+  ClubStatus,
   CoachAthlete,
   CoachGroup,
   Competition,
@@ -31,6 +35,8 @@ const SESSION_KEY = "paddlio_session";
 const SESSIONS_KEY = "paddlio_sessions";
 const INVITATION_CODES_KEY = "paddlio_invitation_codes";
 const TRAINER_REQUESTS_KEY = "paddlio_trainer_requests";
+const CLUBS_KEY = "paddlio_clubs";
+const CLUB_REQUESTS_KEY = "paddlio_club_requests";
 const ADMIN_EMAIL = "t.kanu@outlook.com";
 const LEGACY_V05_STORAGE_KEY = "paddlemotion:v0.5:data";
 const LEGACY_V03_STORAGE_KEY = "paddlemotion:v0.3:data";
@@ -95,7 +101,9 @@ export type RegisterInput = {
   firstName: string;
   lastName: string;
   email: string;
+  clubId: string;
   club: string;
+  suggestClub: boolean;
   password: string;
   passwordRepeat: string;
   privacyAccepted: boolean;
@@ -131,6 +139,30 @@ export type TrainerRequestInput = {
   qualification: string;
   phone: string;
   remark: string;
+};
+
+export type ClubInput = {
+  clubId?: string;
+  name: string;
+  shortName: string;
+  city: string;
+  contactName?: string;
+  contactEmail?: string;
+  website?: string;
+  logoUrl?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  status: ClubStatus;
+};
+
+export type ClubRequestInput = {
+  requestedByUserId: string;
+  name: string;
+  shortName: string;
+  city: string;
+  contactName?: string;
+  contactEmail?: string;
+  website?: string;
 };
 
 export type AuthResult =
@@ -368,6 +400,8 @@ const parseStoredData = (value: string | null): unknown => {
 
 const normalizeEmail = (email: string): string => email.trim().toLowerCase();
 
+const normalizeComparable = (value: string): string => normalizeBrandValue(value).trim().toLowerCase();
+
 const splitDisplayName = (displayName: string): { firstName: string; lastName: string } => {
   const [firstName = "", ...lastNameParts] = displayName.trim().split(/\s+/).filter(Boolean);
   return {
@@ -420,6 +454,7 @@ const normalizeAuthUser = (user: AuthUser): AuthUser => {
     email: normalizeEmail(user.email),
     firstName: user.firstName ?? splitDisplayName(user.displayName).firstName,
     lastName: user.lastName ?? splitDisplayName(user.displayName).lastName,
+    clubId: user.clubId ?? "",
     club: normalizeBrandValue(user.club ?? ""),
     trainingGroupId: user.trainingGroupId ?? "",
     coachId: user.coachId ?? "",
@@ -441,6 +476,210 @@ export const loadUsers = (): AuthUser[] => {
 
 const saveUsers = (users: AuthUser[]): void => {
   writeStorage(USERS_KEY, JSON.stringify(users));
+};
+
+const isClub = (value: unknown): value is Club => {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<Club>;
+  return typeof candidate.clubId === "string" && typeof candidate.name === "string";
+};
+
+const normalizeClub = (club: Club): Club => ({
+  clubId: club.clubId,
+  name: normalizeBrandValue(club.name ?? ""),
+  shortName: club.shortName ?? "",
+  city: club.city ?? "",
+  contactName: club.contactName ?? "",
+  contactEmail: club.contactEmail ?? "",
+  website: club.website ?? "",
+  logoUrl: club.logoUrl ?? "",
+  primaryColor: club.primaryColor ?? "#00B4D8",
+  secondaryColor: club.secondaryColor ?? "#0077B6",
+  status: club.status ?? "active",
+  createdAt: club.createdAt ?? now(),
+  updatedAt: club.updatedAt ?? now(),
+});
+
+export const loadClubs = (): Club[] => {
+  const value = parseStoredData(readStorage(CLUBS_KEY));
+  const clubs = Array.isArray(value) ? value.filter(isClub).map(normalizeClub) : [];
+  if (clubs.length > 0) saveClubs(clubs);
+  return clubs;
+};
+
+const saveClubs = (clubs: Club[]): void => {
+  writeStorage(CLUBS_KEY, JSON.stringify(clubs));
+};
+
+export const upsertClub = (input: ClubInput): Club[] => {
+  const timestamp = now();
+  const clubs = loadClubs();
+  const normalizedInputName = normalizeComparable(input.name);
+  const existing = input.clubId
+    ? clubs.find((club) => club.clubId === input.clubId)
+    : clubs.find((club) => normalizeComparable(club.name) === normalizedInputName);
+  const club: Club = {
+    clubId: existing?.clubId ?? input.clubId ?? createId("club"),
+    name: normalizeBrandValue(input.name.trim()),
+    shortName: input.shortName.trim(),
+    city: input.city.trim(),
+    contactName: input.contactName?.trim() ?? "",
+    contactEmail: input.contactEmail?.trim() ?? "",
+    website: input.website?.trim() ?? "",
+    logoUrl: input.logoUrl?.trim() ?? "",
+    primaryColor: input.primaryColor?.trim() ?? "#00B4D8",
+    secondaryColor: input.secondaryColor?.trim() ?? "#0077B6",
+    status: input.status,
+    createdAt: existing?.createdAt ?? timestamp,
+    updatedAt: timestamp,
+  };
+  const nextClubs = existing ? clubs.map((item) => (item.clubId === club.clubId ? club : item)) : [club, ...clubs];
+  saveClubs(nextClubs);
+  if (existing) {
+    const users = loadUsers().map((user) =>
+      user.clubId === club.clubId || normalizeComparable(user.club) === normalizeComparable(existing.name)
+        ? { ...user, clubId: club.clubId, club: club.name, updatedAt: timestamp }
+        : user,
+    );
+    saveUsers(users);
+  }
+  return nextClubs;
+};
+
+export const deleteClub = (clubId: string): Club[] => {
+  const clubs = loadClubs().filter((club) => club.clubId !== clubId);
+  saveClubs(clubs);
+  return clubs;
+};
+
+const isClubRequest = (value: unknown): value is ClubRequest => {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<ClubRequest>;
+  return typeof candidate.requestId === "string" && typeof candidate.name === "string";
+};
+
+const normalizeClubRequest = (request: ClubRequest): ClubRequest => ({
+  requestId: request.requestId,
+  requestedByUserId: request.requestedByUserId ?? "",
+  name: normalizeBrandValue(request.name ?? ""),
+  shortName: request.shortName ?? "",
+  city: request.city ?? "",
+  contactName: request.contactName ?? "",
+  contactEmail: request.contactEmail ?? "",
+  website: request.website ?? "",
+  status: request.status ?? "open",
+  createdAt: request.createdAt ?? now(),
+  reviewedAt: request.reviewedAt ?? "",
+  reviewedBy: request.reviewedBy ?? "",
+});
+
+const saveClubRequests = (requests: ClubRequest[]): void => {
+  writeStorage(CLUB_REQUESTS_KEY, JSON.stringify(requests));
+};
+
+const ensureClubRequestsForLegacyUsers = (requests: ClubRequest[]): ClubRequest[] => {
+  const clubs = loadClubs();
+  const existingNames = new Set([
+    ...clubs.map((club) => normalizeComparable(club.name)),
+    ...requests.map((request) => normalizeComparable(request.name)),
+  ]);
+  const timestamp = now();
+  const generated = loadUsers()
+    .filter((user) => user.club && !existingNames.has(normalizeComparable(user.club)))
+    .map((user) => {
+      existingNames.add(normalizeComparable(user.club));
+      return {
+        requestId: createId("club-request"),
+        requestedByUserId: user.userId,
+        name: user.club,
+        shortName: user.club.slice(0, 4).toUpperCase(),
+        city: "",
+        contactName: "",
+        contactEmail: "",
+        website: "",
+        status: "open" as ClubRequestStatus,
+        createdAt: timestamp,
+        reviewedAt: "",
+        reviewedBy: "",
+      };
+    });
+
+  return generated.length > 0 ? [...generated, ...requests] : requests;
+};
+
+export const loadClubRequests = (): ClubRequest[] => {
+  const value = parseStoredData(readStorage(CLUB_REQUESTS_KEY));
+  const stored = Array.isArray(value) ? value.filter(isClubRequest).map(normalizeClubRequest) : [];
+  const requests = ensureClubRequestsForLegacyUsers(stored);
+  if (requests.length > 0) saveClubRequests(requests);
+  return requests;
+};
+
+export const createClubRequest = (input: ClubRequestInput): ClubRequest => {
+  const existing = loadClubRequests();
+  const existingRequest = existing.find((request) => normalizeComparable(request.name) === normalizeComparable(input.name));
+  if (existingRequest) return existingRequest;
+
+  const timestamp = now();
+  const request: ClubRequest = {
+    requestId: createId("club-request"),
+    requestedByUserId: input.requestedByUserId,
+    name: normalizeBrandValue(input.name.trim()),
+    shortName: input.shortName.trim(),
+    city: input.city.trim(),
+    contactName: input.contactName?.trim() ?? "",
+    contactEmail: input.contactEmail?.trim() ?? "",
+    website: input.website?.trim() ?? "",
+    status: "open",
+    createdAt: timestamp,
+    reviewedAt: "",
+    reviewedBy: "",
+  };
+  saveClubRequests([request, ...existing]);
+  return request;
+};
+
+export const reviewClubRequest = (
+  requestId: string,
+  status: Exclude<ClubRequestStatus, "open">,
+  reviewedBy: string,
+  clubPatch?: Partial<ClubInput>,
+): { requests: ClubRequest[]; clubs: Club[] } => {
+  const timestamp = now();
+  let acceptedClubId = "";
+  let acceptedClubName = "";
+  const requests = loadClubRequests().map((request) => {
+    if (request.requestId !== requestId) return request;
+    if (status === "approved") {
+      const clubs = upsertClub({
+        name: clubPatch?.name ?? request.name,
+        shortName: clubPatch?.shortName ?? request.shortName,
+        city: clubPatch?.city ?? request.city,
+        contactName: clubPatch?.contactName ?? request.contactName,
+        contactEmail: clubPatch?.contactEmail ?? request.contactEmail,
+        website: clubPatch?.website ?? request.website,
+        logoUrl: clubPatch?.logoUrl ?? "",
+        primaryColor: clubPatch?.primaryColor ?? "#00B4D8",
+        secondaryColor: clubPatch?.secondaryColor ?? "#0077B6",
+        status: clubPatch?.status ?? "active",
+      });
+      const acceptedName = clubPatch?.name ?? request.name;
+      const acceptedClub = clubs.find((club) => normalizeComparable(club.name) === normalizeComparable(acceptedName)) ?? clubs[0];
+      acceptedClubId = acceptedClub?.clubId ?? "";
+      acceptedClubName = acceptedClub?.name ?? "";
+    }
+    return { ...request, status, reviewedAt: timestamp, reviewedBy };
+  });
+  saveClubRequests(requests);
+  if (acceptedClubId && acceptedClubName) {
+    const users = loadUsers().map((user) =>
+      normalizeComparable(user.club) === normalizeComparable(acceptedClubName)
+        ? { ...user, clubId: acceptedClubId, club: acceptedClubName, updatedAt: timestamp }
+        : user,
+    );
+    saveUsers(users);
+  }
+  return { requests, clubs: loadClubs() };
 };
 
 export const loadInvitationCodes = (): InvitationCode[] => {
@@ -760,7 +999,9 @@ export const registerLocalUser = (input: RegisterInput): AuthResult => {
   const firstName = input.firstName.trim();
   const lastName = input.lastName.trim();
   const email = normalizeEmail(input.email);
-  const club = input.club.trim();
+  const clubs = loadClubs();
+  const selectedClub = clubs.find((club) => club.clubId === input.clubId);
+  const club = (selectedClub?.name ?? input.club).trim();
   const password = input.password.trim();
   const passwordRepeat = input.passwordRepeat.trim();
 
@@ -813,6 +1054,7 @@ export const registerLocalUser = (input: RegisterInput): AuthResult => {
     roles,
     firstName,
     lastName,
+    clubId: selectedClub?.clubId ?? "",
     club: normalizeBrandValue(club),
     trainingGroupId: "",
     coachId: "",
@@ -822,6 +1064,15 @@ export const registerLocalUser = (input: RegisterInput): AuthResult => {
   };
 
   saveUsers([...users, user]);
+  if (input.suggestClub && !selectedClub) {
+    createClubRequest({
+      requestedByUserId: user.userId,
+      name: club,
+      shortName: club.slice(0, 4).toUpperCase(),
+      city: "",
+      contactEmail: email,
+    });
+  }
   const session = createSession(user.userId);
   return { ok: true, session, user };
 };
@@ -872,6 +1123,7 @@ export const acceptInvitationLocalUser = (input: InvitationAcceptInput): AuthRes
     roles,
     firstName: invite.firstName,
     lastName: invite.lastName,
+    clubId: "",
     club: invite.club,
     trainingGroupId: invite.trainingGroupId,
     coachId: invite.coachId,
@@ -1194,6 +1446,7 @@ const getAuthUser = (userId: string): AuthUser => {
     roles: ["athlete"],
     firstName: "Athlet",
     lastName: "",
+    clubId: "",
     club: "",
     trainingGroupId: "",
     coachId: "",

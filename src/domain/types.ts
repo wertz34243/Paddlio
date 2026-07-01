@@ -27,6 +27,41 @@ export type UserRole = "athlete" | "coach" | "teamAdmin" | "admin";
 
 export type UserStatus = "active" | "inactive";
 
+export type ClubStatus = "active" | "inactive";
+
+export type Club = {
+  clubId: string;
+  name: string;
+  shortName: string;
+  city: string;
+  contactName?: string;
+  contactEmail?: string;
+  website?: string;
+  logoUrl?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  status: ClubStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ClubRequestStatus = "open" | "approved" | "rejected";
+
+export type ClubRequest = {
+  requestId: string;
+  requestedByUserId: string;
+  name: string;
+  shortName: string;
+  city: string;
+  contactName: string;
+  contactEmail: string;
+  website: string;
+  status: ClubRequestStatus;
+  createdAt: string;
+  reviewedAt: string;
+  reviewedBy: string;
+};
+
 export type AuthUser = {
   userId: string;
   email: string;
@@ -36,6 +71,7 @@ export type AuthUser = {
   roles: UserRole[];
   firstName: string;
   lastName: string;
+  clubId: string;
   club: string;
   trainingGroupId: string;
   coachId: string;

@@ -160,6 +160,40 @@ button {
   font-weight: 700;
 }
 
+.club-card-grid {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.club-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(0, 180, 216, 0.32);
+  border-radius: var(--radius);
+  background: rgba(15, 23, 42, 0.42);
+  box-shadow: var(--shadow);
+}
+
+.club-card strong,
+.club-card span,
+.club-card small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.club-badge {
+  display: inline-grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border-radius: 16px;
+  color: #06121f;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
 .auth-form {
   display: grid;
   gap: 13px;

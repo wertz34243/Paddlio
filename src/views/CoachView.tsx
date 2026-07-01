@@ -1,10 +1,15 @@
 import { useMemo, useState, type FormEvent } from "react";
 import {
   createId,
+  deleteClub,
+  loadClubRequests,
+  loadClubs,
   deleteAuthUser,
   loadTrainerRequests,
   loadUsers,
+  reviewClubRequest,
   reviewTrainerRequest,
+  upsertClub,
   updateAuthUserProfileFields,
   updateAuthUserRole,
   updateAuthUserStatus,
@@ -14,6 +19,9 @@ import type {
   AgeClass,
   AuthUser,
   BoatClass,
+  Club,
+  ClubRequest,
+  ClubStatus,
   CoachAthlete,
   CoachAthleteStatus,
   CoachGroup,
@@ -48,6 +56,8 @@ const intensities: TrainingIntensity[] = ["locker", "mittel", "hart", "maximal"]
 
 const canUseCoach = (role: UserRole): boolean => role === "coach" || role === "teamAdmin" || role === "admin";
 const canManageAdmin = (role: UserRole): boolean => role === "admin";
+
+const normalizeClubName = (value: string): string => value.trim().toLowerCase();
 
 const todayKey = (): string => new Date().toISOString().slice(0, 10);
 
@@ -86,8 +96,12 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
   const [editingAthlete, setEditingAthlete] = useState<CoachAthlete | null>(null);
   const [athleteBoatClasses, setAthleteBoatClasses] = useState<BoatClass[]>(["K1"]);
   const [editingGroup, setEditingGroup] = useState<CoachGroup | null>(null);
+  const [editingClub, setEditingClub] = useState<Club | null>(null);
+  const [editingClubRequestId, setEditingClubRequestId] = useState("");
   const [selectedPreviewAthleteId, setSelectedPreviewAthleteId] = useState("");
   const [authUsers, setAuthUsers] = useState<AuthUser[]>(() => loadUsers());
+  const [clubs, setClubs] = useState<Club[]>(() => loadClubs());
+  const [clubRequests, setClubRequests] = useState<ClubRequest[]>(() => loadClubRequests());
   const [trainerRequests, setTrainerRequests] = useState<TrainerRequest[]>(() => loadTrainerRequests());
   const [userSearch, setUserSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<UserRole | "all">("all");
@@ -97,6 +111,8 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
   const isAdmin = user.role === "admin";
   const userClub = user.profile.club.trim().toLowerCase();
   const ownGroups = isAdmin ? data.coachGroups : data.coachGroups.filter((group) => group.coachUserId === user.userId);
+  const myClub = clubs.find((club) => normalizeClubName(club.name) === userClub);
+  const clubAthletes = authUsers.filter((authUser) => authUser.role === "athlete" && Boolean(userClub) && normalizeClubName(authUser.club) === userClub);
   const canSeeAthlete = (athlete: CoachAthlete): boolean =>
     isAdmin || (Boolean(userClub) && athlete.club.trim().toLowerCase() === userClub);
   const ownAthletes = data.coachAthletes.filter(canSeeAthlete);
@@ -136,11 +152,11 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
   const openFeedback = coachPlan.filter((entry) => entry.status === "erledigt" && !entry.feedbackNote).length;
 
   const metrics = useMemo(() => [
-    { label: "Sportler", value: ownAthletes.length },
-    { label: "Gruppen", value: ownGroups.length },
+    { label: isAdmin ? "Sportler" : "Sportler im Verein", value: isAdmin ? ownAthletes.length : clubAthletes.length },
+    { label: isAdmin ? "Gruppen" : "Gruppen im Verein", value: ownGroups.length },
     { label: "Trainings diese Woche", value: coachPlan.filter((entry) => isThisWeek(entry.date)).length },
     { label: "Offene Rueckmeldungen", value: openFeedback },
-  ], [coachPlan, openFeedback, ownAthletes.length, ownGroups.length]);
+  ], [clubAthletes.length, coachPlan, isAdmin, openFeedback, ownAthletes.length, ownGroups.length]);
 
   if (!canUseCoach(user.role)) {
     return (
@@ -307,6 +323,57 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
     setMessage(status === "approved" ? "Traineranfrage genehmigt" : "Traineranfrage abgelehnt");
   };
 
+  const saveClub = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const name = String(formData.get("name") ?? "").trim();
+    if (!name) {
+      setMessage("Vereinsname ist erforderlich.");
+      return;
+    }
+
+    const clubInput = {
+      clubId: editingClub?.clubId,
+      name,
+      shortName: String(formData.get("shortName") ?? "").trim(),
+      city: String(formData.get("city") ?? "").trim(),
+      contactName: String(formData.get("contactName") ?? "").trim(),
+      contactEmail: String(formData.get("contactEmail") ?? "").trim(),
+      website: String(formData.get("website") ?? "").trim(),
+      logoUrl: String(formData.get("logoUrl") ?? "").trim(),
+      primaryColor: String(formData.get("primaryColor") ?? "#00B4D8"),
+      secondaryColor: String(formData.get("secondaryColor") ?? "#0077B6"),
+      status: String(formData.get("status") ?? "active") as ClubStatus,
+    };
+
+    if (editingClubRequestId) {
+      const result = reviewClubRequest(editingClubRequestId, "approved", user.userId, clubInput);
+      setClubs(result.clubs);
+      setClubRequests(result.requests);
+      setAuthUsers(loadUsers());
+      setEditingClubRequestId("");
+      setMessage("Vereinsvorschlag bearbeitet und angenommen");
+    } else {
+      setClubs(upsertClub(clubInput));
+      setMessage("Verein gespeichert");
+    }
+    setEditingClub(null);
+    event.currentTarget.reset();
+  };
+
+  const removeClub = (clubId: string) => {
+    setClubs(deleteClub(clubId));
+    setMessage("Verein geloescht");
+  };
+
+  const reviewClub = (requestId: string, status: "approved" | "rejected") => {
+    const result = reviewClubRequest(requestId, status, user.userId);
+    setClubRequests(result.requests);
+    setClubs(result.clubs);
+    setAuthUsers(loadUsers());
+    setMessage(status === "approved" ? "Vereinsvorschlag angenommen" : "Vereinsvorschlag abgelehnt");
+  };
+
   const athleteFormValue = editingAthlete ?? defaultAthlete(user.userId);
   const groupFormValue: Pick<CoachGroup, "name" | "description" | "ageRange" | "trainingFocus" | "athleteIds"> =
     editingGroup ?? { name: "", description: "", ageRange: "", trainingFocus: "", athleteIds: [] };
@@ -343,6 +410,144 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
           ))}
         </div>
       </section>
+
+      {!isAdmin ? (
+        <section className="section-block">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Mein Verein</p>
+              <h3>{myClub?.name ?? user.profile.club ?? "Kein Verein"}</h3>
+            </div>
+          </div>
+          <div className="metric-grid">
+            <article className="metric-card">
+              <strong>{clubAthletes.length}</strong>
+              <span>Sportler im Verein</span>
+            </article>
+            <article className="metric-card">
+              <strong>{ownGroups.length}</strong>
+              <span>Gruppen im Verein</span>
+            </article>
+            <article className="metric-card">
+              <strong>{openFeedback}</strong>
+              <span>Offene Rueckmeldungen</span>
+            </article>
+          </div>
+          <p className="card-note">Coach-Zugriff ist auf diesen Verein begrenzt.</p>
+        </section>
+      ) : null}
+
+      {canManageAdmin(user.role) ? (
+        <section className="section-block">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Admin</p>
+              <h3>Vereine</h3>
+            </div>
+          </div>
+          <form className="entry-form" onSubmit={saveClub}>
+            <div className="form-grid">
+              <label>Name<input name="name" defaultValue={editingClub?.name ?? ""} required /></label>
+              <label>Kurzname<input name="shortName" defaultValue={editingClub?.shortName ?? ""} placeholder="MKC" /></label>
+              <label>Stadt<input name="city" defaultValue={editingClub?.city ?? ""} /></label>
+              <label>Kontakt<input name="contactName" defaultValue={editingClub?.contactName ?? ""} /></label>
+              <label>E-Mail<input name="contactEmail" type="email" defaultValue={editingClub?.contactEmail ?? ""} /></label>
+              <label>Website<input name="website" defaultValue={editingClub?.website ?? ""} /></label>
+              <label>Logo URL<input name="logoUrl" defaultValue={editingClub?.logoUrl ?? ""} /></label>
+              <label>Primary<input name="primaryColor" type="color" defaultValue={editingClub?.primaryColor ?? "#00B4D8"} /></label>
+              <label>Secondary<input name="secondaryColor" type="color" defaultValue={editingClub?.secondaryColor ?? "#0077B6"} /></label>
+              <label>
+                Status
+                <select name="status" defaultValue={editingClub?.status ?? "active"}>
+                  <option value="active">aktiv</option>
+                  <option value="inactive">inaktiv</option>
+                </select>
+              </label>
+            </div>
+            <div className="card-actions">
+              <button className="save-button" type="submit">{editingClub ? "Verein speichern" : "Verein erstellen"}</button>
+              {editingClub ? <button type="button" onClick={() => {
+                setEditingClub(null);
+                setEditingClubRequestId("");
+              }}>Abbrechen</button> : null}
+            </div>
+          </form>
+          <div className="club-card-grid">
+            {clubs.length > 0 ? clubs.map((club) => {
+              const clubUsers = authUsers.filter((authUser) => normalizeClubName(authUser.club) === normalizeClubName(club.name));
+              const clubTrainers = clubUsers.filter((authUser) => authUser.role === "coach");
+              const clubAthleteCount = clubUsers.filter((authUser) => authUser.role === "athlete").length;
+              return (
+                <article className="club-card" key={club.clubId} style={{ borderColor: club.primaryColor ?? "#00B4D8" }}>
+                  <div className="club-badge" style={{ background: club.primaryColor ?? "#00B4D8" }}>{club.shortName || club.name.slice(0, 3)}</div>
+                  <div>
+                    <strong>{club.name}</strong>
+                    <span>{club.city || "Keine Stadt"}</span>
+                    <small>Status: {club.status === "active" ? "aktiv" : "inaktiv"}</small>
+                  </div>
+                  <div className="smart-detail-grid">
+                    <span>{clubAthleteCount} Sportler</span>
+                    <span>{clubTrainers.length} Trainer</span>
+                    <span>{club.contactEmail || "Keine Kontakt-E-Mail"}</span>
+                  </div>
+                  <div className="card-actions">
+                    <button type="button" onClick={() => setEditingClub(club)}>Bearbeiten</button>
+                    <button type="button" onClick={() => setUserSearch(club.name)}>Sportler anzeigen</button>
+                    <button type="button" onClick={() => setRoleFilter("coach")}>Trainer anzeigen</button>
+                    <button type="button" onClick={() => removeClub(club.clubId)}>Loeschen</button>
+                  </div>
+                </article>
+              );
+            }) : <p className="empty-state">Noch keine offiziellen Vereine vorhanden.</p>}
+          </div>
+        </section>
+      ) : null}
+
+      {canManageAdmin(user.role) ? (
+        <section className="section-block">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Admin</p>
+              <h3>Vereinsvorschlaege</h3>
+            </div>
+          </div>
+          <div className="result-list">
+            {clubRequests.length > 0 ? clubRequests.map((request) => (
+              <article className="user-admin-card" key={request.requestId}>
+                <div>
+                  <strong>{request.shortName || request.name.slice(0, 4)} - {request.name}</strong>
+                  <span>{request.city || "Keine Stadt"} - {request.contactEmail || "Keine E-Mail"}</span>
+                  <small>Status: {request.status}</small>
+                </div>
+                {request.status === "open" ? (
+                  <div className="card-actions">
+                    <button type="button" onClick={() => reviewClub(request.requestId, "approved")}>Annehmen</button>
+                    <button type="button" onClick={() => {
+                      setEditingClubRequestId(request.requestId);
+                      setEditingClub({
+                        clubId: "",
+                        name: request.name,
+                        shortName: request.shortName,
+                        city: request.city,
+                        contactName: request.contactName,
+                        contactEmail: request.contactEmail,
+                        website: request.website,
+                        logoUrl: "",
+                        primaryColor: "#00B4D8",
+                        secondaryColor: "#0077B6",
+                        status: "active",
+                        createdAt: "",
+                        updatedAt: "",
+                      });
+                    }}>Bearbeiten und annehmen</button>
+                    <button type="button" onClick={() => reviewClub(request.requestId, "rejected")}>Ablehnen</button>
+                  </div>
+                ) : null}
+              </article>
+            )) : <p className="empty-state">Keine offenen Vereinsvorschlaege.</p>}
+          </div>
+        </section>
+      ) : null}
 
       {canManageAdmin(user.role) ? (
         <section className="section-block">

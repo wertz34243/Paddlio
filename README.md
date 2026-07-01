@@ -72,6 +72,15 @@ Version 1.0 richtet sich an Athletinnen und Athleten. Paddlio kombiniert Trainin
 - Dashboard zeigt individuelle Ziele oder einen leeren Zustand, wenn noch keine Ziele angelegt wurden
 - Datenmodell `SeasonGoal` enthaelt `ownerUserId` und `assignedByUserId` als Grundlage fuer Coach-, Team- und Cloud-Funktionen
 
+## Version 2.4 - Vereinsverwaltung
+
+- Admins verwalten offizielle Vereine mit Kurzname, Stadt, Kontaktdaten, Farben, Status und moderner Kartenansicht
+- Registrierung bietet eine Vereinsauswahl oder speichert neue Vereine als Vorschlag fuer die Admin-Pruefung
+- Vereinsvorschlaege koennen angenommen, abgelehnt oder bearbeitet und angenommen werden; angenommene Vereine werden in `paddlio_clubs` gespeichert
+- Bestehende Freitext-Vereine werden als Vereinsvorschlaege migriert, ohne Nutzerdaten zu loeschen
+- Coach Dashboard zeigt den eigenen Verein, Sportler im Verein, Gruppen im Verein und offene Rueckmeldungen
+- LocalStorage-Struktur erweitert um `paddlio_clubs` und `paddlio_club_requests`
+
 ## Paddlio auf iPhone/iPad installieren
 
 1. Paddlio in Safari oeffnen.

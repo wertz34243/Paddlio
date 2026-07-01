@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { APP_NAME, APP_SLOGAN } from "../brand";
-import type { AuthResult, LoginInput, RegisterInput } from "../data/storage";
+import { loadClubs, type AuthResult, type LoginInput, type RegisterInput } from "../data/storage";
 
 type AuthMode = "login" | "register";
 
@@ -11,6 +11,8 @@ type AuthViewProps = {
 
 export function AuthView({ onLogin, onRegister }: AuthViewProps) {
   const [mode, setMode] = useState<AuthMode>("login");
+  const [clubs] = useState(() => loadClubs().filter((club) => club.status === "active"));
+  const [suggestClub, setSuggestClub] = useState(false);
   const [message, setMessage] = useState("");
 
   const handleLogin = (event: FormEvent<HTMLFormElement>) => {
@@ -35,7 +37,9 @@ export function AuthView({ onLogin, onRegister }: AuthViewProps) {
       email: String(formData.get("email") ?? ""),
       password: String(formData.get("password") ?? ""),
       passwordRepeat: String(formData.get("passwordRepeat") ?? ""),
+      clubId: suggestClub ? "" : String(formData.get("clubId") ?? ""),
       club: String(formData.get("club") ?? ""),
+      suggestClub,
       privacyAccepted: formData.get("privacyAccepted") === "on",
     });
 
@@ -100,16 +104,36 @@ export function AuthView({ onLogin, onRegister }: AuthViewProps) {
               E-Mail
               <input name="email" type="email" autoComplete="email" required />
             </label>
-            <label>
-              Verein
-              <input name="club" autoComplete="organization" list="club-options" required />
-              <datalist id="club-options">
-                <option value="Muelheimer KC" />
-                <option value="KVS Schwerte" />
-                <option value="Kanu Club Hilden" />
-                <option value="RKC Koeln" />
-              </datalist>
-            </label>
+            <div className="choice-group">
+              <span>Verein</span>
+              <div className="auth-tabs">
+                <button className={!suggestClub ? "active" : ""} type="button" onClick={() => setSuggestClub(false)}>
+                  Verein auswaehlen
+                </button>
+                <button className={suggestClub ? "active" : ""} type="button" onClick={() => setSuggestClub(true)}>
+                  Verein vorschlagen
+                </button>
+              </div>
+            </div>
+            {suggestClub ? (
+              <label>
+                Vereinsname
+                <input name="club" autoComplete="organization" required placeholder="z. B. Muelheimer Kanu Club" />
+              </label>
+            ) : (
+              <label>
+                Verein
+                <select name="clubId" required>
+                  <option value="">Bitte waehlen</option>
+                  {clubs.map((club) => (
+                    <option key={club.clubId} value={club.clubId}>
+                      {club.name}
+                    </option>
+                  ))}
+                </select>
+                {clubs.length === 0 ? <small className="card-note">Noch kein offizieller Verein vorhanden. Bitte Verein vorschlagen.</small> : null}
+              </label>
+            )}
             <div className="form-grid">
               <label>
                 Passwort
