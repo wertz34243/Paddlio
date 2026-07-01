@@ -2,12 +2,15 @@ import { useState, type FormEvent } from "react";
 import { APP_NAME, APP_SLOGAN } from "../brand";
 import type { AuthResult, LoginInput, RegisterInput } from "../data/storage";
 
+type AuthMode = "login" | "register";
+
 type AuthViewProps = {
   onLogin: (input: LoginInput) => AuthResult;
-  onAcceptInvitation: (input: RegisterInput) => AuthResult;
+  onRegister: (input: RegisterInput) => AuthResult;
 };
 
-export function AuthView({ onLogin, onAcceptInvitation }: AuthViewProps) {
+export function AuthView({ onLogin, onRegister }: AuthViewProps) {
+  const [mode, setMode] = useState<AuthMode>("login");
   const [message, setMessage] = useState("");
 
   const handleLogin = (event: FormEvent<HTMLFormElement>) => {
@@ -23,21 +26,27 @@ export function AuthView({ onLogin, onAcceptInvitation }: AuthViewProps) {
     }
   };
 
-  const handleAcceptInvitation = (event: FormEvent<HTMLFormElement>) => {
+  const handleRegister = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-    const result = onAcceptInvitation({
-      invitationCode: String(formData.get("invitationCode") ?? ""),
+    const formData = new FormData(event.currentTarget);
+    const result = onRegister({
+      firstName: String(formData.get("firstName") ?? ""),
+      lastName: String(formData.get("lastName") ?? ""),
+      email: String(formData.get("email") ?? ""),
       password: String(formData.get("password") ?? ""),
+      passwordRepeat: String(formData.get("passwordRepeat") ?? ""),
+      club: String(formData.get("club") ?? ""),
+      privacyAccepted: formData.get("privacyAccepted") === "on",
     });
 
     if (!result.ok) {
       setMessage(result.message);
-      return;
     }
+  };
 
-    form.reset();
+  const switchMode = (nextMode: AuthMode) => {
+    setMode(nextMode);
+    setMessage("");
   };
 
   return (
@@ -46,43 +55,81 @@ export function AuthView({ onLogin, onAcceptInvitation }: AuthViewProps) {
         <div className="auth-brand">
           <p className="app-brand">{APP_NAME}</p>
           <p className="brand-slogan">{APP_SLOGAN}</p>
-          <span>Login fuer eingeladene Athleten, Coaches und Admins</span>
+          <span>Kanuslalom Training, Wettkampf und Teamplattform</span>
         </div>
 
-        <form className="auth-form" onSubmit={handleLogin}>
-          <label>
-            E-Mail
-            <input name="email" type="email" autoComplete="email" required />
-          </label>
-          <label>
-            Passwort
-            <input name="password" type="password" autoComplete="current-password" required />
-          </label>
-          <button className="save-button" type="submit">
-            Einloggen
+        <div className="auth-tabs" aria-label="Authentifizierung">
+          <button className={mode === "login" ? "active" : ""} type="button" onClick={() => switchMode("login")}>
+            Login
           </button>
-        </form>
+          <button className={mode === "register" ? "active" : ""} type="button" onClick={() => switchMode("register")}>
+            Konto erstellen
+          </button>
+        </div>
 
-        <div className="invite-auth-panel">
-          <div>
-            <p className="eyebrow">Einladung</p>
-            <h3>Konto aktivieren</h3>
-            <p className="card-note">Neue Nutzer koennen Paddlio nur mit einem gueltigen Einladungscode aktivieren.</p>
-          </div>
-          <form className="auth-form" onSubmit={handleAcceptInvitation}>
+        {mode === "login" ? (
+          <form className="auth-form" onSubmit={handleLogin}>
             <label>
-              Einladungscode
-              <input name="invitationCode" autoComplete="off" placeholder="ATHLETE-ABC123" required />
+              E-Mail
+              <input name="email" type="email" autoComplete="email" required />
             </label>
             <label>
-              Passwort festlegen
-              <input name="password" type="password" autoComplete="new-password" minLength={4} required />
+              Passwort
+              <input name="password" type="password" autoComplete="current-password" required />
             </label>
-            <button className="secondary-button" type="submit">
-              Einladung annehmen
+            <button className="save-button" type="submit">
+              Einloggen
+            </button>
+            <button className="text-button" type="button" onClick={() => setMessage("Passwort vergessen ist fuer die Cloud-Version vorbereitet.")}>
+              Passwort vergessen
             </button>
           </form>
-        </div>
+        ) : (
+          <form className="auth-form" onSubmit={handleRegister}>
+            <div className="form-grid">
+              <label>
+                Vorname
+                <input name="firstName" autoComplete="given-name" minLength={2} required />
+              </label>
+              <label>
+                Nachname
+                <input name="lastName" autoComplete="family-name" minLength={2} required />
+              </label>
+            </div>
+            <label>
+              E-Mail
+              <input name="email" type="email" autoComplete="email" required />
+            </label>
+            <label>
+              Verein
+              <input name="club" autoComplete="organization" list="club-options" required />
+              <datalist id="club-options">
+                <option value="Muelheimer KC" />
+                <option value="KVS Schwerte" />
+                <option value="Kanu Club Hilden" />
+                <option value="RKC Koeln" />
+              </datalist>
+            </label>
+            <div className="form-grid">
+              <label>
+                Passwort
+                <input name="password" type="password" autoComplete="new-password" minLength={8} required />
+              </label>
+              <label>
+                Passwort wiederholen
+                <input name="passwordRepeat" type="password" autoComplete="new-password" minLength={8} required />
+              </label>
+            </div>
+            <p className="card-note">Empfohlen: Grossbuchstabe, Kleinbuchstabe und Zahl.</p>
+            <label className="toggle-row">
+              <span>Datenschutz akzeptieren</span>
+              <input name="privacyAccepted" type="checkbox" required />
+            </label>
+            <button className="save-button" type="submit">
+              Konto erstellen
+            </button>
+          </form>
+        )}
 
         {message ? <p className="auth-message">{message}</p> : null}
       </section>

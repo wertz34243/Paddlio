@@ -33,6 +33,7 @@ export type AuthUser = {
   displayName: string;
   passwordHash: string;
   role: UserRole;
+  roles: UserRole[];
   firstName: string;
   lastName: string;
   club: string;
@@ -45,7 +46,26 @@ export type AuthUser = {
 
 export type AuthSession = {
   userId: string;
+  token: string;
   createdAt: string;
+};
+
+export type TrainerRequestStatus = "open" | "approved" | "rejected";
+
+export type TrainerRequest = {
+  requestId: string;
+  userId: string;
+  club: string;
+  message: string;
+  hasLicense: boolean;
+  licenseNumber: string;
+  qualification: string;
+  phone: string;
+  remark: string;
+  status: TrainerRequestStatus;
+  createdAt: string;
+  reviewedAt: string;
+  reviewedBy: string;
 };
 
 export type UserProfile = {

@@ -1,10 +1,10 @@
 import { useMemo, useState, type FormEvent } from "react";
 import {
   createId,
-  createUserInvitation,
   deleteAuthUser,
-  loadInvitationCodes,
+  loadTrainerRequests,
   loadUsers,
+  reviewTrainerRequest,
   updateAuthUserProfileFields,
   updateAuthUserRole,
   updateAuthUserStatus,
@@ -17,10 +17,10 @@ import type {
   CoachAthlete,
   CoachAthleteStatus,
   CoachGroup,
-  InvitationCode,
   PaddleMotionData,
   PaddleSide,
   PlanEntry,
+  TrainerRequest,
   TrainingArea,
   TrainingIntensity,
   TrainingPlanType,
@@ -48,7 +48,6 @@ const intensities: TrainingIntensity[] = ["locker", "mittel", "hart", "maximal"]
 
 const canUseCoach = (role: UserRole): boolean => role === "coach" || role === "teamAdmin" || role === "admin";
 const canManageAdmin = (role: UserRole): boolean => role === "admin";
-const canInviteUsers = (role: UserRole): boolean => role === "admin" || role === "coach" || role === "teamAdmin";
 
 const todayKey = (): string => new Date().toISOString().slice(0, 10);
 
@@ -89,7 +88,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
   const [editingGroup, setEditingGroup] = useState<CoachGroup | null>(null);
   const [selectedPreviewAthleteId, setSelectedPreviewAthleteId] = useState("");
   const [authUsers, setAuthUsers] = useState<AuthUser[]>(() => loadUsers());
-  const [codes, setCodes] = useState<InvitationCode[]>(() => loadInvitationCodes());
+  const [trainerRequests, setTrainerRequests] = useState<TrainerRequest[]>(() => loadTrainerRequests());
   const [userSearch, setUserSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<UserRole | "all">("all");
   const [sortBy, setSortBy] = useState<"name" | "email" | "role" | "club">("name");
@@ -98,24 +97,17 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
   const isAdmin = user.role === "admin";
   const userClub = user.profile.club.trim().toLowerCase();
   const ownGroups = isAdmin ? data.coachGroups : data.coachGroups.filter((group) => group.coachUserId === user.userId);
-  const ownGroupIds = new Set(ownGroups.map((group) => group.id));
   const canSeeAthlete = (athlete: CoachAthlete): boolean =>
-    isAdmin ||
-    athlete.coachUserId === user.userId ||
-    (Boolean(userClub) && athlete.club.trim().toLowerCase() === userClub) ||
-    ownGroupIds.has(athlete.groupId);
+    isAdmin || (Boolean(userClub) && athlete.club.trim().toLowerCase() === userClub);
   const ownAthletes = data.coachAthletes.filter(canSeeAthlete);
   const coachPlan = isAdmin ? data.plan : data.plan.filter((entry) => entry.createdByUserId === user.userId);
-  const visibleCodes = user.role === "admin" ? codes : codes.filter((code) => code.createdByUserId === user.userId);
   const visibleAuthUsers = useMemo(() => {
-    const ownGroupIdList = new Set(ownGroups.map((group) => group.id));
     const scoped = isAdmin
       ? authUsers
       : authUsers.filter((authUser) =>
           authUser.role === "athlete" &&
-          ((Boolean(userClub) && authUser.club.trim().toLowerCase() === userClub) ||
-            ownGroupIdList.has(authUser.trainingGroupId) ||
-            authUser.coachId === user.userId),
+          Boolean(userClub) &&
+          authUser.club.trim().toLowerCase() === userClub,
         );
     const query = userSearch.trim().toLowerCase();
 
@@ -135,7 +127,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
         const valueB = sortBy === "name" ? b.displayName : sortBy === "email" ? b.email : sortBy === "role" ? b.role : b.club;
         return valueA.localeCompare(valueB);
       });
-  }, [authUsers, isAdmin, ownGroups, roleFilter, sortBy, user.userId, userClub, userSearch]);
+  }, [authUsers, isAdmin, roleFilter, sortBy, userClub, userSearch]);
   const previewAthlete = ownAthletes.find((athlete) => athlete.id === selectedPreviewAthleteId) ?? ownAthletes[0];
   const previewPlan = previewAthlete
     ? coachPlan.filter((entry) => entry.assignedAthleteId === previewAthlete.id || (entry.assignedGroupId && entry.assignedGroupId === previewAthlete.groupId))
@@ -287,37 +279,6 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
     }));
   };
 
-  const createInvitation = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const firstName = String(formData.get("firstName") ?? "").trim();
-    const email = String(formData.get("email") ?? "").trim();
-    const role = String(formData.get("role") ?? "athlete") as "athlete" | "coach";
-
-    if (!firstName || !email) {
-      setMessage("Vorname und E-Mail sind fuer eine Einladung erforderlich.");
-      return;
-    }
-
-    if (!isAdmin && role === "coach") {
-      setMessage("Nur Admins koennen Coach-Einladungen erstellen.");
-      return;
-    }
-
-    const code = createUserInvitation({
-      firstName,
-      lastName: String(formData.get("lastName") ?? "").trim(),
-      email,
-      club: String(formData.get("club") ?? user.profile.club).trim(),
-      role,
-      trainingGroupId: String(formData.get("trainingGroupId") ?? ""),
-      createdByUserId: user.userId,
-      coachId: role === "athlete" ? user.userId : "",
-    });
-    setCodes(loadInvitationCodes());
-    setMessage(`Einladung erstellt: ${code.invitationCode}`);
-  };
-
   const changeRole = (targetUserId: string, role: UserRole) => {
     setAuthUsers(updateAuthUserRole(targetUserId, role));
   };
@@ -337,6 +298,13 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
     }
 
     setAuthUsers(deleteAuthUser(targetUserId));
+  };
+
+  const reviewRequest = (requestId: string, status: "approved" | "rejected") => {
+    const result = reviewTrainerRequest(requestId, status, user.userId);
+    setTrainerRequests(result.requests);
+    setAuthUsers(result.users);
+    setMessage(status === "approved" ? "Traineranfrage genehmigt" : "Traineranfrage abgelehnt");
   };
 
   const athleteFormValue = editingAthlete ?? defaultAthlete(user.userId);
@@ -376,43 +344,41 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
         </div>
       </section>
 
-      {canInviteUsers(user.role) ? (
+      {canManageAdmin(user.role) ? (
         <section className="section-block">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">{isAdmin ? "Admin" : "Coach"}</p>
-              <h3>Benutzer einladen</h3>
+              <p className="eyebrow">Admin</p>
+              <h3>Traineranfragen</h3>
             </div>
           </div>
-          <form className="entry-form compact-form" onSubmit={createInvitation}>
-            <div className="form-grid">
-              <label>Vorname<input name="firstName" required /></label>
-              <label>Nachname<input name="lastName" /></label>
-              <label>E-Mail<input name="email" type="email" required /></label>
-              <label>Verein<input name="club" defaultValue={user.profile.club} required /></label>
-              <label>
-                Rolle
-                <select name="role" defaultValue="athlete">
-                <option value="athlete">Athlete</option>
-                  {isAdmin ? <option value="coach">Coach</option> : null}
-              </select>
-            </label>
-              <label>
-                Trainingsgruppe optional
-                <select name="trainingGroupId" defaultValue="">
-                  <option value="">Keine Gruppe</option>
-                  {ownGroups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}
-                </select>
-              </label>
-            </div>
-            <button className="save-button" type="submit">Einladung erstellen</button>
-          </form>
-          <div className="tag-row">
-            {visibleCodes.slice(0, 8).map((code) => (
-              <small key={code.invitationId}>
-                {code.invitationCode} - {code.firstName || "Einladung"} - {roleLabels[code.role]} - {code.status}
-              </small>
-            ))}
+          <div className="result-list">
+            {trainerRequests.length > 0 ? trainerRequests.map((request) => {
+              const requester = authUsers.find((authUser) => authUser.userId === request.userId);
+              return (
+                <article className="user-admin-card" key={request.requestId}>
+                  <div>
+                    <strong>{requester?.displayName ?? "Unbekannter Nutzer"}</strong>
+                    <span>{requester?.email ?? "Keine E-Mail"} - {request.club || requester?.club || "ohne Verein"}</span>
+                    <small>{request.hasLicense ? "Trainerlizenz vorhanden" : "Keine Trainerlizenz"} - {request.status}</small>
+                  </div>
+                  <div className="request-detail-grid">
+                    <span>Qualifikation: {request.qualification || "nicht angegeben"}</span>
+                    <span>Lizenznummer: {request.licenseNumber || "optional"}</span>
+                    <span>Telefon: {request.phone || "nicht angegeben"}</span>
+                    <span>Datum: {new Date(request.createdAt).toLocaleDateString("de-DE")}</span>
+                    <span>Nachricht: {request.message || "keine Nachricht"}</span>
+                    <span>Bemerkung: {request.remark || "keine Bemerkung"}</span>
+                  </div>
+                  {request.status === "open" ? (
+                    <div className="card-actions">
+                      <button type="button" onClick={() => reviewRequest(request.requestId, "approved")}>Genehmigen</button>
+                      <button type="button" onClick={() => reviewRequest(request.requestId, "rejected")}>Ablehnen</button>
+                    </div>
+                  ) : null}
+                </article>
+              );
+            }) : <p className="empty-state">Keine Traineranfragen vorhanden.</p>}
           </div>
         </section>
       ) : null}
@@ -434,7 +400,6 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
                 <option value="athlete">Athlete</option>
                 {isAdmin ? <option value="coach">Coach</option> : null}
                 {isAdmin ? <option value="teamAdmin">TeamAdmin</option> : null}
-                {isAdmin ? <option value="admin">Admin</option> : null}
               </select>
             </label>
             <label>
@@ -452,19 +417,21 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
           {visibleAuthUsers.length > 0 ? visibleAuthUsers.map((authUser) => (
             <article className="user-admin-card" key={authUser.userId}>
               <div>
-                <strong>{authUser.displayName || `${authUser.firstName} ${authUser.lastName}`.trim() || authUser.email}</strong>
+                <div className="user-admin-card-header">
+                  <span className="profile-avatar small">{`${authUser.firstName.slice(0, 1)}${authUser.lastName.slice(0, 1)}` || "P"}</span>
+                  <strong>{authUser.displayName || `${authUser.firstName} ${authUser.lastName}`.trim() || authUser.email}</strong>
+                </div>
                 <span>{authUser.email}</span>
-                <small>{authUser.club || "ohne Verein"} - {roleLabels[authUser.role]} - {authUser.status === "active" ? "aktiv" : "deaktiviert"}</small>
+                <small>{authUser.club || "ohne Verein"} - {authUser.roles.map((role) => roleLabels[role]).join(", ")} - {authUser.status === "active" ? "aktiv" : "deaktiviert"}</small>
               </div>
               <div className="form-grid">
-                {isAdmin ? (
+                {isAdmin && authUser.role !== "admin" ? (
                   <label>
                     Rolle
                     <select value={authUser.role} onChange={(event) => changeRole(authUser.userId, event.target.value as UserRole)}>
                       <option value="athlete">Athlete</option>
                       <option value="coach">Coach</option>
                       <option value="teamAdmin">TeamAdmin</option>
-                      <option value="admin">Admin</option>
                     </select>
                   </label>
                 ) : null}

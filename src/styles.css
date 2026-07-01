@@ -132,6 +132,34 @@ button {
   color: var(--muted);
 }
 
+.user-admin-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile-avatar.small {
+  width: 38px;
+  height: 38px;
+  font-size: 13px;
+}
+
+.request-detail-grid {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.text-button {
+  min-height: 42px;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-weight: 700;
+}
+
 .auth-form {
   display: grid;
   gap: 13px;

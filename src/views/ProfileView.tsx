@@ -1,4 +1,5 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
+import { createTrainerRequest, loadTrainerRequests } from "../data/storage";
 import { getAge, getDisplayName, getInitials, getSportProfileSummary } from "../domain/profile";
 import type {
   AgeClass,
@@ -47,6 +48,19 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
   const [paddleSide, setPaddleSide] = useState<PaddleSide | "">(user.profile.boatClasses.includes("C1") ? user.profile.paddleSide : "");
   const [savedMessage, setSavedMessage] = useState("");
   const [formError, setFormError] = useState("");
+  const [trainerRequestMessage, setTrainerRequestMessage] = useState("");
+  const [trainerRequestDraft, setTrainerRequestDraft] = useState({
+    club: user.profile.club,
+    message: "",
+    hasLicense: false,
+    licenseNumber: "",
+    qualification: "",
+    phone: "",
+    remark: "",
+  });
+  const [trainerRequestStatus, setTrainerRequestStatus] = useState(() =>
+    loadTrainerRequests().find((request) => request.userId === user.userId)?.status ?? "",
+  );
   const age = getAge(user.profile.birthDate);
   const hasC1 = boatClasses.includes("C1");
   const previewProfile: UserProfile = {
@@ -134,6 +148,33 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
     setFormError("");
     setSavedMessage("Profil gespeichert");
     window.setTimeout(() => setSavedMessage(""), 2200);
+  };
+
+  const submitTrainerRequest = () => {
+    if (!trainerRequestDraft.club.trim()) {
+      setTrainerRequestMessage("Bitte gib deinen Verein an.");
+      return;
+    }
+
+    if (!trainerRequestDraft.message.trim()) {
+      setTrainerRequestMessage("Bitte schreibe kurz, warum du Trainer werden moechtest.");
+      return;
+    }
+
+    const request = createTrainerRequest({
+      userId: user.userId,
+      ...trainerRequestDraft,
+    });
+    setTrainerRequestStatus(request.status);
+    setTrainerRequestMessage("Vielen Dank. Deine Anfrage wurde an den Admin gesendet. Nach erfolgreicher Pruefung werden Trainerrechte automatisch freigeschaltet.");
+  };
+
+  const updateTrainerDraft = (key: keyof typeof trainerRequestDraft, value: string | boolean) => {
+    setTrainerRequestDraft((current) => ({
+      ...current,
+      [key]: value,
+    }));
+    setTrainerRequestMessage("");
   };
 
   return (
@@ -284,6 +325,82 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
           <textarea name="competitionExperience" defaultValue={user.profile.competitionExperience} rows={3} />
         </label>
       </section>
+
+      {user.role === "athlete" ? (
+        <section className="section-block">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Trainerstatus</p>
+              <h3>{trainerRequestStatus === "open" ? "Anfrage offen" : trainerRequestStatus === "rejected" ? "Anfrage abgelehnt" : "Du bist aktuell Sportler"}</h3>
+            </div>
+          </div>
+          {trainerRequestStatus === "open" ? (
+            <p className="card-note">Deine Traineranfrage liegt beim Admin und wartet auf Pruefung.</p>
+          ) : (
+            <div className="stack">
+              <div className="form-grid">
+                <label>
+                  Verein
+                  <input
+                    value={trainerRequestDraft.club}
+                    onChange={(event) => updateTrainerDraft("club", event.target.value)}
+                  />
+                </label>
+                <label>
+                  Telefon
+                  <input
+                    value={trainerRequestDraft.phone}
+                    onChange={(event) => updateTrainerDraft("phone", event.target.value)}
+                  />
+                </label>
+                <label>
+                  Qualifikation
+                  <input
+                    value={trainerRequestDraft.qualification}
+                    onChange={(event) => updateTrainerDraft("qualification", event.target.value)}
+                  />
+                </label>
+                <label>
+                  Lizenznummer optional
+                  <input
+                    value={trainerRequestDraft.licenseNumber}
+                    onChange={(event) => updateTrainerDraft("licenseNumber", event.target.value)}
+                  />
+                </label>
+              </div>
+              <label className="toggle-row">
+                <span>Trainerlizenz vorhanden</span>
+                <input
+                  checked={trainerRequestDraft.hasLicense}
+                  onChange={(event) => updateTrainerDraft("hasLicense", event.target.checked)}
+                  type="checkbox"
+                />
+              </label>
+              <label>
+                Nachricht
+                <textarea
+                  rows={3}
+                  value={trainerRequestDraft.message}
+                  onChange={(event) => updateTrainerDraft("message", event.target.value)}
+                  placeholder="Warum moechtest du Trainerrechte in Paddlio?"
+                />
+              </label>
+              <label>
+                Bemerkung
+                <textarea
+                  rows={3}
+                  value={trainerRequestDraft.remark}
+                  onChange={(event) => updateTrainerDraft("remark", event.target.value)}
+                />
+              </label>
+              <button className="secondary-button" type="button" onClick={submitTrainerRequest}>
+                Traineranfrage absenden
+              </button>
+            </div>
+          )}
+          {trainerRequestMessage ? <p className="auth-message">{trainerRequestMessage}</p> : null}
+        </section>
+      ) : null}
 
       <section className="section-block">
         <div className="section-heading">
