@@ -1,5 +1,13 @@
 import { useMemo, useState, type FormEvent } from "react";
 import {
+  canManageAdminArea,
+  canUseCoachArea,
+  getAthletesForCurrentUser,
+  getGroupsForCurrentUser,
+  getTrainingsForCurrentUser,
+  isSameScopeValue,
+} from "../domain/accessControl";
+import {
   createId,
   deleteClub,
   loadClubRequests,
@@ -57,9 +65,6 @@ const groupFocuses: TrainingGroupFocus[] = ["Technik", "Kraft", "Ausdauer", "Spr
 const trainingAreas: TrainingArea[] = ["Wassertraining", "Ausdauer", "Krafttraining", "Trainerarbeit", "Regeneration", "Wettkampf"];
 const trainingTypes: TrainingPlanType[] = ["K1 Technik", "C1 Technik", "Slalomstrecke", "GA1", "Intervalle", "Kraftausdauer", "Pause", "K1 Rennen", "C1 Rennen"];
 const intensities: TrainingIntensity[] = ["locker", "mittel", "hart", "maximal"];
-
-const canUseCoach = (role: UserRole): boolean => role === "coach" || role === "teamAdmin" || role === "admin";
-const canManageAdmin = (role: UserRole): boolean => role === "admin";
 
 const normalizeClubName = (value: string): string => value.trim().toLowerCase();
 
@@ -127,23 +132,13 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
   const [athleteFilter, setAthleteFilter] = useState<"all" | BoatClass | AgeClass | CoachAthleteStatus>("all");
   const [message, setMessage] = useState("");
 
-  const isAdmin = user.role === "admin";
+  const isAdmin = canManageAdminArea(user.role);
   const userClub = user.profile.club.trim().toLowerCase();
   const myClub = clubs.find((club) => normalizeClubName(club.name) === userClub);
   const userClubId = myClub?.clubId ?? "";
-  const ownGroups = isAdmin
-    ? data.coachGroups
-    : data.coachGroups.filter((group) =>
-        (userClubId && group.clubId === userClubId) ||
-        group.coachId === user.userId ||
-        group.coachUserId === user.userId,
-      );
+  const ownGroups = useMemo(() => getGroupsForCurrentUser(data, user, [userClubId]), [data, user, userClubId]);
   const clubAthletes = authUsers.filter((authUser) => authUser.role === "athlete" && Boolean(userClub) && normalizeClubName(authUser.club) === userClub);
-  const canSeeAthlete = (athlete: CoachAthlete): boolean =>
-    isAdmin ||
-    (Boolean(userClubId) && athlete.clubId === userClubId) ||
-    (Boolean(userClub) && athlete.club.trim().toLowerCase() === userClub);
-  const ownAthletes = data.coachAthletes.filter(canSeeAthlete);
+  const ownAthletes = useMemo(() => getAthletesForCurrentUser(data, user, [userClubId]), [data, user, userClubId]);
   const getAthleteGroups = (athlete: CoachAthlete): CoachGroup[] => {
     const ids = athlete.groupIds.length > 0 ? athlete.groupIds : athlete.groupId ? [athlete.groupId] : [];
     return ownGroups.filter((group) => ids.includes(group.id) || ids.includes(group.groupId));
@@ -171,14 +166,14 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
       return matchesQuery && matchesFilter;
     });
   }, [athleteFilter, athleteSearch, ownAthletes, ownGroups]);
-  const coachPlan = isAdmin ? data.plan : data.plan.filter((entry) => entry.createdByUserId === user.userId);
+  const coachPlan = useMemo(() => getTrainingsForCurrentUser(data, user, [userClubId]), [data, user, userClubId]);
   const visibleAuthUsers = useMemo(() => {
     const scoped = isAdmin
       ? authUsers
       : authUsers.filter((authUser) =>
           authUser.role === "athlete" &&
           Boolean(userClub) &&
-          authUser.club.trim().toLowerCase() === userClub,
+          isSameScopeValue(authUser.club, userClub),
         );
     const query = userSearch.trim().toLowerCase();
 
@@ -218,7 +213,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
     { label: "Offene Rueckmeldungen", value: openFeedback },
   ], [clubAthletes.length, isAdmin, openFeedback, ownAthletes.length, ownGroups.length, weeklyTrainingCount]);
 
-  if (!canUseCoach(user.role)) {
+  if (!canUseCoachArea(user.role)) {
     return (
       <section className="section-block">
         <p className="eyebrow">Coach</p>
@@ -592,7 +587,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
         </section>
       ) : null}
 
-      {canManageAdmin(user.role) ? (
+      {canManageAdminArea(user.role) ? (
         <section className="section-block">
           <div className="section-heading">
             <div>
@@ -658,7 +653,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
         </section>
       ) : null}
 
-      {canManageAdmin(user.role) ? (
+      {canManageAdminArea(user.role) ? (
         <section className="section-block">
           <div className="section-heading">
             <div>
@@ -704,7 +699,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
         </section>
       ) : null}
 
-      {canManageAdmin(user.role) ? (
+      {canManageAdminArea(user.role) ? (
         <section className="section-block">
           <div className="section-heading">
             <div>

@@ -6,6 +6,10 @@ Paddlio ist eine moderne Trainings- und Wettkampfplattform fuer Kanuslalom.
 
 Version 1.0 richtet sich an Athletinnen und Athleten. Paddlio kombiniert Training, Wettkaempfe, Analyse, Material, Profil, persoenliche Rekorde und regelbasierte Athlete Intelligence in einer mobilen Web-App.
 
+## Datenschutz und Demo-Auth
+
+Paddlio speichert Daten in der aktuellen Version lokal im Browser per LocalStorage. Die lokale Demo-Authentifizierung ist fuer Entwicklung, Tests und Produktvalidierung gedacht, aber nicht fuer produktive sensible Vereins-, Trainer- oder Gesundheitsdaten geeignet. Fuer echte Vereins- und Trainer-Nutzung ist eine Cloud-Speicherung mit serverseitiger Authentifizierung und Rechtepruefung erforderlich.
+
 ## Version 1.5 - QA & Stabilitaet
 
 - Robustere lokale Auth- und LocalStorage-Schicht mit In-Memory-Fallback, falls Browser-Speicher kurzzeitig nicht verfuegbar ist
@@ -99,6 +103,14 @@ Version 1.0 richtet sich an Athletinnen und Athleten. Paddlio kombiniert Trainin
 - Sportler koennen Trainings erledigen, auslassen und Feedback mit Gefuehl, Schwierigkeit, Muedigkeit, Motivation, Schlaf und Kommentar speichern
 - Kalenderfilter fuer Zeitraum, Bereich, Bootsklasse, Intensitaet, Status, Sportler und Gruppe
 - Dashboard und Analyse nutzen die neue Planstruktur weiterhin aus `paddlio_data_<userId>`, ohne bestehende Daten zu loeschen
+
+## Version 2.7 - Rollen, Rechte, QA & Cloud Readiness
+
+- Gemeinsame Access-Control-Logik fuer Athlete, Coach, TeamAdmin und Admin ergaenzt
+- Dashboard, Coach-Bereich und Trainingskalender filtern Daten rollen-, user- und vereinsbasiert
+- Trainingsplanung prueft Zuweisungen jetzt gegen den erlaubten Coach-/Admin-Scope und zeigt freundliche Formularmeldungen
+- Version und Service-Worker-Cache auf 2.7 aktualisiert
+- Cloud-Readiness-Dokumentation fuer Supabase/Firebase, Serverrechte und LocalStorage-Abloesung ergaenzt
 
 ## Paddlio auf iPhone/iPad installieren
 
@@ -196,3 +208,4 @@ Paddlio speichert Daten lokal im Browser. Bestehende LocalStorage-Daten werden b
 
 - [V1 Product Brief](docs/v1-product-brief.md)
 - [Architecture](docs/architecture.md)
+- [Cloud Readiness](docs/cloud-readiness.md)

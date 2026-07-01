@@ -10,6 +10,7 @@ import {
   getWeeklyPlanSummary,
 } from "../domain/metrics";
 import { getGoalProgressList } from "../domain/goalProgress";
+import { getGoalsForCurrentUser, getTrainingsForCurrentUser } from "../domain/accessControl";
 import { getDisplayName, getGreeting, getInitials } from "../domain/profile";
 import { getAthleteRecords } from "../domain/records";
 import { getTrainingIntelligence } from "../domain/intelligence";
@@ -46,15 +47,17 @@ const getDaysUntil = (date?: string): number | undefined => {
 
 export function DashboardView({ data, user, onNavigate, onQuickAction }: DashboardViewProps) {
   const displayName = getDisplayName(user.profile);
-  const intelligence = getTrainingIntelligence(data.competitions, data.training, data.plan, data.journal);
+  const scopedPlan = getTrainingsForCurrentUser(data, user);
+  const scopedGoals = getGoalsForCurrentUser(data, user);
+  const intelligence = getTrainingIntelligence(data.competitions, data.training, scopedPlan, data.journal);
   const records = getAthleteRecords(data.competitions, data.training);
   const nextCompetition = getNextCompetition(data.competitions);
   const lastCompetition = getLastCompetition(data.competitions);
   const lastTraining = getLastTrainingSession(data.training);
-  const seasonGoals = getGoalProgressList(data.goals, data.competitions, data.training).filter((goal) => goal.goal.status !== "archived");
-  const nextTraining = getNextPlannedEntry(data.plan);
-  const weeklyPlan = getWeeklyPlanSummary(data.plan);
-  const openFeedback = data.plan.filter((entry) =>
+  const seasonGoals = getGoalProgressList(scopedGoals, data.competitions, data.training).filter((goal) => goal.goal.status !== "archived");
+  const nextTraining = getNextPlannedEntry(scopedPlan);
+  const weeklyPlan = getWeeklyPlanSummary(scopedPlan);
+  const openFeedback = scopedPlan.filter((entry) =>
     (entry.status === "done" || entry.status === "erledigt") &&
     !data.trainingFeedback.some((feedback) => feedback.trainingId === entry.id),
   ).length;

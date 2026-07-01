@@ -1,5 +1,13 @@
 import { useMemo, useState, type FormEvent } from "react";
 import {
+  canAccessPlanEntry,
+  canManageAdminArea,
+  canUseCoachArea,
+  getAthletesForCurrentUser,
+  getGroupsForCurrentUser,
+  getTrainingsForCurrentUser,
+} from "../domain/accessControl";
+import {
   getWeekdayFromDate,
   isDoneStatus,
   isPlannedStatus,
@@ -130,8 +138,6 @@ const getMonthDates = (date: string): string[] => {
   return dates;
 };
 
-const isCoachRole = (role: string): boolean => role === "coach" || role === "teamAdmin" || role === "admin";
-
 const getEntryStatusClass = (status: PlanStatus): string =>
   isDoneStatus(status) ? "done" : isSkippedStatus(status) ? "skipped" : status === "cancelled" ? "cancelled" : "planned";
 
@@ -150,38 +156,16 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
   const [intensityFilter, setIntensityFilter] = useState<"all" | TrainingIntensity>("all");
   const [athleteFilter, setAthleteFilter] = useState("all");
   const [groupFilter, setGroupFilter] = useState("all");
-  const isCoach = isCoachRole(user.role);
-  const isAdmin = user.role === "admin";
+  const [formMessage, setFormMessage] = useState("");
+  const isCoach = canUseCoachArea(user.role);
+  const isAdmin = canManageAdminArea(user.role);
 
-  const visibleAthletes = useMemo(
-    () =>
-      isAdmin
-        ? data.coachAthletes
-        : data.coachAthletes.filter((athlete) => athlete.club === user.profile.club || athlete.clubId === user.profile.club),
-    [data.coachAthletes, isAdmin, user.profile.club],
-  );
-  const visibleGroups = useMemo(
-    () =>
-      isAdmin
-        ? data.coachGroups
-        : data.coachGroups.filter((group) => group.clubId === user.profile.club || group.coachId === user.userId || group.coachUserId === user.userId),
-    [data.coachGroups, isAdmin, user.profile.club, user.userId],
-  );
+  const visibleAthletes = useMemo(() => getAthletesForCurrentUser(data, user), [data, user]);
+  const visibleGroups = useMemo(() => getGroupsForCurrentUser(data, user), [data, user]);
 
   const visibleEntries = useMemo(() => {
-    const athleteIds = new Set(visibleAthletes.map((athlete) => athlete.id));
-    const groupIds = new Set(visibleGroups.flatMap((group) => [group.id, group.groupId]));
-
-    return sortPlanEntries(entries).filter((entry) => {
-      const isOwn = entry.ownerUserId === user.userId || entry.createdByUserId === user.userId || entry.assignedAthleteId === data.athlete.id;
-      const matchesCoachScope =
-        isCoach &&
-        (isAdmin ||
-          entry.createdByUserId === user.userId ||
-          entry.assignedAthleteIds.some((id) => athleteIds.has(id)) ||
-          entry.assignedGroupIds.some((id) => groupIds.has(id)));
-
-      if (!isOwn && !matchesCoachScope) return false;
+    const scopedEntries = getTrainingsForCurrentUser({ ...data, plan: entries }, user);
+    return sortPlanEntries(scopedEntries).filter((entry) => {
       if (areaFilter !== "all" && entry.area !== areaFilter) return false;
       if (statusFilter !== "all" && entry.status !== statusFilter) return false;
       if (!includesBoat(entry, boatFilter)) return false;
@@ -190,7 +174,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
       if (groupFilter !== "all" && !entry.assignedGroupIds.includes(groupFilter) && entry.assignedGroupId !== groupFilter) return false;
       return true;
     });
-  }, [areaFilter, athleteFilter, boatFilter, data.athlete.id, entries, groupFilter, intensityFilter, isAdmin, isCoach, statusFilter, user.userId, visibleAthletes, visibleGroups]);
+  }, [areaFilter, athleteFilter, boatFilter, data, entries, groupFilter, intensityFilter, statusFilter, user]);
 
   const todayEntries = visibleEntries.filter((entry) => entry.date === today);
   const weekDates = getWeekDates(selectedDate);
@@ -233,6 +217,17 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
     const trainingType = String(formData.get("trainingType") ?? "K1 Technik") as TrainingPlanType;
 
     if (!title || !date || (assignedType === "athlete" && assignedAthleteIds.length === 0) || (assignedType === "group" && assignedGroupIds.length === 0)) {
+      setFormMessage("Bitte fuelle alle Pflichtfelder aus und waehle bei Zuweisungen mindestens ein Ziel aus.");
+      return;
+    }
+
+    const allowedAthletes = new Set(visibleAthletes.map((athlete) => athlete.id));
+    const allowedGroups = new Set(visibleGroups.flatMap((group) => [group.id, group.groupId]));
+    const hasInvalidAthlete = assignedAthleteIds.some((id) => !allowedAthletes.has(id));
+    const hasInvalidGroup = assignedGroupIds.some((id) => !allowedGroups.has(id));
+
+    if ((assignedType === "athlete" && hasInvalidAthlete) || (assignedType === "group" && hasInvalidGroup)) {
+      setFormMessage("Du hast keine Berechtigung fuer mindestens eine ausgewaehlte Zuweisung.");
       return;
     }
 
@@ -267,6 +262,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
       feedbackNote: draft?.feedbackNote ?? "",
     });
 
+    setFormMessage("");
     setDraft(null);
   };
 
@@ -331,7 +327,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
           </button>
           <button className="delete-button" type="button" onClick={() => setFeedbackEntry({ ...entry, status: "skipped" })}>Ausgelassen</button>
           <button className="edit-button" type="button" onClick={() => setFeedbackEntry({ ...entry, status: "done" })}>Feedback</button>
-          {(entry.createdByUserId === user.userId || user.role === "admin") ? <button className="edit-button" type="button" onClick={() => startEdit(entry)}>Bearbeiten</button> : null}
+          {(entry.createdByUserId === user.userId || user.role === "admin") && canAccessPlanEntry(data, user, entry) ? <button className="edit-button" type="button" onClick={() => startEdit(entry)}>Bearbeiten</button> : null}
           {(entry.createdByUserId === user.userId || user.role === "admin") ? <button className="delete-button" type="button" onClick={() => onDelete(entry.id)}>Loeschen</button> : null}
         </div>
       </article>
@@ -375,6 +371,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
       {draft ? (
         <section className="section-block">
           <div className="section-heading"><div><p className="eyebrow">Planung</p><h3>{draft.id ? "Training bearbeiten" : "Training planen"}</h3></div></div>
+          {formMessage ? <p className="auth-message">{formMessage}</p> : null}
           <form className="entry-form" onSubmit={handleSubmit}>
             <div className="form-grid">
               <label>Titel<input name="title" defaultValue={draft.title} required /></label>
