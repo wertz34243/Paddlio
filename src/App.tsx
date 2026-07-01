@@ -337,13 +337,15 @@ function App() {
       const repeat = entry.repeat ?? "none";
       const startDate = new Date(`${entry.date}T00:00:00`);
       const repeatUntil = entry.repeatUntil ? new Date(`${entry.repeatUntil}T00:00:00`) : startDate;
+      const repeatLimit = entry.repeatMaxCount && entry.repeatMaxCount > 0 ? Math.min(entry.repeatMaxCount, 90) : 90;
       const dates: string[] = [];
       const cursor = new Date(startDate);
 
-      while (dates.length === 0 || (repeat !== "none" && cursor <= repeatUntil && dates.length < 90)) {
+      while (dates.length === 0 || (repeat !== "none" && cursor <= repeatUntil && dates.length < repeatLimit)) {
         dates.push(cursor.toISOString().slice(0, 10));
         if (repeat === "daily") cursor.setDate(cursor.getDate() + 1);
         else if (repeat === "weekly") cursor.setDate(cursor.getDate() + 7);
+        else if (repeat === "biweekly") cursor.setDate(cursor.getDate() + 14);
         else if (repeat === "monthly") cursor.setMonth(cursor.getMonth() + 1);
         else break;
       }
@@ -493,6 +495,7 @@ function App() {
             onDelete={deletePlanEntry}
             onToggleDone={togglePlanEntryDone}
             onFeedbackSave={saveTrainingFeedback}
+            onDataChange={updateData}
           />
         );
       case "journal":

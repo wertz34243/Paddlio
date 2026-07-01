@@ -1,4 +1,4 @@
-import type { CoachAthlete, CoachGroup, PaddleMotionData, PlanEntry, SeasonGoal, User, UserRole } from "./types";
+import type { CoachAthlete, CoachGroup, PaddleMotionData, PlanEntry, SeasonGoal, TrainingTemplate, User, UserRole } from "./types";
 
 export const isAdminRole = (role: UserRole): boolean => role === "admin";
 
@@ -69,6 +69,21 @@ export const canAccessPlanEntry = (data: PaddleMotionData, user: User, entry: Pl
 
 export const getTrainingsForCurrentUser = (data: PaddleMotionData, user: User, extraScopeValues: string[] = []): PlanEntry[] =>
   data.plan.filter((entry) => canAccessPlanEntry(data, user, entry, extraScopeValues));
+
+export const canAccessTrainingTemplate = (user: User, template: TrainingTemplate, extraScopeValues: string[] = []): boolean => {
+  if (isAdminRole(user.role)) return true;
+  if (template.ownerUserId === user.userId || template.createdByUserId === user.userId) return true;
+  if (template.visibility !== "club" || !isCoachLikeRole(user.role)) return false;
+
+  const scopeValues = getUserScopeValues(user, extraScopeValues);
+  return hasMatchingScope(template.clubId, scopeValues);
+};
+
+export const canEditTrainingTemplate = (user: User, template: TrainingTemplate): boolean =>
+  isAdminRole(user.role) || template.ownerUserId === user.userId || template.createdByUserId === user.userId;
+
+export const getTrainingTemplatesForCurrentUser = (data: PaddleMotionData, user: User, extraScopeValues: string[] = []): TrainingTemplate[] =>
+  data.trainingTemplates.filter((template) => canAccessTrainingTemplate(user, template, extraScopeValues));
 
 export const getGoalsForCurrentUser = (data: PaddleMotionData, user: User): SeasonGoal[] => {
   if (isAdminRole(user.role)) return data.goals;

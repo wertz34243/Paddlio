@@ -1,10 +1,12 @@
 import { useMemo, useState, type FormEvent } from "react";
 import {
   canAccessPlanEntry,
+  canEditTrainingTemplate,
   canManageAdminArea,
   canUseCoachArea,
   getAthletesForCurrentUser,
   getGroupsForCurrentUser,
+  getTrainingTemplatesForCurrentUser,
   getTrainingsForCurrentUser,
 } from "../domain/accessControl";
 import {
@@ -32,6 +34,9 @@ import type {
   TrainingIntensity,
   TrainingPlanType,
   TrainingRepeat,
+  TrainingTemplate,
+  TrainingTemplateCategory,
+  TrainingTemplateVisibility,
   User,
 } from "../domain/types";
 
@@ -45,6 +50,7 @@ type PlanViewProps = {
   onDelete: (id: string) => void;
   onToggleDone: (id: string) => void;
   onFeedbackSave: (feedback: Omit<TrainingFeedback, "id" | "completedAt"> & { id?: string }) => void;
+  onDataChange: (updater: (current: PaddleMotionData) => PaddleMotionData) => void;
 };
 
 type CalendarView = "day" | "week" | "month" | "list";
@@ -66,6 +72,13 @@ const intensityLabel: Record<TrainingIntensity, string> = {
   mittel: "Mittel",
   hart: "Hart",
   maximal: "Maximal",
+};
+
+const templateCategories: TrainingTemplateCategory[] = ["K1", "C1", "Ausdauer", "Kraft", "Technik", "Regeneration", "Wettkampf", "Allgemein"];
+
+const visibilityLabel: Record<TrainingTemplateVisibility, string> = {
+  private: "Privat",
+  club: "Verein",
 };
 
 const areaLabel: Record<TrainingArea, string> = {
@@ -103,6 +116,7 @@ const emptyDraft = (user: User, athleteId: string): PlanDraft => ({
   status: "planned",
   repeat: "none",
   repeatUntil: "",
+  repeatMaxCount: undefined,
   assignedAthleteId: athleteId,
   assignedGroupId: "",
   feedbackNote: "",
@@ -144,24 +158,57 @@ const getEntryStatusClass = (status: PlanStatus): string =>
 const includesBoat = (entry: PlanEntry, boat: string): boolean =>
   boat === "all" || entry.boatClass === boat || (boat === "K1" && entry.boatClass === "K1+C1") || (boat === "C1" && entry.boatClass === "K1+C1");
 
-export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, onFeedbackSave }: PlanViewProps) {
+const addDays = (date: string, days: number): string => {
+  const next = new Date(`${date}T00:00:00`);
+  next.setDate(next.getDate() + days);
+  return formatDateKey(next);
+};
+
+const getDateOffset = (from: string, to: string): number =>
+  Math.round((new Date(`${to}T00:00:00`).getTime() - new Date(`${from}T00:00:00`).getTime()) / 86400000);
+
+const parseTags = (value: string): string[] =>
+  value.split(",").map((tag) => tag.trim()).filter(Boolean);
+
+export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, onFeedbackSave, onDataChange }: PlanViewProps) {
   const [draft, setDraft] = useState<PlanDraft | null>(null);
+  const [templateDraft, setTemplateDraft] = useState<TrainingTemplate | null>(null);
   const [calendarView, setCalendarView] = useState<CalendarView>("week");
   const [selectedArea, setSelectedArea] = useState<TrainingArea>("Wassertraining");
+  const [templateArea, setTemplateArea] = useState<TrainingArea>("Wassertraining");
   const [selectedDate, setSelectedDate] = useState(today);
   const [feedbackEntry, setFeedbackEntry] = useState<PlanEntry | null>(null);
+  const [copyEntry, setCopyEntry] = useState<PlanEntry | null>(null);
+  const [showWeekCopy, setShowWeekCopy] = useState(false);
+  const [showBlockCopy, setShowBlockCopy] = useState(false);
   const [areaFilter, setAreaFilter] = useState<"all" | TrainingArea>("all");
   const [statusFilter, setStatusFilter] = useState<"all" | PlanStatus>("all");
   const [boatFilter, setBoatFilter] = useState<"all" | TrainingBoatClass>("all");
   const [intensityFilter, setIntensityFilter] = useState<"all" | TrainingIntensity>("all");
+  const [templateCategoryFilter, setTemplateCategoryFilter] = useState<"all" | TrainingTemplateCategory>("all");
+  const [templateSearch, setTemplateSearch] = useState("");
   const [athleteFilter, setAthleteFilter] = useState("all");
   const [groupFilter, setGroupFilter] = useState("all");
   const [formMessage, setFormMessage] = useState("");
+  const [copyMessage, setCopyMessage] = useState("");
   const isCoach = canUseCoachArea(user.role);
   const isAdmin = canManageAdminArea(user.role);
 
   const visibleAthletes = useMemo(() => getAthletesForCurrentUser(data, user), [data, user]);
   const visibleGroups = useMemo(() => getGroupsForCurrentUser(data, user), [data, user]);
+  const visibleTemplates = useMemo(() => {
+    const query = templateSearch.trim().toLowerCase();
+    return getTrainingTemplatesForCurrentUser(data, user, [user.profile.club])
+      .filter((template) => templateCategoryFilter === "all" || template.category === templateCategoryFilter)
+      .filter((template) => {
+        if (!query) return true;
+        return [template.title, template.focus, template.trainingArea, template.trainingType, template.tags.join(" ")]
+          .join(" ")
+          .toLowerCase()
+          .includes(query);
+      })
+      .sort((a, b) => Number(b.isFavorite) - Number(a.isFavorite) || a.title.localeCompare(b.title));
+  }, [data, templateCategoryFilter, templateSearch, user]);
 
   const visibleEntries = useMemo(() => {
     const scopedEntries = getTrainingsForCurrentUser({ ...data, plan: entries }, user);
@@ -183,12 +230,43 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
   const plannedThisWeek = visibleEntries.filter((entry) => weekDates.includes(entry.date));
   const weeklyMinutes = completedThisWeek.reduce((sum, entry) => sum + entry.durationMinutes, 0);
   const openFeedbackCount = visibleEntries.filter((entry) => isDoneStatus(entry.status) && !data.trainingFeedback.some((feedback) => feedback.trainingId === entry.id)).length;
+  const nextWeekDates = getWeekDates(addDays(selectedDate, 7));
+  const nextWeekCount = visibleEntries.filter((entry) => nextWeekDates.includes(entry.date)).length;
+  const unplannedAthletes = visibleAthletes.filter((athlete) =>
+    !plannedThisWeek.some((entry) => entry.assignedAthleteIds.includes(athlete.id) || entry.assignedAthleteId === athlete.id),
+  );
 
   const startCreate = () => {
     const nextDraft = emptyDraft(user, data.athlete.id);
     setSelectedArea(nextDraft.area);
     setSelectedDate(nextDraft.date);
     setDraft(nextDraft);
+  };
+
+  const startTemplateCreate = () => {
+    const timestamp = new Date().toISOString();
+    setTemplateArea("Wassertraining");
+    setTemplateDraft({
+      id: "",
+      ownerUserId: user.userId,
+      clubId: user.profile.club,
+      createdByUserId: user.userId,
+      title: "",
+      category: "Allgemein",
+      trainingArea: "Wassertraining",
+      trainingType: "K1 Technik",
+      boatClass: "K1",
+      defaultDurationMinutes: 75,
+      defaultIntensity: "mittel",
+      focus: "",
+      description: "",
+      notes: "",
+      tags: [],
+      isFavorite: false,
+      visibility: isCoach ? "club" : "private",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
   };
 
   const startEdit = (entry: PlanEntry) => {
@@ -204,6 +282,225 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
 
   const getAthleteName = (athlete: CoachAthlete): string => athlete.name || `${athlete.firstName} ${athlete.lastName}`.trim() || athlete.email;
   const getGroupName = (group: CoachGroup): string => group.name;
+
+  const getTargetSelection = (formData: FormData) => {
+    const assignedType = String(formData.get("assignedType") ?? "self") as PlanEntry["assignedType"];
+    const assignedAthleteIds = assignedType === "athlete" ? formData.getAll("assignedAthleteIds").map(String) : assignedType === "self" ? [data.athlete.id] : [];
+    const assignedGroupIds = assignedType === "group" ? formData.getAll("assignedGroupIds").map(String) : [];
+    return { assignedType, assignedAthleteIds, assignedGroupIds };
+  };
+
+  const validateTargetSelection = (assignedType: PlanEntry["assignedType"], assignedAthleteIds: string[], assignedGroupIds: string[]): boolean => {
+    const allowedAthletes = new Set(visibleAthletes.map((athlete) => athlete.id));
+    const allowedGroups = new Set(visibleGroups.flatMap((group) => [group.id, group.groupId]));
+    const hasInvalidAthlete = assignedAthleteIds.some((id) => !allowedAthletes.has(id));
+    const hasInvalidGroup = assignedGroupIds.some((id) => !allowedGroups.has(id));
+    return !(assignedType === "athlete" && (assignedAthleteIds.length === 0 || hasInvalidAthlete)) && !(assignedType === "group" && (assignedGroupIds.length === 0 || hasInvalidGroup));
+  };
+
+  const saveTemplate = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!templateDraft) return;
+    const formData = new FormData(event.currentTarget);
+    const title = String(formData.get("title") ?? "").trim();
+    const category = String(formData.get("category") ?? "Allgemein") as TrainingTemplateCategory;
+    const trainingArea = String(formData.get("trainingArea") ?? "Wassertraining") as TrainingArea;
+    const trainingType = String(formData.get("trainingType") ?? "K1 Technik") as TrainingPlanType;
+
+    if (!title || !category || !trainingArea || !trainingType) {
+      setFormMessage("Bitte fuelle Titel, Kategorie, Trainingsbereich und Trainingsart aus.");
+      return;
+    }
+
+    const timestamp = new Date().toISOString();
+    const nextTemplate: TrainingTemplate = {
+      ...templateDraft,
+      id: templateDraft.id || `template-${crypto.randomUUID()}`,
+      ownerUserId: templateDraft.ownerUserId || user.userId,
+      clubId: String(formData.get("visibility") ?? "private") === "club" ? user.profile.club : templateDraft.clubId,
+      createdByUserId: templateDraft.createdByUserId || user.userId,
+      title,
+      category,
+      trainingArea,
+      trainingType,
+      boatClass: String(formData.get("boatClass") ?? "K1") as TrainingBoatClass,
+      defaultDurationMinutes: Number(formData.get("defaultDurationMinutes") ?? 0) || undefined,
+      defaultIntensity: String(formData.get("defaultIntensity") ?? "mittel") as TrainingIntensity,
+      focus: String(formData.get("focus") ?? "").trim(),
+      description: String(formData.get("description") ?? "").trim(),
+      notes: String(formData.get("notes") ?? "").trim(),
+      tags: parseTags(String(formData.get("tags") ?? "")),
+      isFavorite: formData.get("isFavorite") === "on",
+      visibility: String(formData.get("visibility") ?? "private") as TrainingTemplateVisibility,
+      createdAt: templateDraft.createdAt || timestamp,
+      updatedAt: timestamp,
+    };
+
+    onDataChange((current) => ({
+      ...current,
+      trainingTemplates: current.trainingTemplates.some((template) => template.id === nextTemplate.id)
+        ? current.trainingTemplates.map((template) => (template.id === nextTemplate.id ? nextTemplate : template))
+        : [nextTemplate, ...current.trainingTemplates],
+    }));
+    setFormMessage("Vorlage gespeichert.");
+    setTemplateDraft(null);
+  };
+
+  const deleteTemplate = (template: TrainingTemplate) => {
+    if (!canEditTrainingTemplate(user, template)) {
+      setFormMessage("Du hast keine Berechtigung fuer diese Vorlage.");
+      return;
+    }
+
+    onDataChange((current) => ({
+      ...current,
+      trainingTemplates: current.trainingTemplates.filter((item) => item.id !== template.id),
+    }));
+    setFormMessage("Vorlage geloescht.");
+  };
+
+  const copyPlanEntry = (
+    entry: PlanEntry,
+    date: string,
+    assignedType = entry.assignedType,
+    assignedAthleteIds = entry.assignedAthleteIds,
+    assignedGroupIds = entry.assignedGroupIds,
+  ) => {
+    if (!date) {
+      setFormMessage("Bitte waehle ein Datum aus.");
+      return;
+    }
+    if (!canAccessPlanEntry(data, user, entry) || !validateTargetSelection(assignedType, assignedAthleteIds, assignedGroupIds)) {
+      setFormMessage("Dieses Training kann nicht kopiert werden.");
+      return;
+    }
+
+    onSave({
+      ...entry,
+      id: undefined,
+      ownerUserId: user.userId,
+      clubId: user.profile.club,
+      assignedType,
+      assignedAthleteIds,
+      assignedGroupIds,
+      date,
+      weekday: getWeekdayFromDate(date),
+      status: "planned",
+      repeat: "none",
+      repeatUntil: "",
+      assignedAthleteId: assignedAthleteIds[0] ?? "",
+      assignedGroupId: assignedGroupIds[0] ?? "",
+      feedbackNote: "",
+    });
+  };
+
+  const planFromTemplate = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const template = visibleTemplates.find((item) => item.id === String(formData.get("templateId") ?? ""));
+    if (!template) {
+      setFormMessage("Bitte waehle eine Vorlage aus.");
+      return;
+    }
+    const date = String(formData.get("date") ?? "");
+    if (!date) {
+      setFormMessage("Bitte waehle ein Datum aus.");
+      return;
+    }
+    const { assignedType, assignedAthleteIds, assignedGroupIds } = getTargetSelection(formData);
+    if (!validateTargetSelection(assignedType, assignedAthleteIds, assignedGroupIds)) {
+      setFormMessage("Du hast keine Berechtigung fuer diese Gruppe oder diesen Sportler.");
+      return;
+    }
+
+    onSave({
+      ownerUserId: user.userId,
+      clubId: user.profile.club,
+      assignedType,
+      assignedAthleteIds,
+      assignedGroupIds,
+      title: template.title,
+      date,
+      weekday: getWeekdayFromDate(date),
+      time: String(formData.get("startTime") ?? "17:30"),
+      startTime: String(formData.get("startTime") ?? "17:30"),
+      endTime: "",
+      durationMinutes: Number(formData.get("durationMinutes") ?? template.defaultDurationMinutes ?? 75),
+      area: template.trainingArea,
+      trainingType: template.trainingType,
+      boatClass: template.boatClass ?? "none",
+      goal: String(formData.get("focus") ?? template.focus).trim(),
+      focus: String(formData.get("focus") ?? template.focus).trim(),
+      description: template.description ?? "",
+      intensity: String(formData.get("intensity") ?? template.defaultIntensity) as TrainingIntensity,
+      note: String(formData.get("notes") ?? template.notes ?? "").trim(),
+      notes: String(formData.get("notes") ?? template.notes ?? "").trim(),
+      status: "planned",
+      repeat: "none",
+      repeatUntil: "",
+      assignedAthleteId: assignedAthleteIds[0] ?? "",
+      assignedGroupId: assignedGroupIds[0] ?? "",
+      feedbackNote: "",
+      templateId: template.id,
+    });
+    setFormMessage("Training aus Vorlage geplant.");
+  };
+
+  const handleCopyEntrySubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!copyEntry) return;
+    const formData = new FormData(event.currentTarget);
+    const mode = String(formData.get("copyMode") ?? "custom");
+    const date = mode === "tomorrow" ? addDays(copyEntry.date, 1) : mode === "nextWeek" ? addDays(copyEntry.date, 7) : String(formData.get("date") ?? "");
+    const { assignedType, assignedAthleteIds, assignedGroupIds } = getTargetSelection(formData);
+    copyPlanEntry(copyEntry, date, assignedType, assignedAthleteIds, assignedGroupIds);
+    setCopyEntry(null);
+    setCopyMessage("1 Training wurde kopiert.");
+  };
+
+  const handleWeekCopySubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const destinationDate = String(formData.get("destinationDate") ?? addDays(selectedDate, 7));
+    const area = String(formData.get("area") ?? "all");
+    const boat = String(formData.get("boat") ?? "all");
+    const { assignedType, assignedAthleteIds, assignedGroupIds } = getTargetSelection(formData);
+    const offset = getDateOffset(weekDates[0], getWeekDates(destinationDate)[0]);
+    const sourceEntries = plannedThisWeek.filter((entry) => (area === "all" || entry.area === area) && includesBoat(entry, boat));
+
+    if (sourceEntries.length === 0) {
+      setFormMessage("Es wurden keine Trainings im ausgewaehlten Zeitraum gefunden.");
+      return;
+    }
+
+    sourceEntries.forEach((entry) => copyPlanEntry(entry, addDays(entry.date, offset), assignedType, assignedAthleteIds, assignedGroupIds));
+    setShowWeekCopy(false);
+    setCopyMessage(`${sourceEntries.length} Trainings wurden kopiert.`);
+  };
+
+  const handleBlockCopySubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const startDate = String(formData.get("startDate") ?? "");
+    const endDate = String(formData.get("endDate") ?? "");
+    const targetStartDate = String(formData.get("targetStartDate") ?? "");
+    const { assignedType, assignedAthleteIds, assignedGroupIds } = getTargetSelection(formData);
+    if (!startDate || !endDate || !targetStartDate) {
+      setFormMessage("Bitte waehle Zeitraum und Zielzeitraum aus.");
+      return;
+    }
+    const offset = getDateOffset(startDate, targetStartDate);
+    const sourceEntries = visibleEntries.filter((entry) => entry.date >= startDate && entry.date <= endDate);
+
+    if (sourceEntries.length === 0) {
+      setFormMessage("Es wurden keine Trainings im ausgewaehlten Zeitraum gefunden.");
+      return;
+    }
+
+    sourceEntries.forEach((entry) => copyPlanEntry(entry, addDays(entry.date, offset), assignedType, assignedAthleteIds, assignedGroupIds));
+    setShowBlockCopy(false);
+    setCopyMessage(`${sourceEntries.length} Trainings wurden kopiert.`);
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -257,6 +554,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
       status: String(formData.get("status") ?? "planned") as PlanStatus,
       repeat: String(formData.get("repeat") ?? "none") as TrainingRepeat,
       repeatUntil: String(formData.get("repeatUntil") ?? ""),
+      repeatMaxCount: Number(formData.get("repeatMaxCount") ?? 0) || undefined,
       assignedAthleteId: assignedAthleteIds[0] ?? "",
       assignedGroupId: assignedGroupIds[0] ?? "",
       feedbackNote: draft?.feedbackNote ?? "",
@@ -327,11 +625,40 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
           </button>
           <button className="delete-button" type="button" onClick={() => setFeedbackEntry({ ...entry, status: "skipped" })}>Ausgelassen</button>
           <button className="edit-button" type="button" onClick={() => setFeedbackEntry({ ...entry, status: "done" })}>Feedback</button>
+          <button className="edit-button" type="button" onClick={() => setCopyEntry(entry)}>Kopieren</button>
           {(entry.createdByUserId === user.userId || user.role === "admin") && canAccessPlanEntry(data, user, entry) ? <button className="edit-button" type="button" onClick={() => startEdit(entry)}>Bearbeiten</button> : null}
           {(entry.createdByUserId === user.userId || user.role === "admin") ? <button className="delete-button" type="button" onClick={() => onDelete(entry.id)}>Loeschen</button> : null}
         </div>
       </article>
     );
+  };
+
+  const renderTargetControls = (
+    defaultType: PlanEntry["assignedType"] = "self",
+    defaultAthleteIds: string[] = [data.athlete.id],
+    defaultGroupIds: string[] = [],
+  ) => (
+    <>
+      <label>Zuweisung<select name="assignedType" defaultValue={defaultType}><option value="self">Fuer mich</option>{isCoach ? <option value="athlete">Einzelner Sportler</option> : null}{isCoach ? <option value="group">Trainingsgruppe</option> : null}</select></label>
+      {isCoach ? <div className="choice-group"><span>Sportler</span><div className="tag-row">{visibleAthletes.map((athlete) => <label className="toggle-row" key={athlete.id}><span>{getAthleteName(athlete)}</span><input name="assignedAthleteIds" type="checkbox" value={athlete.id} defaultChecked={defaultAthleteIds.includes(athlete.id)} /></label>)}</div></div> : null}
+      {isCoach ? <div className="choice-group"><span>Trainingsgruppen</span><div className="tag-row">{visibleGroups.map((group) => <label className="toggle-row" key={group.id}><span>{group.name}</span><input name="assignedGroupIds" type="checkbox" value={group.id} defaultChecked={defaultGroupIds.includes(group.id)} /></label>)}</div></div> : null}
+    </>
+  );
+
+  const getRepeatPreview = (repeat: TrainingRepeat, repeatUntil: string, maxCount?: number): number => {
+    if (!draft || repeat === "none" || !repeatUntil) return 1;
+    const cursor = new Date(`${draft.date}T00:00:00`);
+    const end = new Date(`${repeatUntil}T00:00:00`);
+    let count = 0;
+    while (cursor <= end && count < (maxCount || 90)) {
+      count += 1;
+      if (repeat === "daily") cursor.setDate(cursor.getDate() + 1);
+      else if (repeat === "weekly") cursor.setDate(cursor.getDate() + 7);
+      else if (repeat === "biweekly") cursor.setDate(cursor.getDate() + 14);
+      else if (repeat === "monthly") cursor.setMonth(cursor.getMonth() + 1);
+      else break;
+    }
+    return Math.max(1, count);
   };
 
   return (
@@ -342,14 +669,25 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
         <div><span>Ausgelassen</span><strong>{skippedThisWeek.length}</strong></div>
       </section>
 
+      <section className="summary-strip">
+        <div><span>Favorisierte Vorlagen</span><strong>{visibleTemplates.filter((template) => template.isFavorite).length}</strong></div>
+        <div><span>Naechste Woche</span><strong>{nextWeekCount}</strong></div>
+        <div><span>Ungeplante Sportler</span><strong>{unplannedAthletes.length}</strong></div>
+      </section>
+
       <section className="section-block">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Kalender</p>
             <h3>Trainingsplanung</h3>
           </div>
-          <button className="primary-button" type="button" onClick={startCreate}>Training planen</button>
+          <div className="card-actions">
+            <button className="primary-button" type="button" onClick={startCreate}>Training planen</button>
+            <button type="button" onClick={() => setShowWeekCopy(true)}>Woche kopieren</button>
+            <button type="button" onClick={() => setShowBlockCopy(true)}>Trainingsblock kopieren</button>
+          </div>
         </div>
+        {copyMessage ? <p className="auth-message">{copyMessage} <button type="button" onClick={() => setCalendarView("list")}>Trainings anzeigen</button></p> : null}
         <div className="calendar-view-tabs">
           {(["day", "week", "month", "list"] as CalendarView[]).map((view) => (
             <button className={calendarView === view ? "active" : ""} key={view} type="button" onClick={() => setCalendarView(view)}>
@@ -366,6 +704,84 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
           {isCoach ? <label>Sportler<select value={athleteFilter} onChange={(event) => setAthleteFilter(event.target.value)}><option value="all">Alle</option>{visibleAthletes.map((athlete) => <option key={athlete.id} value={athlete.id}>{getAthleteName(athlete)}</option>)}</select></label> : null}
           {isCoach ? <label>Gruppe<select value={groupFilter} onChange={(event) => setGroupFilter(event.target.value)}><option value="all">Alle</option>{visibleGroups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select></label> : null}
         </div>
+      </section>
+
+      <section className="section-block">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Trainingsbibliothek</p>
+            <h3>{visibleTemplates.length > 0 ? `${visibleTemplates.length} Vorlagen` : "Noch keine Trainingsvorlagen."}</h3>
+          </div>
+          <button className="primary-button" type="button" onClick={startTemplateCreate}>{visibleTemplates.length > 0 ? "Vorlage erstellen" : "Erste Vorlage erstellen"}</button>
+        </div>
+        <div className="form-grid compact-form">
+          <label>Suche<input value={templateSearch} onChange={(event) => setTemplateSearch(event.target.value)} placeholder="Titel, Fokus, Tags" /></label>
+          <label>Kategorie<select value={templateCategoryFilter} onChange={(event) => setTemplateCategoryFilter(event.target.value as typeof templateCategoryFilter)}><option value="all">Alle</option>{templateCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
+        </div>
+        <div className="calendar-list">
+          {visibleTemplates.length > 0 ? visibleTemplates.map((template) => (
+            <article className="calendar-training-card" key={template.id}>
+              <div className="plan-card-head">
+                <div><span>{template.category} - {visibilityLabel[template.visibility]}</span><h4>{template.isFavorite ? "★ " : ""}{template.title}</h4></div>
+                <b className="status-pill planned">{template.defaultDurationMinutes ?? 0} min</b>
+              </div>
+              <div className="smart-detail-grid">
+                <span>{template.trainingArea}</span>
+                <span>{template.trainingType}</span>
+                <span>{template.boatClass ?? "none"}</span>
+                <span>{intensityLabel[template.defaultIntensity]}</span>
+              </div>
+              <p>{template.focus || "Noch kein Fokus eingetragen."}</p>
+              {template.tags.length > 0 ? <small className="card-note">{template.tags.join(" · ")}</small> : null}
+              <div className="card-actions">
+                {canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => { setTemplateDraft(template); setTemplateArea(template.trainingArea); }}>Bearbeiten</button> : null}
+                {canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => deleteTemplate(template)}>Loeschen</button> : null}
+              </div>
+            </article>
+          )) : <p className="empty-state">Noch keine Trainingsvorlagen. Erstelle deine erste Vorlage fuer schnelle Trainingsplanung.</p>}
+        </div>
+      </section>
+
+      {templateDraft ? (
+        <section className="section-block">
+          <div className="section-heading"><div><p className="eyebrow">Vorlage</p><h3>{templateDraft.id ? "Vorlage bearbeiten" : "Vorlage erstellen"}</h3></div></div>
+          <form className="entry-form" onSubmit={saveTemplate}>
+            <div className="form-grid">
+              <label>Titel<input name="title" defaultValue={templateDraft.title} required /></label>
+              <label>Kategorie<select name="category" defaultValue={templateDraft.category}>{templateCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
+              <label>Trainingsbereich<select name="trainingArea" defaultValue={templateDraft.trainingArea} onChange={(event) => setTemplateArea(event.currentTarget.value as TrainingArea)}>{trainingAreas.map((area) => <option key={area} value={area}>{area}</option>)}</select></label>
+              <label>Trainingsart<select name="trainingType" defaultValue={templateDraft.trainingType}>{trainingTypeGroups[templateArea].map((trainingType) => <option key={trainingType} value={trainingType}>{trainingType}</option>)}</select></label>
+              <label>Bootsklasse<select name="boatClass" defaultValue={templateDraft.boatClass ?? "none"}><option value="K1">K1</option><option value="C1">C1</option><option value="K1+C1">K1+C1</option><option value="none">ohne Boot</option></select></label>
+              <label>Standarddauer<input name="defaultDurationMinutes" type="number" min="0" step="5" defaultValue={templateDraft.defaultDurationMinutes ?? 75} /></label>
+              <label>Intensitaet<select name="defaultIntensity" defaultValue={templateDraft.defaultIntensity}>{trainingIntensities.map((intensity) => <option key={intensity} value={intensity}>{intensityLabel[intensity]}</option>)}</select></label>
+              <label>Sichtbarkeit<select name="visibility" defaultValue={templateDraft.visibility}><option value="private">privat</option>{isCoach ? <option value="club">Verein</option> : null}</select></label>
+            </div>
+            <label>Ziel/Fokus<input name="focus" defaultValue={templateDraft.focus} placeholder="z. B. Strafsekunden reduzieren" /></label>
+            <label>Beschreibung<textarea name="description" defaultValue={templateDraft.description} rows={3} /></label>
+            <label>Notiz<textarea name="notes" defaultValue={templateDraft.notes} rows={3} /></label>
+            <label>Tags<input name="tags" defaultValue={templateDraft.tags.join(", ")} placeholder="Technik, K1, Wettkampf" /></label>
+            <label className="toggle-row"><span>Favorit</span><input name="isFavorite" type="checkbox" defaultChecked={templateDraft.isFavorite} /></label>
+            <div className="form-actions"><button className="save-button" type="submit">Vorlage speichern</button><button className="ghost-button wide" type="button" onClick={() => setTemplateDraft(null)}>Abbrechen</button></div>
+          </form>
+        </section>
+      ) : null}
+
+      <section className="section-block">
+        <div className="section-heading"><div><p className="eyebrow">Schnell planen</p><h3>Aus Vorlage planen</h3></div></div>
+        {formMessage ? <p className="auth-message">{formMessage}</p> : null}
+        <form className="entry-form" onSubmit={planFromTemplate}>
+          <div className="form-grid">
+            <label>Vorlage<select name="templateId" required><option value="">Bitte waehlen</option>{visibleTemplates.map((template) => <option key={template.id} value={template.id}>{template.title}</option>)}</select></label>
+            <label>Datum<input name="date" type="date" defaultValue={selectedDate} required /></label>
+            <label>Uhrzeit<input name="startTime" type="time" defaultValue="17:30" /></label>
+            <label>Dauer<input name="durationMinutes" type="number" min="0" step="5" placeholder="aus Vorlage" /></label>
+            <label>Intensitaet<select name="intensity" defaultValue="mittel">{trainingIntensities.map((intensity) => <option key={intensity} value={intensity}>{intensityLabel[intensity]}</option>)}</select></label>
+          </div>
+          {renderTargetControls()}
+          <label>Fokus anpassen<input name="focus" placeholder="optional" /></label>
+          <label>Notiz<textarea name="notes" rows={2} /></label>
+          <button className="save-button" type="submit">Aus Vorlage planen</button>
+        </form>
       </section>
 
       {draft ? (
@@ -386,15 +802,61 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
               <label>Bootsklasse<select name="boatClass" defaultValue={draft.boatClass}><option value="K1">K1</option><option value="C1">C1</option><option value="K1+C1">K1+C1</option><option value="none">ohne Boot</option></select></label>
               <label>Intensitaet<select name="intensity" defaultValue={draft.intensity}>{trainingIntensities.map((intensity) => <option key={intensity} value={intensity}>{intensityLabel[intensity]}</option>)}</select></label>
               <label>Status<select name="status" defaultValue={draft.status}>{planStatuses.map((status) => <option key={status} value={status}>{statusLabel[status]}</option>)}</select></label>
-              <label>Wiederholung<select name="repeat" defaultValue={draft.repeat}><option value="none">keine</option><option value="daily">taeglich</option><option value="weekly">woechentlich</option><option value="monthly">monatlich</option></select></label>
+              <label>Wiederholung<select name="repeat" defaultValue={draft.repeat}><option value="none">keine</option><option value="daily">taeglich</option><option value="weekly">woechentlich</option><option value="biweekly">alle 2 Wochen</option><option value="monthly">monatlich</option></select></label>
               <label>Wiederholen bis<input name="repeatUntil" type="date" defaultValue={draft.repeatUntil} /></label>
+              <label>Max. Termine<input name="repeatMaxCount" type="number" min="1" max="90" defaultValue={draft.repeatMaxCount ?? ""} placeholder="optional" /></label>
             </div>
+            {draft.repeat !== "none" && draft.repeatUntil ? <p className="card-note">Vorschau: Es werden {getRepeatPreview(draft.repeat, draft.repeatUntil, draft.repeatMaxCount)} Trainingseinheiten erstellt.</p> : null}
             {isCoach ? <div className="choice-group"><span>Sportler fuer Einzeltraining</span><div className="tag-row">{visibleAthletes.map((athlete) => <label className="toggle-row" key={athlete.id}><span>{getAthleteName(athlete)}</span><input name="assignedAthleteIds" type="checkbox" value={athlete.id} defaultChecked={draft.assignedAthleteIds.includes(athlete.id)} /></label>)}</div></div> : null}
             {isCoach ? <div className="choice-group"><span>Trainingsgruppen</span><div className="tag-row">{visibleGroups.map((group) => <label className="toggle-row" key={group.id}><span>{group.name}</span><input name="assignedGroupIds" type="checkbox" value={group.id} defaultChecked={draft.assignedGroupIds.includes(group.id)} /></label>)}</div></div> : null}
             <label>Ziel/Fokus<input name="focus" defaultValue={draft.focus || draft.goal} placeholder="z. B. Tor 6 sauber anfahren" /></label>
             <label>Beschreibung<textarea name="description" defaultValue={draft.description} rows={3} /></label>
             <label>Notiz<textarea name="notes" defaultValue={draft.notes || draft.note} rows={3} /></label>
             <div className="form-actions"><button className="save-button" type="submit">Speichern</button><button className="ghost-button wide" type="button" onClick={() => setDraft(null)}>Abbrechen</button></div>
+          </form>
+        </section>
+      ) : null}
+
+      {copyEntry ? (
+        <section className="section-block">
+          <div className="section-heading"><div><p className="eyebrow">Kopieren</p><h3>{copyEntry.title || copyEntry.trainingType}</h3></div></div>
+          <form className="entry-form" onSubmit={handleCopyEntrySubmit}>
+            <div className="form-grid">
+              <label>Option<select name="copyMode" defaultValue="nextWeek"><option value="custom">anderes Datum</option><option value="tomorrow">naechster Tag</option><option value="nextWeek">naechste Woche</option></select></label>
+              <label>Datum<input name="date" type="date" defaultValue={addDays(copyEntry.date, 7)} /></label>
+            </div>
+            {renderTargetControls(copyEntry.assignedType, copyEntry.assignedAthleteIds, copyEntry.assignedGroupIds)}
+            <div className="form-actions"><button className="save-button" type="submit">Training kopieren</button><button className="ghost-button wide" type="button" onClick={() => setCopyEntry(null)}>Abbrechen</button></div>
+          </form>
+        </section>
+      ) : null}
+
+      {showWeekCopy ? (
+        <section className="section-block">
+          <div className="section-heading"><div><p className="eyebrow">Woche kopieren</p><h3>{plannedThisWeek.length} Einheiten in aktueller Woche</h3></div></div>
+          <form className="entry-form" onSubmit={handleWeekCopySubmit}>
+            <div className="form-grid">
+              <label>Zielwoche<input name="destinationDate" type="date" defaultValue={addDays(selectedDate, 7)} /></label>
+              <label>Bereich<select name="area" defaultValue="all"><option value="all">Alle</option>{trainingAreas.map((area) => <option key={area} value={area}>{area}</option>)}</select></label>
+              <label>Boot/Fokus<select name="boat" defaultValue="all"><option value="all">Alle</option><option value="K1">K1</option><option value="C1">C1</option><option value="none">Kraft/Ausdauer/ohne Boot</option></select></label>
+            </div>
+            {renderTargetControls()}
+            <div className="form-actions"><button className="save-button" type="submit">Woche kopieren</button><button className="ghost-button wide" type="button" onClick={() => setShowWeekCopy(false)}>Abbrechen</button></div>
+          </form>
+        </section>
+      ) : null}
+
+      {showBlockCopy ? (
+        <section className="section-block">
+          <div className="section-heading"><div><p className="eyebrow">Trainingsblock kopieren</p><h3>Zeitraum planen</h3></div></div>
+          <form className="entry-form" onSubmit={handleBlockCopySubmit}>
+            <div className="form-grid">
+              <label>Startdatum<input name="startDate" type="date" defaultValue={weekDates[0]} /></label>
+              <label>Enddatum<input name="endDate" type="date" defaultValue={weekDates[6]} /></label>
+              <label>Zielstart<input name="targetStartDate" type="date" defaultValue={addDays(weekDates[0], 28)} /></label>
+            </div>
+            {renderTargetControls()}
+            <div className="form-actions"><button className="save-button" type="submit">Trainingsblock kopieren</button><button className="ghost-button wide" type="button" onClick={() => setShowBlockCopy(false)}>Abbrechen</button></div>
           </form>
         </section>
       ) : null}

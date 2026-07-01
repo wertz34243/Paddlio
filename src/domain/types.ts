@@ -143,11 +143,15 @@ export type PlanStatus = "planned" | "done" | "skipped" | "cancelled" | "geplant
 
 export type TrainingAssignedType = "self" | "athlete" | "group";
 
-export type TrainingRepeat = "none" | "daily" | "weekly" | "monthly";
+export type TrainingRepeat = "none" | "daily" | "weekly" | "biweekly" | "monthly";
 
 export type TrainingBoatClass = "K1" | "C1" | "K1+C1" | "none";
 
 export type TrainingIntensity = "locker" | "mittel" | "hart" | "maximal";
+
+export type TrainingTemplateCategory = "K1" | "C1" | "Ausdauer" | "Kraft" | "Technik" | "Regeneration" | "Wettkampf" | "Allgemein";
+
+export type TrainingTemplateVisibility = "private" | "club";
 
 export type TrainingArea =
   | "Wassertraining"
@@ -296,10 +300,34 @@ export type PlanEntry = {
   status: PlanStatus;
   repeat: TrainingRepeat;
   repeatUntil: string;
+  repeatMaxCount?: number;
+  templateId?: string;
   createdByUserId: string;
   assignedAthleteId: string;
   assignedGroupId: string;
   feedbackNote: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type TrainingTemplate = {
+  id: string;
+  ownerUserId: string;
+  clubId?: string;
+  createdByUserId: string;
+  title: string;
+  category: TrainingTemplateCategory;
+  trainingArea: TrainingArea;
+  trainingType: TrainingPlanType;
+  boatClass?: TrainingBoatClass;
+  defaultDurationMinutes?: number;
+  defaultIntensity: TrainingIntensity;
+  focus: string;
+  description?: string;
+  notes?: string;
+  tags: string[];
+  isFavorite: boolean;
+  visibility: TrainingTemplateVisibility;
   createdAt: string;
   updatedAt: string;
 };
@@ -447,6 +475,7 @@ export type PaddleMotionData = {
   journal: TrainingJournalEntry[];
   material: MaterialItem[];
   plan: PlanEntry[];
+  trainingTemplates: TrainingTemplate[];
   trainingFeedback: TrainingFeedback[];
   goals: SeasonGoal[];
   coachAthletes: CoachAthlete[];

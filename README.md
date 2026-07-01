@@ -104,6 +104,14 @@ Paddlio speichert Daten in der aktuellen Version lokal im Browser per LocalStora
 - Kalenderfilter fuer Zeitraum, Bereich, Bootsklasse, Intensitaet, Status, Sportler und Gruppe
 - Dashboard und Analyse nutzen die neue Planstruktur weiterhin aus `paddlio_data_<userId>`, ohne bestehende Daten zu loeschen
 
+## Version 2.6.1 - Trainingsvorlagen & Planungsassistent
+
+- Trainingsbibliothek mit privaten Vorlagen und Vereinsvorlagen fuer Coach/Admin ergaenzt
+- Vorlagen koennen erstellt, bearbeitet, geloescht, favorisiert und direkt fuer Trainingsplanung genutzt werden
+- Trainings koennen einzeln, wochenweise oder als Zeitraum/Trainingsblock kopiert werden
+- Wiederkehrende Trainings unterstuetzen taeglich, woechentlich, alle 2 Wochen, monatlich und eine maximale Terminanzahl
+- Trainingsvorlagen werden im bestehenden `paddlio_data_<userId>` LocalStorage gespeichert, ohne vorhandene Trainingsdaten zu loeschen
+
 ## Version 2.7 - Rollen, Rechte, QA & Cloud Readiness
 
 - Gemeinsame Access-Control-Logik fuer Athlete, Coach, TeamAdmin und Admin ergaenzt

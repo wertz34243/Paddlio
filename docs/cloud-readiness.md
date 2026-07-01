@@ -9,6 +9,7 @@ Paddlio 2.7 bleibt eine lokale Demo-App mit LocalStorage. Diese Datei beschreibt
 - Clubs und Club Requests: offizielle Vereine, Vereinsvorschlaege, Status und Admin-Review.
 - Trainer Requests: Traineranfragen, Review-Status, Review-Historie und Admin-Entscheidungen.
 - Training Groups: Gruppen pro Verein, Coach-Zuordnung, Sportler-Zuordnung, Status.
+- Training Templates: private Vorlagen, Vereinsvorlagen, Favoriten, Tags, Trainingsbereich, Bootsklasse, Standarddauer und Standardintensitaet.
 - Training Plan Items: eigene Trainings, Coach-Zuweisungen an Sportler oder Gruppen, Wiederholungen, Status.
 - Training Feedback: Rueckmeldungen, Ausfallgruende, Befinden, Schlaf, Motivation und Coach-Sichtbarkeit.
 - Competitions: Rennen, Ergebnisse, Zeiten, Strafsekunden, Platzierung, Medienverweise.
@@ -23,13 +24,13 @@ Paddlio 2.7 bleibt eine lokale Demo-App mit LocalStorage. Diese Datei beschreibt
 - `paddlio_session` und `paddlio_sessions` werden durch sichere Provider-Sessions ersetzt.
 - `paddlio_data_<userId>` wird in normalisierte Tabellen fuer Training, Ziele, Wettkaempfe, Material, Journal und Profil aufgeteilt.
 - `paddlio_clubs` und `paddlio_club_requests` werden Cloud-Tabellen mit Admin-Review.
-- `paddlio_training_groups`, `paddlio_training_plan_items`, `paddlio_training_feedback` und `paddlio_season_goals` werden serverseitig nach userId, clubId und role gefiltert.
+- `paddlio_training_groups`, `paddlio_training_templates`, `paddlio_training_plan_items`, `paddlio_training_feedback` und `paddlio_season_goals` werden serverseitig nach userId, clubId und role gefiltert.
 - Alte Demo- oder Legacy-Keys sollten nur fuer eine einmalige Migration gelesen und danach nicht mehr geschrieben werden.
 
 ## Serverrechte
 
 - Athlete: darf nur eigene Datensaetze lesen und schreiben.
-- Coach: darf nur Sportler, Gruppen, Trainings, Feedback und Ziele des eigenen Vereins beziehungsweise der eigenen Gruppen lesen und bearbeiten.
+- Coach: darf nur Sportler, Gruppen, Trainingsvorlagen, Trainings, Feedback und Ziele des eigenen Vereins beziehungsweise der eigenen Gruppen lesen und bearbeiten.
 - TeamAdmin: bleibt strukturell separat und kann zunaechst Coach-Rechte erhalten.
 - Admin: darf alle Datensaetze sehen und verwalten.
 - Trainerrechte duerfen nur durch Admin-Review oder eine serverseitige Admin-Aktion vergeben werden.
@@ -50,7 +51,7 @@ Supabase ist fuer Paddlio der naheliegende erste Schritt, weil Postgres, Row Lev
 ## Naechste Schritte fuer Version 3.0
 
 1. Supabase- oder Firebase-Projekt anlegen und Auth aktivieren.
-2. Tabellen fuer Users, Clubs, Groups, Training, Goals, Competitions, Material und Feedback modellieren.
+2. Tabellen fuer Users, Clubs, Groups, Training Templates, Training, Goals, Competitions, Material und Feedback modellieren.
 3. Row Level Security beziehungsweise Security Rules fuer Athlete, Coach, TeamAdmin und Admin definieren.
 4. Lokale Storage-Funktionen hinter ein Repository/API-Interface setzen.
 5. Einmalige Migration aus LocalStorage in Cloud-Daten vorbereiten.

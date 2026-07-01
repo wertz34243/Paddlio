@@ -21,6 +21,7 @@ import type {
   SeasonGoal,
   TrainingFeedback,
   TrainingJournalEntry,
+  TrainingTemplate,
   TrainerRequest,
   TrainerRequestStatus,
   TrainingSession,
@@ -415,6 +416,29 @@ const normalizeTrainingFeedback = (items: Array<Partial<TrainingFeedback> & Pick
     completedAt: feedback.completedAt ?? now(),
   }));
 
+const normalizeTrainingTemplates = (items: Array<Partial<TrainingTemplate> & Pick<TrainingTemplate, "id" | "title">>, userId: string, clubId: string): TrainingTemplate[] =>
+  items.map((template) => ({
+    id: template.id,
+    ownerUserId: template.ownerUserId ?? userId,
+    clubId: template.clubId ?? clubId,
+    createdByUserId: template.createdByUserId ?? template.ownerUserId ?? userId,
+    title: template.title,
+    category: template.category ?? "Allgemein",
+    trainingArea: template.trainingArea ?? "Wassertraining",
+    trainingType: template.trainingType ?? "K1 Technik",
+    boatClass: template.boatClass ?? "K1",
+    defaultDurationMinutes: template.defaultDurationMinutes ?? 75,
+    defaultIntensity: template.defaultIntensity ?? "mittel",
+    focus: template.focus ?? "",
+    description: template.description ?? "",
+    notes: template.notes ?? "",
+    tags: Array.isArray(template.tags) ? template.tags : [],
+    isFavorite: Boolean(template.isFavorite),
+    visibility: template.visibility ?? "private",
+    createdAt: template.createdAt ?? now(),
+    updatedAt: template.updatedAt ?? now(),
+  }));
+
 const normalizeDataShape = (data: PaddleMotionData): PaddleMotionData => ({
   ...data,
   journal: Array.isArray(data.journal) ? normalizeJournalEntries(data.journal) : [],
@@ -422,6 +446,7 @@ const normalizeDataShape = (data: PaddleMotionData): PaddleMotionData => ({
   goals: Array.isArray(data.goals) ? normalizeSeasonGoals(data.goals, data.athlete.id, data.activeUserId) : [],
   coachAthletes: Array.isArray(data.coachAthletes) ? normalizeCoachAthletes(data.coachAthletes, data.athlete.club, "") : [],
   coachGroups: Array.isArray(data.coachGroups) ? normalizeCoachGroups(data.coachGroups, "") : [],
+  trainingTemplates: Array.isArray(data.trainingTemplates) ? normalizeTrainingTemplates(data.trainingTemplates, data.activeUserId, data.athlete.club) : [],
   trainingFeedback: Array.isArray(data.trainingFeedback) ? normalizeTrainingFeedback(data.trainingFeedback) : [],
 });
 
@@ -1341,6 +1366,7 @@ const createEmptyDataForUser = (authUser: AuthUser): PaddleMotionData => {
     journal: [],
     material: [],
     plan: [],
+    trainingTemplates: [],
     trainingFeedback: [],
     goals: [],
     coachAthletes: [],
@@ -1361,6 +1387,7 @@ const withUsers = (data: V03Data): PaddleMotionData => {
     journal: data.journal ?? [],
     material: normalizeMaterialItems(data.material),
     plan: normalizePlanEntries(data.plan ?? seedData.plan, data.athlete.id, data.activeUserId ?? users[0].id),
+    trainingTemplates: data.trainingTemplates ?? [],
     trainingFeedback: data.trainingFeedback ?? [],
     goals: data.goals ?? [],
     coachAthletes: data.coachAthletes ?? [],
@@ -1515,6 +1542,7 @@ const migrateLegacyData = (legacy: LegacyData): PaddleMotionData => {
     journal: [],
     material: material.length > 0 ? material : seedData.material,
     plan: normalizePlanEntries(seedData.plan, athlete.id, "legacy-user"),
+    trainingTemplates: [],
     trainingFeedback: [],
     goals: [],
     coachAthletes: [],

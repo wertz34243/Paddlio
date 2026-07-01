@@ -55,6 +55,7 @@ Die Migration legt diese Tabellen an:
 - `clubs`
 - `club_requests`
 - `trainer_requests`
+- `training_templates` ist fuer eine Folgemigration vorgesehen, sobald die LocalStorage-Vorlagen aus Version 2.6.1 in die Cloud synchronisiert werden.
 - `training_groups`
 - `group_members`
 - `season_goals`
