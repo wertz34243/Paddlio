@@ -16,6 +16,7 @@ import {
 } from "./data/storage";
 import { getActiveUser } from "./domain/profile";
 import { getWeekdayFromDate, isDoneStatus } from "./domain/trainingPlan";
+import { isSupabaseConfigured } from "./lib/supabaseConfig";
 import type {
   Competition,
   AuthSession,
@@ -127,6 +128,12 @@ function App() {
     const currentSession = loadSession();
     return currentSession ? loadData(currentSession.userId) : null;
   });
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) {
+      console.info("Paddlio Cloud ist deaktiviert. LocalStorage bleibt aktiv, bis VITE_SUPABASE_URL und VITE_SUPABASE_ANON_KEY gesetzt sind.");
+    }
+  }, []);
 
   useEffect(() => {
     if (session && data) {

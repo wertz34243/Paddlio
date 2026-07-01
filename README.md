@@ -112,6 +112,14 @@ Paddlio speichert Daten in der aktuellen Version lokal im Browser per LocalStora
 - Version und Service-Worker-Cache auf 2.7 aktualisiert
 - Cloud-Readiness-Dokumentation fuer Supabase/Firebase, Serverrechte und LocalStorage-Abloesung ergaenzt
 
+## Version 3.0.1 - Supabase Datenbank-Fundament
+
+- Supabase-Projektstruktur vorbereitet: `src/lib/supabase.ts`, `src/lib/database.types.ts`, `supabase/migrations`
+- Erste Supabase-Migration mit Tabellen fuer Profile, Vereine, Traineranfragen, Gruppen, Ziele, Trainingsplanung, Feedback, Wettkaempfe, Material, Benachrichtigungen und Audit-Logs
+- Row Level Security und erste rollenbasierte Policies fuer Athlete, Coach, TeamAdmin und Admin vorbereitet
+- App bleibt ohne Supabase-Environment-Variablen voll LocalStorage-faehig und stuerzt nicht ab
+- Setup-Dokumentation fuer lokale Entwicklung und Vercel ergaenzt
+
 ## Paddlio auf iPhone/iPad installieren
 
 1. Paddlio in Safari oeffnen.
@@ -191,6 +199,17 @@ Das Projekt ist fuer Vercel vorbereitet.
 
 Die Datei `vercel.json` enthaelt die passenden Build- und SPA-Rewrite-Einstellungen.
 
+### Supabase Environment Variablen
+
+Fuer spaetere Cloud-Funktionen werden diese Variablen vorbereitet:
+
+```env
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+```
+
+Keine echten Keys in Git committen. Lokal gehoeren die Werte in `.env.local`. In Vercel werden sie unter `Project Settings` -> `Environment Variables` eingetragen, danach muss ein Redeploy erfolgen. Ohne diese Werte bleibt Paddlio im LocalStorage-Modus.
+
 ## Datenhaltung
 
 Paddlio speichert Daten lokal im Browser. Bestehende LocalStorage-Daten werden beim Laden normalisiert und migriert, damit fruehere Daten nicht verloren gehen. Alte interne Migrationsnamen bleiben deshalb bewusst im Code erhalten.
@@ -209,3 +228,4 @@ Paddlio speichert Daten lokal im Browser. Bestehende LocalStorage-Daten werden b
 - [V1 Product Brief](docs/v1-product-brief.md)
 - [Architecture](docs/architecture.md)
 - [Cloud Readiness](docs/cloud-readiness.md)
+- [Supabase Setup](docs/supabase-setup.md)

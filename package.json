@@ -1,6 +1,6 @@
 {
   "name": "paddlio",
-  "version": "2.7.0",
+  "version": "3.0.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
