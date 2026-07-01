@@ -23,6 +23,7 @@ import type {
   ClubRequest,
   ClubStatus,
   CoachAthlete,
+  CoachAthleteInvitationStatus,
   CoachAthleteStatus,
   CoachGroup,
   PaddleMotionData,
@@ -30,6 +31,8 @@ import type {
   PlanEntry,
   TrainerRequest,
   TrainingArea,
+  TrainingGroupFocus,
+  TrainingGroupStatus,
   TrainingIntensity,
   TrainingPlanType,
   User,
@@ -50,6 +53,7 @@ const roleLabels: Record<UserRole, string> = {
 };
 
 const ageClasses: Array<AgeClass | ""> = ["", "U10", "U12", "U14", "U16", "U18", "U23", "Leistungsklasse", "Masters"];
+const groupFocuses: TrainingGroupFocus[] = ["Technik", "Kraft", "Ausdauer", "Sprint", "Wettkampf", "Allgemein"];
 const trainingAreas: TrainingArea[] = ["Wassertraining", "Ausdauer", "Krafttraining", "Trainerarbeit", "Regeneration", "Wettkampf"];
 const trainingTypes: TrainingPlanType[] = ["K1 Technik", "C1 Technik", "Slalomstrecke", "GA1", "Intervalle", "Kraftausdauer", "Pause", "K1 Rennen", "C1 Rennen"];
 const intensities: TrainingIntensity[] = ["locker", "mittel", "hart", "maximal"];
@@ -78,27 +82,40 @@ const isThisWeek = (date: string): boolean => {
   return current >= start && current < end;
 };
 
-const defaultAthlete = (coachUserId: string): Omit<CoachAthlete, "id" | "createdAt" | "updatedAt"> => ({
+const defaultAthlete = (coachUserId: string, clubId: string, club: string): Omit<CoachAthlete, "id" | "createdAt" | "updatedAt"> => ({
   coachUserId,
+  clubId,
+  firstName: "",
+  lastName: "",
+  email: "",
   name: "",
   birthDate: "",
   ageClass: "",
-  club: "",
+  club,
   boatClasses: ["K1"],
   paddleSide: "rechts",
   groupId: "",
+  groupIds: [],
   goals: "",
+  trainerNotes: "",
   notes: "",
   status: "aktiv",
+  invitationStatus: "aktiv",
 });
+
+const getAthleteName = (athlete: CoachAthlete): string =>
+  athlete.name || `${athlete.firstName} ${athlete.lastName}`.trim() || athlete.email || "Unbenannter Sportler";
 
 export function CoachView({ data, user, onDataChange }: CoachViewProps) {
   const [editingAthlete, setEditingAthlete] = useState<CoachAthlete | null>(null);
   const [athleteBoatClasses, setAthleteBoatClasses] = useState<BoatClass[]>(["K1"]);
+  const [athleteGroupIds, setAthleteGroupIds] = useState<string[]>([]);
   const [editingGroup, setEditingGroup] = useState<CoachGroup | null>(null);
+  const [groupBoatClasses, setGroupBoatClasses] = useState<BoatClass[]>(["K1"]);
   const [editingClub, setEditingClub] = useState<Club | null>(null);
   const [editingClubRequestId, setEditingClubRequestId] = useState("");
   const [selectedPreviewAthleteId, setSelectedPreviewAthleteId] = useState("");
+  const [selectedProfileAthleteId, setSelectedProfileAthleteId] = useState("");
   const [authUsers, setAuthUsers] = useState<AuthUser[]>(() => loadUsers());
   const [clubs, setClubs] = useState<Club[]>(() => loadClubs());
   const [clubRequests, setClubRequests] = useState<ClubRequest[]>(() => loadClubRequests());
@@ -106,16 +123,54 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
   const [userSearch, setUserSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<UserRole | "all">("all");
   const [sortBy, setSortBy] = useState<"name" | "email" | "role" | "club">("name");
+  const [athleteSearch, setAthleteSearch] = useState("");
+  const [athleteFilter, setAthleteFilter] = useState<"all" | BoatClass | AgeClass | CoachAthleteStatus>("all");
   const [message, setMessage] = useState("");
 
   const isAdmin = user.role === "admin";
   const userClub = user.profile.club.trim().toLowerCase();
-  const ownGroups = isAdmin ? data.coachGroups : data.coachGroups.filter((group) => group.coachUserId === user.userId);
   const myClub = clubs.find((club) => normalizeClubName(club.name) === userClub);
+  const userClubId = myClub?.clubId ?? "";
+  const ownGroups = isAdmin
+    ? data.coachGroups
+    : data.coachGroups.filter((group) =>
+        (userClubId && group.clubId === userClubId) ||
+        group.coachId === user.userId ||
+        group.coachUserId === user.userId,
+      );
   const clubAthletes = authUsers.filter((authUser) => authUser.role === "athlete" && Boolean(userClub) && normalizeClubName(authUser.club) === userClub);
   const canSeeAthlete = (athlete: CoachAthlete): boolean =>
-    isAdmin || (Boolean(userClub) && athlete.club.trim().toLowerCase() === userClub);
+    isAdmin ||
+    (Boolean(userClubId) && athlete.clubId === userClubId) ||
+    (Boolean(userClub) && athlete.club.trim().toLowerCase() === userClub);
   const ownAthletes = data.coachAthletes.filter(canSeeAthlete);
+  const getAthleteGroups = (athlete: CoachAthlete): CoachGroup[] => {
+    const ids = athlete.groupIds.length > 0 ? athlete.groupIds : athlete.groupId ? [athlete.groupId] : [];
+    return ownGroups.filter((group) => ids.includes(group.id) || ids.includes(group.groupId));
+  };
+  const filteredAthletes = useMemo(() => {
+    const query = athleteSearch.trim().toLowerCase();
+    return ownAthletes.filter((athlete) => {
+      const groups = getAthleteGroups(athlete);
+      const searchable = [
+        athlete.firstName,
+        athlete.lastName,
+        athlete.name,
+        athlete.email,
+        athlete.ageClass,
+        athlete.boatClasses.join(" "),
+        athlete.status,
+        groups.map((group) => group.name).join(" "),
+      ].join(" ").toLowerCase();
+      const matchesQuery = !query || searchable.includes(query);
+      const matchesFilter =
+        athleteFilter === "all" ||
+        athlete.boatClasses.includes(athleteFilter as BoatClass) ||
+        athlete.ageClass === athleteFilter ||
+        athlete.status === athleteFilter;
+      return matchesQuery && matchesFilter;
+    });
+  }, [athleteFilter, athleteSearch, ownAthletes, ownGroups]);
   const coachPlan = isAdmin ? data.plan : data.plan.filter((entry) => entry.createdByUserId === user.userId);
   const visibleAuthUsers = useMemo(() => {
     const scoped = isAdmin
@@ -145,18 +200,23 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
       });
   }, [authUsers, isAdmin, roleFilter, sortBy, userClub, userSearch]);
   const previewAthlete = ownAthletes.find((athlete) => athlete.id === selectedPreviewAthleteId) ?? ownAthletes[0];
+  const profileAthlete = ownAthletes.find((athlete) => athlete.id === selectedProfileAthleteId) ?? null;
   const previewPlan = previewAthlete
-    ? coachPlan.filter((entry) => entry.assignedAthleteId === previewAthlete.id || (entry.assignedGroupId && entry.assignedGroupId === previewAthlete.groupId))
+    ? coachPlan.filter((entry) => {
+        const groupIds = previewAthlete.groupIds.length > 0 ? previewAthlete.groupIds : previewAthlete.groupId ? [previewAthlete.groupId] : [];
+        return entry.assignedAthleteId === previewAthlete.id || (entry.assignedGroupId && groupIds.includes(entry.assignedGroupId));
+      })
     : [];
   const todaysPreviewTraining = previewPlan.find((entry) => entry.date === todayKey());
   const openFeedback = coachPlan.filter((entry) => entry.status === "erledigt" && !entry.feedbackNote).length;
+  const weeklyTrainingCount = coachPlan.filter((entry) => isThisWeek(entry.date)).length;
 
   const metrics = useMemo(() => [
     { label: isAdmin ? "Sportler" : "Sportler im Verein", value: isAdmin ? ownAthletes.length : clubAthletes.length },
     { label: isAdmin ? "Gruppen" : "Gruppen im Verein", value: ownGroups.length },
-    { label: "Trainings diese Woche", value: coachPlan.filter((entry) => isThisWeek(entry.date)).length },
+    { label: "Trainings diese Woche", value: weeklyTrainingCount },
     { label: "Offene Rueckmeldungen", value: openFeedback },
-  ], [clubAthletes.length, coachPlan, isAdmin, openFeedback, ownAthletes.length, ownGroups.length]);
+  ], [clubAthletes.length, isAdmin, openFeedback, ownAthletes.length, ownGroups.length, weeklyTrainingCount]);
 
   if (!canUseCoach(user.role)) {
     return (
@@ -172,31 +232,42 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const hasC1 = athleteBoatClasses.includes("C1");
-    const name = String(formData.get("name") ?? "").trim();
+    const firstName = String(formData.get("firstName") ?? "").trim();
+    const lastName = String(formData.get("lastName") ?? "").trim();
+    const email = String(formData.get("email") ?? "").trim().toLowerCase();
+    const name = `${firstName} ${lastName}`.trim();
 
-    if (!name || athleteBoatClasses.length === 0 || (hasC1 && !formData.get("paddleSide"))) {
-      setMessage("Sportler braucht einen Namen, mindestens eine Bootsklasse und bei C1 eine Paddelseite.");
+    if (!firstName || !lastName || athleteBoatClasses.length === 0 || (hasC1 && !formData.get("paddleSide"))) {
+      setMessage("Sportler braucht Vorname, Nachname, mindestens eine Bootsklasse und bei C1 eine Paddelseite.");
       return;
     }
 
     const timestamp = new Date().toISOString();
+    const selectedGroups = formData.getAll("groupIds").map(String);
     const athlete: CoachAthlete = {
       ...(editingAthlete ?? {
-        ...defaultAthlete(user.userId),
+        ...defaultAthlete(user.userId, userClubId, user.profile.club),
         id: createId("coach-athlete"),
         createdAt: timestamp,
       }),
       coachUserId: user.userId,
+      clubId: editingAthlete?.clubId || userClubId,
+      firstName,
+      lastName,
+      email,
       name,
       birthDate: String(formData.get("birthDate") ?? ""),
       ageClass: String(formData.get("ageClass") ?? "") as AgeClass | "",
-      club: String(formData.get("club") ?? "").trim(),
+      club: String(formData.get("club") ?? user.profile.club).trim(),
       boatClasses: athleteBoatClasses,
       paddleSide: hasC1 ? String(formData.get("paddleSide")) as PaddleSide : "rechts",
-      groupId: String(formData.get("groupId") ?? ""),
+      groupId: selectedGroups[0] ?? "",
+      groupIds: selectedGroups,
       goals: String(formData.get("goals") ?? "").trim(),
+      trainerNotes: String(formData.get("trainerNotes") ?? "").trim(),
       notes: String(formData.get("notes") ?? "").trim(),
       status: String(formData.get("status") ?? "aktiv") as CoachAthleteStatus,
+      invitationStatus: String(formData.get("invitationStatus") ?? "aktiv") as CoachAthleteInvitationStatus,
       updatedAt: timestamp,
     };
 
@@ -208,6 +279,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
     }));
     setEditingAthlete(null);
     setAthleteBoatClasses(["K1"]);
+    setAthleteGroupIds([]);
     setMessage("Sportler gespeichert");
   };
 
@@ -226,18 +298,30 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const timestamp = new Date().toISOString();
+    const selectedAthletes = formData.getAll("athleteIds").map(String);
+    const groupId = editingGroup?.id ?? createId("coach-group");
     const group: CoachGroup = {
       ...(editingGroup ?? {
-        id: createId("coach-group"),
+        id: groupId,
+        groupId,
         coachUserId: user.userId,
+        coachId: user.userId,
+        clubId: userClubId,
         createdAt: timestamp,
       }),
+      groupId: editingGroup?.groupId ?? groupId,
+      clubId: editingGroup?.clubId || userClubId,
       coachUserId: user.userId,
+      coachId: user.userId,
       name: String(formData.get("name") ?? "").trim(),
       description: String(formData.get("description") ?? "").trim(),
-      ageRange: String(formData.get("ageRange") ?? "").trim(),
-      trainingFocus: String(formData.get("trainingFocus") ?? "").trim(),
-      athleteIds: formData.getAll("athleteIds").map(String),
+      ageCategory: String(formData.get("ageCategory") ?? "") as AgeClass | "",
+      ageRange: String(formData.get("ageCategory") ?? "").trim(),
+      boatClasses: groupBoatClasses,
+      trainingFocus: String(formData.get("trainingFocus") ?? "Allgemein") as TrainingGroupFocus,
+      color: String(formData.get("color") ?? "#00B4D8"),
+      status: String(formData.get("status") ?? "active") as TrainingGroupStatus,
+      athleteIds: selectedAthletes,
       updatedAt: timestamp,
     };
 
@@ -248,17 +332,29 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
         : [group, ...current.coachGroups],
       coachAthletes: current.coachAthletes.map((athlete) => ({
         ...athlete,
-        groupId: group.athleteIds.includes(athlete.id) ? group.id : athlete.groupId === group.id ? "" : athlete.groupId,
+        groupIds: selectedAthletes.includes(athlete.id)
+          ? Array.from(new Set([...(athlete.groupIds ?? []), group.id]))
+          : (athlete.groupIds ?? []).filter((groupId) => groupId !== group.id),
+        groupId: selectedAthletes.includes(athlete.id)
+          ? group.id
+          : athlete.groupId === group.id
+            ? (athlete.groupIds ?? []).filter((groupId) => groupId !== group.id)[0] ?? ""
+            : athlete.groupId,
       })),
     }));
     setEditingGroup(null);
+    setGroupBoatClasses(["K1"]);
   };
 
   const deleteGroup = (id: string) => {
     onDataChange((current) => ({
       ...current,
       coachGroups: current.coachGroups.filter((group) => group.id !== id),
-      coachAthletes: current.coachAthletes.map((athlete) => athlete.groupId === id ? { ...athlete, groupId: "" } : athlete),
+      coachAthletes: current.coachAthletes.map((athlete) => ({
+        ...athlete,
+        groupIds: athlete.groupIds.filter((groupId) => groupId !== id),
+        groupId: athlete.groupId === id ? athlete.groupIds.filter((groupId) => groupId !== id)[0] ?? "" : athlete.groupId,
+      })),
     }));
   };
 
@@ -374,11 +470,20 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
     setMessage(status === "approved" ? "Vereinsvorschlag angenommen" : "Vereinsvorschlag abgelehnt");
   };
 
-  const athleteFormValue = editingAthlete ?? defaultAthlete(user.userId);
-  const groupFormValue: Pick<CoachGroup, "name" | "description" | "ageRange" | "trainingFocus" | "athleteIds"> =
-    editingGroup ?? { name: "", description: "", ageRange: "", trainingFocus: "", athleteIds: [] };
+  const athleteFormValue = editingAthlete ?? defaultAthlete(user.userId, userClubId, user.profile.club);
+  const groupFormValue: Pick<CoachGroup, "name" | "description" | "ageCategory" | "trainingFocus" | "color" | "status" | "athleteIds"> =
+    editingGroup ?? { name: "", description: "", ageCategory: "", trainingFocus: "Allgemein", color: "#00B4D8", status: "active", athleteIds: [] };
   const toggleAthleteBoatClass = (boatClass: BoatClass) => {
     setAthleteBoatClasses((current) => {
+      if (current.includes(boatClass)) {
+        return current.length === 1 ? current : current.filter((item) => item !== boatClass);
+      }
+
+      return [...current, boatClass];
+    });
+  };
+  const toggleGroupBoatClass = (boatClass: BoatClass) => {
+    setGroupBoatClasses((current) => {
       if (current.includes(boatClass)) {
         return current.length === 1 ? current : current.filter((item) => item !== boatClass);
       }
@@ -390,6 +495,12 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
   const startEditingAthlete = (athlete: CoachAthlete) => {
     setEditingAthlete(athlete);
     setAthleteBoatClasses(athlete.boatClasses.length > 0 ? athlete.boatClasses : ["K1"]);
+    setAthleteGroupIds(athlete.groupIds.length > 0 ? athlete.groupIds : athlete.groupId ? [athlete.groupId] : []);
+  };
+
+  const startEditingGroup = (group: CoachGroup) => {
+    setEditingGroup(group);
+    setGroupBoatClasses(group.boatClasses.length > 0 ? group.boatClasses : ["K1"]);
   };
 
   return (
@@ -397,7 +508,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
       <section className="section-block">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Coach Foundation</p>
+            <p className="eyebrow">Coach Foundation 2.5</p>
             <h3>{roleLabels[user.role]}</h3>
           </div>
         </div>
@@ -408,6 +519,33 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
               <span>{metric.label}</span>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section className="section-block">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Meine Trainingsgruppen</p>
+            <h3>{ownGroups.length} Gruppen im Fokus</h3>
+          </div>
+        </div>
+        <div className="metric-grid">
+          <article className="metric-card">
+            <strong>{ownAthletes.length}</strong>
+            <span>Sportler</span>
+          </article>
+          <article className="metric-card">
+            <strong>{ownGroups.length}</strong>
+            <span>Trainingsgruppen</span>
+          </article>
+          <article className="metric-card">
+            <strong>{openFeedback}</strong>
+            <span>Offene Rueckmeldungen</span>
+          </article>
+          <article className="metric-card">
+            <strong>{weeklyTrainingCount}</strong>
+            <span>Trainings diese Woche</span>
+          </article>
         </div>
       </section>
 
@@ -674,13 +812,32 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
       <section className="section-block">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Sportlerverwaltung</p>
-            <h3>Sportler anlegen</h3>
+            <p className="eyebrow">Sportler</p>
+            <h3>Sportlerverwaltung</h3>
+          </div>
+        </div>
+        <div className="entry-form compact-form">
+          <div className="form-grid">
+            <label>Suche<input value={athleteSearch} onChange={(event) => setAthleteSearch(event.target.value)} placeholder="Name, E-Mail, Gruppe, Bootsklasse" /></label>
+            <label>
+              Filter
+              <select value={athleteFilter} onChange={(event) => setAthleteFilter(event.target.value as typeof athleteFilter)}>
+                <option value="all">Alle</option>
+                <option value="K1">K1</option>
+                <option value="C1">C1</option>
+                <option value="Leistungsklasse">Leistungsklasse</option>
+                <option value="U18">U18</option>
+                <option value="aktiv">Aktiv</option>
+                <option value="pausiert">Pausiert</option>
+              </select>
+            </label>
           </div>
         </div>
         <form className="entry-form" onSubmit={upsertAthlete}>
           <div className="form-grid">
-            <label>Name<input name="name" defaultValue={athleteFormValue.name} required /></label>
+            <label>Vorname<input name="firstName" defaultValue={athleteFormValue.firstName} required /></label>
+            <label>Nachname<input name="lastName" defaultValue={athleteFormValue.lastName} required /></label>
+            <label>E-Mail<input name="email" type="email" defaultValue={athleteFormValue.email} /></label>
             <label>Geburtsdatum<input name="birthDate" type="date" defaultValue={athleteFormValue.birthDate} /></label>
             <label>
               Altersklasse
@@ -688,14 +845,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
                 {ageClasses.map((ageClass) => <option key={ageClass || "empty"} value={ageClass}>{ageClass || "Bitte waehlen"}</option>)}
               </select>
             </label>
-            <label>Verein<input name="club" defaultValue={athleteFormValue.club} /></label>
-            <label>
-              Gruppe
-              <select name="groupId" defaultValue={athleteFormValue.groupId}>
-                <option value="">Keine Gruppe</option>
-                {ownGroups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}
-              </select>
-            </label>
+            <label>Verein<input name="club" defaultValue={athleteFormValue.club || user.profile.club} readOnly={!isAdmin} /></label>
             <label>
               Status
               <select name="status" defaultValue={athleteFormValue.status}>
@@ -703,6 +853,29 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
                 <option value="pausiert">pausiert</option>
               </select>
             </label>
+            <label>
+              Einladung
+              <select name="invitationStatus" defaultValue={athleteFormValue.invitationStatus}>
+                <option value="aktiv">aktiv</option>
+                <option value="einladung_offen">Einladung offen</option>
+              </select>
+            </label>
+          </div>
+          <div className="choice-group">
+            <span>Trainingsgruppen</span>
+            <div className="tag-row">
+              {ownGroups.length > 0 ? ownGroups.map((group) => (
+                <label className="toggle-row" key={group.id}>
+                  <span>{group.name}</span>
+                  <input
+                    name="groupIds"
+                    type="checkbox"
+                    value={group.id}
+                    defaultChecked={athleteGroupIds.includes(group.id) || athleteFormValue.groupIds.includes(group.id)}
+                  />
+                </label>
+              )) : <small>Erstelle zuerst eine Trainingsgruppe.</small>}
+            </div>
           </div>
           <div className="choice-group">
             <span>Bootsklassen</span>
@@ -723,35 +896,125 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
           {athleteBoatClasses.includes("C1") ? (
             <label>Paddelseite bei C1<select name="paddleSide" defaultValue={athleteFormValue.paddleSide}><option value="links">Links</option><option value="rechts">Rechts</option></select></label>
           ) : null}
-          <label>Ziele<textarea name="goals" defaultValue={athleteFormValue.goals} rows={3} /></label>
-          <label>Notizen<textarea name="notes" defaultValue={athleteFormValue.notes} rows={3} /></label>
-          <button className="save-button" type="submit">{editingAthlete ? "Sportler speichern" : "Sportler anlegen"}</button>
+          <label>Saisonziele<textarea name="goals" defaultValue={athleteFormValue.goals} rows={3} /></label>
+          <label>Trainernotizen<textarea name="trainerNotes" defaultValue={athleteFormValue.trainerNotes} rows={3} /></label>
+          <label>Interne Notiz<textarea name="notes" defaultValue={athleteFormValue.notes} rows={3} /></label>
+          <button className="save-button" type="submit">{editingAthlete ? "Sportler speichern" : "Sportler einladen"}</button>
         </form>
-        <div className="result-list">
-          {ownAthletes.map((athlete) => (
-            <article className="summary-strip" key={athlete.id}>
-              <span>{athlete.name} - {athlete.ageClass || "ohne AK"} - {athlete.boatClasses.join(" + ")}</span>
+        <div className="athlete-table">
+          <div className="athlete-table-header">
+            <span>Sportler</span>
+            <span>Altersklasse</span>
+            <span>Boot</span>
+            <span>Gruppe</span>
+            <span>Status</span>
+          </div>
+          {filteredAthletes.length > 0 ? filteredAthletes.map((athlete) => {
+            const groups = getAthleteGroups(athlete);
+            return (
+            <article className="athlete-row" key={athlete.id}>
+              <div className="user-admin-card-header">
+                <span className="profile-avatar small">{`${athlete.firstName.slice(0, 1)}${athlete.lastName.slice(0, 1)}` || "P"}</span>
+                <div>
+                  <strong>{getAthleteName(athlete)}</strong>
+                  <small>{athlete.email || "Keine E-Mail"}</small>
+                </div>
+              </div>
+              <span>{athlete.ageClass || "ohne AK"}</span>
+              <span>{athlete.boatClasses.join(" + ")}</span>
+              <span>{groups.length > 0 ? groups.map((group) => group.name).join(" + ") : "Keine Gruppe"}</span>
+              <span>{athlete.invitationStatus === "einladung_offen" ? "Einladung offen" : athlete.status}</span>
               <div className="card-actions">
+                <button type="button" onClick={() => setSelectedProfileAthleteId(athlete.id)}>Profil</button>
                 <button type="button" onClick={() => startEditingAthlete(athlete)}>Bearbeiten</button>
-                <button type="button" onClick={() => deleteAthlete(athlete.id)}>Loeschen</button>
+                <button type="button" onClick={() => startEditingAthlete(athlete)}>Gruppe aendern</button>
               </div>
             </article>
-          ))}
+            );
+          }) : <p className="empty-state">Keine Sportler fuer diese Suche gefunden.</p>}
         </div>
+        {profileAthlete ? (
+          <article className="athlete-profile-card">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Sportlerprofil</p>
+                <h3>{getAthleteName(profileAthlete)}</h3>
+              </div>
+              <button type="button" onClick={() => setSelectedProfileAthleteId("")}>Schliessen</button>
+            </div>
+            <div className="smart-detail-grid">
+              <span>{profileAthlete.club || "Kein Verein"}</span>
+              <span>{profileAthlete.ageClass || "Keine Altersklasse"}</span>
+              <span>{profileAthlete.boatClasses.join(" + ")}</span>
+              <span>{getAthleteGroups(profileAthlete).map((group) => group.name).join(" + ") || "Keine Gruppe"}</span>
+              <span>{profileAthlete.status}</span>
+            </div>
+            <div className="profile-insight-grid">
+              <div><strong>Ziele</strong><span>{profileAthlete.goals || "Noch keine Ziele hinterlegt."}</span></div>
+              <div><strong>Trainings</strong><span>{coachPlan.filter((entry) => entry.assignedAthleteId === profileAthlete.id).length} geplante Einheiten</span></div>
+              <div><strong>Wettkaempfe</strong><span>Wettkampfdaten werden mit dem Athletenprofil verknuepft vorbereitet.</span></div>
+              <div><strong>Material</strong><span>Materialuebersicht wird fuer Coach-Freigaben vorbereitet.</span></div>
+              <div><strong>Journal</strong><span>Rueckmeldungen und Befinden werden hier zusammengefuehrt.</span></div>
+              <div><strong>Trainernotizen</strong><span>{profileAthlete.trainerNotes || "Keine Trainernotizen."}</span></div>
+            </div>
+            <div className="card-actions">
+              <button type="button" onClick={() => startEditingAthlete(profileAthlete)}>Gruppen, Ziele und Status bearbeiten</button>
+              <button type="button" onClick={() => deleteAthlete(profileAthlete.id)}>Sportler entfernen</button>
+            </div>
+          </article>
+        ) : null}
       </section>
 
       <section className="section-block">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Gruppenverwaltung</p>
-            <h3>Gruppen</h3>
+            <p className="eyebrow">Trainingsgruppen</p>
+            <h3>Gruppenverwaltung</h3>
           </div>
+          <button type="button" onClick={() => {
+            setEditingGroup(null);
+            setGroupBoatClasses(["K1"]);
+          }}>Neue Gruppe erstellen</button>
         </div>
         <form className="entry-form" onSubmit={upsertGroup}>
           <div className="form-grid">
             <label>Gruppenname<input name="name" defaultValue={groupFormValue.name} required /></label>
-            <label>Altersbereich<input name="ageRange" defaultValue={groupFormValue.ageRange} /></label>
-            <label>Trainingsfokus<input name="trainingFocus" defaultValue={groupFormValue.trainingFocus} /></label>
+            <label>
+              Altersklasse
+              <select name="ageCategory" defaultValue={groupFormValue.ageCategory}>
+                {ageClasses.map((ageClass) => <option key={ageClass || "empty"} value={ageClass}>{ageClass || "Alle"}</option>)}
+              </select>
+            </label>
+            <label>
+              Trainingsfokus
+              <select name="trainingFocus" defaultValue={groupFormValue.trainingFocus}>
+                {groupFocuses.map((focus) => <option key={focus} value={focus}>{focus}</option>)}
+              </select>
+            </label>
+            <label>Farbe<input name="color" type="color" defaultValue={groupFormValue.color} /></label>
+            <label>
+              Status
+              <select name="status" defaultValue={groupFormValue.status}>
+                <option value="active">aktiv</option>
+                <option value="inactive">inaktiv</option>
+              </select>
+            </label>
+          </div>
+          <div className="choice-group">
+            <span>Bootsklassen</span>
+            <div className="boat-class-grid">
+              {(["K1", "C1"] as BoatClass[]).map((boatClass) => (
+                <label className={groupBoatClasses.includes(boatClass) ? "boat-class-option active" : "boat-class-option"} key={boatClass}>
+                  <input
+                    checked={groupBoatClasses.includes(boatClass)}
+                    onChange={() => toggleGroupBoatClass(boatClass)}
+                    type="checkbox"
+                    value={boatClass}
+                  />
+                  {boatClass}
+                </label>
+              ))}
+            </div>
           </div>
           <label>Beschreibung<textarea name="description" defaultValue={groupFormValue.description} rows={3} /></label>
           <div className="choice-group">
@@ -767,16 +1030,28 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
           </div>
           <button className="save-button" type="submit">{editingGroup ? "Gruppe speichern" : "Gruppe anlegen"}</button>
         </form>
-        <div className="result-list">
-          {ownGroups.map((group) => (
-            <article className="summary-strip" key={group.id}>
-              <span>{group.name} - {group.trainingFocus || "ohne Fokus"} - {group.athleteIds.length} Sportler</span>
+        <div className="group-card-grid">
+          {ownGroups.length > 0 ? ownGroups.map((group) => (
+            <article className="training-group-card" key={group.id} style={{ borderColor: group.color }}>
+              <div className="group-card-top">
+                <span className="group-color-dot" style={{ background: group.color }} />
+                <div>
+                  <strong>{group.name}</strong>
+                  <small>{group.ageCategory || "Alle Altersklassen"} - {group.trainingFocus}</small>
+                </div>
+              </div>
+              <p>{group.description || "Keine Beschreibung hinterlegt."}</p>
+              <div className="smart-detail-grid">
+                <span>{group.boatClasses.join(" + ")}</span>
+                <span>{group.athleteIds.length} Sportler</span>
+                <span>{group.status === "active" ? "aktiv" : "inaktiv"}</span>
+              </div>
               <div className="card-actions">
-                <button type="button" onClick={() => setEditingGroup(group)}>Bearbeiten</button>
+                <button type="button" onClick={() => startEditingGroup(group)}>Bearbeiten</button>
                 <button type="button" onClick={() => deleteGroup(group.id)}>Loeschen</button>
               </div>
             </article>
-          ))}
+          )) : <p className="empty-state">Noch keine Trainingsgruppen vorhanden.</p>}
         </div>
       </section>
 

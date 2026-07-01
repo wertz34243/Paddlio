@@ -350,10 +350,19 @@ export type InvitationCode = {
 };
 
 export type CoachAthleteStatus = "aktiv" | "pausiert";
+export type CoachAthleteInvitationStatus = "aktiv" | "einladung_offen";
+
+export type TrainingGroupFocus = "Technik" | "Kraft" | "Ausdauer" | "Sprint" | "Wettkampf" | "Allgemein";
+
+export type TrainingGroupStatus = "active" | "inactive";
 
 export type CoachAthlete = {
   id: string;
   coachUserId: string;
+  clubId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
   name: string;
   birthDate: string;
   ageClass: AgeClass | "";
@@ -361,20 +370,30 @@ export type CoachAthlete = {
   boatClasses: BoatClass[];
   paddleSide: PaddleSide;
   groupId: string;
+  groupIds: string[];
   goals: string;
+  trainerNotes: string;
   notes: string;
   status: CoachAthleteStatus;
+  invitationStatus: CoachAthleteInvitationStatus;
   createdAt: string;
   updatedAt: string;
 };
 
 export type CoachGroup = {
   id: string;
+  groupId: string;
+  clubId: string;
   coachUserId: string;
+  coachId: string;
   name: string;
   description: string;
+  ageCategory: AgeClass | "";
   ageRange: string;
-  trainingFocus: string;
+  boatClasses: BoatClass[];
+  trainingFocus: TrainingGroupFocus;
+  color: string;
+  status: TrainingGroupStatus;
   athleteIds: string[];
   createdAt: string;
   updatedAt: string;

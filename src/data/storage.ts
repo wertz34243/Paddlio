@@ -341,13 +341,69 @@ const normalizeJournalEntries = (items: Array<Partial<TrainingJournalEntry> & Pi
     updatedAt: item.updatedAt ?? now(),
   }));
 
+const normalizeCoachGroups = (items: Array<Partial<CoachGroup> & Pick<CoachGroup, "id" | "name">>, fallbackClubId: string): CoachGroup[] =>
+  items.map((group) => ({
+    id: group.id,
+    groupId: group.groupId ?? group.id,
+    clubId: group.clubId ?? fallbackClubId,
+    coachUserId: group.coachUserId ?? group.coachId ?? "",
+    coachId: group.coachId ?? group.coachUserId ?? "",
+    name: group.name,
+    description: group.description ?? "",
+    ageCategory: group.ageCategory ?? "",
+    ageRange: group.ageRange ?? "",
+    boatClasses: Array.isArray(group.boatClasses) && group.boatClasses.length > 0 ? group.boatClasses : ["K1"],
+    trainingFocus: group.trainingFocus ?? "Allgemein",
+    color: group.color ?? "#00B4D8",
+    status: group.status ?? "active",
+    athleteIds: Array.isArray(group.athleteIds) ? group.athleteIds : [],
+    createdAt: group.createdAt ?? now(),
+    updatedAt: group.updatedAt ?? now(),
+  }));
+
+const normalizeCoachAthletes = (items: Array<Partial<CoachAthlete> & Pick<CoachAthlete, "id">>, fallbackClub: string, fallbackClubId: string): CoachAthlete[] =>
+  items.map((athlete) => {
+    const nameParts = (athlete.name ?? `${athlete.firstName ?? ""} ${athlete.lastName ?? ""}`).trim().split(/\s+/).filter(Boolean);
+    const firstName = athlete.firstName ?? nameParts[0] ?? "";
+    const lastName = athlete.lastName ?? nameParts.slice(1).join(" ");
+    const groupIds = Array.isArray(athlete.groupIds) && athlete.groupIds.length > 0
+      ? athlete.groupIds
+      : athlete.groupId
+        ? [athlete.groupId]
+        : [];
+
+    return {
+      id: athlete.id,
+      coachUserId: athlete.coachUserId ?? "",
+      clubId: athlete.clubId ?? fallbackClubId,
+      firstName,
+      lastName,
+      email: athlete.email ?? "",
+      name: athlete.name ?? `${firstName} ${lastName}`.trim(),
+      birthDate: athlete.birthDate ?? "",
+      ageClass: athlete.ageClass ?? "",
+      club: normalizeBrandValue(athlete.club ?? fallbackClub),
+      boatClasses: Array.isArray(athlete.boatClasses) && athlete.boatClasses.length > 0 ? athlete.boatClasses : ["K1"],
+      paddleSide: athlete.paddleSide ?? "rechts",
+      groupId: athlete.groupId ?? groupIds[0] ?? "",
+      groupIds,
+      goals: athlete.goals ?? "",
+      trainerNotes: athlete.trainerNotes ?? athlete.notes ?? "",
+      notes: athlete.notes ?? "",
+      status: athlete.status ?? "aktiv",
+      invitationStatus: athlete.invitationStatus ?? "aktiv",
+      createdAt: athlete.createdAt ?? now(),
+      updatedAt: athlete.updatedAt ?? now(),
+    };
+  });
+
 const normalizeDataShape = (data: PaddleMotionData): PaddleMotionData => ({
   ...data,
   journal: Array.isArray(data.journal) ? normalizeJournalEntries(data.journal) : [],
   material: normalizeMaterialItems(data.material),
   goals: Array.isArray(data.goals) ? normalizeSeasonGoals(data.goals, data.athlete.id, data.activeUserId) : [],
-  coachAthletes: Array.isArray(data.coachAthletes) ? data.coachAthletes : [],
-  coachGroups: Array.isArray(data.coachGroups) ? data.coachGroups : [],
+  coachAthletes: Array.isArray(data.coachAthletes) ? normalizeCoachAthletes(data.coachAthletes, data.athlete.club, "") : [],
+  coachGroups: Array.isArray(data.coachGroups) ? normalizeCoachGroups(data.coachGroups, "") : [],
 });
 
 const normalizeSeasonGoals = (

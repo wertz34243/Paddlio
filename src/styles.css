@@ -194,6 +194,106 @@ button {
   letter-spacing: 0;
 }
 
+.athlete-table,
+.group-card-grid,
+.profile-insight-grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.athlete-table-header,
+.athlete-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.5fr) minmax(88px, 0.7fr) minmax(72px, 0.6fr) minmax(120px, 1fr) minmax(94px, 0.8fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.athlete-table-header {
+  padding: 0 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.athlete-row,
+.athlete-profile-card,
+.training-group-card {
+  padding: 16px;
+  border: 1px solid rgba(144, 224, 239, 0.14);
+  border-radius: var(--radius);
+  background: rgba(30, 41, 59, 0.66);
+  box-shadow: var(--shadow);
+}
+
+.athlete-row strong,
+.athlete-row span,
+.athlete-row small,
+.training-group-card strong,
+.training-group-card span,
+.training-group-card small,
+.training-group-card p,
+.athlete-profile-card span {
+  overflow-wrap: anywhere;
+}
+
+.athlete-row > span {
+  color: #dbeafe;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.group-card-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.group-color-dot {
+  width: 18px;
+  height: 44px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  box-shadow: 0 0 24px rgba(144, 224, 239, 0.22);
+}
+
+.training-group-card {
+  display: grid;
+  gap: 12px;
+}
+
+.training-group-card p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.profile-insight-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.profile-insight-grid div {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.profile-insight-grid strong {
+  color: var(--accent);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.profile-insight-grid span {
+  color: #dbeafe;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .auth-form {
   display: grid;
   gap: 13px;
@@ -1910,9 +2010,20 @@ p {
   .form-grid,
   .form-actions,
   .card-actions,
+  .athlete-table-header,
+  .athlete-row,
+  .profile-insight-grid,
   .personal-best-grid,
   .quick-actions {
     grid-template-columns: 1fr;
+  }
+
+  .athlete-table-header {
+    display: none;
+  }
+
+  .athlete-row {
+    align-items: stretch;
   }
 
   .today-training-card {

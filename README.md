@@ -81,6 +81,15 @@ Version 1.0 richtet sich an Athletinnen und Athleten. Paddlio kombiniert Trainin
 - Coach Dashboard zeigt den eigenen Verein, Sportler im Verein, Gruppen im Verein und offene Rueckmeldungen
 - LocalStorage-Struktur erweitert um `paddlio_clubs` und `paddlio_club_requests`
 
+## Version 2.5 - Trainingsgruppen & Sportlerverwaltung
+
+- Coach Dashboard erweitert um die Karte `Meine Trainingsgruppen` mit Sportlern, Gruppen, Wochen-Trainings und offenen Rueckmeldungen
+- Trainingsgruppen haben jetzt Club-Zuordnung, Coach-Zuordnung, Altersklasse, Bootsklassen, Trainingsfokus, Farbe und Status
+- Coach-Sportlerverwaltung mit Suche, Filter, Tabellenansicht, Einladungsoffen-Status und Mehrfachzuweisung zu Gruppen
+- Sportlerprofil fuer Coaches zeigt Verein, Gruppen, Ziele, Trainings, Wettkampf-/Material-/Journal-Platzhalter und Trainernotizen
+- Bestehende Coach-Gruppen und Coach-Sportler werden beim Laden in die neue 2.5-Struktur migriert
+- Coaches sehen weiterhin nur Sportler und Gruppen ihres Vereins; Admins sehen alles
+
 ## Paddlio auf iPhone/iPad installieren
 
 1. Paddlio in Safari oeffnen.
