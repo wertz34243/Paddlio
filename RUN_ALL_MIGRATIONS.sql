@@ -506,9 +506,22 @@ create index training_templates_owner_id_idx on public.training_templates(owner_
 create index training_templates_club_id_idx on public.training_templates(club_id);
 create index training_templates_visibility_idx on public.training_templates(visibility);
 
-create or replace view public.athlete_profiles
-with (security_invoker = true)
-as
+create or replace view public.athlete_profiles (
+  id,
+  email,
+  first_name,
+  last_name,
+  display_name,
+  club_id,
+  roles,
+  status,
+  avatar_url,
+  age_category,
+  boat_classes,
+  paddle_side,
+  created_at,
+  updated_at
+) as
 select
   id,
   email,
@@ -527,9 +540,22 @@ select
 from public.profiles
 where 'Athlete' = any(roles);
 
-create or replace view public.coach_profiles
-with (security_invoker = true)
-as
+create or replace view public.coach_profiles (
+  id,
+  email,
+  first_name,
+  last_name,
+  display_name,
+  club_id,
+  roles,
+  status,
+  avatar_url,
+  age_category,
+  boat_classes,
+  paddle_side,
+  created_at,
+  updated_at
+) as
 select
   id,
   email,
@@ -549,6 +575,9 @@ from public.profiles
 where 'Coach' = any(roles)
    or 'TeamAdmin' = any(roles)
    or 'Admin' = any(roles);
+
+alter view public.athlete_profiles set (security_invoker = true);
+alter view public.coach_profiles set (security_invoker = true);
 
 alter table public.profiles enable row level security;
 alter table public.clubs enable row level security;

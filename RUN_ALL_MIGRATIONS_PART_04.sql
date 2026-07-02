@@ -1,4 +1,43 @@
 ﻿
+create policy "season_goals_scope_write" on public.season_goals
+  for all
+  using (
+    athlete_id = auth.uid()
+    or public.is_admin()
+    or exists (
+      select 1 from public.profiles p
+      where p.id = season_goals.athlete_id
+        and p.club_id is not null
+        and p.club_id = public.current_user_club_id()
+        and public.has_role('Coach')
+    )
+  )
+  with check (
+    athlete_id = auth.uid()
+    or public.is_admin()
+    or exists (
+      select 1 from public.profiles p
+      where p.id = season_goals.athlete_id
+        and p.club_id is not null
+        and p.club_id = public.current_user_club_id()
+        and public.has_role('Coach')
+    )
+  );
+
+create policy "training_plan_items_scope_select" on public.training_plan_items
+  for select
+  using (
+    owner_id = auth.uid()
+    or assigned_athlete_id = auth.uid()
+    or coach_id = auth.uid()
+    or public.is_admin()
+    or (
+      public.has_role('Coach')
+      and club_id is not null
+      and club_id = public.current_user_club_id()
+    )
+  );
+
 create policy "training_plan_items_scope_write" on public.training_plan_items
   for all
   using (
