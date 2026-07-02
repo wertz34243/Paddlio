@@ -54,6 +54,13 @@ Supabase ist fuer Paddlio der naheliegende erste Schritt, weil Postgres, Row Lev
 2. Tabellen fuer Users, Clubs, Groups, Training Templates, Training, Goals, Competitions, Material und Feedback modellieren.
 3. Row Level Security beziehungsweise Security Rules fuer Athlete, Coach, TeamAdmin und Admin definieren.
 4. Lokale Storage-Funktionen hinter ein Repository/API-Interface setzen.
-5. Einmalige Migration aus LocalStorage in Cloud-Daten vorbereiten.
-6. Deployment-Umgebungsvariablen fuer Vercel dokumentieren.
-7. End-to-End-Tests fuer Registrierung, Login, Rollenwechsel und Datenisolierung einfuehren.
+5. Supabase Auth Provider aktivieren und Profile, Vereine, Benutzer, Gruppen und Traineranfragen aus der Cloud laden.
+6. Einmalige Migration aus LocalStorage in Cloud-Daten vorbereiten.
+7. Deployment-Umgebungsvariablen fuer Vercel dokumentieren.
+8. End-to-End-Tests fuer Registrierung, Login, Rollenwechsel und Datenisolierung einfuehren.
+
+## Stand Version 3.0.2
+
+- Supabase Auth ist als primaerer Login-Pfad vorbereitet.
+- `profiles`, `clubs`, `trainer_requests` und `training_groups` werden ueber Services geladen und lokal gecacht.
+- Trainings, Ziele, Wettkaempfe, Material und Analyse bleiben fuer 3.0.3 im LocalStorage-Cache.

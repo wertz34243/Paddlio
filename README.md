@@ -128,6 +128,14 @@ Paddlio speichert Daten in der aktuellen Version lokal im Browser per LocalStora
 - App bleibt ohne Supabase-Environment-Variablen voll LocalStorage-faehig und stuerzt nicht ab
 - Setup-Dokumentation fuer lokale Entwicklung und Vercel ergaenzt
 
+## Version 3.0.2 - Supabase Auth & Cloud Integration
+
+- Supabase Auth Provider fuer Registrierung, Login, Logout, Session-Wiederherstellung und Passwort-Reset
+- Profile, Vereine, Benutzer, Trainingsgruppen und Traineranfragen werden aus Supabase geladen und in den lokalen Cache synchronisiert
+- Rollen kommen aus dem Cloud-Profil; Admin-E-Mail `T.Kanu@outlook.com` wird per Datenbank-Trigger vorbereitet
+- Cloud Status zeigt verbunden, synchronisiert oder Offline-Modus; Admins sehen synchronisierte Datensaetze
+- LocalStorage bleibt als Offline-Cache erhalten, bis Trainings, Ziele, Wettkaempfe und Material in 3.0.3 in die Cloud wandern
+
 ## Paddlio auf iPhone/iPad installieren
 
 1. Paddlio in Safari oeffnen.
@@ -221,6 +229,8 @@ Keine echten Keys in Git committen. Lokal gehoeren die Werte in `.env.local`. In
 ## Datenhaltung
 
 Paddlio speichert Daten lokal im Browser. Bestehende LocalStorage-Daten werden beim Laden normalisiert und migriert, damit fruehere Daten nicht verloren gehen. Alte interne Migrationsnamen bleiben deshalb bewusst im Code erhalten.
+
+Ab Version 3.0.2 nutzt Paddlio Supabase Auth als primaere Anmeldung. Profil-, Vereins-, Benutzer-, Gruppen- und Traineranfrage-Daten werden aus Supabase geladen und lokal gecacht. Wenn keine Verbindung besteht, bleibt der letzte Cache nutzbar.
 
 ## Release-Check 1.0
 

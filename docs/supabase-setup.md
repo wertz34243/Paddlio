@@ -36,6 +36,7 @@ Die erste Migration liegt unter:
 
 ```text
 supabase/migrations/0001_initial_schema.sql
+supabase/migrations/0002_auth_integration.sql
 ```
 
 Mit Supabase CLI:
@@ -49,7 +50,7 @@ Alternativ kann die SQL-Datei im Supabase SQL Editor ausgefuehrt werden.
 
 ## Tabellen
 
-Die Migration legt diese Tabellen an:
+Die Migrationen legen diese Tabellen und Auth-Helfer an:
 
 - `profiles`
 - `clubs`
@@ -66,7 +67,11 @@ Die Migration legt diese Tabellen an:
 - `materials`
 - `notifications`
 - `audit_logs`
+- Trigger `on_auth_user_created`, der bei Registrierung automatisch ein Profil erstellt
+- Funktion `default_roles_for_email`, die `T.Kanu@outlook.com` als Athlete, Coach und Admin vorbereitet
 
 ## Sicherheit
 
 Die Migration aktiviert Row Level Security fuer alle App-Tabellen und legt erste Policies fuer Athlete, Coach, TeamAdmin und Admin an. Diese Policies sind die Grundlage fuer Version 3.0, muessen aber vor produktiver Vereinsnutzung mit echten Testnutzern und Supabase Auth End-to-End geprueft werden.
+
+Ab Version 3.0.2 ruft React Supabase nicht direkt in Seitenkomponenten auf. Auth laeuft ueber `AuthProvider`, Datenzugriffe laufen ueber Services unter `src/services/`.

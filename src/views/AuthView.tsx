@@ -1,37 +1,38 @@
 import { useState, type FormEvent } from "react";
 import { APP_NAME, APP_SLOGAN } from "../brand";
-import { loadClubs, type AuthResult, type LoginInput, type RegisterInput } from "../data/storage";
+import { loadClubs, type LoginInput, type RegisterInput } from "../data/storage";
+import type { CloudAuthResult } from "../auth/AuthProvider";
 
 type AuthMode = "login" | "register";
 
 type AuthViewProps = {
-  onLogin: (input: LoginInput) => AuthResult;
-  onRegister: (input: RegisterInput) => AuthResult;
+  onLogin: (input: LoginInput) => Promise<CloudAuthResult>;
+  onRegister: (input: RegisterInput) => Promise<CloudAuthResult>;
+  onResetPassword: (email: string) => Promise<CloudAuthResult>;
+  cloudMessage?: string;
 };
 
-export function AuthView({ onLogin, onRegister }: AuthViewProps) {
+export function AuthView({ onLogin, onRegister, onResetPassword, cloudMessage }: AuthViewProps) {
   const [mode, setMode] = useState<AuthMode>("login");
   const [clubs] = useState(() => loadClubs().filter((club) => club.status === "active"));
   const [suggestClub, setSuggestClub] = useState(false);
   const [message, setMessage] = useState("");
 
-  const handleLogin = (event: FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const result = onLogin({
+    const result = await onLogin({
       email: String(formData.get("email") ?? ""),
       password: String(formData.get("password") ?? ""),
     });
 
-    if (!result.ok) {
-      setMessage(result.message);
-    }
+    setMessage(result.ok ? result.message ?? "" : result.message);
   };
 
-  const handleRegister = (event: FormEvent<HTMLFormElement>) => {
+  const handleRegister = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const result = onRegister({
+    const result = await onRegister({
       firstName: String(formData.get("firstName") ?? ""),
       lastName: String(formData.get("lastName") ?? ""),
       email: String(formData.get("email") ?? ""),
@@ -43,9 +44,14 @@ export function AuthView({ onLogin, onRegister }: AuthViewProps) {
       privacyAccepted: formData.get("privacyAccepted") === "on",
     });
 
-    if (!result.ok) {
-      setMessage(result.message);
-    }
+    setMessage(result.ok ? result.message ?? "" : result.message);
+  };
+
+  const handleResetPassword = async () => {
+    const email = window.prompt("E-Mail fuer Passwort-Reset");
+    if (!email) return;
+    const result = await onResetPassword(email);
+    setMessage(result.message ?? "Passwort-Reset wurde angefordert.");
   };
 
   const switchMode = (nextMode: AuthMode) => {
@@ -84,7 +90,7 @@ export function AuthView({ onLogin, onRegister }: AuthViewProps) {
             <button className="save-button" type="submit">
               Einloggen
             </button>
-            <button className="text-button" type="button" onClick={() => setMessage("Passwort vergessen ist fuer die Cloud-Version vorbereitet.")}>
+            <button className="text-button" type="button" onClick={handleResetPassword}>
               Passwort vergessen
             </button>
           </form>
@@ -155,6 +161,7 @@ export function AuthView({ onLogin, onRegister }: AuthViewProps) {
           </form>
         )}
 
+        {cloudMessage ? <p className="auth-message">{cloudMessage}</p> : null}
         {message ? <p className="auth-message">{message}</p> : null}
       </section>
     </main>

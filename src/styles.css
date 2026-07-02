@@ -2272,3 +2272,55 @@ p {
     font-size: 9.5px;
   }
 }
+
+.cloud-status {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: calc(82px + env(safe-area-inset-bottom));
+  z-index: 30;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: min(320px, calc(100vw - 32px));
+  padding: 8px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.82);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  color: var(--text);
+  font-size: 12px;
+  backdrop-filter: blur(16px);
+}
+
+.cloud-status::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  transform: translateY(-50%);
+}
+
+.cloud-status span,
+.cloud-status small {
+  padding-left: 12px;
+}
+
+.cloud-status small {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.cloud-status.green::before {
+  background: var(--success);
+}
+
+.cloud-status.yellow::before {
+  background: var(--warning);
+}
+
+.cloud-status.red::before {
+  background: var(--danger);
+}

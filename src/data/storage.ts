@@ -578,6 +578,10 @@ const saveUsers = (users: AuthUser[]): void => {
   writeStorage(USERS_KEY, JSON.stringify(users));
 };
 
+export const cacheCloudAuthUsers = (users: AuthUser[]): void => {
+  saveUsers(users.map(normalizeAuthUser));
+};
+
 const isClub = (value: unknown): value is Club => {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<Club>;
@@ -609,6 +613,10 @@ export const loadClubs = (): Club[] => {
 
 const saveClubs = (clubs: Club[]): void => {
   writeStorage(CLUBS_KEY, JSON.stringify(clubs));
+};
+
+export const cacheCloudClubs = (clubs: Club[]): void => {
+  saveClubs(clubs.map(normalizeClub));
 };
 
 export const upsertClub = (input: ClubInput): Club[] => {
@@ -974,6 +982,10 @@ export const loadTrainerRequests = (): TrainerRequest[] => {
 
 const saveTrainerRequests = (requests: TrainerRequest[]): void => {
   writeStorage(TRAINER_REQUESTS_KEY, JSON.stringify(requests));
+};
+
+export const cacheCloudTrainerRequests = (requests: TrainerRequest[]): void => {
+  saveTrainerRequests(requests.map(normalizeTrainerRequest));
 };
 
 export const createTrainerRequest = (input: TrainerRequestInput): TrainerRequest => {

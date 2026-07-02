@@ -1,25 +1,14 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { APP_NAME, APP_SLOGAN, APP_VERSION } from "./brand";
 import { Icon, type IconName } from "./components/Icon";
 import { SegmentNav, type SegmentItem } from "./components/SegmentNav";
-import {
-  clearSession,
-  createId,
-  loadData,
-  loadSession,
-  loginLocalUser,
-  registerLocalUser,
-  saveData,
-  type AuthResult,
-  type LoginInput,
-  type RegisterInput,
-} from "./data/storage";
+import { createId } from "./data/storage";
+import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import { getActiveUser } from "./domain/profile";
 import { getWeekdayFromDate, isDoneStatus } from "./domain/trainingPlan";
-import { isSupabaseConfigured } from "./lib/supabaseConfig";
+import { updateCloudProfile } from "./services/profileService";
 import type {
   Competition,
-  AuthSession,
   MaterialItem,
   PageId,
   PaddleMotionData,
@@ -114,8 +103,8 @@ const getTimestamp = (): string => new Date().toISOString();
 
 const canUseCoachArea = (role: string): boolean => role === "coach" || role === "teamAdmin" || role === "admin";
 
-function App() {
-  const [session, setSession] = useState<AuthSession | null>(() => loadSession());
+function AppContent() {
+  const { session, data, setData, profile: cloudProfile, loading, cloudStatus, cloudMessage, syncCount, signIn, signUp, signOut, resetPassword } = useAuth();
   const [activePage, setActivePage] = useState<PageId>("dashboard");
   const [trainingSegment, setTrainingSegment] = useState<TrainingSegment>("plan");
   const [competitionSegment, setCompetitionSegment] = useState<CompetitionSegment>("races");
@@ -124,50 +113,24 @@ function App() {
   const [newTrainingSignal, setNewTrainingSignal] = useState(0);
   const [newCompetitionSignal, setNewCompetitionSignal] = useState(0);
   const [journalSignal, setJournalSignal] = useState(0);
-  const [data, setData] = useState<PaddleMotionData | null>(() => {
-    const currentSession = loadSession();
-    return currentSession ? loadData(currentSession.userId) : null;
-  });
-
-  useEffect(() => {
-    if (!isSupabaseConfigured) {
-      console.info("Paddlio Cloud ist deaktiviert. LocalStorage bleibt aktiv, bis VITE_SUPABASE_URL und VITE_SUPABASE_ANON_KEY gesetzt sind.");
-    }
-  }, []);
-
-  useEffect(() => {
-    if (session && data) {
-      saveData(session.userId, data);
-    }
-  }, [data, session]);
-
-  const activateSession = (result: AuthResult): AuthResult => {
-    if (result.ok) {
-      setSession(result.session);
-      setData(loadData(result.session.userId));
-      setActivePage("dashboard");
-      setTrainingSegment("plan");
-      setCompetitionSegment("races");
-      setAnalysisSegment("overview");
-      setMoreSegment("profile");
-    }
-
-    return result;
-  };
-
-  const handleLogin = (input: LoginInput): AuthResult => activateSession(loginLocalUser(input));
-
-  const handleRegister = (input: RegisterInput): AuthResult => activateSession(registerLocalUser(input));
-
-  const handleLogout = () => {
-    clearSession();
-    setSession(null);
-    setData(null);
+  const handleLogout = async () => {
+    await signOut();
     setActivePage("dashboard");
   };
 
+  if (loading) {
+    return (
+      <main className="auth-shell">
+        <section className="auth-card">
+          <p className="app-brand">Paddlio</p>
+          <p className="auth-message">Cloud-Daten werden geladen...</p>
+        </section>
+      </main>
+    );
+  }
+
   if (!session || !data) {
-    return <AuthView onLogin={handleLogin} onRegister={handleRegister} />;
+    return <AuthView onLogin={signIn} onRegister={signUp} onResetPassword={resetPassword} cloudMessage={cloudMessage || "Bitte melde dich mit deinem Paddlio Cloud-Konto an."} />;
   }
 
   const activeUser = getActiveUser(data.users, data.activeUserId);
@@ -452,7 +415,7 @@ function App() {
     }));
   };
 
-  const updateProfile = (profile: UserProfile) => {
+  const updateProfile = (userProfile: UserProfile) => {
     const timestamp = getTimestamp();
 
     updateData((current) => ({
@@ -461,17 +424,30 @@ function App() {
         user.id === current.activeUserId
           ? {
               ...user,
-              profile,
+              profile: userProfile,
               updatedAt: timestamp,
             }
           : user,
       ),
       athlete: {
         ...current.athlete,
-        name: profile.nickname || `${profile.firstName} ${profile.lastName}`.trim() || current.athlete.name,
-        club: profile.club || current.athlete.club,
+        name: userProfile.nickname || `${userProfile.firstName} ${userProfile.lastName}`.trim() || current.athlete.name,
+        club: userProfile.club || current.athlete.club,
       },
     }));
+
+    if (cloudProfile) {
+      void updateCloudProfile({
+        id: cloudProfile.id,
+        first_name: userProfile.firstName,
+        last_name: userProfile.lastName,
+        display_name: userProfile.nickname || `${userProfile.firstName} ${userProfile.lastName}`.trim(),
+        avatar_url: userProfile.profileImageDataUrl || null,
+        age_category: userProfile.ageClass || null,
+        boat_classes: userProfile.boatClasses.map((boat) => boat),
+        paddle_side: userProfile.boatClasses.includes("C1") ? (userProfile.paddleSide === "links" ? "Links" : "Rechts") : null,
+      }).catch((error) => console.error("Profil konnte nicht in die Cloud synchronisiert werden", error));
+    }
   };
 
   const updateProfileSettings = (
@@ -705,6 +681,7 @@ function App() {
       ) : null}
 
       <main className="page-content">{renderPage()}</main>
+      <CloudStatusBadge status={cloudStatus} syncCount={syncCount} isAdmin={activeUser.role === "admin"} message={cloudMessage} />
 
       <nav className="bottom-nav" aria-label="Hauptnavigation">
         {navItems.map((item) => (
@@ -723,6 +700,26 @@ function App() {
         ))}
       </nav>
     </div>
+  );
+}
+
+function CloudStatusBadge({ status, syncCount, isAdmin, message }: { status: string; syncCount: number; isAdmin: boolean; message: string }) {
+  const label = status === "connected" ? "Verbunden" : status === "syncing" ? "Synchronisiert..." : status === "offline" ? "Offline Modus" : "Cloud deaktiviert";
+  const dot = status === "connected" ? "green" : status === "syncing" ? "yellow" : "red";
+  return (
+    <div className={`cloud-status ${dot}`}>
+      <span>{label}</span>
+      {isAdmin ? <small>{syncCount} Datensaetze</small> : null}
+      {message ? <small>{message}</small> : null}
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
