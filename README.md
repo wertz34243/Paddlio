@@ -136,6 +136,14 @@ Paddlio speichert Daten in der aktuellen Version lokal im Browser per LocalStora
 - Cloud Status zeigt verbunden, synchronisiert oder Offline-Modus; Admins sehen synchronisierte Datensaetze
 - LocalStorage bleibt als Offline-Cache erhalten, bis Trainings, Ziele, Wettkaempfe und Material in 3.0.3 in die Cloud wandern
 
+## Version 3.0.3 - Cloud Data Migration & Live Synchronisierung
+
+- Automatische Erst-Migration lokaler Daten in Supabase mit Migrationsmarkierung pro Nutzer
+- Cloud-Services fuer Training, Feedback, Trainingsvorlagen, Ziele, Wettkaempfe, Material, Notifications, Migration und Sync
+- Supabase Realtime aktualisiert Training, Feedback, Ziele, Traineranfragen und Profile ohne manuellen Reload
+- Offline Queue `paddlio_sync_queue` speichert Aenderungen lokal und synchronisiert beim Onlinegehen
+- LocalStorage bleibt Cache, Supabase ist fuer migrierte App-Daten der Hauptspeicher
+
 ## Paddlio auf iPhone/iPad installieren
 
 1. Paddlio in Safari oeffnen.
@@ -247,3 +255,4 @@ Ab Version 3.0.2 nutzt Paddlio Supabase Auth als primaere Anmeldung. Profil-, Ve
 - [Architecture](docs/architecture.md)
 - [Cloud Readiness](docs/cloud-readiness.md)
 - [Supabase Setup](docs/supabase-setup.md)
+- [Cloud Sync](docs/cloud-sync.md)

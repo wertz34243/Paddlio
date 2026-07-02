@@ -37,6 +37,7 @@ Die erste Migration liegt unter:
 ```text
 supabase/migrations/0001_initial_schema.sql
 supabase/migrations/0002_auth_integration.sql
+supabase/migrations/0003_cloud_sync.sql
 ```
 
 Mit Supabase CLI:
@@ -56,7 +57,7 @@ Die Migrationen legen diese Tabellen und Auth-Helfer an:
 - `clubs`
 - `club_requests`
 - `trainer_requests`
-- `training_templates` ist fuer eine Folgemigration vorgesehen, sobald die LocalStorage-Vorlagen aus Version 2.6.1 in die Cloud synchronisiert werden.
+- `training_templates`
 - `training_groups`
 - `group_members`
 - `season_goals`

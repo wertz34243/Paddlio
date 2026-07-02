@@ -1,4 +1,4 @@
-const CACHE_NAME = "paddlio-shell-v3.0.2";
+const CACHE_NAME = "paddlio-shell-v3.0.3";
 const APP_SHELL = ["/", "/manifest.webmanifest", "/offline.html"];
 
 self.addEventListener("install", (event) => {
