@@ -232,7 +232,7 @@ VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
 ```
 
-Keine echten Keys in Git committen. Lokal gehoeren die Werte in `.env.local`. In Vercel werden sie unter `Project Settings` -> `Environment Variables` eingetragen, danach muss ein Redeploy erfolgen. Ohne diese Werte bleibt Paddlio im LocalStorage-Modus.
+Keine echten Keys in Git committen. Lokal gehoeren die Werte in `.env.local`; `.env.example` zeigt die benoetigten Namen. In Vercel werden sie unter `Project Settings` -> `Environment Variables` fuer Production, Preview und Development eingetragen, danach muss ein Redeploy erfolgen. Ohne diese Werte bleibt Paddlio im LocalStorage-Modus und zeigt eine genaue Konfigurationsmeldung.
 
 ## Datenhaltung
 

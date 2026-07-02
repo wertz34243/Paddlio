@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Session, User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase, getSupabaseClient } from "../lib/supabase";
-import { isSupabaseConfigured } from "../lib/supabaseConfig";
+import { getSupabaseConfigMessage, isSupabaseConfigured } from "../lib/supabaseConfig";
 import {
   cacheCloudAuthUsers,
   cacheCloudClubs,
@@ -233,6 +233,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshCloudData = async () => {
     if (!isSupabaseConfigured || !supabase) {
       setCloudStatus("disabled");
+      setCloudMessage(getSupabaseConfigMessage());
       setLoading(false);
       return;
     }
@@ -348,7 +349,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (input: LoginInput): Promise<CloudAuthResult> => {
     const client = getSupabaseClient();
-    if (!client) return { ok: false, message: "Supabase ist noch nicht konfiguriert." };
+    if (!client) return { ok: false, message: getSupabaseConfigMessage() };
     const { error } = await client.auth.signInWithPassword({ email: input.email.trim().toLowerCase(), password: input.password });
     if (error) return { ok: false, message: "E-Mail oder Passwort ist nicht korrekt." };
     await refreshCloudData();
@@ -357,7 +358,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (input: RegisterInput): Promise<CloudAuthResult> => {
     const client = getSupabaseClient();
-    if (!client) return { ok: false, message: "Supabase ist noch nicht konfiguriert." };
+    if (!client) return { ok: false, message: getSupabaseConfigMessage() };
     if (!input.privacyAccepted) return { ok: false, message: "Bitte akzeptiere den Datenschutz." };
     if (input.password !== input.passwordRepeat) return { ok: false, message: "Die Passwoerter stimmen nicht ueberein." };
     const { data: result, error } = await client.auth.signUp({
@@ -394,7 +395,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const resetPassword = async (email: string): Promise<CloudAuthResult> => {
     const client = getSupabaseClient();
-    if (!client) return { ok: false, message: "Supabase ist noch nicht konfiguriert." };
+    if (!client) return { ok: false, message: getSupabaseConfigMessage() };
     const { error } = await client.auth.resetPasswordForEmail(email.trim().toLowerCase());
     if (error) return { ok: false, message: error.message };
     return { ok: true, message: "Wenn die E-Mail existiert, wurde ein Link zum Zuruecksetzen gesendet." };

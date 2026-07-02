@@ -27,8 +27,11 @@ Wenn die Variablen fehlen, bleibt die Cloud-Schicht deaktiviert und Paddlio nutz
 
 1. Vercel Project Settings oeffnen.
 2. `Environment Variables` waehlen.
-3. `VITE_SUPABASE_URL` und `VITE_SUPABASE_ANON_KEY` eintragen.
-4. Deployment neu starten oder einen neuen Commit deployen.
+3. `VITE_SUPABASE_URL` und `VITE_SUPABASE_ANON_KEY` exakt mit diesem Namen eintragen.
+4. Die Variablen fuer `Production`, `Preview` und `Development` aktivieren.
+5. Deployment neu starten oder einen neuen Commit deployen.
+
+Wenn die App `Supabase ist noch nicht konfiguriert` anzeigt, sind die Variablen im ausgelieferten Vite-Build nicht vorhanden oder die URL ist nicht im Format `https://<project-ref>.supabase.co`. Vite liest nur Variablen mit dem Prefix `VITE_` ueber `import.meta.env`.
 
 ## Migration ausfuehren
 
