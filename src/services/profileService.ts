@@ -26,19 +26,21 @@ export const ensureCloudProfile = async (user: SupabaseUser): Promise<CloudProfi
   const firstName = String(metadata.firstName ?? "");
   const lastName = String(metadata.lastName ?? "");
   const email = user.email;
+  const isUuid = (value: unknown): value is string =>
+    typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
   const { data, error } = await (client.from("profiles") as any)
-    .insert({
+    .upsert({
       id: user.id,
       email,
       first_name: firstName,
       last_name: lastName,
       display_name: `${firstName} ${lastName}`.trim() || email,
-      club_id: typeof metadata.clubId === "string" && metadata.clubId ? metadata.clubId : null,
-      roles: email.toLowerCase() === adminEmail ? ["Athlete"] : ["Athlete"],
+      club_id: isUuid(metadata.clubId) ? metadata.clubId : null,
+      roles: email.toLowerCase() === adminEmail ? ["Athlete", "Coach", "Admin"] : ["Athlete"],
       status: "active",
       boat_classes: ["K1"],
-    })
+    }, { onConflict: "id" })
     .select("*")
     .maybeSingle();
 
@@ -75,7 +77,8 @@ export const listCloudProfiles = async (viewer: CloudProfile): Promise<CloudProf
 
   let query = client.from("profiles").select("*").order("display_name", { ascending: true });
   if (!viewer.roles.includes("Admin")) {
-    query = query.eq("club_id", viewer.club_id ?? "");
+    if (!viewer.club_id) return [viewer];
+    query = query.eq("club_id", viewer.club_id);
   }
 
   const { data, error } = await query;

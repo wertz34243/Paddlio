@@ -704,7 +704,7 @@ function AppContent() {
 }
 
 function CloudStatusBadge({ status, syncCount, isAdmin, message }: { status: string; syncCount: number; isAdmin: boolean; message: string }) {
-  const label = status === "connected" ? "Verbunden" : status === "syncing" ? "Synchronisiert..." : status === "offline" ? "Offline Modus" : "Cloud deaktiviert";
+  const label = status === "connected" ? "Verbunden" : status === "syncing" ? "Synchronisiert..." : status === "offline" ? "Offline Modus" : status === "error" ? "Cloud Fehler" : "Cloud deaktiviert";
   const dot = status === "connected" ? "green" : status === "syncing" ? "yellow" : "red";
   return (
     <div className={`cloud-status ${dot}`}>

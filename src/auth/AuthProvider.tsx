@@ -32,7 +32,7 @@ import { listCloudMaterials } from "../services/materialService";
 import { flushSyncQueue, getPendingSyncCount, subscribeToCloudChanges } from "../services/syncService";
 import { migrateLocalDataToCloud, syncDataSnapshotToCloud } from "../services/migrationService";
 
-export type CloudConnectionState = "connected" | "syncing" | "offline" | "disabled";
+export type CloudConnectionState = "connected" | "syncing" | "offline" | "disabled" | "error";
 
 export type CloudAuthResult = { ok: true; message?: string } | { ok: false; message: string };
 
@@ -59,6 +59,32 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 const toLocalRole = (role: string): UserRole =>
   role === "Admin" ? "admin" : role === "Coach" ? "coach" : role === "TeamAdmin" ? "teamAdmin" : "athlete";
+
+const describeCloudError = (error: unknown): string => {
+  if (error && typeof error === "object") {
+    const record = error as Record<string, unknown>;
+    const message = typeof record.message === "string" ? record.message : "";
+    const details = typeof record.details === "string" ? record.details : "";
+    const hint = typeof record.hint === "string" ? record.hint : "";
+    const code = typeof record.code === "string" ? record.code : "";
+    return [code, message, details, hint].filter(Boolean).join(" | ") || JSON.stringify(record);
+  }
+
+  return String(error);
+};
+
+const logCloudError = (scope: string, error: unknown) => {
+  console.error(`[Paddlio Cloud] ${scope} fehlgeschlagen: ${describeCloudError(error)}`, error);
+};
+
+const loadOptionalCloudData = async <T,>(scope: string, loader: () => Promise<T>, fallback: T): Promise<T> => {
+  try {
+    return await loader();
+  } catch (error) {
+    logCloudError(scope, error);
+    return fallback;
+  }
+};
 
 const getPrimaryRole = (roles: string[]): UserRole => {
   if (roles.includes("Admin")) return "admin";
@@ -254,19 +280,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCurrentUser(activeSession.user);
       const nextProfile = (await ensureCloudProfile(activeSession.user)) ?? (await getCloudProfile(activeSession.user.id));
       if (!nextProfile) throw new Error("Profil konnte nicht geladen werden.");
-      const clubs = (await listCloudClubs()).map(toClub);
-      const allProfiles = await listCloudProfiles(nextProfile);
-      const requests = (await listCloudTrainerRequests()).map(toTrainerRequest);
-      const groups = await listCloudTrainingGroups();
+      const clubs = (await loadOptionalCloudData("clubs lesen", listCloudClubs, [])).map(toClub);
+      const allProfiles = await loadOptionalCloudData("profiles listen", () => listCloudProfiles(nextProfile), [nextProfile]);
+      const requests = (await loadOptionalCloudData("trainer_requests lesen", listCloudTrainerRequests, [])).map(toTrainerRequest);
+      const groups = await loadOptionalCloudData("training_groups lesen", listCloudTrainingGroups, []);
       cacheCloudTrainerRequests(requests);
       const cachedBeforeMerge = loadData(activeSession.user.id);
-      const migratedCount = navigator.onLine ? await migrateLocalDataToCloud(activeSession.user.id, cachedBeforeMerge, nextProfile, nextProfile.club_id ?? undefined) : 0;
+      const migratedCount = navigator.onLine
+        ? await loadOptionalCloudData("lokale Daten migrieren", () => migrateLocalDataToCloud(activeSession.user.id, cachedBeforeMerge, nextProfile, nextProfile.club_id ?? undefined), 0)
+        : 0;
       const [cloudPlan, cloudTemplates, cloudGoals, cloudCompetitions, cloudMaterials] = await Promise.all([
-        listCloudTraining(activeSession.user.id),
-        listCloudTrainingTemplates(),
-        listCloudGoals(),
-        listCloudCompetitions(),
-        listCloudMaterials(),
+        loadOptionalCloudData("training_plan_items lesen", () => listCloudTraining(activeSession.user.id), []),
+        loadOptionalCloudData("training_templates lesen", listCloudTrainingTemplates, []),
+        loadOptionalCloudData("season_goals lesen", listCloudGoals, []),
+        loadOptionalCloudData("competitions lesen", listCloudCompetitions, []),
+        loadOptionalCloudData("materials lesen", listCloudMaterials, []),
       ]);
       const nextData = mergeCloudData(activeSession.user.id, nextProfile, clubs, allProfiles.length > 0 ? allProfiles : [nextProfile], groups, {
         plan: cloudPlan,
@@ -282,12 +310,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCloudMessage(migratedCount > 0 ? `${migratedCount} lokale Datensaetze wurden in die Cloud migriert.` : "");
       setCloudStatus(navigator.onLine ? "connected" : "offline");
     } catch (error) {
-      console.error("Paddlio Cloud Synchronisation fehlgeschlagen", error);
-      setCloudMessage("Cloud-Synchronisation ist fehlgeschlagen. Lokaler Cache wird verwendet.");
+      logCloudError("Login-Synchronisation", error);
+      setCloudMessage(`Cloud-Synchronisation ist fehlgeschlagen. Lokaler Cache wird verwendet. ${describeCloudError(error)}`);
       if (activeSession.user) {
         setDataState(loadData(activeSession.user.id));
       }
-      setCloudStatus(navigator.onLine ? "connected" : "offline");
+      setCloudStatus(navigator.onLine ? "error" : "offline");
     } finally {
       setLoading(false);
     }
@@ -330,8 +358,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               if (count > 0) setCloudMessage("Daten wurden zwischen Geraeten synchronisiert.");
             })
             .catch((error) => {
-              console.error("Cloud-Sync fehlgeschlagen", error);
-              setCloudMessage("Aenderungen wurden lokal gespeichert und werden spaeter synchronisiert.");
+              logCloudError("Aenderungen speichern", error);
+              setCloudStatus(navigator.onLine ? "error" : "offline");
+              setCloudMessage(`Aenderungen wurden lokal gespeichert und werden spaeter synchronisiert. ${describeCloudError(error)}`);
             });
         }
       }

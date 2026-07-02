@@ -48,6 +48,7 @@ Die erste Migration liegt unter:
 supabase/migrations/0001_initial_schema.sql
 supabase/migrations/0002_auth_integration.sql
 supabase/migrations/0003_cloud_sync.sql
+supabase/migrations/0004_cloud_sync_policies.sql
 ```
 
 Mit Supabase CLI:
