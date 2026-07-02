@@ -73,6 +73,14 @@ const describeCloudError = (error: unknown): string => {
   return String(error);
 };
 
+const isAuthRateLimitError = (error: unknown): boolean => {
+  if (!error || typeof error !== "object") return false;
+  const record = error as Record<string, unknown>;
+  const status = typeof record.status === "number" ? record.status : Number(record.status);
+  const message = typeof record.message === "string" ? record.message.toLowerCase() : "";
+  return status === 429 || message.includes("rate limit") || message.includes("email rate limit");
+};
+
 const logCloudError = (scope: string, error: unknown) => {
   console.error(`[Paddlio Cloud] ${scope} fehlgeschlagen: ${describeCloudError(error)}`, error);
 };
@@ -402,7 +410,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       },
     });
-    if (error) return { ok: false, message: error.message };
+    if (error) {
+      if (isAuthRateLimitError(error)) {
+        logCloudError("Registrierung Rate Limit", error);
+        return {
+          ok: false,
+          message: "Supabase blockiert gerade zu viele Registrierungs- oder E-Mail-Anfragen. Bitte warte ein paar Minuten und versuche es erneut. Ohne serverseitigen Admin-Schluessel kann Paddlio im Browser kein Konto an diesem Limit vorbei anlegen.",
+        };
+      }
+
+      return { ok: false, message: error.message };
+    }
     if (result.user) {
       try {
         await ensureCloudProfile(result.user);
@@ -411,7 +429,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
     await refreshCloudData();
-    return { ok: true, message: result.session ? undefined : "Bitte bestaetige deine E-Mail, bevor du dich einloggst." };
+    return {
+      ok: true,
+      message: result.session
+        ? "Konto erstellt. Du bist als Athlete angemeldet. Rollen koennen spaeter im Adminbereich vergeben werden."
+        : "Konto erstellt. Bitte bestaetige deine E-Mail, bevor du dich einloggst. Wenn Auto Confirm in Supabase aktiv ist, wirst du direkt angemeldet.",
+    };
   };
 
   const signOut = async () => {

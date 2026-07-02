@@ -40,6 +40,27 @@ Wenn die Variablen fehlen, bleibt die Cloud-Schicht deaktiviert und Paddlio nutz
 
 Wenn die App `Supabase ist noch nicht vollstaendig konfiguriert` anzeigt, fehlt im ausgelieferten Vite-Build der Publishable Key. Vite liest nur Variablen mit dem Prefix `VITE_` ueber `import.meta.env`.
 
+## Auth fuer produktive Registrierung
+
+Paddlio nutzt ausschliesslich Supabase Auth. Neue Nutzer koennen selbst ein Konto erstellen und erhalten immer die Standardrolle `Athlete`. Rollen wie `Coach`, `TeamAdmin` und `Admin` werden nicht bei Registrierung vergeben, sondern spaeter durch einen berechtigten Admin im Adminbereich beziehungsweise direkt in Supabase.
+
+Empfohlene Supabase-Einstellungen:
+
+1. `Authentication` -> `Providers` -> `Email`: Email Provider aktivieren.
+2. Fuer produktive Nutzung: `Confirm email` aktivieren, damit Nutzer ihre E-Mail bestaetigen.
+3. Fuer geschlossene Tests ohne E-Mail-Versand: `Confirm email` deaktivieren oder Nutzer im Dashboard mit `Auto Confirm User` anlegen.
+4. Wenn `Confirm email` deaktiviert ist, versendet Supabase bei normalem Sign-up keine Bestaetigungs-E-Mail und Paddlio meldet den Nutzer direkt an.
+5. Rate Limits pruefen: `Authentication` -> `Rate Limits`. Bei `email rate limit exceeded` muss im Supabase-Projekt gewartet oder das Limit/SMTP-Setup angepasst werden.
+6. Fuer hoehere produktive Limits sollte ein eigener SMTP-Anbieter konfiguriert werden. Ohne eigenen SMTP koennen Supabase-Standardlimits schnell greifen.
+
+Wichtig: Ein Frontend mit Publishable/Anon Key darf keine Benutzer am E-Mail-Rate-Limit vorbei erstellen. Ein Fallback ohne E-Mail-Bestaetigung waere nur ueber einen serverseitigen Admin-Pfad moeglich, zum Beispiel Supabase Edge Function mit Service-Role-Key. Dieser Key darf niemals in Vite, Vercel Public Environments oder im Browser landen.
+
+Bei jeder neuen Registrierung erstellt der Datenbank-Trigger:
+
+- ein `profiles`-Profil mit Rolle `Athlete`
+- optional einen `club_requests`-Eintrag, wenn der Nutzer einen neuen Verein vorschlaegt
+- eine `notifications`-Benachrichtigung fuer vorhandene Admin-Profile
+
 ## Migration ausfuehren
 
 Die erste Migration liegt unter:
@@ -81,10 +102,10 @@ Die Migrationen legen diese Tabellen und Auth-Helfer an:
 - `notifications`
 - `audit_logs`
 - Trigger `on_auth_user_created`, der bei Registrierung automatisch ein Profil erstellt
-- Funktion `default_roles_for_email`, die `T.Kanu@outlook.com` als Athlete, Coach und Admin vorbereitet
+- Funktion `default_roles_for_email`, die neue Nutzer immer als `Athlete` anlegt
 
 ## Sicherheit
 
-Die Migration aktiviert Row Level Security fuer alle App-Tabellen und legt erste Policies fuer Athlete, Coach, TeamAdmin und Admin an. Diese Policies sind die Grundlage fuer Version 3.0, muessen aber vor produktiver Vereinsnutzung mit echten Testnutzern und Supabase Auth End-to-End geprueft werden.
+Die Migration aktiviert Row Level Security fuer alle App-Tabellen und legt erste Policies fuer Athlete, Coach, TeamAdmin und Admin an. Diese Policies sind die Grundlage fuer Version 3.0, muessen aber vor produktiver Vereinsnutzung mit echten Testnutzern und Supabase Auth End-to-End geprueft werden. Adminrechte duerfen nur durch einen bereits berechtigten Admin oder eine kontrollierte serverseitige Bootstrap-Aktion vergeben werden.
 
 Ab Version 3.0.2 ruft React Supabase nicht direkt in Seitenkomponenten auf. Auth laeuft ueber `AuthProvider`, Datenzugriffe laufen ueber Services unter `src/services/`.

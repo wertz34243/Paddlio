@@ -6,9 +6,11 @@ Paddlio ist eine moderne Trainings- und Wettkampfplattform fuer Kanuslalom.
 
 Version 1.0 richtet sich an Athletinnen und Athleten. Paddlio kombiniert Training, Wettkaempfe, Analyse, Material, Profil, persoenliche Rekorde und regelbasierte Athlete Intelligence in einer mobilen Web-App.
 
-## Datenschutz und Demo-Auth
+## Datenschutz und Auth
 
-Paddlio speichert Daten in der aktuellen Version lokal im Browser per LocalStorage. Die lokale Demo-Authentifizierung ist fuer Entwicklung, Tests und Produktvalidierung gedacht, aber nicht fuer produktive sensible Vereins-, Trainer- oder Gesundheitsdaten geeignet. Fuer echte Vereins- und Trainer-Nutzung ist eine Cloud-Speicherung mit serverseitiger Authentifizierung und Rechtepruefung erforderlich.
+Paddlio nutzt Supabase Auth fuer Registrierung, Login, Logout und Session-Wiederherstellung. App-Daten werden in Supabase gespeichert und lokal nur als Offline-/Performance-Cache gehalten. Rollen duerfen nicht aus Formularwerten entstehen: neue Konten starten immer als `Athlete`, Coach-, TeamAdmin- und Admin-Rechte werden ausschliesslich im Adminbereich beziehungsweise direkt in Supabase durch berechtigte Admins vergeben.
+
+Wenn Supabase Auth `email rate limit exceeded` meldet, hat das Projekt zu viele E-Mail-/Registrierungsanfragen in kurzer Zeit erzeugt. Ein Browser-Client darf dieses Limit ohne serverseitigen Admin-Schluessel nicht umgehen. Fuer produktive Tests sollten in Supabase Auth die unten dokumentierten E-Mail- und Rate-Limit-Einstellungen passend gesetzt werden.
 
 ## Version 1.5 - QA & Stabilitaet
 
@@ -43,7 +45,7 @@ Paddlio speichert Daten in der aktuellen Version lokal im Browser per LocalStora
 
 ## Version 2.0 - Coach Foundation
 
-- Rollen-System fuer Athlete, Coach, TeamAdmin und Admin mit automatischer Admin-Rolle fuer `T.Kanu@outlook.com`
+- Rollen-System fuer Athlete, Coach, TeamAdmin und Admin mit vorbereitetem Adminbereich
 - Einladungscodes fuer Coach, TeamAdmin und Athlete im lokalen Demo-Auth-System
 - Erster Coach/Admin-Bereich mit Dashboard, Sportlerverwaltung, Gruppenverwaltung, Trainingszuweisung und Sportler-Vorschau
 - Coach-Daten werden pro eingeloggtem Nutzer im bestehenden `paddlio_data_<userId>` LocalStorage getrennt gespeichert
@@ -61,7 +63,7 @@ Paddlio speichert Daten in der aktuellen Version lokal im Browser per LocalStora
 
 - Oeffentliche Registrierung fuer alle Sportler mit Vorname, Nachname, E-Mail, Passwort, Verein und Datenschutz-Bestaetigung
 - Neue Nutzer erhalten automatisch die Rolle `Athlete`; Trainerrechte werden nicht mehr per Registrierung oder Einladung vergeben
-- Admin-E-Mail `T.Kanu@outlook.com` wird beim Laden/Login weiterhin automatisch als `Admin` normalisiert
+- Neue Nutzer erhalten ausschliesslich `Athlete`; Admin- und Coach-Rechte werden nur durch Adminentscheidung vergeben
 - Profilbereich `Trainerstatus`: Athleten koennen eine Traineranfrage mit Lizenz, Qualifikation, Telefon und Nachricht absenden
 - Adminbereich `Traineranfragen`: Admin kann Anfragen genehmigen oder ablehnen; Genehmigung setzt die Rolle `Coach`
 - Benutzerverwaltung zeigt Rollen, Status und Verein; Adminrechte koennen nicht per UI vergeben werden
@@ -132,7 +134,7 @@ Paddlio speichert Daten in der aktuellen Version lokal im Browser per LocalStora
 
 - Supabase Auth Provider fuer Registrierung, Login, Logout, Session-Wiederherstellung und Passwort-Reset
 - Profile, Vereine, Benutzer, Trainingsgruppen und Traineranfragen werden aus Supabase geladen und in den lokalen Cache synchronisiert
-- Rollen kommen aus dem Cloud-Profil; Admin-E-Mail `T.Kanu@outlook.com` wird per Datenbank-Trigger vorbereitet
+- Rollen kommen aus dem Cloud-Profil; neue Registrierungen starten immer als `Athlete` und erzeugen eine Admin-Benachrichtigung
 - Cloud Status zeigt verbunden, synchronisiert oder Offline-Modus; Admins sehen synchronisierte Datensaetze
 - LocalStorage bleibt als Offline-Cache erhalten, bis Trainings, Ziele, Wettkaempfe und Material in 3.0.3 in die Cloud wandern
 

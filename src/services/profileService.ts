@@ -4,8 +4,6 @@ import type { Database } from "../lib/database.types";
 
 export type CloudProfile = Database["public"]["Tables"]["profiles"]["Row"];
 
-const adminEmail = "t.kanu@outlook.com";
-
 export const getCloudProfile = async (userId: string): Promise<CloudProfile | null> => {
   const client = getSupabaseClient();
   if (!client) return null;
@@ -37,7 +35,7 @@ export const ensureCloudProfile = async (user: SupabaseUser): Promise<CloudProfi
       last_name: lastName,
       display_name: `${firstName} ${lastName}`.trim() || email,
       club_id: isUuid(metadata.clubId) ? metadata.clubId : null,
-      roles: email.toLowerCase() === adminEmail ? ["Athlete", "Coach", "Admin"] : ["Athlete"],
+      roles: ["Athlete"],
       status: "active",
       boat_classes: ["K1"],
     }, { onConflict: "id" })
