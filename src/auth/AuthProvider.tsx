@@ -4,6 +4,7 @@ import { supabase, getSupabaseClient } from "../lib/supabase";
 import { getSupabaseConfigMessage, isSupabaseConfigured } from "../lib/supabaseConfig";
 import {
   cacheCloudAuthUsers,
+  cacheCloudClubRequests,
   cacheCloudClubs,
   cacheCloudTrainerRequests,
   loadData,
@@ -14,6 +15,7 @@ import {
 import type {
   AuthUser,
   Club,
+  ClubRequest,
   CoachAthlete,
   CoachGroup,
   PaddleMotionData,
@@ -22,8 +24,8 @@ import type {
   UserRole,
 } from "../domain/types";
 import { ensureCloudProfile, getCloudProfile, listCloudProfiles, type CloudProfile } from "../services/profileService";
-import { listCloudClubs, type CloudClub } from "../services/clubService";
-import { listCloudTrainerRequests, listCloudTrainingGroups, type CloudTrainerRequest, type CloudTrainingGroup } from "../services/coachService";
+import { listCloudClubRequests, listCloudClubs, type CloudClub, type CloudClubRequest } from "../services/clubService";
+import { listCloudGroupMembers, listCloudTrainerRequests, listCloudTrainingGroups, type CloudGroupMember, type CloudTrainerRequest, type CloudTrainingGroup } from "../services/coachService";
 import { listCloudTraining } from "../services/trainingService";
 import { listCloudTrainingTemplates } from "../services/trainingTemplateService";
 import { listCloudGoals } from "../services/goalService";
@@ -155,7 +157,22 @@ const toTrainerRequest = (request: CloudTrainerRequest): TrainerRequest => ({
   reviewedBy: request.reviewed_by ?? "",
 });
 
-const toCoachGroup = (group: CloudTrainingGroup): CoachGroup => ({
+const toClubRequest = (request: CloudClubRequest): ClubRequest => ({
+  requestId: request.id,
+  requestedByUserId: request.requested_by ?? "",
+  name: request.name,
+  shortName: request.short_name ?? "",
+  city: request.city ?? "",
+  contactName: "",
+  contactEmail: "",
+  website: "",
+  status: request.status,
+  createdAt: request.created_at,
+  reviewedAt: request.reviewed_at ?? "",
+  reviewedBy: request.reviewed_by ?? "",
+});
+
+const toCoachGroup = (group: CloudTrainingGroup, members: CloudGroupMember[] = []): CoachGroup => ({
   id: group.id,
   groupId: group.id,
   clubId: group.club_id,
@@ -169,12 +186,14 @@ const toCoachGroup = (group: CloudTrainingGroup): CoachGroup => ({
   trainingFocus: (group.training_focus ?? "Allgemein") as CoachGroup["trainingFocus"],
   color: group.color ?? "#00B4D8",
   status: group.status,
-  athleteIds: [],
+  athleteIds: members.filter((member) => member.group_id === group.id).map((member) => member.athlete_id),
   createdAt: group.created_at,
   updatedAt: group.updated_at,
 });
 
-const toCoachAthlete = (profile: CloudProfile, clubName = ""): CoachAthlete => ({
+const toCoachAthlete = (profile: CloudProfile, clubName = "", members: CloudGroupMember[] = []): CoachAthlete => {
+  const groupIds = members.filter((member) => member.athlete_id === profile.id).map((member) => member.group_id);
+  return {
   id: profile.id,
   coachUserId: "",
   clubId: profile.club_id ?? "",
@@ -187,8 +206,8 @@ const toCoachAthlete = (profile: CloudProfile, clubName = ""): CoachAthlete => (
   club: clubName,
   boatClasses: profile.boat_classes.filter((boat): boat is "K1" | "C1" => boat === "K1" || boat === "C1"),
   paddleSide: profile.paddle_side === "Links" ? "links" : "rechts",
-  groupId: "",
-  groupIds: [],
+  groupId: groupIds[0] ?? "",
+  groupIds,
   goals: "",
   trainerNotes: "",
   notes: "",
@@ -196,7 +215,8 @@ const toCoachAthlete = (profile: CloudProfile, clubName = ""): CoachAthlete => (
   invitationStatus: "aktiv",
   createdAt: profile.created_at,
   updatedAt: profile.updated_at,
-});
+  };
+};
 
 const mergeCloudData = (
   userId: string,
@@ -204,6 +224,7 @@ const mergeCloudData = (
   clubs: Club[],
   profiles: CloudProfile[],
   groups: CloudTrainingGroup[],
+  members: CloudGroupMember[] = [],
   cloudData?: Partial<PaddleMotionData>,
 ): PaddleMotionData => {
   const club = clubs.find((item) => item.clubId === profile.club_id);
@@ -240,8 +261,8 @@ const mergeCloudData = (
       name: localUser.profile.nickname || `${localUser.profile.firstName} ${localUser.profile.lastName}`.trim() || profile.email,
       club: club?.name ?? localUser.profile.club,
     },
-    coachAthletes: profiles.filter((item) => item.roles.includes("Athlete")).map((item) => toCoachAthlete(item, clubs.find((clubItem) => clubItem.clubId === item.club_id)?.name ?? "")),
-    coachGroups: groups.map(toCoachGroup),
+    coachAthletes: profiles.filter((item) => item.roles.includes("Athlete")).map((item) => toCoachAthlete(item, clubs.find((clubItem) => clubItem.clubId === item.club_id)?.name ?? "", members)),
+    coachGroups: groups.map((group) => toCoachGroup(group, members)),
     plan: cloudData?.plan && cloudData.plan.length > 0 ? cloudData.plan : cached.plan,
     trainingTemplates: cloudData?.trainingTemplates && cloudData.trainingTemplates.length > 0 ? cloudData.trainingTemplates : cached.trainingTemplates,
     goals: cloudData?.goals && cloudData.goals.length > 0 ? cloudData.goals : cached.goals,
@@ -291,8 +312,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const clubs = (await loadOptionalCloudData("clubs lesen", listCloudClubs, [])).map(toClub);
       const allProfiles = await loadOptionalCloudData("profiles listen", () => listCloudProfiles(nextProfile), [nextProfile]);
       const requests = (await loadOptionalCloudData("trainer_requests lesen", listCloudTrainerRequests, [])).map(toTrainerRequest);
+      const clubRequests = (await loadOptionalCloudData("club_requests lesen", listCloudClubRequests, [])).map(toClubRequest);
       const groups = await loadOptionalCloudData("training_groups lesen", listCloudTrainingGroups, []);
+      const groupMembers = await loadOptionalCloudData("group_members lesen", listCloudGroupMembers, []);
       cacheCloudTrainerRequests(requests);
+      cacheCloudClubRequests(clubRequests);
       const cachedBeforeMerge = loadData(activeSession.user.id);
       const migratedCount = navigator.onLine
         ? await loadOptionalCloudData("lokale Daten migrieren", () => migrateLocalDataToCloud(activeSession.user.id, cachedBeforeMerge, nextProfile, nextProfile.club_id ?? undefined), 0)
@@ -304,7 +328,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loadOptionalCloudData("competitions lesen", listCloudCompetitions, []),
         loadOptionalCloudData("materials lesen", listCloudMaterials, []),
       ]);
-      const nextData = mergeCloudData(activeSession.user.id, nextProfile, clubs, allProfiles.length > 0 ? allProfiles : [nextProfile], groups, {
+      const nextData = mergeCloudData(activeSession.user.id, nextProfile, clubs, allProfiles.length > 0 ? allProfiles : [nextProfile], groups, groupMembers, {
         plan: cloudPlan,
         trainingTemplates: cloudTemplates,
         goals: cloudGoals,
@@ -314,7 +338,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(nextProfile);
       setClub(clubs.find((item) => item.clubId === nextProfile.club_id) ?? null);
       setDataState(nextData);
-      setSyncCount(allProfiles.length + clubs.length + requests.length + groups.length + cloudPlan.length + cloudTemplates.length + cloudGoals.length + cloudCompetitions.length + cloudMaterials.length + getPendingSyncCount());
+      setSyncCount(allProfiles.length + clubs.length + requests.length + clubRequests.length + groups.length + groupMembers.length + cloudPlan.length + cloudTemplates.length + cloudGoals.length + cloudCompetitions.length + cloudMaterials.length + getPendingSyncCount());
       setCloudMessage(migratedCount > 0 ? `${migratedCount} lokale Datensaetze wurden in die Cloud migriert.` : "");
       setCloudStatus(navigator.onLine ? "connected" : "offline");
     } catch (error) {

@@ -723,6 +723,10 @@ export const loadClubRequests = (): ClubRequest[] => {
   return requests;
 };
 
+export const cacheCloudClubRequests = (requests: ClubRequest[]): void => {
+  saveClubRequests(requests.map(normalizeClubRequest));
+};
+
 export const createClubRequest = (input: ClubRequestInput): ClubRequest => {
   const existing = loadClubRequests();
   const existingRequest = existing.find((request) => normalizeComparable(request.name) === normalizeComparable(input.name));

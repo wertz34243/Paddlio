@@ -146,6 +146,14 @@ Wenn Supabase Auth `email rate limit exceeded` meldet, hat das Projekt zu viele 
 - Offline Queue `paddlio_sync_queue` speichert Aenderungen lokal und synchronisiert beim Onlinegehen
 - LocalStorage bleibt Cache, Supabase ist fuer migrierte App-Daten der Hauptspeicher
 
+## Version 3.1 - Vereins- und Teamverwaltung
+
+- Adminbereich verwaltet Vereine, Vereinsvorschlaege, Mitglieder, Rollen, Status und Traineranfragen ueber Supabase
+- Coach-Bereich nutzt Supabase fuer eigene Vereinsmitglieder, Trainingsgruppen und Gruppenzuordnungen
+- Neue Nutzer bleiben immer `Athlete`; Coach-, TeamAdmin- und Admin-Rechte werden ausschliesslich administrativ vergeben
+- RLS-Policies und Foreign Keys fuer `club_requests`, `trainer_requests`, `training_groups` und `group_members` ergaenzt
+- Reparatur-/Update-Migration: `PADDLIO_3_1_CLUB_TEAM_MANAGEMENT.sql`
+
 ## Paddlio auf iPhone/iPad installieren
 
 1. Paddlio in Safari oeffnen.

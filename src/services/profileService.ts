@@ -1,6 +1,6 @@
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { getSupabaseClient } from "../lib/supabase";
-import type { Database } from "../lib/database.types";
+import type { Database, UserRole } from "../lib/database.types";
 
 export type CloudProfile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -67,6 +67,40 @@ export const updateCloudProfile = async (profile: Partial<CloudProfile> & { id: 
 
   if (error) throw error;
   return data;
+};
+
+export const updateCloudProfileAdminFields = async (
+  id: string,
+  fields: {
+    roles?: CloudProfile["roles"];
+    status?: CloudProfile["status"];
+    club_id?: string | null;
+    age_category?: string | null;
+    boat_classes?: string[];
+    paddle_side?: string | null;
+  },
+): Promise<CloudProfile | null> => {
+  const client = getSupabaseClient();
+  if (!client) return null;
+
+  const { data, error } = await (client.from("profiles") as any)
+    .update({ ...fields, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .select("*")
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+};
+
+export const addCloudProfileRole = async (profile: CloudProfile, role: "Athlete" | "Coach" | "TeamAdmin" | "Admin"): Promise<CloudProfile | null> => {
+  const roles = Array.from(new Set([...(profile.roles.length > 0 ? profile.roles : ["Athlete" as UserRole]), role]));
+  return updateCloudProfileAdminFields(profile.id, { roles });
+};
+
+export const setCloudProfilePrimaryRole = async (profile: CloudProfile, role: "Athlete" | "Coach" | "TeamAdmin" | "Admin"): Promise<CloudProfile | null> => {
+  const roles: UserRole[] = role === "Athlete" ? ["Athlete"] : Array.from(new Set(["Athlete" as UserRole, role]));
+  return updateCloudProfileAdminFields(profile.id, { roles });
 };
 
 export const listCloudProfiles = async (viewer: CloudProfile): Promise<CloudProfile[]> => {

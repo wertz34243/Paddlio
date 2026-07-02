@@ -23,6 +23,17 @@ import {
   updateAuthUserStatus,
 } from "../data/storage";
 import { getWeekdayFromDate } from "../domain/trainingPlan";
+import { useAuth } from "../auth/AuthProvider";
+import { updateCloudProfileAdminFields } from "../services/profileService";
+import { reviewCloudClubRequest, setCloudClubStatus, upsertCloudClub, type CloudClubRequest } from "../services/clubService";
+import {
+  reviewCloudTrainerRequest,
+  setCloudAthleteGroups,
+  setCloudTrainingGroupStatus,
+  upsertCloudTrainingGroup,
+  setCloudGroupMembers,
+  type CloudTrainerRequest,
+} from "../services/coachService";
 import type {
   AgeClass,
   AuthUser,
@@ -68,6 +79,18 @@ const intensities: TrainingIntensity[] = ["locker", "mittel", "hart", "maximal"]
 
 const normalizeClubName = (value: string): string => value.trim().toLowerCase();
 
+const isUuid = (value: string): boolean =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
+const toCloudRoles = (role: UserRole): Array<"Athlete" | "Coach" | "TeamAdmin" | "Admin"> => {
+  if (role === "admin") return ["Athlete", "Coach", "Admin"];
+  if (role === "teamAdmin") return ["Athlete", "TeamAdmin"];
+  if (role === "coach") return ["Athlete", "Coach"];
+  return ["Athlete"];
+};
+
+const toCloudPaddleSide = (value: PaddleSide): "Links" | "Rechts" => value === "links" ? "Links" : "Rechts";
+
 const todayKey = (): string => new Date().toISOString().slice(0, 10);
 
 const getWeekStart = (): Date => {
@@ -112,6 +135,7 @@ const getAthleteName = (athlete: CoachAthlete): string =>
   athlete.name || `${athlete.firstName} ${athlete.lastName}`.trim() || athlete.email || "Unbenannter Sportler";
 
 export function CoachView({ data, user, onDataChange }: CoachViewProps) {
+  const { refreshCloudData } = useAuth();
   const [editingAthlete, setEditingAthlete] = useState<CoachAthlete | null>(null);
   const [athleteBoatClasses, setAthleteBoatClasses] = useState<BoatClass[]>(["K1"]);
   const [athleteGroupIds, setAthleteGroupIds] = useState<string[]>([]);
@@ -131,6 +155,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
   const [athleteSearch, setAthleteSearch] = useState("");
   const [athleteFilter, setAthleteFilter] = useState<"all" | BoatClass | AgeClass | CoachAthleteStatus>("all");
   const [message, setMessage] = useState("");
+  const [isSavingCloud, setIsSavingCloud] = useState(false);
 
   const isAdmin = canManageAdminArea(user.role);
   const userClub = user.profile.club.trim().toLowerCase();
@@ -213,6 +238,20 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
     { label: "Offene Rueckmeldungen", value: openFeedback },
   ], [clubAthletes.length, isAdmin, openFeedback, ownAthletes.length, ownGroups.length, weeklyTrainingCount]);
 
+  const runCloudAction = async (successMessage: string, action: () => Promise<void>) => {
+    try {
+      setIsSavingCloud(true);
+      await action();
+      await refreshCloudData();
+      setMessage(successMessage);
+    } catch (error) {
+      console.error("[Paddlio Cloud] Coach/Admin-Aktion fehlgeschlagen", error);
+      setMessage("Aktion konnte nicht gespeichert werden. Bitte pruefe deine Berechtigung oder versuche es erneut.");
+    } finally {
+      setIsSavingCloud(false);
+    }
+  };
+
   if (!canUseCoachArea(user.role)) {
     return (
       <section className="section-block">
@@ -266,27 +305,40 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
       updatedAt: timestamp,
     };
 
-    onDataChange((current) => ({
-      ...current,
-      coachAthletes: current.coachAthletes.some((item) => item.id === athlete.id)
-        ? current.coachAthletes.map((item) => (item.id === athlete.id ? athlete : item))
-        : [athlete, ...current.coachAthletes],
-    }));
-    setEditingAthlete(null);
-    setAthleteBoatClasses(["K1"]);
-    setAthleteGroupIds([]);
-    setMessage("Sportler gespeichert");
+    void runCloudAction("Sportler gespeichert", async () => {
+      if (isUuid(athlete.id)) {
+        await updateCloudProfileAdminFields(athlete.id, {
+          club_id: athlete.clubId || null,
+          age_category: athlete.ageClass || null,
+          boat_classes: athlete.boatClasses,
+          paddle_side: athlete.boatClasses.includes("C1") ? toCloudPaddleSide(athlete.paddleSide) : null,
+        });
+        await setCloudAthleteGroups(athlete.id, selectedGroups);
+      }
+      onDataChange((current) => ({
+        ...current,
+        coachAthletes: current.coachAthletes.some((item) => item.id === athlete.id)
+          ? current.coachAthletes.map((item) => (item.id === athlete.id ? athlete : item))
+          : [athlete, ...current.coachAthletes],
+      }));
+      setEditingAthlete(null);
+      setAthleteBoatClasses(["K1"]);
+      setAthleteGroupIds([]);
+    });
   };
 
   const deleteAthlete = (id: string) => {
-    onDataChange((current) => ({
-      ...current,
-      coachAthletes: current.coachAthletes.filter((athlete) => athlete.id !== id),
-      coachGroups: current.coachGroups.map((group) => ({
-        ...group,
-        athleteIds: group.athleteIds.filter((athleteId) => athleteId !== id),
-      })),
-    }));
+    void runCloudAction("Sportler pausiert", async () => {
+      if (isUuid(id)) await updateCloudProfileAdminFields(id, { status: "disabled" });
+      onDataChange((current) => ({
+        ...current,
+        coachAthletes: current.coachAthletes.map((athlete) => athlete.id === id ? { ...athlete, status: "pausiert", updatedAt: new Date().toISOString() } : athlete),
+        coachGroups: current.coachGroups.map((group) => ({
+          ...group,
+          athleteIds: group.athleteIds.filter((athleteId) => athleteId !== id),
+        })),
+      }));
+    });
   };
 
   const upsertGroup = (event: FormEvent<HTMLFormElement>) => {
@@ -320,37 +372,62 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
       updatedAt: timestamp,
     };
 
-    onDataChange((current) => ({
-      ...current,
-      coachGroups: current.coachGroups.some((item) => item.id === group.id)
-        ? current.coachGroups.map((item) => (item.id === group.id ? group : item))
-        : [group, ...current.coachGroups],
-      coachAthletes: current.coachAthletes.map((athlete) => ({
-        ...athlete,
-        groupIds: selectedAthletes.includes(athlete.id)
-          ? Array.from(new Set([...(athlete.groupIds ?? []), group.id]))
-          : (athlete.groupIds ?? []).filter((groupId) => groupId !== group.id),
-        groupId: selectedAthletes.includes(athlete.id)
-          ? group.id
-          : athlete.groupId === group.id
-            ? (athlete.groupIds ?? []).filter((groupId) => groupId !== group.id)[0] ?? ""
-            : athlete.groupId,
-      })),
-    }));
-    setEditingGroup(null);
-    setGroupBoatClasses(["K1"]);
+    void runCloudAction("Trainingsgruppe gespeichert", async () => {
+      const cloudGroup = await upsertCloudTrainingGroup({
+        ...(editingGroup?.id && isUuid(editingGroup.id) ? { id: editingGroup.id } : {}),
+        club_id: group.clubId,
+        coach_id: user.userId,
+        name: group.name,
+        description: group.description,
+        age_category: group.ageCategory || null,
+        boat_classes: group.boatClasses,
+        training_focus: group.trainingFocus,
+        color: group.color,
+        status: group.status,
+      });
+      const persistedGroup = cloudGroup ? {
+        ...group,
+        id: cloudGroup.id,
+        groupId: cloudGroup.id,
+        createdAt: cloudGroup.created_at,
+        updatedAt: cloudGroup.updated_at,
+      } : group;
+      await setCloudGroupMembers(persistedGroup.id, selectedAthletes);
+      onDataChange((current) => ({
+        ...current,
+        coachGroups: current.coachGroups.some((item) => item.id === persistedGroup.id || item.id === group.id)
+          ? current.coachGroups.map((item) => (item.id === persistedGroup.id || item.id === group.id ? persistedGroup : item))
+          : [persistedGroup, ...current.coachGroups],
+        coachAthletes: current.coachAthletes.map((athlete) => ({
+          ...athlete,
+          groupIds: selectedAthletes.includes(athlete.id)
+            ? Array.from(new Set([...(athlete.groupIds ?? []).filter((id) => id !== group.id), persistedGroup.id]))
+            : (athlete.groupIds ?? []).filter((groupId) => groupId !== persistedGroup.id && groupId !== group.id),
+          groupId: selectedAthletes.includes(athlete.id)
+            ? persistedGroup.id
+            : athlete.groupId === persistedGroup.id || athlete.groupId === group.id
+              ? (athlete.groupIds ?? []).filter((groupId) => groupId !== persistedGroup.id && groupId !== group.id)[0] ?? ""
+              : athlete.groupId,
+        })),
+      }));
+      setEditingGroup(null);
+      setGroupBoatClasses(["K1"]);
+    });
   };
 
   const deleteGroup = (id: string) => {
-    onDataChange((current) => ({
-      ...current,
-      coachGroups: current.coachGroups.filter((group) => group.id !== id),
-      coachAthletes: current.coachAthletes.map((athlete) => ({
-        ...athlete,
-        groupIds: athlete.groupIds.filter((groupId) => groupId !== id),
-        groupId: athlete.groupId === id ? athlete.groupIds.filter((groupId) => groupId !== id)[0] ?? "" : athlete.groupId,
-      })),
-    }));
+    void runCloudAction("Trainingsgruppe deaktiviert", async () => {
+      await setCloudTrainingGroupStatus(id, "inactive");
+      onDataChange((current) => ({
+        ...current,
+        coachGroups: current.coachGroups.map((group) => group.id === id ? { ...group, status: "inactive", updatedAt: new Date().toISOString() } : group),
+        coachAthletes: current.coachAthletes.map((athlete) => ({
+          ...athlete,
+          groupIds: athlete.groupIds.filter((groupId) => groupId !== id),
+          groupId: athlete.groupId === id ? athlete.groupIds.filter((groupId) => groupId !== id)[0] ?? "" : athlete.groupId,
+        })),
+      }));
+    });
   };
 
   const assignTraining = (event: FormEvent<HTMLFormElement>) => {
@@ -404,15 +481,24 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
   };
 
   const changeRole = (targetUserId: string, role: UserRole) => {
-    setAuthUsers(updateAuthUserRole(targetUserId, role));
+    void runCloudAction("Rolle gespeichert", async () => {
+      await updateCloudProfileAdminFields(targetUserId, { roles: toCloudRoles(role) });
+      setAuthUsers(updateAuthUserRole(targetUserId, role));
+    });
   };
 
   const changeStatus = (targetUserId: string, status: "active" | "inactive") => {
-    setAuthUsers(updateAuthUserStatus(targetUserId, status));
+    void runCloudAction("Status gespeichert", async () => {
+      await updateCloudProfileAdminFields(targetUserId, { status: status === "active" ? "active" : "disabled" });
+      setAuthUsers(updateAuthUserStatus(targetUserId, status));
+    });
   };
 
   const changeTrainingGroup = (targetUserId: string, trainingGroupId: string) => {
-    setAuthUsers(updateAuthUserProfileFields(targetUserId, { trainingGroupId, coachId: user.userId }));
+    void runCloudAction("Gruppenzuweisung gespeichert", async () => {
+      await setCloudAthleteGroups(targetUserId, trainingGroupId ? [trainingGroupId] : []);
+      setAuthUsers(updateAuthUserProfileFields(targetUserId, { trainingGroupId, coachId: user.userId }));
+    });
   };
 
   const removeUser = (targetUserId: string) => {
@@ -425,10 +511,35 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
   };
 
   const reviewRequest = (requestId: string, status: "approved" | "rejected") => {
-    const result = reviewTrainerRequest(requestId, status, user.userId);
-    setTrainerRequests(result.requests);
-    setAuthUsers(result.users);
-    setMessage(status === "approved" ? "Traineranfrage genehmigt" : "Traineranfrage abgelehnt");
+    void runCloudAction(status === "approved" ? "Traineranfrage genehmigt" : "Traineranfrage abgelehnt", async () => {
+      const request = trainerRequests.find((item) => item.requestId === requestId);
+      if (!request) throw new Error("Traineranfrage nicht gefunden.");
+      const cloudRequest: CloudTrainerRequest = {
+        id: request.requestId,
+        user_id: request.userId || null,
+        club_id: null,
+        club_name: request.club,
+        message: request.message,
+        has_license: request.hasLicense,
+        license_number: request.licenseNumber || null,
+        qualification: request.qualification || null,
+        phone: request.phone || null,
+        status: request.status,
+        reviewed_by: request.reviewedBy || null,
+        reviewed_at: request.reviewedAt || null,
+        created_at: request.createdAt,
+      };
+      if (status === "approved") {
+        if (!request.userId) throw new Error("Profil zur Traineranfrage nicht gefunden.");
+        await updateCloudProfileAdminFields(request.userId, { roles: ["Athlete", "Coach"] });
+        await reviewCloudTrainerRequest(request.requestId, "approved", user.userId);
+      } else {
+        await reviewCloudTrainerRequest(request.requestId, "rejected", user.userId);
+      }
+      const result = reviewTrainerRequest(requestId, status, user.userId);
+      setTrainerRequests(result.requests);
+      setAuthUsers(result.users);
+    });
   };
 
   const saveClub = (event: FormEvent<HTMLFormElement>) => {
@@ -454,32 +565,90 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
       status: String(formData.get("status") ?? "active") as ClubStatus,
     };
 
-    if (editingClubRequestId) {
-      const result = reviewClubRequest(editingClubRequestId, "approved", user.userId, clubInput);
-      setClubs(result.clubs);
-      setClubRequests(result.requests);
-      setAuthUsers(loadUsers());
-      setEditingClubRequestId("");
-      setMessage("Vereinsvorschlag bearbeitet und angenommen");
-    } else {
-      setClubs(upsertClub(clubInput));
-      setMessage("Verein gespeichert");
-    }
-    setEditingClub(null);
-    event.currentTarget.reset();
+    const form = event.currentTarget;
+    void runCloudAction(editingClubRequestId ? "Vereinsvorschlag angenommen" : "Verein gespeichert", async () => {
+      if (editingClubRequestId) {
+        const request = clubRequests.find((item) => item.requestId === editingClubRequestId);
+        if (!request) throw new Error("Vereinsvorschlag nicht gefunden.");
+        const cloudRequest: CloudClubRequest = {
+          id: request.requestId,
+          requested_by: request.requestedByUserId || null,
+          name: request.name,
+          short_name: request.shortName || null,
+          city: request.city || null,
+          message: null,
+          status: request.status,
+          reviewed_by: request.reviewedBy || null,
+          reviewed_at: request.reviewedAt || null,
+          created_at: request.createdAt,
+        };
+        await reviewCloudClubRequest(cloudRequest, "approved", user.userId, {
+          name: clubInput.name,
+          short_name: clubInput.shortName,
+          city: clubInput.city,
+          contact_name: clubInput.contactName,
+          contact_email: clubInput.contactEmail,
+          website: clubInput.website,
+          logo_url: clubInput.logoUrl,
+          primary_color: clubInput.primaryColor,
+          secondary_color: clubInput.secondaryColor,
+          status: clubInput.status,
+        });
+        const result = reviewClubRequest(editingClubRequestId, "approved", user.userId, clubInput);
+        setClubs(result.clubs);
+        setClubRequests(result.requests);
+        setAuthUsers(loadUsers());
+        setEditingClubRequestId("");
+      } else {
+        const cloudClub = await upsertCloudClub({
+          ...(editingClub?.clubId && isUuid(editingClub.clubId) ? { id: editingClub.clubId } : {}),
+          name: clubInput.name,
+          short_name: clubInput.shortName,
+          city: clubInput.city,
+          contact_name: clubInput.contactName,
+          contact_email: clubInput.contactEmail,
+          website: clubInput.website,
+          logo_url: clubInput.logoUrl,
+          primary_color: clubInput.primaryColor,
+          secondary_color: clubInput.secondaryColor,
+          status: clubInput.status,
+        });
+        setClubs(upsertClub({ ...clubInput, clubId: cloudClub?.id ?? clubInput.clubId }));
+      }
+      setEditingClub(null);
+      form.reset();
+    });
   };
 
   const removeClub = (clubId: string) => {
-    setClubs(deleteClub(clubId));
-    setMessage("Verein geloescht");
+    void runCloudAction("Verein deaktiviert", async () => {
+      await setCloudClubStatus(clubId, "inactive");
+      setClubs(deleteClub(clubId));
+    });
   };
 
   const reviewClub = (requestId: string, status: "approved" | "rejected") => {
-    const result = reviewClubRequest(requestId, status, user.userId);
-    setClubRequests(result.requests);
-    setClubs(result.clubs);
-    setAuthUsers(loadUsers());
-    setMessage(status === "approved" ? "Vereinsvorschlag angenommen" : "Vereinsvorschlag abgelehnt");
+    void runCloudAction(status === "approved" ? "Vereinsvorschlag angenommen" : "Vereinsvorschlag abgelehnt", async () => {
+      const request = clubRequests.find((item) => item.requestId === requestId);
+      if (!request) throw new Error("Vereinsvorschlag nicht gefunden.");
+      const cloudRequest: CloudClubRequest = {
+        id: request.requestId,
+        requested_by: request.requestedByUserId || null,
+        name: request.name,
+        short_name: request.shortName || null,
+        city: request.city || null,
+        message: null,
+        status: request.status,
+        reviewed_by: request.reviewedBy || null,
+        reviewed_at: request.reviewedAt || null,
+        created_at: request.createdAt,
+      };
+      await reviewCloudClubRequest(cloudRequest, status, user.userId);
+      const result = reviewClubRequest(requestId, status, user.userId);
+      setClubRequests(result.requests);
+      setClubs(result.clubs);
+      setAuthUsers(loadUsers());
+    });
   };
 
   const athleteFormValue = editingAthlete ?? defaultAthlete(user.userId, userClubId, user.profile.club);
@@ -520,7 +689,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
       <section className="section-block">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Coach Foundation 2.5</p>
+            <p className="eyebrow">Vereins- und Teamverwaltung 3.1</p>
             <h3>{roleLabels[user.role]}</h3>
           </div>
         </div>
@@ -1125,6 +1294,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
         ) : <p className="empty-state">Lege zuerst einen Sportler an.</p>}
       </section>
 
+      {isSavingCloud ? <p className="auth-message">Speichere in Supabase...</p> : null}
       {message ? <p className="auth-message">{message}</p> : null}
     </div>
   );
