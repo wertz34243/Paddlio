@@ -49,6 +49,7 @@ supabase/migrations/0001_initial_schema.sql
 supabase/migrations/0002_auth_integration.sql
 supabase/migrations/0003_cloud_sync.sql
 supabase/migrations/0004_cloud_sync_policies.sql
+supabase/migrations/0005_role_profile_views.sql
 ```
 
 Mit Supabase CLI:
