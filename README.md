@@ -223,16 +223,21 @@ Das Projekt ist fuer Vercel vorbereitet.
 
 Die Datei `vercel.json` enthaelt die passenden Build- und SPA-Rewrite-Einstellungen.
 
-### Supabase Environment Variablen
+### Supabase Einrichtung
 
-Fuer spaetere Cloud-Funktionen werden diese Variablen vorbereitet:
+Paddlio ist auf dieses Supabase-Projekt vorbereitet:
+
+- Projekt-ID: `twlkhfbrrwjwppxinmpn`
+- Project URL: `https://twlkhfbrrwjwppxinmpn.supabase.co`
+
+Die Project URL ist im Supabase Client als fester Default hinterlegt. Fuer Registrierung, Login, Passwort-Reset und Cloud-Sync muss nur noch der Publishable Key gesetzt werden:
 
 ```env
-VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
+VITE_SUPABASE_URL=https://twlkhfbrrwjwppxinmpn.supabase.co
+VITE_SUPABASE_ANON_KEY=<Publishable Key>
 ```
 
-Keine echten Keys in Git committen. Lokal gehoeren die Werte in `.env.local`; `.env.example` zeigt die benoetigten Namen. In Vercel werden sie unter `Project Settings` -> `Environment Variables` fuer Production, Preview und Development eingetragen, danach muss ein Redeploy erfolgen. Ohne diese Werte bleibt Paddlio im LocalStorage-Modus und zeigt eine genaue Konfigurationsmeldung.
+Keine echten Keys in Git committen. Lokal gehoert der Key in `.env.local`; `.env.example` zeigt die benoetigten Namen. In Vercel wird `VITE_SUPABASE_ANON_KEY` unter `Project Settings` -> `Environment Variables` fuer Production, Preview und Development eingetragen, danach muss ein Redeploy erfolgen. Fehlt der Key, startet Paddlio ohne Absturz und zeigt den Hinweis: `Bitte VITE_SUPABASE_ANON_KEY in Vercel oder .env.local eintragen.`
 
 ## Datenhaltung
 

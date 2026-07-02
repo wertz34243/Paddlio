@@ -4,7 +4,10 @@ const normalizeEnvValue = (value: unknown): string | undefined => {
   return trimmed.length > 0 ? trimmed : undefined;
 };
 
-const rawSupabaseUrl = normalizeEnvValue(import.meta.env.VITE_SUPABASE_URL);
+export const SUPABASE_PROJECT_ID = "twlkhfbrrwjwppxinmpn";
+export const SUPABASE_PROJECT_URL = "https://twlkhfbrrwjwppxinmpn.supabase.co";
+
+const rawSupabaseUrl = normalizeEnvValue(import.meta.env.VITE_SUPABASE_URL) ?? SUPABASE_PROJECT_URL;
 const rawSupabaseAnonKey = normalizeEnvValue(import.meta.env.VITE_SUPABASE_ANON_KEY);
 
 const isValidSupabaseUrl = (value: string | undefined): value is string => {
@@ -18,12 +21,11 @@ const isValidSupabaseUrl = (value: string | undefined): value is string => {
   }
 };
 
-export const supabaseUrl = isValidSupabaseUrl(rawSupabaseUrl) ? rawSupabaseUrl : undefined;
+export const supabaseUrl = isValidSupabaseUrl(rawSupabaseUrl) ? rawSupabaseUrl : SUPABASE_PROJECT_URL;
 
 export const supabaseAnonKey = rawSupabaseAnonKey;
 
 export const supabaseConfigIssues = [
-  !rawSupabaseUrl ? "VITE_SUPABASE_URL fehlt" : undefined,
   rawSupabaseUrl && !supabaseUrl ? "VITE_SUPABASE_URL ist keine gueltige Supabase-URL" : undefined,
   !rawSupabaseAnonKey ? "VITE_SUPABASE_ANON_KEY fehlt" : undefined,
 ].filter((issue): issue is string => Boolean(issue));
@@ -32,5 +34,5 @@ export const isSupabaseConfigured = supabaseConfigIssues.length === 0;
 
 export const getSupabaseConfigMessage = (): string => {
   if (isSupabaseConfigured) return "Supabase ist konfiguriert.";
-  return `Supabase ist noch nicht konfiguriert: ${supabaseConfigIssues.join(", ")}. Bitte die Vercel Environment Variables setzen und neu deployen.`;
+  return `Supabase ist noch nicht vollstaendig konfiguriert: ${supabaseConfigIssues.join(", ")}. Bitte VITE_SUPABASE_ANON_KEY in Vercel oder .env.local eintragen.`;
 };

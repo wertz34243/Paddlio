@@ -4,9 +4,16 @@ Paddlio 3.0.1 bereitet Supabase vor, schaltet die App aber noch nicht vollstaend
 
 ## Benoetigte Environment Variablen
 
+Paddlio ist fest auf dieses Supabase-Projekt vorbereitet:
+
+- Projekt-ID: `twlkhfbrrwjwppxinmpn`
+- Project URL: `https://twlkhfbrrwjwppxinmpn.supabase.co`
+
+Die URL ist im Client als Default eingetragen. Der Publishable Key wird weiterhin per Environment Variable geladen:
+
 ```env
-VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
+VITE_SUPABASE_URL=https://twlkhfbrrwjwppxinmpn.supabase.co
+VITE_SUPABASE_ANON_KEY=DEIN_PUBLISHABLE_KEY
 ```
 
 Keine geheimen Service-Role-Keys im Frontend, in der README oder in Vercel Public Environments speichern.
@@ -27,11 +34,11 @@ Wenn die Variablen fehlen, bleibt die Cloud-Schicht deaktiviert und Paddlio nutz
 
 1. Vercel Project Settings oeffnen.
 2. `Environment Variables` waehlen.
-3. `VITE_SUPABASE_URL` und `VITE_SUPABASE_ANON_KEY` exakt mit diesem Namen eintragen.
+3. `VITE_SUPABASE_ANON_KEY` exakt mit diesem Namen eintragen.
 4. Die Variablen fuer `Production`, `Preview` und `Development` aktivieren.
 5. Deployment neu starten oder einen neuen Commit deployen.
 
-Wenn die App `Supabase ist noch nicht konfiguriert` anzeigt, sind die Variablen im ausgelieferten Vite-Build nicht vorhanden oder die URL ist nicht im Format `https://<project-ref>.supabase.co`. Vite liest nur Variablen mit dem Prefix `VITE_` ueber `import.meta.env`.
+Wenn die App `Supabase ist noch nicht vollstaendig konfiguriert` anzeigt, fehlt im ausgelieferten Vite-Build der Publishable Key. Vite liest nur Variablen mit dem Prefix `VITE_` ueber `import.meta.env`.
 
 ## Migration ausfuehren
 
