@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { APP_NAME, APP_SLOGAN, APP_VERSION } from "./brand";
+import { LoadingState } from "./components/AppSupport";
 import { Icon, type IconName } from "./components/Icon";
 import { SegmentNav, type SegmentItem } from "./components/SegmentNav";
 import { createId } from "./data/storage";
@@ -119,14 +120,7 @@ function AppContent() {
   };
 
   if (loading) {
-    return (
-      <main className="auth-shell">
-        <section className="auth-card">
-          <p className="app-brand">Paddlio</p>
-          <p className="auth-message">Cloud-Daten werden geladen...</p>
-        </section>
-      </main>
-    );
+    return <LoadingState />;
   }
 
   if (!session || !data) {
@@ -667,6 +661,9 @@ function AppContent() {
 
   return (
     <div className={isHome ? "app-shell app-shell-home" : "app-shell"}>
+      <a className="skip-link" href="#main">
+        Zum Inhalt springen
+      </a>
       {!isHome ? (
         <header className="app-header app-header-compact">
           <div className="brand-lockup">
@@ -680,7 +677,7 @@ function AppContent() {
         </header>
       ) : null}
 
-      <main className="page-content">{renderPage()}</main>
+      <main className="page-content" id="main">{renderPage()}</main>
       <CloudStatusBadge status={cloudStatus} syncCount={syncCount} isAdmin={activeUser.role === "admin"} message={cloudMessage} />
 
       <nav className="bottom-nav" aria-label="Hauptnavigation">

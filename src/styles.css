@@ -2324,3 +2324,141 @@ p {
 .cloud-status.red::before {
   background: var(--danger);
 }
+
+.skip-link {
+  position: fixed;
+  top: -4rem;
+  left: 1rem;
+  z-index: 1000;
+  padding: 0.75rem 1rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #06121f;
+  font-weight: 900;
+  text-decoration: none;
+  box-shadow: var(--shadow);
+}
+
+.skip-link:focus {
+  top: calc(1rem + env(safe-area-inset-top));
+}
+
+.loading-screen {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100dvh;
+  align-items: center;
+  padding: calc(24px + env(safe-area-inset-top)) 14px calc(24px + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(circle at 30% 0%, rgba(0, 180, 216, 0.18), transparent 28rem),
+    var(--background);
+  color: var(--text);
+}
+
+.loading-card {
+  display: grid;
+  width: min(100%, 28rem);
+  gap: 1rem;
+  margin: auto;
+  padding: 1.5rem;
+  border: 1px solid rgba(144, 224, 239, 0.16);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(145deg, rgba(0, 180, 216, 0.14), rgba(255, 255, 255, 0.03)),
+    rgba(30, 41, 59, 0.9);
+  box-shadow: var(--shadow);
+}
+
+.loading-card h1 {
+  margin: 0;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  line-height: 1.1;
+}
+
+.loading-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 800;
+}
+
+.loading-copy,
+.help-text,
+.muted {
+  color: var(--muted);
+}
+
+.loading-bar {
+  height: 0.75rem;
+  margin-top: 0.25rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.loading-bar span {
+  display: block;
+  width: 45%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  animation: loading-bar 1.2s ease-in-out infinite;
+}
+
+.admin-users,
+.training-week {
+  padding: 1rem;
+}
+
+.user-list,
+.training-week {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.user-row,
+.training-day {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border: 1px solid rgba(144, 224, 239, 0.14);
+  border-radius: var(--radius);
+  background: rgba(30, 41, 59, 0.66);
+}
+
+.user-row p,
+.training-day strong {
+  margin: 0.25rem 0 0;
+}
+
+.training-day {
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+.training-day time {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+@keyframes loading-bar {
+  0% {
+    transform: translateX(-110%);
+  }
+
+  100% {
+    transform: translateX(240%);
+  }
+}
+
+@media (max-width: 480px) {
+  .loading-card {
+    padding: 1.25rem;
+  }
+
+  .user-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
