@@ -2,7 +2,6 @@ import { useMemo, useState, type FormEvent } from "react";
 import {
   canAccessPlanEntry,
   canEditTrainingTemplate,
-  canManageAdminArea,
   canUseCoachArea,
   getAthletesForCurrentUser,
   getGroupsForCurrentUser,
@@ -54,6 +53,29 @@ type PlanViewProps = {
 };
 
 type CalendarView = "day" | "week" | "month" | "list";
+type WorkflowTab = "today" | "week" | "month" | "templates" | "groups" | "feedback" | "upcoming" | "done";
+type WorkflowTabConfig = {
+  id: WorkflowTab;
+  label: string;
+  calendarView?: CalendarView;
+};
+
+const coachWorkflowTabs: WorkflowTabConfig[] = [
+  { id: "today", label: "Heute", calendarView: "day" },
+  { id: "week", label: "Woche", calendarView: "week" },
+  { id: "month", label: "Monat", calendarView: "month" },
+  { id: "templates", label: "Vorlagen" },
+  { id: "groups", label: "Gruppen" },
+  { id: "feedback", label: "Rueckmeldungen" },
+];
+
+const athleteWorkflowTabs: WorkflowTabConfig[] = [
+  { id: "today", label: "Heute", calendarView: "day" },
+  { id: "week", label: "Diese Woche", calendarView: "week" },
+  { id: "upcoming", label: "Kommende" },
+  { id: "done", label: "Erledigt" },
+  { id: "feedback", label: "Rueckmeldung" },
+];
 
 const today = new Date().toISOString().slice(0, 10);
 
@@ -174,6 +196,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
   const [draft, setDraft] = useState<PlanDraft | null>(null);
   const [templateDraft, setTemplateDraft] = useState<TrainingTemplate | null>(null);
   const [calendarView, setCalendarView] = useState<CalendarView>("week");
+  const [workflowTab, setWorkflowTab] = useState<WorkflowTab>("week");
   const [selectedArea, setSelectedArea] = useState<TrainingArea>("Wassertraining");
   const [templateArea, setTemplateArea] = useState<TrainingArea>("Wassertraining");
   const [selectedDate, setSelectedDate] = useState(today);
@@ -192,7 +215,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
   const [formMessage, setFormMessage] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
   const isCoach = canUseCoachArea(user.role);
-  const isAdmin = canManageAdminArea(user.role);
+  const workflowTabs = isCoach ? coachWorkflowTabs : athleteWorkflowTabs;
 
   const visibleAthletes = useMemo(() => getAthletesForCurrentUser(data, user), [data, user]);
   const visibleGroups = useMemo(() => getGroupsForCurrentUser(data, user), [data, user]);
@@ -229,12 +252,23 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
   const skippedThisWeek = visibleEntries.filter((entry) => weekDates.includes(entry.date) && isSkippedStatus(entry.status));
   const plannedThisWeek = visibleEntries.filter((entry) => weekDates.includes(entry.date));
   const weeklyMinutes = completedThisWeek.reduce((sum, entry) => sum + entry.durationMinutes, 0);
-  const openFeedbackCount = visibleEntries.filter((entry) => isDoneStatus(entry.status) && !data.trainingFeedback.some((feedback) => feedback.trainingId === entry.id)).length;
+  const entriesWithFeedback = visibleEntries.filter((entry) => data.trainingFeedback.some((feedback) => feedback.trainingId === entry.id));
+  const openFeedbackEntries = visibleEntries.filter((entry) => isDoneStatus(entry.status) && !data.trainingFeedback.some((feedback) => feedback.trainingId === entry.id));
+  const openFeedbackCount = openFeedbackEntries.length;
   const nextWeekDates = getWeekDates(addDays(selectedDate, 7));
   const nextWeekCount = visibleEntries.filter((entry) => nextWeekDates.includes(entry.date)).length;
   const unplannedAthletes = visibleAthletes.filter((athlete) =>
     !plannedThisWeek.some((entry) => entry.assignedAthleteIds.includes(athlete.id) || entry.assignedAthleteId === athlete.id),
   );
+  const upcomingEntries = visibleEntries.filter((entry) => entry.date >= today && isPlannedStatus(entry.status));
+  const doneEntries = visibleEntries.filter((entry) => isDoneStatus(entry.status));
+
+  const switchWorkflowTab = (tab: WorkflowTabConfig) => {
+    setWorkflowTab(tab.id);
+    if (tab.calendarView) {
+      setCalendarView(tab.calendarView);
+    }
+  };
 
   const startCreate = () => {
     const nextDraft = emptyDraft(user, data.athlete.id);
@@ -672,10 +706,30 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
       <section className="summary-strip">
         <div><span>Favorisierte Vorlagen</span><strong>{visibleTemplates.filter((template) => template.isFavorite).length}</strong></div>
         <div><span>Naechste Woche</span><strong>{nextWeekCount}</strong></div>
-        <div><span>Ungeplante Sportler</span><strong>{unplannedAthletes.length}</strong></div>
+        <div><span>{isCoach ? "Ungeplante Sportler" : "Offene Rueckmeldung"}</span><strong>{isCoach ? unplannedAthletes.length : openFeedbackCount}</strong></div>
       </section>
 
-      <section className="section-block">
+      <section className="training-workflow-hero section-block">
+        <div>
+          <p className="eyebrow">{isCoach ? "Coach Workflow" : "Mein Trainingsplan"}</p>
+          <h3>{isCoach ? "Trainingsplanung 2.0" : "Deine naechsten Einheiten"}</h3>
+          <p>{isCoach ? "Plane Tage, Wochen und Saisonbloecke aus Vorlagen, kopiere Einheiten und pruefe Rueckmeldungen." : "Sieh deine Einheiten, hake Training ab und gib deinem Coach klares Feedback."}</p>
+        </div>
+        <div className="training-workflow-actions">
+          <button className="primary-button" type="button" onClick={startCreate}>Training planen</button>
+          {isCoach ? <button type="button" onClick={startTemplateCreate}>Vorlage erstellen</button> : null}
+        </div>
+      </section>
+
+      <nav className="calendar-view-tabs workflow-tabs" aria-label="Trainingsplanung Bereiche">
+        {workflowTabs.map((tab) => (
+          <button className={workflowTab === tab.id ? "active" : ""} key={tab.id} type="button" onClick={() => switchWorkflowTab(tab)}>
+            {tab.label}
+          </button>
+        ))}
+      </nav>
+
+      {workflowTab === "today" || workflowTab === "week" || workflowTab === "month" ? <section className="section-block">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Kalender</p>
@@ -704,9 +758,9 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
           {isCoach ? <label>Sportler<select value={athleteFilter} onChange={(event) => setAthleteFilter(event.target.value)}><option value="all">Alle</option>{visibleAthletes.map((athlete) => <option key={athlete.id} value={athlete.id}>{getAthleteName(athlete)}</option>)}</select></label> : null}
           {isCoach ? <label>Gruppe<select value={groupFilter} onChange={(event) => setGroupFilter(event.target.value)}><option value="all">Alle</option>{visibleGroups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select></label> : null}
         </div>
-      </section>
+      </section> : null}
 
-      <section className="section-block">
+      {workflowTab === "templates" || (!isCoach && workflowTab === "week") ? <section className="section-block">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Trainingsbibliothek</p>
@@ -722,7 +776,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
           {visibleTemplates.length > 0 ? visibleTemplates.map((template) => (
             <article className="calendar-training-card" key={template.id}>
               <div className="plan-card-head">
-                <div><span>{template.category} - {visibilityLabel[template.visibility]}</span><h4>{template.isFavorite ? "★ " : ""}{template.title}</h4></div>
+                <div><span>{template.category} - {visibilityLabel[template.visibility]}</span><h4>{template.isFavorite ? "* " : ""}{template.title}</h4></div>
                 <b className="status-pill planned">{template.defaultDurationMinutes ?? 0} min</b>
               </div>
               <div className="smart-detail-grid">
@@ -732,7 +786,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
                 <span>{intensityLabel[template.defaultIntensity]}</span>
               </div>
               <p>{template.focus || "Noch kein Fokus eingetragen."}</p>
-              {template.tags.length > 0 ? <small className="card-note">{template.tags.join(" · ")}</small> : null}
+              {template.tags.length > 0 ? <small className="card-note">{template.tags.join(" - ")}</small> : null}
               <div className="card-actions">
                 {canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => { setTemplateDraft(template); setTemplateArea(template.trainingArea); }}>Bearbeiten</button> : null}
                 {canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => deleteTemplate(template)}>Loeschen</button> : null}
@@ -740,7 +794,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
             </article>
           )) : <p className="empty-state">Noch keine Trainingsvorlagen. Erstelle deine erste Vorlage fuer schnelle Trainingsplanung.</p>}
         </div>
-      </section>
+      </section> : null}
 
       {templateDraft ? (
         <section className="section-block">
@@ -766,7 +820,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
         </section>
       ) : null}
 
-      <section className="section-block">
+      {workflowTab === "templates" || workflowTab === "week" ? <section className="section-block">
         <div className="section-heading"><div><p className="eyebrow">Schnell planen</p><h3>Aus Vorlage planen</h3></div></div>
         {formMessage ? <p className="auth-message">{formMessage}</p> : null}
         <form className="entry-form" onSubmit={planFromTemplate}>
@@ -782,7 +836,63 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
           <label>Notiz<textarea name="notes" rows={2} /></label>
           <button className="save-button" type="submit">Aus Vorlage planen</button>
         </form>
-      </section>
+      </section> : null}
+
+      {isCoach && workflowTab === "groups" ? (
+        <section className="section-block">
+          <div className="section-heading">
+            <div><p className="eyebrow">Gruppenplanung</p><h3>{visibleGroups.length > 0 ? `${visibleGroups.length} Trainingsgruppen` : "Noch keine Trainingsgruppen"}</h3></div>
+            <button className="primary-button" type="button" onClick={startCreate}>Training fuer Gruppe planen</button>
+          </div>
+          <div className="calendar-list">
+            {visibleGroups.length > 0 ? visibleGroups.map((group) => {
+              const groupEntries = visibleEntries.filter((entry) => entry.assignedGroupIds.includes(group.id) || entry.assignedGroupId === group.id);
+              const groupAthletes = visibleAthletes.filter((athlete) => athlete.groupId === group.id || athlete.groupId === group.groupId || athlete.groupIds.includes(group.id) || athlete.groupIds.includes(group.groupId));
+              return (
+                <article className="calendar-training-card" key={group.id}>
+                  <div className="plan-card-head">
+                    <div><span>{group.ageCategory || "Alle Altersklassen"} - {group.trainingFocus || "Allgemein"}</span><h4>{group.name}</h4></div>
+                    <b className="status-pill planned">{groupEntries.length} Einheiten</b>
+                  </div>
+                  <div className="smart-detail-grid">
+                    <span>{groupAthletes.length} Sportler</span>
+                    <span>{group.boatClasses.join(" + ") || "K1/C1"}</span>
+                    <span>{group.status}</span>
+                  </div>
+                  <p>{group.description || "Noch keine Beschreibung hinterlegt."}</p>
+                  <div className="card-actions">
+                    <button type="button" onClick={() => { setGroupFilter(group.id); setWorkflowTab("week"); setCalendarView("week"); }}>Wochenplan anzeigen</button>
+                    <button type="button" onClick={startCreate}>Training planen</button>
+                  </div>
+                </article>
+              );
+            }) : <p className="empty-state">Noch keine Gruppen im Verein. Lege Gruppen im Coach-Bereich an und plane danach direkt aus der Wochenansicht.</p>}
+          </div>
+        </section>
+      ) : null}
+
+      {workflowTab === "feedback" ? (
+        <section className="section-block">
+          <div className="section-heading">
+            <div><p className="eyebrow">Rueckmeldungen</p><h3>{isCoach ? "Statusuebersicht" : "Trainingstagebuch"}</h3></div>
+          </div>
+          <div className="calendar-list">
+            {isCoach && openFeedbackEntries.length > 0 ? openFeedbackEntries.map((entry) => (
+              <article className="calendar-training-card status-planned" key={`open-${entry.id}`}>
+                <div className="plan-card-head">
+                  <div><span>{entry.date} - offen</span><h4>{entry.title || entry.trainingType}</h4></div>
+                  <b className="status-pill planned">Offen</b>
+                </div>
+                <p>{entry.focus || "Rueckmeldung steht noch aus."}</p>
+              </article>
+            )) : null}
+            {entriesWithFeedback.length > 0 ? entriesWithFeedback.map(renderEntryCard) : null}
+            {(!isCoach || openFeedbackEntries.length === 0) && entriesWithFeedback.length === 0 ? (
+              <p className="empty-state">{isCoach ? "Noch keine Rueckmeldungen vorhanden." : "Noch keine erledigten Trainings mit Rueckmeldung."}</p>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
 
       {draft ? (
         <section className="section-block">
@@ -861,20 +971,24 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
         </section>
       ) : null}
 
-      <section className="section-block">
-        <div className="section-heading"><div><p className="eyebrow">Heute</p><h3>{todayEntries.length > 0 ? "Heutiges Training" : "Fuer heute ist kein Training geplant."}</h3></div></div>
-        <div className="calendar-list">{todayEntries.length > 0 ? todayEntries.map(renderEntryCard) : <p className="empty-state">Plane dein erstes Training.</p>}</div>
-      </section>
+      {workflowTab === "today" && calendarView !== "day" ? (
+        <section className="section-block">
+          <div className="section-heading"><div><p className="eyebrow">Heute</p><h3>{todayEntries.length > 0 ? "Heutiges Training" : "Fuer heute ist kein Training geplant."}</h3></div></div>
+          <div className="calendar-list">{todayEntries.length > 0 ? todayEntries.map(renderEntryCard) : <p className="empty-state">Plane dein erstes Training.</p>}</div>
+        </section>
+      ) : null}
 
-      {calendarView === "week" ? (
+      {workflowTab === "week" && calendarView === "week" ? (
         <section className="calendar-week-grid">{weekDates.map((date, index) => <article className="calendar-day-column" key={date}><div className="plan-day-heading"><strong>{weekdays[index]}</strong><span>{new Date(date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}</span></div>{visibleEntries.filter((entry) => entry.date === date).map(renderEntryCard)}{visibleEntries.filter((entry) => entry.date === date).length === 0 ? <p className="empty-state compact">Noch kein Training geplant.</p> : null}</article>)}</section>
-      ) : calendarView === "day" ? (
+      ) : workflowTab === "today" && calendarView === "day" ? (
         <section className="calendar-list">{visibleEntries.filter((entry) => entry.date === selectedDate).map(renderEntryCard)}{visibleEntries.filter((entry) => entry.date === selectedDate).length === 0 ? <p className="empty-state">Fuer diesen Tag ist noch kein Training geplant.</p> : null}</section>
-      ) : calendarView === "month" ? (
-        <section className="calendar-month-grid">{getMonthDates(selectedDate).map((date) => { const count = visibleEntries.filter((entry) => entry.date === date).length; return <button className={count > 0 ? "has-training" : ""} key={date} type="button" onClick={() => { setSelectedDate(date); setCalendarView("day"); }}><strong>{new Date(date).getDate()}</strong><span>{count > 0 ? `${count} Einheiten` : "frei"}</span></button>; })}</section>
-      ) : (
-        <section className="calendar-list">{visibleEntries.length > 0 ? visibleEntries.map(renderEntryCard) : <p className="empty-state">Noch kein Training geplant.</p>}</section>
-      )}
+      ) : workflowTab === "month" && calendarView === "month" ? (
+        <section className="calendar-month-grid">{getMonthDates(selectedDate).map((date) => { const count = visibleEntries.filter((entry) => entry.date === date).length; return <button className={count > 0 ? "has-training" : ""} key={date} type="button" onClick={() => { setSelectedDate(date); setCalendarView("day"); setWorkflowTab("today"); }}><strong>{new Date(date).getDate()}</strong><span>{count > 0 ? `${count} Einheiten` : "frei"}</span></button>; })}</section>
+      ) : workflowTab === "upcoming" ? (
+        <section className="calendar-list">{upcomingEntries.length > 0 ? upcomingEntries.map(renderEntryCard) : <p className="empty-state">Noch keine kommenden Einheiten geplant.</p>}</section>
+      ) : workflowTab === "done" ? (
+        <section className="calendar-list">{doneEntries.length > 0 ? doneEntries.map(renderEntryCard) : <p className="empty-state">Noch keine erledigten Einheiten.</p>}</section>
+      ) : null}
 
       {feedbackEntry ? (
         <section className="section-block feedback-modal">

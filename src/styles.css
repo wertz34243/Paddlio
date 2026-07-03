@@ -298,6 +298,46 @@ button {
   gap: 16px;
 }
 
+.training-workflow-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: end;
+  border-color: rgba(0, 180, 216, 0.24);
+  background: linear-gradient(145deg, rgba(0, 119, 182, 0.18), rgba(30, 41, 59, 0.74));
+}
+
+.training-workflow-hero h3,
+.training-workflow-hero p {
+  margin: 0;
+}
+
+.training-workflow-hero p:not(.eyebrow) {
+  max-width: 620px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.training-workflow-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.workflow-tabs {
+  position: sticky;
+  top: 8px;
+  z-index: 8;
+  margin-inline: -2px;
+  padding: 6px;
+  border: 1px solid rgba(144, 224, 239, 0.14);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.82);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(18px);
+}
+
 .calendar-view-tabs {
   display: flex;
   gap: 8px;
@@ -2270,6 +2310,26 @@ p {
 
   .nav-item span:last-child {
     font-size: 9.5px;
+  }
+}
+
+@media (max-width: 640px) {
+  .training-workflow-hero {
+    grid-template-columns: 1fr;
+    padding: 14px;
+  }
+
+  .training-workflow-actions {
+    justify-content: stretch;
+  }
+
+  .training-workflow-actions button {
+    flex: 1 1 100%;
+  }
+
+  .workflow-tabs {
+    top: 4px;
+    border-radius: 18px;
   }
 }
 

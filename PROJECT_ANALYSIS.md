@@ -1,6 +1,6 @@
 # Paddlio Project Analysis
 
-## Stand Version 3.1
+## Stand Version 3.2
 
 Paddlio ist eine React/Vite/TypeScript-PWA fuer Kanuslalom mit Supabase Auth und Supabase als Hauptspeicher fuer die Plattformbereiche. LocalStorage bleibt als Cache und Offline-Fallback erhalten.
 
@@ -19,6 +19,13 @@ Paddlio ist eine React/Vite/TypeScript-PWA fuer Kanuslalom mit Supabase Auth und
 - Trainingsgruppen und Gruppenzuweisungen laufen ueber `training_groups` und `group_members`.
 - Supabase RLS muss serverseitig sicherstellen, dass Athleten nur eigene Daten, Coaches nur Vereinsdaten und Admins alles sehen.
 
+## Version 3.2 Schwerpunkt
+
+- Trainingsplanung wird zum Coach-Workflow mit Heute, Woche, Monat, Vorlagen, Gruppen und Rueckmeldungen.
+- Athleten erhalten eine reduzierte Planansicht fuer Heute, Diese Woche, kommende und erledigte Einheiten.
+- Vorlagen, Einzeltraining, Wochenkopie, Trainingsblock-Kopie und Feedback laufen weiter ueber die bestehende Planstruktur.
+- Supabase ist fuer Trainingsplanung ueber `training_plan_items`, `training_feedback` und `training_templates` vorbereitet; Migration `0006_training_planning_2_0.sql` ergaenzt Indizes und Realtime-Eintragung.
+
 ## Datenmodelle in Nutzung
 
 - `profiles`: Nutzerprofil, Rollen, Status, Verein, Bootsklassen.
@@ -27,6 +34,9 @@ Paddlio ist eine React/Vite/TypeScript-PWA fuer Kanuslalom mit Supabase Auth und
 - `trainer_requests`: Trainerfreigaben.
 - `training_groups`: Vereinsgruppen.
 - `group_members`: Gruppenzuordnungen.
+- `training_plan_items`: Trainings fuer Athleten, Gruppen und Eigenplanung.
+- `training_feedback`: Rueckmeldungen und Ausfallgruende.
+- `training_templates`: private und Vereinsvorlagen.
 
 ## Naechste Risiken
 

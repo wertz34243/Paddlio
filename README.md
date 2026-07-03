@@ -114,6 +114,16 @@ Wenn Supabase Auth `email rate limit exceeded` meldet, hat das Projekt zu viele 
 - Wiederkehrende Trainings unterstuetzen taeglich, woechentlich, alle 2 Wochen, monatlich und eine maximale Terminanzahl
 - Trainingsvorlagen werden im bestehenden `paddlio_data_<userId>` LocalStorage gespeichert, ohne vorhandene Trainingsdaten zu loeschen
 
+## Version 3.2 - Trainingsplanung 2.0 & Coach Workflow
+
+- Trainingsplanung bekommt eine rollenabhaengige Workflow-Navigation fuer Coach/Admin und Athlete
+- Coach/Admin arbeiten mit Heute, Woche, Monat, Vorlagen, Gruppen und Rueckmeldungen
+- Athleten sehen Heute, Diese Woche, Kommende Einheiten, Erledigt und Rueckmeldung
+- Trainings koennen weiterhin aus Vorlagen geplant, einzeln kopiert, wochenweise kopiert oder als Trainingsblock kopiert werden
+- Gruppenansicht zeigt Trainingsgruppen, Sportlerzahl, Wochenplan-Sprung und direkte Planungsaktion
+- Rueckmeldungsansicht buendelt offene und gespeicherte Feedbacks fuer Coach Workflow und Trainingstagebuch
+- Supabase-Migration `0006_training_planning_2_0.sql` ergaenzt Indizes und Realtime-Vorbereitung fuer Trainingsplanung, Feedback und Vorlagen
+
 ## Version 2.7 - Rollen, Rechte, QA & Cloud Readiness
 
 - Gemeinsame Access-Control-Logik fuer Athlete, Coach, TeamAdmin und Admin ergaenzt

@@ -38,6 +38,7 @@ Paddlio abonniert Supabase Realtime fuer:
 
 - `training_plan_items`
 - `training_feedback`
+- `training_templates`
 - `season_goals`
 - `trainer_requests`
 - `profiles`
@@ -65,3 +66,13 @@ Alle Cloud-Daten laufen ueber Supabase Row Level Security. Das Frontend versteck
 ## Version 3.0.4 Vorbereitung
 
 Als naechstes sollten Schreibpfade in den einzelnen Feature-Views noch granularer auf Services umgestellt werden. Aktuell synchronisiert der AuthProvider den lokalen Snapshot best-effort in die Cloud.
+
+## Version 3.2 Trainingsplanung
+
+Die Trainingsplanung nutzt weiterhin den lokalen Snapshot als Offline-faehige Arbeitskopie und synchronisiert ueber den AuthProvider in die Cloud. Fuer Coach-Workflows sind folgende Tabellen performancekritisch:
+
+- `training_plan_items`: Tages-, Wochen-, Monats- und Blockplanung.
+- `training_feedback`: Rueckmeldungen von Athleten an Coaches.
+- `training_templates`: private und vereinsweite Trainingsvorlagen.
+
+Migration `0006_training_planning_2_0.sql` legt Indizes fuer Datum, Verein, Athlet, Coach, Gruppen-/Athletenlisten und Vorlagen-Sichtbarkeit an. Ausserdem wird Supabase Realtime fuer Training, Feedback und Vorlagen vorbereitet, damit Coach und Athlet denselben Plan ohne manuelles Neuladen sehen koennen.
