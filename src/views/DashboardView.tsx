@@ -14,12 +14,15 @@ import { getGoalsForCurrentUser, getTrainingsForCurrentUser } from "../domain/ac
 import { getDisplayName, getGreeting, getInitials } from "../domain/profile";
 import { getAthleteRecords } from "../domain/records";
 import { getTrainingIntelligence } from "../domain/intelligence";
-import type { Competition, PaddleMotionData, PageId, User } from "../domain/types";
+import type { Competition, PaddleMotionData, PageId, SmartCoachRecommendation, User } from "../domain/types";
+import { SmartCoachView } from "./SmartCoachView";
 
 type DashboardViewProps = {
   data: PaddleMotionData;
   user: User;
   onNavigate: (page: PageId) => void;
+  onOpenSmartCoach: () => void;
+  onUpdateRecommendation: (recommendation: SmartCoachRecommendation, updates: Partial<Pick<SmartCoachRecommendation, "status" | "note">>) => void;
   onQuickAction: (action: DashboardQuickAction) => void;
 };
 
@@ -45,7 +48,7 @@ const getDaysUntil = (date?: string): number | undefined => {
   return Math.max(0, Math.round((target.getTime() - today.getTime()) / 86400000));
 };
 
-export function DashboardView({ data, user, onNavigate, onQuickAction }: DashboardViewProps) {
+export function DashboardView({ data, user, onNavigate, onOpenSmartCoach, onUpdateRecommendation, onQuickAction }: DashboardViewProps) {
   const displayName = getDisplayName(user.profile);
   const scopedPlan = getTrainingsForCurrentUser(data, user);
   const scopedGoals = getGoalsForCurrentUser(data, user);
@@ -208,15 +211,13 @@ export function DashboardView({ data, user, onNavigate, onQuickAction }: Dashboa
         </button>
       </section>
 
-      <section className="section-block smart-coach-card">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">{intelligence.coachAdvice.title}</p>
-            <h3>{intelligence.coachAdvice.recommendation}</h3>
-          </div>
-        </div>
-        <p>{intelligence.coachAdvice.reason}</p>
-      </section>
+      <SmartCoachView
+        data={data}
+        user={user}
+        compact
+        onOpenDetails={onOpenSmartCoach}
+        onUpdateRecommendation={onUpdateRecommendation}
+      />
 
       <section className="dashboard-card-grid">
         <AppCard icon="target" title="Persoenliche Rekorde" subtitle="Automatisch erkannt" value={records.k1Best} tone="k1">

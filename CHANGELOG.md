@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.6
+
+- Added Smart Coach as a rule-based recommendation center in Analytics and on the Athlete dashboard.
+- Added recommendation categories, priorities, reasons, suggested actions, done/dismissed states and notes.
+- Added Coach-facing recommendations for athletes without weekly training, high load, open feedback and risky goals.
+- Added Supabase table migration `0009_smart_coach_recommendations.sql` with RLS policies for Athlete, Coach and Admin.
+- Added cloud service, offline queue support and realtime subscriptions for Smart Coach recommendations.
+- Documented rule logic, data sources, role rights and limitations in `docs/smart-coach.md`.
+
 ## 3.5
 
 - Added Analytics Center with overview, training, competition, goals, load, Coach and Admin analysis views.

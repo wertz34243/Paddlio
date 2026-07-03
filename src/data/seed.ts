@@ -299,4 +299,5 @@ export const seedData: PaddleMotionData = {
   coachAthletes: [],
   coachGroups: [],
   notifications: [],
+  smartCoachRecommendations: [],
 };

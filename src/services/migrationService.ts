@@ -5,6 +5,7 @@ import { upsertCloudTrainingTemplate } from "./trainingTemplateService";
 import { upsertCloudGoal } from "./goalService";
 import { upsertCloudCompetition } from "./competitionService";
 import { upsertCloudMaterial } from "./materialService";
+import { upsertCloudSmartCoachRecommendation } from "./smartCoachService";
 
 const migrationKey = (userId: string): string => `paddlio_cloud_migration_${userId}`;
 
@@ -59,6 +60,10 @@ export const syncDataSnapshotToCloud = async (data: PaddleMotionData, profile: C
   }
   for (const material of data.material) {
     await upsertCloudMaterial(material);
+    migrated += 1;
+  }
+  for (const recommendation of data.smartCoachRecommendations) {
+    await upsertCloudSmartCoachRecommendation(recommendation);
     migrated += 1;
   }
 

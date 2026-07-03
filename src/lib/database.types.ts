@@ -290,6 +290,34 @@ export type Database = {
         };
         Update: Partial<Database["public"]["Tables"]["notifications"]["Row"]>;
       };
+      smart_coach_recommendations: {
+        Row: {
+          id: string;
+          owner_user_id: string;
+          created_for_user_id: string;
+          created_by_system: boolean;
+          club_id: string | null;
+          category: string;
+          priority: "low" | "medium" | "high";
+          title: string;
+          message: string | null;
+          reason: string | null;
+          suggested_action: string | null;
+          status: "open" | "done" | "dismissed";
+          related_entity_type: string | null;
+          related_entity_id: string | null;
+          note: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Omit<Database["public"]["Tables"]["smart_coach_recommendations"]["Row"], "id" | "created_at" | "updated_at">> & {
+          id: string;
+          owner_user_id: string;
+          created_for_user_id: string;
+          title: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["smart_coach_recommendations"]["Row"]>;
+      };
       audit_logs: {
         Row: {
           id: string;

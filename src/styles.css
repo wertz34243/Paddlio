@@ -2156,6 +2156,153 @@ p {
   margin: 0;
 }
 
+.smart-coach-panel {
+  overflow: hidden;
+}
+
+.smart-coach-panel.compact {
+  border-color: rgba(0, 180, 216, 0.26);
+  background:
+    linear-gradient(145deg, rgba(0, 180, 216, 0.12), rgba(245, 158, 11, 0.06)),
+    rgba(30, 41, 59, 0.82);
+}
+
+.smart-coach-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.smart-coach-filters label,
+.smart-coach-note {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.smart-coach-filters input,
+.smart-coach-filters select,
+.smart-coach-note textarea {
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid rgba(144, 224, 239, 0.18);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.68);
+  color: var(--text);
+  font: inherit;
+}
+
+.smart-coach-note textarea {
+  min-height: 74px;
+  resize: vertical;
+}
+
+.smart-coach-list {
+  display: grid;
+  gap: 12px;
+}
+
+.smart-coach-recommendation {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius);
+  background: rgba(15, 23, 42, 0.48);
+  animation: card-in 220ms ease both;
+}
+
+.smart-coach-recommendation.priority-high {
+  border-left-color: var(--warning);
+}
+
+.smart-coach-recommendation.priority-medium {
+  border-left-color: var(--primary);
+}
+
+.smart-coach-recommendation.priority-low {
+  border-left-color: var(--success);
+}
+
+.smart-coach-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 14px;
+  background: rgba(144, 224, 239, 0.14);
+  color: var(--accent);
+  font-weight: 900;
+}
+
+.smart-coach-copy {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+}
+
+.smart-coach-copy h4,
+.smart-coach-copy p,
+.smart-coach-copy small {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.smart-coach-copy p {
+  color: var(--text);
+  line-height: 1.45;
+}
+
+.smart-coach-copy small {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.smart-coach-meta,
+.smart-coach-action {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.smart-coach-meta span,
+.smart-coach-meta b,
+.smart-coach-meta em,
+.smart-coach-action strong,
+.smart-coach-action span {
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+}
+
+.smart-coach-meta b {
+  color: var(--accent);
+}
+
+.smart-coach-action span {
+  border-radius: 12px;
+  color: var(--text);
+}
+
+.inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.inline-actions button {
+  flex: 0 1 auto;
+}
+
 .placeholder-card {
   display: grid;
   gap: 8px;
@@ -2546,5 +2693,15 @@ p {
   .user-row {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .smart-coach-filters,
+  .smart-coach-recommendation {
+    grid-template-columns: 1fr;
+  }
+
+  .smart-coach-icon {
+    width: 34px;
+    height: 34px;
   }
 }

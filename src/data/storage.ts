@@ -20,6 +20,7 @@ import type {
   PaddleMotionData,
   PlanEntry,
   SeasonGoal,
+  SmartCoachRecommendation,
   TrainingFeedback,
   TrainingJournalEntry,
   TrainingTemplate,
@@ -456,6 +457,30 @@ const normalizeNotifications = (
     relatedEntityId: item.relatedEntityId,
   }));
 
+const normalizeSmartCoachRecommendations = (
+  items: Array<Partial<SmartCoachRecommendation> & Pick<SmartCoachRecommendation, "id" | "title">>,
+  userId: string,
+): SmartCoachRecommendation[] =>
+  items.map((item) => ({
+    id: item.id,
+    ownerUserId: item.ownerUserId ?? userId,
+    createdForUserId: item.createdForUserId ?? userId,
+    createdBySystem: item.createdBySystem ?? true,
+    clubId: item.clubId ?? "",
+    category: item.category ?? "training",
+    priority: item.priority ?? "medium",
+    title: item.title,
+    message: item.message ?? "",
+    reason: item.reason ?? "",
+    suggestedAction: item.suggestedAction ?? "",
+    status: item.status ?? "open",
+    relatedEntityType: item.relatedEntityType,
+    relatedEntityId: item.relatedEntityId,
+    note: item.note ?? "",
+    createdAt: item.createdAt ?? now(),
+    updatedAt: item.updatedAt ?? now(),
+  }));
+
 const normalizeDataShape = (data: PaddleMotionData): PaddleMotionData => ({
   ...data,
   journal: Array.isArray(data.journal) ? normalizeJournalEntries(data.journal) : [],
@@ -466,6 +491,7 @@ const normalizeDataShape = (data: PaddleMotionData): PaddleMotionData => ({
   trainingTemplates: Array.isArray(data.trainingTemplates) ? normalizeTrainingTemplates(data.trainingTemplates, data.activeUserId, data.athlete.club) : [],
   trainingFeedback: Array.isArray(data.trainingFeedback) ? normalizeTrainingFeedback(data.trainingFeedback) : [],
   notifications: Array.isArray(data.notifications) ? normalizeNotifications(data.notifications, data.activeUserId) : [],
+  smartCoachRecommendations: Array.isArray(data.smartCoachRecommendations) ? normalizeSmartCoachRecommendations(data.smartCoachRecommendations, data.activeUserId) : [],
 });
 
 const normalizeSeasonGoals = (
@@ -1406,6 +1432,7 @@ const createEmptyDataForUser = (authUser: AuthUser): PaddleMotionData => {
     coachAthletes: [],
     coachGroups: [],
     notifications: [],
+    smartCoachRecommendations: [],
   };
 };
 
@@ -1428,6 +1455,7 @@ const withUsers = (data: V03Data): PaddleMotionData => {
     coachAthletes: data.coachAthletes ?? [],
     coachGroups: data.coachGroups ?? [],
     notifications: data.notifications ?? [],
+    smartCoachRecommendations: data.smartCoachRecommendations ?? [],
   };
 };
 
@@ -1584,6 +1612,7 @@ const migrateLegacyData = (legacy: LegacyData): PaddleMotionData => {
     coachAthletes: [],
     coachGroups: [],
     notifications: [],
+    smartCoachRecommendations: [],
   };
 };
 
@@ -1678,6 +1707,11 @@ const bindDataToUser = (data: PaddleMotionData, authUser: AuthUser): PaddleMotio
     notifications: normalized.notifications.map((notification) => ({
       ...notification,
       userId: authUser.userId,
+    })),
+    smartCoachRecommendations: normalized.smartCoachRecommendations.map((recommendation) => ({
+      ...recommendation,
+      ownerUserId: recommendation.ownerUserId || authUser.userId,
+      createdForUserId: recommendation.createdForUserId || authUser.userId,
     })),
   };
 };

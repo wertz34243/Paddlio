@@ -1,6 +1,6 @@
 # Paddlio Project Analysis
 
-## Stand Version 3.5
+## Stand Version 3.6
 
 Paddlio ist eine React/Vite/TypeScript-PWA fuer Kanuslalom mit Supabase Auth und Supabase als Hauptspeicher fuer die Plattformbereiche. LocalStorage bleibt als Cache und Offline-Fallback erhalten.
 
@@ -48,6 +48,14 @@ Paddlio ist eine React/Vite/TypeScript-PWA fuer Kanuslalom mit Supabase Auth und
 - Belastungsanalyse ist regelbasiert aus Dauer, Intensitaet, Feedback und Regeneration.
 - Coach- und Admin-Views bleiben rollenabhaengig sichtbar und basieren auf dem geladenen, RLS-geschuetzten Snapshot.
 
+## Version 3.6 Schwerpunkt
+
+- Smart Coach erzeugt regelbasierte Empfehlungen aus Training, Feedback, Zielen, Wettkaempfen und Material.
+- Empfehlungen haben Kategorie, Prioritaet, Begruendung, vorgeschlagene Aktion und Status.
+- Athleten sehen eigene Hinweise auf Home und im Analysezentrum.
+- Coaches sehen Hinweise fuer Sportler/Gruppen aus dem eigenen Verein; Admins sehen den geladenen Gesamtsnapshot.
+- Supabase-Tabelle `smart_coach_recommendations` speichert erledigt/ausgeblendet/Notizen und ist per RLS abgesichert.
+
 ## Datenmodelle in Nutzung
 
 - `profiles`: Nutzerprofil, Rollen, Status, Verein, Bootsklassen.
@@ -62,6 +70,7 @@ Paddlio ist eine React/Vite/TypeScript-PWA fuer Kanuslalom mit Supabase Auth und
 - `notifications`: Live-Hinweise fuer Training, Feedback, Ziele, Rollen und Gruppen.
 - `competitions`: Wettkampf-Stammdaten inklusive Importquelle.
 - `competition_results`: Ergebnisdaten pro Sportler und Bootsklasse.
+- `smart_coach_recommendations`: gespeicherte Statuswerte und Notizen fuer regelbasierte Hinweise.
 
 ## Naechste Risiken
 
@@ -69,3 +78,4 @@ Paddlio ist eine React/Vite/TypeScript-PWA fuer Kanuslalom mit Supabase Auth und
 - Supabase Auth Rate Limits brauchen fuer reale Tests ein sauberes SMTP-/Limit-Setup.
 - Trainer-Notizen und Sportlerstatus sollten spaeter als eigene Cloud-Tabelle statt Profilstatus modelliert werden.
 - Breite Admin-Listen brauchen mittelfristig Pagination.
+- Smart-Coach-Regeln sollten mit echten Vereinsdaten validiert werden, bevor daraus automatisierte Trainingsentscheidungen entstehen.

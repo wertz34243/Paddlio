@@ -9,6 +9,8 @@ import { getActiveUser } from "./domain/profile";
 import { getWeekdayFromDate, isDoneStatus } from "./domain/trainingPlan";
 import { updateCloudProfile } from "./services/profileService";
 import { createCloudNotification, markAllCloudNotificationsRead, markCloudNotificationRead } from "./services/notificationService";
+import { upsertCloudSmartCoachRecommendation } from "./services/smartCoachService";
+import { upsertSmartCoachStatus } from "./domain/smartCoach";
 import type {
   Competition,
   MaterialItem,
@@ -17,6 +19,7 @@ import type {
   PlanEntry,
   TrainingFeedback,
   SeasonGoal,
+  SmartCoachRecommendation,
   TrainingJournalEntry,
   TrainingSession,
   UserProfile,
@@ -41,12 +44,13 @@ import { ProfileView } from "./views/ProfileView";
 import { RecordsView } from "./views/RecordsView";
 import { SeasonView } from "./views/SeasonView";
 import { SettingsView } from "./views/SettingsView";
+import { SmartCoachView } from "./views/SmartCoachView";
 import { TrainingJournalView } from "./views/TrainingJournalView";
 import { TrainingView } from "./views/TrainingView";
 
 type TrainingSegment = "plan" | "sessions" | "journal";
 type CompetitionSegment = "races" | "results" | "bests" | "stats" | "coach" | "admin" | "videos";
-type AnalysisSegment = "overview" | "training" | "competition" | "goals" | "load" | "boats" | "season" | "coach" | "admin";
+type AnalysisSegment = "overview" | "smartCoach" | "training" | "competition" | "goals" | "load" | "boats" | "season" | "coach" | "admin";
 type MoreSegment = "profile" | "equipment" | "goals" | "records" | "notifications" | "coach" | "settings";
 
 const navItems: Array<{ id: PageId; label: string; icon: IconName }> = [
@@ -82,6 +86,7 @@ const competitionSegments: SegmentItem<CompetitionSegment>[] = [
 
 const analysisSegments: SegmentItem<AnalysisSegment>[] = [
   { id: "overview", label: "Uebersicht" },
+  { id: "smartCoach", label: "Smart Coach" },
   { id: "training", label: "Training" },
   { id: "competition", label: "Wettkampf" },
   { id: "goals", label: "Ziele" },
@@ -168,6 +173,19 @@ function AppContent() {
       notifications: current.notifications.map((notification) => ({ ...notification, read: true })),
     }));
     void markAllCloudNotificationsRead(activeUser.userId).catch((error) => console.error("Benachrichtigungen konnten nicht gespeichert werden", error));
+  };
+
+  const updateSmartCoachRecommendation = (recommendation: SmartCoachRecommendation, updates: Partial<Pick<SmartCoachRecommendation, "status" | "note">>) => {
+    const nextRecommendation = {
+      ...recommendation,
+      ...updates,
+      updatedAt: getTimestamp(),
+    };
+    updateData((current) => ({
+      ...current,
+      smartCoachRecommendations: upsertSmartCoachStatus(current.smartCoachRecommendations ?? [], recommendation, updates),
+    }));
+    void upsertCloudSmartCoachRecommendation(nextRecommendation).catch((error) => console.error("Smart-Coach-Hinweis konnte nicht gespeichert werden", error));
   };
 
   const handleDashboardQuickAction = (action: DashboardQuickAction) => {
@@ -614,6 +632,8 @@ function AppContent() {
         return <AnalyticsCenterView data={data} user={activeUser} mode="coach" />;
       case "admin":
         return <AnalyticsCenterView data={data} user={activeUser} mode="admin" />;
+      case "smartCoach":
+        return <SmartCoachView data={data} user={activeUser} onUpdateRecommendation={updateSmartCoachRecommendation} />;
       case "training":
       case "competition":
       case "goals":
@@ -741,6 +761,11 @@ function AppContent() {
             data={data}
             user={activeUser}
             onNavigate={setActivePage}
+            onOpenSmartCoach={() => {
+              setAnalysisSegment("smartCoach");
+              setActivePage("analysis");
+            }}
+            onUpdateRecommendation={updateSmartCoachRecommendation}
             onQuickAction={handleDashboardQuickAction}
           />
         );

@@ -12,6 +12,15 @@ Paddlio nutzt Supabase Auth fuer Registrierung, Login, Logout und Session-Wieder
 
 Wenn Supabase Auth `email rate limit exceeded` meldet, hat das Projekt zu viele E-Mail-/Registrierungsanfragen in kurzer Zeit erzeugt. Ein Browser-Client darf dieses Limit ohne serverseitigen Admin-Schluessel nicht umgehen. Fuer produktive Tests sollten in Supabase Auth die unten dokumentierten E-Mail- und Rate-Limit-Einstellungen passend gesetzt werden.
 
+## Version 3.6 - Smart Coach & Trainingsintelligenz
+
+- Neuer Smart-Coach-Bereich im Analysezentrum mit regelbasierten Empfehlungen fuer Training, Regeneration, Technik, Ausdauer, Wettkampf, Ziele, Material und Motivation
+- Home zeigt die drei wichtigsten persoenlichen Hinweise direkt als Karte `Dein Smart Coach`
+- Coach-Hinweise erkennen Sportler ohne Wochenplan, hohe Belastung, offene Rueckmeldungen und gefaehrdete Ziele im eigenen Verein
+- Empfehlungen koennen erledigt, ausgeblendet und mit Notizen versehen werden
+- Supabase-Migration `0009_smart_coach_recommendations.sql` erstellt die Tabelle `smart_coach_recommendations` mit RLS fuer Athlete, Coach und Admin
+- Smart Coach ist regelbasiert und ersetzt keinen Trainer, Arzt oder medizinische Beratung
+
 ## Version 1.5 - QA & Stabilitaet
 
 - Robustere lokale Auth- und LocalStorage-Schicht mit In-Memory-Fallback, falls Browser-Speicher kurzzeitig nicht verfuegbar ist

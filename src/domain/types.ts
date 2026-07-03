@@ -491,6 +491,42 @@ export type NotificationItem = {
   relatedEntityId?: string;
 };
 
+export type SmartCoachCategory =
+  | "training"
+  | "regeneration"
+  | "technik"
+  | "ausdauer"
+  | "kraft"
+  | "wettkampf"
+  | "ziele"
+  | "material"
+  | "warnung"
+  | "motivation";
+
+export type SmartCoachPriority = "low" | "medium" | "high";
+
+export type SmartCoachStatus = "open" | "done" | "dismissed";
+
+export type SmartCoachRecommendation = {
+  id: string;
+  ownerUserId: string;
+  createdForUserId: string;
+  createdBySystem: boolean;
+  clubId: string;
+  category: SmartCoachCategory;
+  priority: SmartCoachPriority;
+  title: string;
+  message: string;
+  reason: string;
+  suggestedAction: string;
+  status: SmartCoachStatus;
+  relatedEntityType?: string;
+  relatedEntityId?: string;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type PaddleMotionData = {
   activeUserId: string;
   users: User[];
@@ -506,6 +542,7 @@ export type PaddleMotionData = {
   coachAthletes: CoachAthlete[];
   coachGroups: CoachGroup[];
   notifications: NotificationItem[];
+  smartCoachRecommendations: SmartCoachRecommendation[];
 };
 
 export type PageId =

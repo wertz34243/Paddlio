@@ -33,6 +33,7 @@ import { listCloudCompetitions } from "../services/competitionService";
 import { listCloudMaterials } from "../services/materialService";
 import { flushSyncQueue, getPendingSyncCount } from "../services/syncService";
 import { listCloudNotifications } from "../services/notificationService";
+import { listCloudSmartCoachRecommendations } from "../services/smartCoachService";
 import { migrateLocalDataToCloud, syncDataSnapshotToCloud } from "../services/migrationService";
 import { subscribeToCoachClub, subscribeToNotifications, subscribeToTrainingFeedback, subscribeToUserTrainings, unsubscribeAll } from "../services/realtimeService";
 
@@ -274,6 +275,7 @@ const mergeCloudData = (
     competitions: cloudData?.competitions && cloudData.competitions.length > 0 ? cloudData.competitions : cached.competitions,
     material: cloudData?.material && cloudData.material.length > 0 ? cloudData.material : cached.material,
     notifications: cloudData?.notifications ?? cached.notifications ?? [],
+    smartCoachRecommendations: cloudData?.smartCoachRecommendations ?? cached.smartCoachRecommendations ?? [],
   };
 
   saveData(userId, nextData);
@@ -329,7 +331,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const migratedCount = navigator.onLine
         ? await loadOptionalCloudData("lokale Daten migrieren", () => migrateLocalDataToCloud(activeSession.user.id, cachedBeforeMerge, nextProfile, nextProfile.club_id ?? undefined), 0)
         : 0;
-      const [cloudPlan, cloudFeedback, cloudTemplates, cloudGoals, cloudCompetitions, cloudMaterials, cloudNotifications] = await Promise.all([
+      const [cloudPlan, cloudFeedback, cloudTemplates, cloudGoals, cloudCompetitions, cloudMaterials, cloudNotifications, cloudSmartCoach] = await Promise.all([
         loadOptionalCloudData("training_plan_items lesen", () => listCloudTraining(activeSession.user.id), []),
         loadOptionalCloudData("training_feedback lesen", listCloudFeedback, []),
         loadOptionalCloudData("training_templates lesen", listCloudTrainingTemplates, []),
@@ -337,6 +339,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loadOptionalCloudData("competitions lesen", listCloudCompetitions, []),
         loadOptionalCloudData("materials lesen", listCloudMaterials, []),
         loadOptionalCloudData("notifications lesen", () => listCloudNotifications(activeSession.user.id), []),
+        loadOptionalCloudData("smart_coach_recommendations lesen", listCloudSmartCoachRecommendations, []),
       ]);
       const nextData = mergeCloudData(activeSession.user.id, nextProfile, clubs, allProfiles.length > 0 ? allProfiles : [nextProfile], groups, groupMembers, {
         plan: cloudPlan,
@@ -346,6 +349,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         competitions: cloudCompetitions,
         material: cloudMaterials,
         notifications: cloudNotifications,
+        smartCoachRecommendations: cloudSmartCoach,
       });
       const pendingCount = getPendingSyncCount();
       setProfile(nextProfile);
@@ -353,7 +357,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setDataState(nextData);
       setPendingSyncCount(pendingCount);
       setLastSyncAt(new Date().toISOString());
-      setSyncCount(allProfiles.length + clubs.length + requests.length + clubRequests.length + groups.length + groupMembers.length + cloudPlan.length + cloudFeedback.length + cloudTemplates.length + cloudGoals.length + cloudCompetitions.length + cloudMaterials.length + cloudNotifications.length + pendingCount);
+      setSyncCount(allProfiles.length + clubs.length + requests.length + clubRequests.length + groups.length + groupMembers.length + cloudPlan.length + cloudFeedback.length + cloudTemplates.length + cloudGoals.length + cloudCompetitions.length + cloudMaterials.length + cloudNotifications.length + cloudSmartCoach.length + pendingCount);
       setCloudMessage(pendingCount > 0 ? `${pendingCount} Aenderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensaetze wurden in die Cloud migriert.` : "");
       setCloudStatus(!navigator.onLine ? "offline" : pendingCount > 0 ? "pending" : "connected");
     } catch (error) {
