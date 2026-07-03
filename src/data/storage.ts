@@ -16,6 +16,7 @@ import type {
   InvitationCode,
   InvitationRole,
   MaterialItem,
+  NotificationItem,
   PaddleMotionData,
   PlanEntry,
   SeasonGoal,
@@ -439,6 +440,22 @@ const normalizeTrainingTemplates = (items: Array<Partial<TrainingTemplate> & Pic
     updatedAt: template.updatedAt ?? now(),
   }));
 
+const normalizeNotifications = (
+  items: Array<Partial<NotificationItem> & { id?: string; user_id?: string; body?: string | null; read_at?: string | null; created_at?: string }>,
+  userId: string,
+): NotificationItem[] =>
+  items.map((item) => ({
+    id: item.id ?? createId("notification"),
+    userId: item.userId ?? item.user_id ?? userId,
+    title: item.title ?? "Benachrichtigung",
+    message: item.message ?? item.body ?? "",
+    type: item.type ?? "info",
+    read: Boolean(item.read ?? item.read_at),
+    createdAt: item.createdAt ?? item.created_at ?? now(),
+    relatedEntityType: item.relatedEntityType,
+    relatedEntityId: item.relatedEntityId,
+  }));
+
 const normalizeDataShape = (data: PaddleMotionData): PaddleMotionData => ({
   ...data,
   journal: Array.isArray(data.journal) ? normalizeJournalEntries(data.journal) : [],
@@ -448,6 +465,7 @@ const normalizeDataShape = (data: PaddleMotionData): PaddleMotionData => ({
   coachGroups: Array.isArray(data.coachGroups) ? normalizeCoachGroups(data.coachGroups, "") : [],
   trainingTemplates: Array.isArray(data.trainingTemplates) ? normalizeTrainingTemplates(data.trainingTemplates, data.activeUserId, data.athlete.club) : [],
   trainingFeedback: Array.isArray(data.trainingFeedback) ? normalizeTrainingFeedback(data.trainingFeedback) : [],
+  notifications: Array.isArray(data.notifications) ? normalizeNotifications(data.notifications, data.activeUserId) : [],
 });
 
 const normalizeSeasonGoals = (
@@ -1387,6 +1405,7 @@ const createEmptyDataForUser = (authUser: AuthUser): PaddleMotionData => {
     goals: [],
     coachAthletes: [],
     coachGroups: [],
+    notifications: [],
   };
 };
 
@@ -1408,6 +1427,7 @@ const withUsers = (data: V03Data): PaddleMotionData => {
     goals: data.goals ?? [],
     coachAthletes: data.coachAthletes ?? [],
     coachGroups: data.coachGroups ?? [],
+    notifications: data.notifications ?? [],
   };
 };
 
@@ -1563,6 +1583,7 @@ const migrateLegacyData = (legacy: LegacyData): PaddleMotionData => {
     goals: [],
     coachAthletes: [],
     coachGroups: [],
+    notifications: [],
   };
 };
 
@@ -1653,6 +1674,10 @@ const bindDataToUser = (data: PaddleMotionData, authUser: AuthUser): PaddleMotio
       ...goal,
       athleteId: athlete.id,
       ownerUserId: authUser.userId,
+    })),
+    notifications: normalized.notifications.map((notification) => ({
+      ...notification,
+      userId: authUser.userId,
     })),
   };
 };

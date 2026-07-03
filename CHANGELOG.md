@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.3
+
+- Added central Supabase realtime service for trainings, feedback, goals, notifications, groups, group members and profiles.
+- Added offline queue service with insert/update/delete operations, retry count and pending sync status.
+- Added Notification Center under Mehr/Updates with unread-first cards and mark-as-read actions.
+- Added notification creation for assigned trainings and incoming feedback.
+- Extended CloudStatus with pending changes and last-sync information for Admin users.
+- Added Supabase migration `0007_realtime_notifications_offline_sync.sql`.
+- Documented realtime, notification and offline queue architecture in `docs/realtime-and-offline-sync.md`.
+
 ## 3.2
 
 - Added role-aware training planning workflows for Coach/Admin and Athlete.

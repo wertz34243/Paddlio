@@ -270,8 +270,12 @@ export type Database = {
           user_id: string;
           title: string;
           body: string | null;
+          message: string | null;
           type: string | null;
+          read: boolean | null;
           read_at: string | null;
+          related_entity_type: string | null;
+          related_entity_id: string | null;
           created_at: string;
         };
         Insert: Partial<Omit<Database["public"]["Tables"]["notifications"]["Row"], "id" | "created_at">> & {

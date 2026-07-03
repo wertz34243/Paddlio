@@ -169,6 +169,7 @@ export type TrainingPlanType =
   | "Abwaertstore"
   | "Starttraining"
   | "Wettkampfsimulation"
+  | "Kehrwasser"
   | "Kehrwassertraining"
   | "Linienwahl"
   | "Bootskontrolle"
@@ -183,7 +184,9 @@ export type TrainingPlanType =
   | "Kraftausdauer"
   | "Maximalkraft"
   | "Explosivkraft"
+  | "Rumpf"
   | "Rumpfstabilitaet"
+  | "Schulter"
   | "Schulterstabilitaet"
   | "Rotation"
   | "Beweglichkeit"
@@ -192,6 +195,7 @@ export type TrainingPlanType =
   | "Anfaengertraining"
   | "Gruppenbetreuung"
   | "Pause"
+  | "Mobility"
   | "Mobilitaet"
   | "Dehnen"
   | "Spaziergang"
@@ -201,6 +205,7 @@ export type TrainingPlanType =
   | "Mannschaft"
   | "Streckenbesichtigung"
   | "Warmfahren"
+  | "Rennanalyse"
   | "Wettkampftag";
 
 export type Weekday =
@@ -466,6 +471,18 @@ export type CoachGroup = {
   updatedAt: string;
 };
 
+export type NotificationItem = {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: string;
+  read: boolean;
+  createdAt: string;
+  relatedEntityType?: string;
+  relatedEntityId?: string;
+};
+
 export type PaddleMotionData = {
   activeUserId: string;
   users: User[];
@@ -480,6 +497,7 @@ export type PaddleMotionData = {
   goals: SeasonGoal[];
   coachAthletes: CoachAthlete[];
   coachGroups: CoachGroup[];
+  notifications: NotificationItem[];
 };
 
 export type PageId =

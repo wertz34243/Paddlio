@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import { getActiveUser } from "./domain/profile";
 import { getWeekdayFromDate, isDoneStatus } from "./domain/trainingPlan";
 import { updateCloudProfile } from "./services/profileService";
+import { createCloudNotification, markAllCloudNotificationsRead, markCloudNotificationRead } from "./services/notificationService";
 import type {
   Competition,
   MaterialItem,
@@ -31,6 +32,7 @@ import { DashboardView, type DashboardQuickAction } from "./views/DashboardView"
 import { EquipmentView } from "./views/EquipmentView";
 import { GoalsView } from "./views/GoalsView";
 import { PlanView } from "./views/PlanView";
+import { NotificationsView } from "./views/NotificationsView";
 import { ProfileView } from "./views/ProfileView";
 import { RecordsView } from "./views/RecordsView";
 import { SeasonView } from "./views/SeasonView";
@@ -41,7 +43,7 @@ import { TrainingView } from "./views/TrainingView";
 type TrainingSegment = "plan" | "sessions" | "journal";
 type CompetitionSegment = "races" | "results" | "videos";
 type AnalysisSegment = "overview" | "boats" | "season";
-type MoreSegment = "profile" | "equipment" | "goals" | "records" | "coach" | "settings";
+type MoreSegment = "profile" | "equipment" | "goals" | "records" | "notifications" | "coach" | "settings";
 
 const navItems: Array<{ id: PageId; label: string; icon: IconName }> = [
   { id: "dashboard", label: "Home", icon: "home" },
@@ -83,6 +85,7 @@ const baseMoreSegments: SegmentItem<MoreSegment>[] = [
   { id: "equipment", label: "Material" },
   { id: "goals", label: "Ziele" },
   { id: "records", label: "Rekorde" },
+  { id: "notifications", label: "Updates" },
   { id: "settings", label: "Einstellungen" },
 ];
 
@@ -105,7 +108,7 @@ const getTimestamp = (): string => new Date().toISOString();
 const canUseCoachArea = (role: string): boolean => role === "coach" || role === "teamAdmin" || role === "admin";
 
 function AppContent() {
-  const { session, data, setData, profile: cloudProfile, loading, cloudStatus, cloudMessage, syncCount, signIn, signUp, signOut, resetPassword } = useAuth();
+  const { session, data, setData, profile: cloudProfile, loading, cloudStatus, cloudMessage, syncCount, pendingSyncCount, lastSyncAt, signIn, signUp, signOut, resetPassword } = useAuth();
   const [activePage, setActivePage] = useState<PageId>("dashboard");
   const [trainingSegment, setTrainingSegment] = useState<TrainingSegment>("plan");
   const [competitionSegment, setCompetitionSegment] = useState<CompetitionSegment>("races");
@@ -132,12 +135,30 @@ function AppContent() {
   const moreSegments = canUseCoachArea(activeUser.role)
     ? [
         ...baseMoreSegments.slice(0, 4),
-        { id: "coach" as const, label: activeUser.role === "admin" ? "Admin" : "Coach" },
         baseMoreSegments[4],
+        { id: "coach" as const, label: activeUser.role === "admin" ? "Admin" : "Coach" },
+        baseMoreSegments[5],
       ]
     : baseMoreSegments;
+  const unreadNotificationCount = data.notifications.filter((notification) => !notification.read).length;
   const updateData = (updater: (current: PaddleMotionData) => PaddleMotionData) => {
     setData((current) => (current ? updater(current) : current));
+  };
+
+  const markNotificationRead = (id: string) => {
+    updateData((current) => ({
+      ...current,
+      notifications: current.notifications.map((notification) => (notification.id === id ? { ...notification, read: true } : notification)),
+    }));
+    void markCloudNotificationRead(id).catch((error) => console.error("Benachrichtigung konnte nicht gespeichert werden", error));
+  };
+
+  const markAllNotificationsRead = () => {
+    updateData((current) => ({
+      ...current,
+      notifications: current.notifications.map((notification) => ({ ...notification, read: true })),
+    }));
+    void markAllCloudNotificationsRead(activeUser.userId).catch((error) => console.error("Benachrichtigungen konnten nicht gespeichert werden", error));
   };
 
   const handleDashboardQuickAction = (action: DashboardQuickAction) => {
@@ -329,6 +350,27 @@ function AppContent() {
           : [...current.plan, ...createdEntries],
       };
     });
+
+    const targetUserIds = new Set(entry.assignedAthleteIds);
+    if (entry.assignedType === "group") {
+      const assignedGroupIds = new Set(entry.assignedGroupIds);
+      data.coachAthletes
+        .filter((athlete) => athlete.groupIds.some((groupId) => assignedGroupIds.has(groupId)) || assignedGroupIds.has(athlete.groupId))
+        .forEach((athlete) => targetUserIds.add(athlete.id));
+    }
+
+    targetUserIds.forEach((userId) => {
+      if (userId && userId !== activeUser.userId) {
+        void createCloudNotification({
+          userId,
+          title: entry.id ? "Training wurde geaendert" : "Neues Training zugewiesen",
+          message: `${entry.title || entry.trainingType} am ${entry.date}${entry.startTime ? ` um ${entry.startTime}` : ""}`,
+          type: entry.status === "cancelled" ? "training_cancelled" : entry.id ? "training_updated" : "training_assigned",
+          relatedEntityType: "training_plan_items",
+          relatedEntityId: entry.id,
+        }).catch((error) => console.error("Training-Benachrichtigung konnte nicht erstellt werden", error));
+      }
+    });
   };
 
   const deletePlanEntry = (id: string) => {
@@ -360,6 +402,17 @@ function AppContent() {
         ),
       };
     });
+
+    if (feedback.coachUserId) {
+      void createCloudNotification({
+        userId: feedback.coachUserId,
+        title: "Neue Rueckmeldung eingegangen",
+        message: feedback.status === "skipped" ? `Training ausgelassen: ${feedback.reason || "kein Grund angegeben"}` : `Feedback: Gefuehl ${feedback.feeling}/10, Motivation ${feedback.motivation}/10`,
+        type: "feedback_received",
+        relatedEntityType: "training_feedback",
+        relatedEntityId: feedback.id,
+      }).catch((error) => console.error("Feedback-Benachrichtigung konnte nicht erstellt werden", error));
+    }
   };
 
   const upsertGoal = (
@@ -582,6 +635,8 @@ function AppContent() {
         );
       case "records":
         return <RecordsView competitions={data.competitions} training={data.training} />;
+      case "notifications":
+        return <NotificationsView notifications={data.notifications} onMarkRead={markNotificationRead} onMarkAllRead={markAllNotificationsRead} />;
       case "coach":
         return <CoachView data={data} user={activeUser} onDataChange={updateData} />;
       case "settings":
@@ -596,7 +651,7 @@ function AppContent() {
     <div className="category-shell">
       <SegmentNav
         label="Mehr Kategorien"
-        items={moreSegments}
+        items={moreSegments.map((segment) => segment.id === "notifications" && unreadNotificationCount > 0 ? { ...segment, label: `Updates (${unreadNotificationCount})` } : segment)}
         activeId={segment}
         onChange={(nextSegment) => {
           setMoreSegment(nextSegment);
@@ -678,7 +733,7 @@ function AppContent() {
       ) : null}
 
       <main className="page-content" id="main">{renderPage()}</main>
-      <CloudStatusBadge status={cloudStatus} syncCount={syncCount} isAdmin={activeUser.role === "admin"} message={cloudMessage} />
+      <CloudStatusBadge status={cloudStatus} syncCount={syncCount} pendingSyncCount={pendingSyncCount} lastSyncAt={lastSyncAt} isAdmin={activeUser.role === "admin"} message={cloudMessage} />
 
       <nav className="bottom-nav" aria-label="Hauptnavigation">
         {navItems.map((item) => (
@@ -700,13 +755,21 @@ function AppContent() {
   );
 }
 
-function CloudStatusBadge({ status, syncCount, isAdmin, message }: { status: string; syncCount: number; isAdmin: boolean; message: string }) {
-  const label = status === "connected" ? "Verbunden" : status === "syncing" ? "Synchronisiert..." : status === "offline" ? "Offline Modus" : status === "error" ? "Cloud Fehler" : "Cloud deaktiviert";
-  const dot = status === "connected" ? "green" : status === "syncing" ? "yellow" : "red";
+function CloudStatusBadge({ status, syncCount, pendingSyncCount, lastSyncAt, isAdmin, message }: { status: string; syncCount: number; pendingSyncCount: number; lastSyncAt: string; isAdmin: boolean; message: string }) {
+  const label =
+    status === "connected" ? "Synchronisiert" :
+      status === "syncing" ? "Synchronisiert..." :
+        status === "pending" ? "Wartende Aenderungen" :
+          status === "offline" ? "Offline" :
+            status === "error" ? "Cloud Fehler" :
+              "Cloud deaktiviert";
+  const dot = status === "connected" ? "green" : status === "syncing" || status === "pending" ? "yellow" : "red";
+  const syncLabel = lastSyncAt ? new Date(lastSyncAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) : "";
   return (
     <div className={`cloud-status ${dot}`}>
       <span>{label}</span>
-      {isAdmin ? <small>{syncCount} Datensaetze</small> : null}
+      {pendingSyncCount > 0 ? <small>{pendingSyncCount} Aenderungen warten auf Synchronisation</small> : null}
+      {isAdmin ? <small>{syncCount} Datensaetze{syncLabel ? ` - letzter Sync ${syncLabel}` : ""}</small> : null}
       {message ? <small>{message}</small> : null}
     </div>
   );

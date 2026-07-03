@@ -413,6 +413,32 @@ button {
   border-left-color: #94a3b8;
 }
 
+.notification-center-head {
+  border-color: rgba(144, 224, 239, 0.22);
+}
+
+.notification-card {
+  display: grid;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid rgba(0, 180, 216, 0.28);
+  border-left: 4px solid var(--primary);
+  border-radius: var(--radius);
+  background: rgba(30, 41, 59, 0.72);
+  box-shadow: var(--shadow);
+}
+
+.notification-card.read {
+  border-left-color: rgba(148, 163, 184, 0.62);
+  opacity: 0.72;
+}
+
+.notification-card p,
+.notification-card span,
+.notification-card h4 {
+  overflow-wrap: anywhere;
+}
+
 .calendar-training-card p,
 .calendar-training-card span,
 .calendar-training-card small,

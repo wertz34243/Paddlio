@@ -108,3 +108,27 @@ export const upsertCloudFeedback = async (feedback: TrainingFeedback): Promise<v
   const { error } = await (client.from("training_feedback") as any).upsert(payload, { onConflict: "id" });
   if (error) throw error;
 };
+
+export const fromCloudFeedback = (row: any): TrainingFeedback => ({
+  id: row.id,
+  trainingId: row.training_plan_item_id,
+  athleteUserId: row.athlete_id,
+  coachUserId: row.coach_id ?? "",
+  status: row.status ?? "done",
+  feeling: row.feeling ?? 7,
+  difficulty: row.difficulty ?? 5,
+  fatigue: row.fatigue ?? 5,
+  motivation: row.motivation ?? 7,
+  sleep: row.sleep ?? undefined,
+  reason: row.reason ?? "",
+  comment: row.comment ?? "",
+  completedAt: row.updated_at ?? row.created_at,
+});
+
+export const listCloudFeedback = async (): Promise<TrainingFeedback[]> => {
+  const client = getSupabaseClient();
+  if (!client) return [];
+  const { data, error } = await client.from("training_feedback").select("*").order("updated_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map(fromCloudFeedback);
+};

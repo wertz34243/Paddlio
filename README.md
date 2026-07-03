@@ -124,6 +124,16 @@ Wenn Supabase Auth `email rate limit exceeded` meldet, hat das Projekt zu viele 
 - Rueckmeldungsansicht buendelt offene und gespeicherte Feedbacks fuer Coach Workflow und Trainingstagebuch
 - Supabase-Migration `0006_training_planning_2_0.sql` ergaenzt Indizes und Realtime-Vorbereitung fuer Trainingsplanung, Feedback und Vorlagen
 
+## Version 3.3 - Live-Synchronisierung, Benachrichtigungen & Offline-Queue
+
+- Zentraler Realtime-Service fuer Trainings, Feedback, Ziele, Notifications, Gruppen, Gruppenzuordnungen und Profile
+- Notification Center im Mehr-Bereich unter `Updates` mit ungelesenen Karten und Markieren-als-gelesen
+- Automatische Benachrichtigungen fuer zugewiesene Trainings und eingehendes Feedback
+- Offline-Queue fuer Insert/Update/Delete-Aenderungen mit Retry-Zaehler und automatischem Flush beim Onlinegehen
+- CloudStatus zeigt Synchronisiert, Synchronisiert..., Offline, Wartende Aenderungen und Cloud Fehler
+- Dokumentation: `docs/realtime-and-offline-sync.md`
+- Supabase-Migration `0007_realtime_notifications_offline_sync.sql` ergaenzt Notification-Felder, Indizes, Policies und Realtime-Publication
+
 ## Version 2.7 - Rollen, Rechte, QA & Cloud Readiness
 
 - Gemeinsame Access-Control-Logik fuer Athlete, Coach, TeamAdmin und Admin ergaenzt
