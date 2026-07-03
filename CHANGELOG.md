@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.5
+
+- Added Analytics Center with overview, training, competition, goals, load, Coach and Admin analysis views.
+- Added time range filters for 7, 30, 90 days, season, year and custom dates.
+- Added rule-based load analysis using duration, intensity, feedback, hard sessions and regeneration.
+- Added goal analysis with progress bars, status counts and overall goal quote.
+- Added Coach athlete analytics and Admin platform overview.
+- Documented metrics, data sources, roles and KI-Coach preparation in `docs/analytics-center.md`.
+
 ## 3.4
 
 - Expanded Wettkampf into a competition portal with races, results, best times, season statistics and Coach/Admin views.

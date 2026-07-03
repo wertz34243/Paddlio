@@ -144,6 +144,16 @@ Wenn Supabase Auth `email rate limit exceeded` meldet, hat das Projekt zu viele 
 - Import vorbereitet ueber `source`, `external_id` und `source_url` fuer spaetere canoeslalom.net-Anbindung
 - Supabase-Migration `0008_competition_portal_results.sql` ergaenzt Portal-Felder, Indizes und Realtime-Publication
 
+## Version 3.5 - Analysezentrum & Leistungsentwicklung
+
+- Analysebereich ist ein Analysezentrum mit Uebersicht, Training, Wettkampf, Ziele, Belastung, K1/C1, Coach Analyse und Admin Uebersicht
+- Zeitraumfilter fuer 7, 30, 90 Tage, Saison, Jahr und eigenen Zeitraum
+- Trainingsanalyse mit Minuten, Statusquote, Trainingsbereichen, Intensitaet, Ausfallquote und Feedbackquote
+- Wettkampfanalyse mit Bestzeiten, Strafschnitt, Platzierung/Abstand und K1/C1-Differenzen
+- Zielanalyse mit Fortschritt, Zielquote, Status und Fortschrittsbalken
+- Regelbasierte Belastungsanalyse mit sportlichen Empfehlungen ohne medizinische Aussage
+- Dokumentation: `docs/analytics-center.md`
+
 ## Version 2.7 - Rollen, Rechte, QA & Cloud Readiness
 
 - Gemeinsame Access-Control-Logik fuer Athlete, Coach, TeamAdmin und Admin ergaenzt

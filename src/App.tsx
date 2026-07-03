@@ -22,6 +22,7 @@ import type {
   UserProfile,
 } from "./domain/types";
 import { AnalysisView } from "./views/AnalysisView";
+import { AnalyticsCenterView, type AnalyticsMode } from "./views/AnalyticsCenterView";
 import { AuthView } from "./views/AuthView";
 import { BoatComparisonView } from "./views/BoatComparisonView";
 import { CompetitionResultsView } from "./views/CompetitionResultsView";
@@ -45,7 +46,7 @@ import { TrainingView } from "./views/TrainingView";
 
 type TrainingSegment = "plan" | "sessions" | "journal";
 type CompetitionSegment = "races" | "results" | "bests" | "stats" | "coach" | "admin" | "videos";
-type AnalysisSegment = "overview" | "boats" | "season";
+type AnalysisSegment = "overview" | "training" | "competition" | "goals" | "load" | "boats" | "season" | "coach" | "admin";
 type MoreSegment = "profile" | "equipment" | "goals" | "records" | "notifications" | "coach" | "settings";
 
 const navItems: Array<{ id: PageId; label: string; icon: IconName }> = [
@@ -81,8 +82,11 @@ const competitionSegments: SegmentItem<CompetitionSegment>[] = [
 
 const analysisSegments: SegmentItem<AnalysisSegment>[] = [
   { id: "overview", label: "Uebersicht" },
+  { id: "training", label: "Training" },
+  { id: "competition", label: "Wettkampf" },
+  { id: "goals", label: "Ziele" },
+  { id: "load", label: "Belastung" },
   { id: "boats", label: "K1/C1" },
-  { id: "season", label: "Saison" },
 ];
 
 const baseMoreSegments: SegmentItem<MoreSegment>[] = [
@@ -606,9 +610,39 @@ function AppContent() {
         return <BoatComparisonView competitions={data.competitions} />;
       case "season":
         return <SeasonView competitions={data.competitions} training={data.training} plan={data.plan} />;
+      case "coach":
+        return <AnalyticsCenterView data={data} user={activeUser} mode="coach" />;
+      case "admin":
+        return <AnalyticsCenterView data={data} user={activeUser} mode="admin" />;
+      case "training":
+      case "competition":
+      case "goals":
+      case "load":
+        return <AnalyticsCenterView data={data} user={activeUser} mode={segment as AnalyticsMode} />;
       case "overview":
       default:
-        return <AnalysisView competitions={data.competitions} training={data.training} plan={data.plan} feedback={data.trainingFeedback} />;
+        return (
+          <div className="stack">
+            <AnalyticsCenterView
+              data={data}
+              user={activeUser}
+              mode="overview"
+              onNavigate={(target) => {
+                if (target === "training") {
+                  setTrainingSegment("plan");
+                  setActivePage("training");
+                } else if (target === "competition") {
+                  setCompetitionSegment("races");
+                  setActivePage("competitions");
+                } else {
+                  setMoreSegment("goals");
+                  setActivePage("more");
+                }
+              }}
+            />
+            <AnalysisView competitions={data.competitions} training={data.training} plan={data.plan} feedback={data.trainingFeedback} />
+          </div>
+        );
     }
   };
 
@@ -616,7 +650,10 @@ function AppContent() {
     <div className="category-shell">
       <SegmentNav
         label="Analyse Kategorien"
-        items={analysisSegments}
+        items={[
+          ...analysisSegments,
+          ...(canUseCoachArea(activeUser.role) ? [{ id: activeUser.role === "admin" ? "admin" as const : "coach" as const, label: activeUser.role === "admin" ? "Admin Uebersicht" : "Coach Analyse" }] : []),
+        ]}
         activeId={segment}
         onChange={(nextSegment) => {
           setAnalysisSegment(nextSegment);
