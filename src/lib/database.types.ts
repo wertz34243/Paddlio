@@ -204,9 +204,14 @@ export type Database = {
           club_id: string | null;
           name: string;
           location: string | null;
+          organizer: string | null;
+          course: string | null;
           start_date: string;
           end_date: string | null;
           level: string | null;
+          source: string | null;
+          external_id: string | null;
+          source_url: string | null;
           notes: string | null;
           created_at: string;
           updated_at: string;
@@ -229,6 +234,7 @@ export type Database = {
           run2_penalty_seconds: number | null;
           best_total_seconds: number | null;
           rank: number | null;
+          starter_field: number | null;
           gap_to_winner_seconds: number | null;
           feeling: number | null;
           notes: string | null;

@@ -1,6 +1,6 @@
 # Paddlio Project Analysis
 
-## Stand Version 3.3
+## Stand Version 3.4
 
 Paddlio ist eine React/Vite/TypeScript-PWA fuer Kanuslalom mit Supabase Auth und Supabase als Hauptspeicher fuer die Plattformbereiche. LocalStorage bleibt als Cache und Offline-Fallback erhalten.
 
@@ -34,6 +34,13 @@ Paddlio ist eine React/Vite/TypeScript-PWA fuer Kanuslalom mit Supabase Auth und
 - CloudStatus unterscheidet synchronisiert, synchronisiert..., offline, wartende Aenderungen und Cloud-Fehler.
 - Migration `0007_realtime_notifications_offline_sync.sql` ergaenzt Notification-Felder, Indizes und Realtime-Publication.
 
+## Version 3.4 Schwerpunkt
+
+- Wettkampfbereich ist ein Portal mit Ergebnisverwaltung, Bestzeiten, Saisonstatistik und Coach/Admin-Auswertung.
+- Competition-Datenmodell ist fuer Veranstalter, Strecke, Ebene, Starterfeld und spaetere Importquellen erweitert.
+- Supabase nutzt `competitions` und `competition_results` als Hauptspeicher fuer Portal- und Ergebnisdaten.
+- Migration `0008_competition_portal_results.sql` ergaenzt Felder, Indizes, Realtime und RLS-Select-Policies.
+
 ## Datenmodelle in Nutzung
 
 - `profiles`: Nutzerprofil, Rollen, Status, Verein, Bootsklassen.
@@ -46,6 +53,8 @@ Paddlio ist eine React/Vite/TypeScript-PWA fuer Kanuslalom mit Supabase Auth und
 - `training_feedback`: Rueckmeldungen und Ausfallgruende.
 - `training_templates`: private und Vereinsvorlagen.
 - `notifications`: Live-Hinweise fuer Training, Feedback, Ziele, Rollen und Gruppen.
+- `competitions`: Wettkampf-Stammdaten inklusive Importquelle.
+- `competition_results`: Ergebnisdaten pro Sportler und Bootsklasse.
 
 ## Naechste Risiken
 

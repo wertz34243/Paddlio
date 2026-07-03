@@ -1,4 +1,4 @@
-export type BoatClass = "K1" | "C1";
+export type BoatClass = "K1" | "C1" | "C2" | "Mannschaft";
 
 export type AgeClass = "U10" | "U12" | "U14" | "U16" | "U18" | "U23" | "Leistungsklasse" | "Masters";
 
@@ -220,17 +220,25 @@ export type Weekday =
 export type Competition = {
   id: string;
   athleteId: string;
+  name?: string;
   date: string;
   location: string;
+  organizer?: string;
+  course?: string;
+  level?: "Training" | "Vereinsrennen" | "Bezirk" | "Westdeutsch" | "DM" | "International";
   boatClass: BoatClass;
   run1TimeSeconds: number;
   run1PenaltySeconds: number;
   run2TimeSeconds: number;
   run2PenaltySeconds: number;
   rank: number;
+  starterField?: number;
   gapToWinnerSeconds: number;
   feeling: number;
   note: string;
+  source?: string;
+  externalId?: string;
+  sourceUrl?: string;
   createdAt: string;
   updatedAt: string;
 };

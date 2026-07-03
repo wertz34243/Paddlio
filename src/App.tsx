@@ -27,6 +27,9 @@ import { BoatComparisonView } from "./views/BoatComparisonView";
 import { CompetitionResultsView } from "./views/CompetitionResultsView";
 import { CompetitionVideosView } from "./views/CompetitionVideosView";
 import { CompetitionsView } from "./views/CompetitionsView";
+import { CompetitionBestTimesView } from "./views/CompetitionBestTimesView";
+import { CompetitionCoachAdminView } from "./views/CompetitionCoachAdminView";
+import { CompetitionSeasonStatsView } from "./views/CompetitionSeasonStatsView";
 import { CoachView } from "./views/CoachView";
 import { DashboardView, type DashboardQuickAction } from "./views/DashboardView";
 import { EquipmentView } from "./views/EquipmentView";
@@ -41,7 +44,7 @@ import { TrainingJournalView } from "./views/TrainingJournalView";
 import { TrainingView } from "./views/TrainingView";
 
 type TrainingSegment = "plan" | "sessions" | "journal";
-type CompetitionSegment = "races" | "results" | "videos";
+type CompetitionSegment = "races" | "results" | "bests" | "stats" | "coach" | "admin" | "videos";
 type AnalysisSegment = "overview" | "boats" | "season";
 type MoreSegment = "profile" | "equipment" | "goals" | "records" | "notifications" | "coach" | "settings";
 
@@ -69,8 +72,10 @@ const trainingSegments: SegmentItem<TrainingSegment>[] = [
 ];
 
 const competitionSegments: SegmentItem<CompetitionSegment>[] = [
-  { id: "races", label: "Rennen" },
+  { id: "races", label: "Meine Wettkaempfe" },
   { id: "results", label: "Ergebnisse" },
+  { id: "bests", label: "Bestzeiten" },
+  { id: "stats", label: "Saisonstatistik" },
   { id: "videos", label: "Videos" },
 ];
 
@@ -558,6 +563,13 @@ function AppContent() {
     switch (segment) {
       case "results":
         return <CompetitionResultsView competitions={data.competitions} />;
+      case "bests":
+        return <CompetitionBestTimesView competitions={data.competitions} />;
+      case "stats":
+        return <CompetitionSeasonStatsView competitions={data.competitions} />;
+      case "coach":
+      case "admin":
+        return <CompetitionCoachAdminView competitions={data.competitions} user={activeUser} />;
       case "videos":
         return <CompetitionVideosView />;
       case "races":
@@ -577,7 +589,10 @@ function AppContent() {
     <div className="category-shell">
       <SegmentNav
         label="Wettkampf Kategorien"
-        items={competitionSegments}
+        items={[
+          ...competitionSegments,
+          ...(canUseCoachArea(activeUser.role) ? [{ id: activeUser.role === "admin" ? "admin" as const : "coach" as const, label: activeUser.role === "admin" ? "Admin-Ansicht" : "Coach-Ansicht" }] : []),
+        ]}
         activeId={competitionSegment}
         onChange={setCompetitionSegment}
       />

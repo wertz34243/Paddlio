@@ -134,6 +134,16 @@ Wenn Supabase Auth `email rate limit exceeded` meldet, hat das Projekt zu viele 
 - Dokumentation: `docs/realtime-and-offline-sync.md`
 - Supabase-Migration `0007_realtime_notifications_offline_sync.sql` ergaenzt Notification-Felder, Indizes, Policies und Realtime-Publication
 
+## Version 3.4 - Wettkampfportal & Ergebnisverwaltung
+
+- Wettkampfbereich ist ein Portal mit Meine Wettkaempfe, Ergebnisse, Bestzeiten, Saisonstatistik und Coach/Admin-Ansicht
+- Wettkaempfe speichern Name, Ort, Datum, Veranstalter, Strecke, Ebene und Notizen
+- Ergebnisse speichern Bootsklasse, beide Laufzeiten, Strafsekunden, Platz, Starterfeld, Abstand, Gefuehl und Notiz
+- Automatische Kennzahlen: Lauf-Gesamtzeiten, beste Gesamtzeit, Strafschnitt und Trend gegen vorheriges Ergebnis
+- Bestzeiten nach Bootsklasse und Strecke sowie Monats-/Saisonstatistik
+- Import vorbereitet ueber `source`, `external_id` und `source_url` fuer spaetere canoeslalom.net-Anbindung
+- Supabase-Migration `0008_competition_portal_results.sql` ergaenzt Portal-Felder, Indizes und Realtime-Publication
+
 ## Version 2.7 - Rollen, Rechte, QA & Cloud Readiness
 
 - Gemeinsame Access-Control-Logik fuer Athlete, Coach, TeamAdmin und Admin ergaenzt

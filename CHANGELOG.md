@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.4
+
+- Expanded Wettkampf into a competition portal with races, results, best times, season statistics and Coach/Admin views.
+- Added competition metadata for name, organizer, course, level, starter field and import preparation.
+- Added automatic result summaries for run totals, best total, penalty average and trend versus previous result.
+- Added Supabase migration `0008_competition_portal_results.sql` for portal fields, indexes and realtime publication.
+- Prepared import metadata for future canoeslalom.net integrations.
+
 ## 3.3
 
 - Added central Supabase realtime service for trainings, feedback, goals, notifications, groups, group members and profiles.

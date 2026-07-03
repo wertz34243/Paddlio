@@ -32,6 +32,7 @@ export const subscribeToUserTrainings = (userId: string, onChange: RealtimeHandl
   const channel = client
     .channel(`paddlio-user-trainings-${userId}`)
     .on("postgres_changes", { event: "*", schema: "public", table: "training_plan_items", filter: `athlete_id=eq.${userId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "competition_results", filter: `athlete_id=eq.${userId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "season_goals", filter: `athlete_id=eq.${userId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "group_members", filter: `athlete_id=eq.${userId}` }, onChange)
     .subscribe();
@@ -46,6 +47,7 @@ export const subscribeToCoachClub = (clubId: string, onChange: RealtimeHandler):
   const channel = client
     .channel(`paddlio-coach-club-${clubId}`)
     .on("postgres_changes", { event: "*", schema: "public", table: "training_plan_items", filter: `club_id=eq.${clubId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "competitions", filter: `club_id=eq.${clubId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "training_groups", filter: `club_id=eq.${clubId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "profiles", filter: `club_id=eq.${clubId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "trainer_requests", filter: `club_id=eq.${clubId}` }, onChange)
@@ -89,6 +91,8 @@ export const subscribeToGeneralCloudChanges = (onChange: RealtimeHandler): (() =
     .channel("paddlio-cloud-sync")
     .on("postgres_changes", { event: "*", schema: "public", table: "training_plan_items" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "training_feedback" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "competitions" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "competition_results" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "season_goals" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "training_groups" }, onChange)
