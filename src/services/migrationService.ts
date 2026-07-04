@@ -6,6 +6,14 @@ import { upsertCloudGoal } from "./goalService";
 import { upsertCloudCompetition } from "./competitionService";
 import { upsertCloudMaterial } from "./materialService";
 import { upsertCloudSmartCoachRecommendation } from "./smartCoachService";
+import {
+  upsertCloudClubBoat,
+  upsertCloudClubDocument,
+  upsertCloudClubEvent,
+  upsertCloudClubMaterial,
+  upsertCloudClubMessage,
+  upsertCloudClubSettings,
+} from "./clubPortalService";
 
 const migrationKey = (userId: string): string => `paddlio_cloud_migration_${userId}`;
 
@@ -64,6 +72,30 @@ export const syncDataSnapshotToCloud = async (data: PaddleMotionData, profile: C
   }
   for (const recommendation of data.smartCoachRecommendations) {
     await upsertCloudSmartCoachRecommendation(recommendation);
+    migrated += 1;
+  }
+  for (const item of data.clubMaterial) {
+    await upsertCloudClubMaterial(item);
+    migrated += 1;
+  }
+  for (const boat of data.clubBoats) {
+    await upsertCloudClubBoat(boat);
+    migrated += 1;
+  }
+  for (const event of data.clubEvents) {
+    await upsertCloudClubEvent(event);
+    migrated += 1;
+  }
+  for (const document of data.clubDocuments) {
+    await upsertCloudClubDocument(document);
+    migrated += 1;
+  }
+  for (const message of data.clubMessages) {
+    await upsertCloudClubMessage(message);
+    migrated += 1;
+  }
+  for (const settings of data.clubSettings) {
+    await upsertCloudClubSettings(settings);
     migrated += 1;
   }
 

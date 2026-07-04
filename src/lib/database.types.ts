@@ -1,6 +1,6 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
-export type UserRole = "Athlete" | "Coach" | "TeamAdmin" | "Admin";
+export type UserRole = "Athlete" | "Coach" | "TeamAdmin" | "ClubAdmin" | "Admin";
 export type UserStatus = "active" | "disabled";
 export type ClubStatus = "active" | "inactive";
 export type ReviewStatus = "open" | "approved" | "rejected";
@@ -317,6 +317,115 @@ export type Database = {
           title: string;
         };
         Update: Partial<Database["public"]["Tables"]["smart_coach_recommendations"]["Row"]>;
+      };
+      club_material: {
+        Row: {
+          id: string;
+          club_id: string;
+          inventory_number: string | null;
+          category: string;
+          name: string;
+          condition: string | null;
+          owner_user_id: string | null;
+          owner_name: string | null;
+          photo_url: string | null;
+          last_inspection_date: string | null;
+          remark: string | null;
+          status: ClubStatus;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Omit<Database["public"]["Tables"]["club_material"]["Row"], "id" | "created_at" | "updated_at">> & { id: string; club_id: string; category: string; name: string };
+        Update: Partial<Database["public"]["Tables"]["club_material"]["Row"]>;
+      };
+      boats: {
+        Row: {
+          id: string;
+          club_id: string;
+          manufacturer: string | null;
+          model: string | null;
+          boat_class: string;
+          length_cm: number | null;
+          weight_kg: number | null;
+          build_year: number | null;
+          owner_user_id: string | null;
+          owner_name: string | null;
+          is_club_boat: boolean;
+          linked_athlete_ids: string[];
+          status: ClubStatus;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Omit<Database["public"]["Tables"]["boats"]["Row"], "id" | "created_at" | "updated_at">> & { id: string; club_id: string; boat_class: string };
+        Update: Partial<Database["public"]["Tables"]["boats"]["Row"]>;
+      };
+      club_events: {
+        Row: {
+          id: string;
+          club_id: string;
+          title: string;
+          date: string;
+          time: string | null;
+          category: string;
+          group_id: string | null;
+          trainer_user_id: string | null;
+          athlete_user_id: string | null;
+          note: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Omit<Database["public"]["Tables"]["club_events"]["Row"], "id" | "created_at" | "updated_at">> & { id: string; club_id: string; title: string; date: string };
+        Update: Partial<Database["public"]["Tables"]["club_events"]["Row"]>;
+      };
+      club_documents: {
+        Row: {
+          id: string;
+          club_id: string;
+          folder: string;
+          title: string;
+          file_name: string | null;
+          file_url: string | null;
+          mime_type: string | null;
+          visible_for_roles: string[];
+          uploaded_by_user_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Omit<Database["public"]["Tables"]["club_documents"]["Row"], "id" | "created_at" | "updated_at">> & { id: string; club_id: string; folder: string; title: string };
+        Update: Partial<Database["public"]["Tables"]["club_documents"]["Row"]>;
+      };
+      club_messages: {
+        Row: {
+          id: string;
+          club_id: string;
+          sender_user_id: string;
+          audience: string;
+          group_id: string | null;
+          recipient_user_id: string | null;
+          title: string;
+          body: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Omit<Database["public"]["Tables"]["club_messages"]["Row"], "id" | "created_at" | "updated_at">> & { id: string; club_id: string; sender_user_id: string; title: string };
+        Update: Partial<Database["public"]["Tables"]["club_messages"]["Row"]>;
+      };
+      club_settings: {
+        Row: {
+          club_id: string;
+          logo_url: string | null;
+          primary_color: string | null;
+          secondary_color: string | null;
+          address: string | null;
+          homepage: string | null;
+          contact_name: string | null;
+          contact_email: string | null;
+          club_number: string | null;
+          imprint: string | null;
+          updated_at: string;
+        };
+        Insert: Partial<Omit<Database["public"]["Tables"]["club_settings"]["Row"], "updated_at">> & { club_id: string };
+        Update: Partial<Database["public"]["Tables"]["club_settings"]["Row"]>;
       };
       audit_logs: {
         Row: {

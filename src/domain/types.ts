@@ -23,7 +23,7 @@ export type MeasurementUnit = "metrisch" | "imperial";
 
 export type AppLanguage = "de" | "en";
 
-export type UserRole = "athlete" | "coach" | "teamAdmin" | "admin";
+export type UserRole = "athlete" | "coach" | "teamAdmin" | "clubAdmin" | "admin";
 
 export type UserStatus = "active" | "inactive";
 
@@ -491,6 +491,103 @@ export type NotificationItem = {
   relatedEntityId?: string;
 };
 
+export type ClubPortalStatus = "active" | "inactive";
+export type ClubEventCategory = "training" | "competition" | "meeting" | "club_party" | "workday";
+export type ClubDocumentFolder = "Trainer" | "Sportler" | "Vorstand" | "Wettkaempfe" | "Formulare";
+export type ClubMessageAudience = "club" | "coaches" | "athletes" | "group" | "athlete";
+export type ClubMaterialCategory = "Boot" | "Paddel" | "Helm" | "Schwimmweste" | "Spritzdecke" | "Anhaenger" | "Vereinsmaterial";
+
+export type ClubMaterial = {
+  id: string;
+  clubId: string;
+  inventoryNumber: string;
+  category: ClubMaterialCategory;
+  name: string;
+  condition: string;
+  ownerUserId: string;
+  ownerName: string;
+  photoUrl: string;
+  lastInspectionDate: string;
+  remark: string;
+  status: ClubPortalStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ClubBoat = {
+  id: string;
+  clubId: string;
+  manufacturer: string;
+  model: string;
+  boatClass: BoatClass;
+  lengthCm: number;
+  weightKg: number;
+  buildYear: number;
+  ownerUserId: string;
+  ownerName: string;
+  isClubBoat: boolean;
+  linkedAthleteIds: string[];
+  status: ClubPortalStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ClubEvent = {
+  id: string;
+  clubId: string;
+  title: string;
+  date: string;
+  time: string;
+  category: ClubEventCategory;
+  groupId: string;
+  trainerUserId: string;
+  athleteUserId: string;
+  note: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ClubDocument = {
+  id: string;
+  clubId: string;
+  folder: ClubDocumentFolder;
+  title: string;
+  fileName: string;
+  fileUrl: string;
+  mimeType: string;
+  visibleForRoles: UserRole[];
+  uploadedByUserId: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ClubMessage = {
+  id: string;
+  clubId: string;
+  senderUserId: string;
+  audience: ClubMessageAudience;
+  groupId: string;
+  recipientUserId: string;
+  title: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ClubSettings = {
+  clubId: string;
+  logoUrl: string;
+  primaryColor: string;
+  secondaryColor: string;
+  address: string;
+  homepage: string;
+  contactName: string;
+  contactEmail: string;
+  clubNumber: string;
+  imprint: string;
+  updatedAt: string;
+};
+
 export type SmartCoachCategory =
   | "training"
   | "regeneration"
@@ -543,6 +640,12 @@ export type PaddleMotionData = {
   coachGroups: CoachGroup[];
   notifications: NotificationItem[];
   smartCoachRecommendations: SmartCoachRecommendation[];
+  clubMaterial: ClubMaterial[];
+  clubBoats: ClubBoat[];
+  clubEvents: ClubEvent[];
+  clubDocuments: ClubDocument[];
+  clubMessages: ClubMessage[];
+  clubSettings: ClubSettings[];
 };
 
 export type PageId =
@@ -550,6 +653,7 @@ export type PageId =
   | "training"
   | "competitions"
   | "analysis"
+  | "club"
   | "more"
   | "goals"
   | "records"

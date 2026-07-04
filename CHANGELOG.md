@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.7
+
+- Added main navigation area `Verein` with Dashboard, members, trainers, groups, material, boats, calendar, documents, messages and settings.
+- Added ClubAdmin role preparation across local and cloud role mapping.
+- Added club portal domain models and Supabase service layer for organization data.
+- Added Supabase migration `0010_club_management_portal.sql` for club material, boats, events, documents, messages, settings and RLS.
+- Added realtime subscriptions and offline queue support for club portal tables.
+- Documented club management architecture in `docs/club-management.md`.
+
 ## 3.6
 
 - Added Smart Coach as a rule-based recommendation center in Analytics and on the Athlete dashboard.

@@ -300,4 +300,10 @@ export const seedData: PaddleMotionData = {
   coachGroups: [],
   notifications: [],
   smartCoachRecommendations: [],
+  clubMaterial: [],
+  clubBoats: [],
+  clubEvents: [],
+  clubDocuments: [],
+  clubMessages: [],
+  clubSettings: [],
 };

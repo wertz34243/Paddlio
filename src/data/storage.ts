@@ -7,6 +7,12 @@ import type {
   AuthUser,
   BoatClass,
   Club,
+  ClubBoat,
+  ClubDocument,
+  ClubEvent,
+  ClubMaterial,
+  ClubMessage,
+  ClubSettings,
   ClubRequest,
   ClubRequestStatus,
   ClubStatus,
@@ -481,6 +487,103 @@ const normalizeSmartCoachRecommendations = (
     updatedAt: item.updatedAt ?? now(),
   }));
 
+const normalizeClubMaterial = (items: Array<Partial<ClubMaterial> & Pick<ClubMaterial, "id" | "name">>): ClubMaterial[] =>
+  items.map((item) => ({
+    id: item.id,
+    clubId: item.clubId ?? "",
+    inventoryNumber: item.inventoryNumber ?? "",
+    category: item.category ?? "Vereinsmaterial",
+    name: item.name,
+    condition: item.condition ?? "bereit",
+    ownerUserId: item.ownerUserId ?? "",
+    ownerName: item.ownerName ?? "",
+    photoUrl: item.photoUrl ?? "",
+    lastInspectionDate: item.lastInspectionDate ?? "",
+    remark: item.remark ?? "",
+    status: item.status ?? "active",
+    createdAt: item.createdAt ?? now(),
+    updatedAt: item.updatedAt ?? now(),
+  }));
+
+const normalizeClubBoats = (items: Array<Partial<ClubBoat> & Pick<ClubBoat, "id">>): ClubBoat[] =>
+  items.map((item) => ({
+    id: item.id,
+    clubId: item.clubId ?? "",
+    manufacturer: item.manufacturer ?? "",
+    model: item.model ?? "",
+    boatClass: item.boatClass ?? "K1",
+    lengthCm: item.lengthCm ?? 0,
+    weightKg: item.weightKg ?? 0,
+    buildYear: item.buildYear ?? 0,
+    ownerUserId: item.ownerUserId ?? "",
+    ownerName: item.ownerName ?? "",
+    isClubBoat: Boolean(item.isClubBoat ?? true),
+    linkedAthleteIds: Array.isArray(item.linkedAthleteIds) ? item.linkedAthleteIds : [],
+    status: item.status ?? "active",
+    createdAt: item.createdAt ?? now(),
+    updatedAt: item.updatedAt ?? now(),
+  }));
+
+const normalizeClubEvents = (items: Array<Partial<ClubEvent> & Pick<ClubEvent, "id" | "title" | "date">>): ClubEvent[] =>
+  items.map((item) => ({
+    id: item.id,
+    clubId: item.clubId ?? "",
+    title: item.title,
+    date: item.date,
+    time: item.time ?? "",
+    category: item.category ?? "training",
+    groupId: item.groupId ?? "",
+    trainerUserId: item.trainerUserId ?? "",
+    athleteUserId: item.athleteUserId ?? "",
+    note: item.note ?? "",
+    createdAt: item.createdAt ?? now(),
+    updatedAt: item.updatedAt ?? now(),
+  }));
+
+const normalizeClubDocuments = (items: Array<Partial<ClubDocument> & Pick<ClubDocument, "id" | "title">>): ClubDocument[] =>
+  items.map((item) => ({
+    id: item.id,
+    clubId: item.clubId ?? "",
+    folder: item.folder ?? "Formulare",
+    title: item.title,
+    fileName: item.fileName ?? "",
+    fileUrl: item.fileUrl ?? "",
+    mimeType: item.mimeType ?? "",
+    visibleForRoles: Array.isArray(item.visibleForRoles) ? item.visibleForRoles : ["coach", "teamAdmin", "clubAdmin", "admin"],
+    uploadedByUserId: item.uploadedByUserId ?? "",
+    createdAt: item.createdAt ?? now(),
+    updatedAt: item.updatedAt ?? now(),
+  }));
+
+const normalizeClubMessages = (items: Array<Partial<ClubMessage> & Pick<ClubMessage, "id" | "title">>): ClubMessage[] =>
+  items.map((item) => ({
+    id: item.id,
+    clubId: item.clubId ?? "",
+    senderUserId: item.senderUserId ?? "",
+    audience: item.audience ?? "club",
+    groupId: item.groupId ?? "",
+    recipientUserId: item.recipientUserId ?? "",
+    title: item.title,
+    body: item.body ?? "",
+    createdAt: item.createdAt ?? now(),
+    updatedAt: item.updatedAt ?? now(),
+  }));
+
+const normalizeClubSettings = (items: Array<Partial<ClubSettings> & Pick<ClubSettings, "clubId">>): ClubSettings[] =>
+  items.map((item) => ({
+    clubId: item.clubId,
+    logoUrl: item.logoUrl ?? "",
+    primaryColor: item.primaryColor ?? "#00B4D8",
+    secondaryColor: item.secondaryColor ?? "#0077B6",
+    address: item.address ?? "",
+    homepage: item.homepage ?? "",
+    contactName: item.contactName ?? "",
+    contactEmail: item.contactEmail ?? "",
+    clubNumber: item.clubNumber ?? "",
+    imprint: item.imprint ?? "",
+    updatedAt: item.updatedAt ?? now(),
+  }));
+
 const normalizeDataShape = (data: PaddleMotionData): PaddleMotionData => ({
   ...data,
   journal: Array.isArray(data.journal) ? normalizeJournalEntries(data.journal) : [],
@@ -492,6 +595,12 @@ const normalizeDataShape = (data: PaddleMotionData): PaddleMotionData => ({
   trainingFeedback: Array.isArray(data.trainingFeedback) ? normalizeTrainingFeedback(data.trainingFeedback) : [],
   notifications: Array.isArray(data.notifications) ? normalizeNotifications(data.notifications, data.activeUserId) : [],
   smartCoachRecommendations: Array.isArray(data.smartCoachRecommendations) ? normalizeSmartCoachRecommendations(data.smartCoachRecommendations, data.activeUserId) : [],
+  clubMaterial: Array.isArray(data.clubMaterial) ? normalizeClubMaterial(data.clubMaterial) : [],
+  clubBoats: Array.isArray(data.clubBoats) ? normalizeClubBoats(data.clubBoats) : [],
+  clubEvents: Array.isArray(data.clubEvents) ? normalizeClubEvents(data.clubEvents) : [],
+  clubDocuments: Array.isArray(data.clubDocuments) ? normalizeClubDocuments(data.clubDocuments) : [],
+  clubMessages: Array.isArray(data.clubMessages) ? normalizeClubMessages(data.clubMessages) : [],
+  clubSettings: Array.isArray(data.clubSettings) ? normalizeClubSettings(data.clubSettings) : [],
 });
 
 const normalizeSeasonGoals = (
@@ -564,6 +673,7 @@ const getRolesForEmail = (email: string, fallback: UserRole[] = ["athlete"]): Us
 
 const getPrimaryRole = (roles: UserRole[]): UserRole => {
   if (roles.includes("admin")) return "admin";
+  if (roles.includes("clubAdmin")) return "clubAdmin";
   if (roles.includes("teamAdmin")) return "teamAdmin";
   if (roles.includes("coach")) return "coach";
   return "athlete";
@@ -1433,6 +1543,12 @@ const createEmptyDataForUser = (authUser: AuthUser): PaddleMotionData => {
     coachGroups: [],
     notifications: [],
     smartCoachRecommendations: [],
+    clubMaterial: [],
+    clubBoats: [],
+    clubEvents: [],
+    clubDocuments: [],
+    clubMessages: [],
+    clubSettings: [],
   };
 };
 
@@ -1456,6 +1572,12 @@ const withUsers = (data: V03Data): PaddleMotionData => {
     coachGroups: data.coachGroups ?? [],
     notifications: data.notifications ?? [],
     smartCoachRecommendations: data.smartCoachRecommendations ?? [],
+    clubMaterial: data.clubMaterial ?? [],
+    clubBoats: data.clubBoats ?? [],
+    clubEvents: data.clubEvents ?? [],
+    clubDocuments: data.clubDocuments ?? [],
+    clubMessages: data.clubMessages ?? [],
+    clubSettings: data.clubSettings ?? [],
   };
 };
 
@@ -1613,6 +1735,12 @@ const migrateLegacyData = (legacy: LegacyData): PaddleMotionData => {
     coachGroups: [],
     notifications: [],
     smartCoachRecommendations: [],
+    clubMaterial: [],
+    clubBoats: [],
+    clubEvents: [],
+    clubDocuments: [],
+    clubMessages: [],
+    clubSettings: [],
   };
 };
 

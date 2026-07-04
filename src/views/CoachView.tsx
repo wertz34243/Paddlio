@@ -68,6 +68,7 @@ const roleLabels: Record<UserRole, string> = {
   athlete: "Athlete",
   coach: "Coach",
   teamAdmin: "TeamAdmin",
+  clubAdmin: "ClubAdmin",
   admin: "Admin",
 };
 
@@ -82,8 +83,9 @@ const normalizeClubName = (value: string): string => value.trim().toLowerCase();
 const isUuid = (value: string): boolean =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
-const toCloudRoles = (role: UserRole): Array<"Athlete" | "Coach" | "TeamAdmin" | "Admin"> => {
+const toCloudRoles = (role: UserRole): Array<"Athlete" | "Coach" | "TeamAdmin" | "ClubAdmin" | "Admin"> => {
   if (role === "admin") return ["Athlete", "Coach", "Admin"];
+  if (role === "clubAdmin") return ["Athlete", "Coach", "ClubAdmin"];
   if (role === "teamAdmin") return ["Athlete", "TeamAdmin"];
   if (role === "coach") return ["Athlete", "Coach"];
   return ["Athlete"];

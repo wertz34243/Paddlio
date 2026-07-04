@@ -34,6 +34,7 @@ import { CompetitionsView } from "./views/CompetitionsView";
 import { CompetitionBestTimesView } from "./views/CompetitionBestTimesView";
 import { CompetitionCoachAdminView } from "./views/CompetitionCoachAdminView";
 import { CompetitionSeasonStatsView } from "./views/CompetitionSeasonStatsView";
+import { ClubPortalView } from "./views/ClubPortalView";
 import { CoachView } from "./views/CoachView";
 import { DashboardView, type DashboardQuickAction } from "./views/DashboardView";
 import { EquipmentView } from "./views/EquipmentView";
@@ -58,6 +59,7 @@ const navItems: Array<{ id: PageId; label: string; icon: IconName }> = [
   { id: "training", label: "Training", icon: "training" },
   { id: "competitions", label: "Wettkampf", icon: "trophy" },
   { id: "analysis", label: "Analyse", icon: "chart" },
+  { id: "club", label: "Verein", icon: "club" },
   { id: "more", label: "Mehr", icon: "more" },
 ];
 
@@ -108,6 +110,7 @@ const pageTitles: Record<PageId, string> = {
   training: "Training",
   competitions: "Wettkaempfe",
   analysis: "Analyse",
+  club: "Verein",
   more: "Mehr",
   goals: "Ziele",
   records: "Rekorde",
@@ -119,7 +122,7 @@ const pageTitles: Record<PageId, string> = {
 
 const getTimestamp = (): string => new Date().toISOString();
 
-const canUseCoachArea = (role: string): boolean => role === "coach" || role === "teamAdmin" || role === "admin";
+const canUseCoachArea = (role: string): boolean => role === "coach" || role === "teamAdmin" || role === "clubAdmin" || role === "admin";
 
 function AppContent() {
   const { session, data, setData, profile: cloudProfile, loading, cloudStatus, cloudMessage, syncCount, pendingSyncCount, lastSyncAt, signIn, signUp, signOut, resetPassword } = useAuth();
@@ -775,6 +778,8 @@ function AppContent() {
         return renderCompetitionArea();
       case "analysis":
         return renderAnalysisArea();
+      case "club":
+        return <ClubPortalView data={data} user={activeUser} onDataChange={updateData} />;
       case "more":
         return renderMoreArea();
       case "goals":

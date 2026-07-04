@@ -51,6 +51,12 @@ export const subscribeToCoachClub = (clubId: string, onChange: RealtimeHandler):
     .on("postgres_changes", { event: "*", schema: "public", table: "competitions", filter: `club_id=eq.${clubId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "training_groups", filter: `club_id=eq.${clubId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "smart_coach_recommendations", filter: `club_id=eq.${clubId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "club_material", filter: `club_id=eq.${clubId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "boats", filter: `club_id=eq.${clubId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "club_events", filter: `club_id=eq.${clubId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "club_documents", filter: `club_id=eq.${clubId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "club_messages", filter: `club_id=eq.${clubId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "club_settings", filter: `club_id=eq.${clubId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "profiles", filter: `club_id=eq.${clubId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "trainer_requests", filter: `club_id=eq.${clubId}` }, onChange)
     .subscribe();
@@ -101,6 +107,12 @@ export const subscribeToGeneralCloudChanges = (onChange: RealtimeHandler): (() =
     .on("postgres_changes", { event: "*", schema: "public", table: "training_groups" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "group_members" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "club_material" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "boats" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "club_events" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "club_documents" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "club_messages" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "club_settings" }, onChange)
     .subscribe();
 
   return registerChannel(channel);

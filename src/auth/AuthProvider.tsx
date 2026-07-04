@@ -34,6 +34,14 @@ import { listCloudMaterials } from "../services/materialService";
 import { flushSyncQueue, getPendingSyncCount } from "../services/syncService";
 import { listCloudNotifications } from "../services/notificationService";
 import { listCloudSmartCoachRecommendations } from "../services/smartCoachService";
+import {
+  listCloudClubBoats,
+  listCloudClubDocuments,
+  listCloudClubEvents,
+  listCloudClubMaterial,
+  listCloudClubMessages,
+  listCloudClubSettings,
+} from "../services/clubPortalService";
 import { migrateLocalDataToCloud, syncDataSnapshotToCloud } from "../services/migrationService";
 import { subscribeToCoachClub, subscribeToNotifications, subscribeToTrainingFeedback, subscribeToUserTrainings, unsubscribeAll } from "../services/realtimeService";
 
@@ -65,7 +73,7 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 const toLocalRole = (role: string): UserRole =>
-  role === "Admin" ? "admin" : role === "Coach" ? "coach" : role === "TeamAdmin" ? "teamAdmin" : "athlete";
+  role === "Admin" ? "admin" : role === "ClubAdmin" ? "clubAdmin" : role === "Coach" ? "coach" : role === "TeamAdmin" ? "teamAdmin" : "athlete";
 
 const describeCloudError = (error: unknown): string => {
   if (error && typeof error === "object") {
@@ -103,6 +111,7 @@ const loadOptionalCloudData = async <T,>(scope: string, loader: () => Promise<T>
 
 const getPrimaryRole = (roles: string[]): UserRole => {
   if (roles.includes("Admin")) return "admin";
+  if (roles.includes("ClubAdmin")) return "clubAdmin";
   if (roles.includes("Coach")) return "coach";
   if (roles.includes("TeamAdmin")) return "teamAdmin";
   return "athlete";
@@ -276,6 +285,12 @@ const mergeCloudData = (
     material: cloudData?.material && cloudData.material.length > 0 ? cloudData.material : cached.material,
     notifications: cloudData?.notifications ?? cached.notifications ?? [],
     smartCoachRecommendations: cloudData?.smartCoachRecommendations ?? cached.smartCoachRecommendations ?? [],
+    clubMaterial: cloudData?.clubMaterial ?? cached.clubMaterial ?? [],
+    clubBoats: cloudData?.clubBoats ?? cached.clubBoats ?? [],
+    clubEvents: cloudData?.clubEvents ?? cached.clubEvents ?? [],
+    clubDocuments: cloudData?.clubDocuments ?? cached.clubDocuments ?? [],
+    clubMessages: cloudData?.clubMessages ?? cached.clubMessages ?? [],
+    clubSettings: cloudData?.clubSettings ?? cached.clubSettings ?? [],
   };
 
   saveData(userId, nextData);
@@ -331,7 +346,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const migratedCount = navigator.onLine
         ? await loadOptionalCloudData("lokale Daten migrieren", () => migrateLocalDataToCloud(activeSession.user.id, cachedBeforeMerge, nextProfile, nextProfile.club_id ?? undefined), 0)
         : 0;
-      const [cloudPlan, cloudFeedback, cloudTemplates, cloudGoals, cloudCompetitions, cloudMaterials, cloudNotifications, cloudSmartCoach] = await Promise.all([
+      const [
+        cloudPlan,
+        cloudFeedback,
+        cloudTemplates,
+        cloudGoals,
+        cloudCompetitions,
+        cloudMaterials,
+        cloudNotifications,
+        cloudSmartCoach,
+        cloudClubMaterial,
+        cloudClubBoats,
+        cloudClubEvents,
+        cloudClubDocuments,
+        cloudClubMessages,
+        cloudClubSettings,
+      ] = await Promise.all([
         loadOptionalCloudData("training_plan_items lesen", () => listCloudTraining(activeSession.user.id), []),
         loadOptionalCloudData("training_feedback lesen", listCloudFeedback, []),
         loadOptionalCloudData("training_templates lesen", listCloudTrainingTemplates, []),
@@ -340,6 +370,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loadOptionalCloudData("materials lesen", listCloudMaterials, []),
         loadOptionalCloudData("notifications lesen", () => listCloudNotifications(activeSession.user.id), []),
         loadOptionalCloudData("smart_coach_recommendations lesen", listCloudSmartCoachRecommendations, []),
+        loadOptionalCloudData("club_material lesen", listCloudClubMaterial, []),
+        loadOptionalCloudData("boats lesen", listCloudClubBoats, []),
+        loadOptionalCloudData("club_events lesen", listCloudClubEvents, []),
+        loadOptionalCloudData("club_documents lesen", listCloudClubDocuments, []),
+        loadOptionalCloudData("club_messages lesen", listCloudClubMessages, []),
+        loadOptionalCloudData("club_settings lesen", listCloudClubSettings, []),
       ]);
       const nextData = mergeCloudData(activeSession.user.id, nextProfile, clubs, allProfiles.length > 0 ? allProfiles : [nextProfile], groups, groupMembers, {
         plan: cloudPlan,
@@ -350,6 +386,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         material: cloudMaterials,
         notifications: cloudNotifications,
         smartCoachRecommendations: cloudSmartCoach,
+        clubMaterial: cloudClubMaterial,
+        clubBoats: cloudClubBoats,
+        clubEvents: cloudClubEvents,
+        clubDocuments: cloudClubDocuments,
+        clubMessages: cloudClubMessages,
+        clubSettings: cloudClubSettings,
       });
       const pendingCount = getPendingSyncCount();
       setProfile(nextProfile);
@@ -357,7 +399,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setDataState(nextData);
       setPendingSyncCount(pendingCount);
       setLastSyncAt(new Date().toISOString());
-      setSyncCount(allProfiles.length + clubs.length + requests.length + clubRequests.length + groups.length + groupMembers.length + cloudPlan.length + cloudFeedback.length + cloudTemplates.length + cloudGoals.length + cloudCompetitions.length + cloudMaterials.length + cloudNotifications.length + cloudSmartCoach.length + pendingCount);
+      setSyncCount(allProfiles.length + clubs.length + requests.length + clubRequests.length + groups.length + groupMembers.length + cloudPlan.length + cloudFeedback.length + cloudTemplates.length + cloudGoals.length + cloudCompetitions.length + cloudMaterials.length + cloudNotifications.length + cloudSmartCoach.length + cloudClubMaterial.length + cloudClubBoats.length + cloudClubEvents.length + cloudClubDocuments.length + cloudClubMessages.length + cloudClubSettings.length + pendingCount);
       setCloudMessage(pendingCount > 0 ? `${pendingCount} Aenderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensaetze wurden in die Cloud migriert.` : "");
       setCloudStatus(!navigator.onLine ? "offline" : pendingCount > 0 ? "pending" : "connected");
     } catch (error) {

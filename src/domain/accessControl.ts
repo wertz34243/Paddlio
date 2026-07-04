@@ -2,7 +2,7 @@ import type { CoachAthlete, CoachGroup, PaddleMotionData, PlanEntry, SeasonGoal,
 
 export const isAdminRole = (role: UserRole): boolean => role === "admin";
 
-export const isCoachLikeRole = (role: UserRole): boolean => role === "coach" || role === "teamAdmin";
+export const isCoachLikeRole = (role: UserRole): boolean => role === "coach" || role === "teamAdmin" || role === "clubAdmin";
 
 export const canUseCoachArea = (role: UserRole): boolean => isAdminRole(role) || isCoachLikeRole(role);
 

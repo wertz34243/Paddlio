@@ -1,6 +1,6 @@
 # Paddlio Project Analysis
 
-## Stand Version 3.6
+## Stand Version 3.7
 
 Paddlio ist eine React/Vite/TypeScript-PWA fuer Kanuslalom mit Supabase Auth und Supabase als Hauptspeicher fuer die Plattformbereiche. LocalStorage bleibt als Cache und Offline-Fallback erhalten.
 
@@ -56,6 +56,14 @@ Paddlio ist eine React/Vite/TypeScript-PWA fuer Kanuslalom mit Supabase Auth und
 - Coaches sehen Hinweise fuer Sportler/Gruppen aus dem eigenen Verein; Admins sehen den geladenen Gesamtsnapshot.
 - Supabase-Tabelle `smart_coach_recommendations` speichert erledigt/ausgeblendet/Notizen und ist per RLS abgesichert.
 
+## Version 3.7 Schwerpunkt
+
+- Vereinsportal ist als eigener Hauptbereich `Verein` eingebaut.
+- Coach, TeamAdmin, ClubAdmin und Admin verwalten Mitglieder, Trainer, Gruppen, Material, Boote, Kalender, Dokumente, Nachrichten und Einstellungen.
+- ClubAdmin ist als eigene Rolle in Frontend, Typen und Supabase-Migration vorbereitet.
+- Vereinsdaten liegen in eigenen Supabase-Tabellen und bleiben lokal nur Cache/Offline-Fallback.
+- Datei-Uploads sind als Dokument-Metadaten vorbereitet; echte Storage-Buckets folgen spaeter.
+
 ## Datenmodelle in Nutzung
 
 - `profiles`: Nutzerprofil, Rollen, Status, Verein, Bootsklassen.
@@ -71,6 +79,12 @@ Paddlio ist eine React/Vite/TypeScript-PWA fuer Kanuslalom mit Supabase Auth und
 - `competitions`: Wettkampf-Stammdaten inklusive Importquelle.
 - `competition_results`: Ergebnisdaten pro Sportler und Bootsklasse.
 - `smart_coach_recommendations`: gespeicherte Statuswerte und Notizen fuer regelbasierte Hinweise.
+- `club_material`: Vereinsinventar wie Boote, Paddel, Helme, Schwimmwesten und Anhaenger.
+- `boats`: detaillierte Bootsdaten und Sportlerverknuepfung.
+- `club_events`: Vereinskalender fuer Training, Wettkampf, Sitzung, Feier und Arbeitseinsatz.
+- `club_documents`: Dokument-Metadaten und Ordnerstruktur.
+- `club_messages`: interne Vereinsnachrichten.
+- `club_settings`: Logo, Farben, Adresse, Homepage, Ansprechpartner, Vereinsnummer und Impressum.
 
 ## Naechste Risiken
 
@@ -79,3 +93,4 @@ Paddlio ist eine React/Vite/TypeScript-PWA fuer Kanuslalom mit Supabase Auth und
 - Trainer-Notizen und Sportlerstatus sollten spaeter als eigene Cloud-Tabelle statt Profilstatus modelliert werden.
 - Breite Admin-Listen brauchen mittelfristig Pagination.
 - Smart-Coach-Regeln sollten mit echten Vereinsdaten validiert werden, bevor daraus automatisierte Trainingsentscheidungen entstehen.
+- Supabase Storage fuer echte Dokument-Uploads braucht eigene Bucket- und RLS-Policies.
