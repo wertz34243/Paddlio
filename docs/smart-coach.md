@@ -4,12 +4,12 @@ Stand: Version 3.6
 
 ## Ziel
 
-Smart Coach erzeugt regelbasierte Trainingshinweise aus vorhandenen Paddlio-Daten. Die Funktion ist bewusst ohne externe KI/API gebaut und dient als Grundlage fuer einen spaeteren KI-Coach.
+Smart Coach erzeugt regelbasierte Trainingshinweise aus vorhandenen Paddlio-Daten. Die Funktion ist bewusst ohne externe KI/API gebaut und dient als Grundlage für einen späteren KI-Coach.
 
 ## Datenquellen
 
 - `training_plan_items`: geplante, erledigte und ausgelassene Trainings
-- `training_feedback`: Gefuehl, Schwierigkeit, Muedigkeit, Motivation, Schlaf und Kommentar
+- `training_feedback`: Gefühl, Schwierigkeit, Müdigkeit, Motivation, Schlaf und Kommentar
 - `season_goals`: Zielstatus, Fortschritt und Faelligkeit
 - `competitions` / `competition_results`: Wettkampfentwicklung und Strafsekunden
 - `materials`: Materialstatus und Testnotizen
@@ -19,7 +19,7 @@ Smart Coach erzeugt regelbasierte Trainingshinweise aus vorhandenen Paddlio-Date
 
 - 7 Tage kein erledigtes Training: lockere Einheit empfehlen
 - 3 harte/maximale Einheiten in 5 Tagen: Regeneration empfehlen
-- hohe Muedigkeit, wenig Schlaf, schlechtes Gefuehl oder geringe Motivation: locker trainieren
+- hohe Müdigkeit, wenig Schlaf, schlechtes Gefühl oder geringe Motivation: locker trainieren
 - hoher Strafsekunden-Schnitt: Techniktraining mit Linien-/Tor-Fokus empfehlen
 - kein GA1/Grundlagentraining in 14 Tagen: Ausdauerreiz empfehlen
 - Wettkampf innerhalb von 7 Tagen: Wettkampfvorbereitung empfehlen
@@ -32,15 +32,15 @@ Smart Coach erzeugt regelbasierte Trainingshinweise aus vorhandenen Paddlio-Date
 Empfehlungen haben:
 
 - Kategorie: Training, Regeneration, Technik, Ausdauer, Kraft, Wettkampf, Ziele, Material, Warnung, Motivation
-- Prioritaet: niedrig, mittel, hoch
-- Titel, Text, Begruendung und vorgeschlagene Aktion
+- Priorität: niedrig, mittel, hoch
+- Titel, Text, Begründung und vorgeschlagene Aktion
 - Status: offen, erledigt, ausgeblendet
 - optionale Notiz
 
 ## Rollenrechte
 
 - Athlete sieht nur eigene Empfehlungen und kann sie erledigen oder ausblenden.
-- Coach sieht Hinweise fuer Sportler aus dem eigenen Verein und eigene Gruppen.
+- Coach sieht Hinweise für Sportler aus dem eigenen Verein und eigene Gruppen.
 - Admin sieht alle geladenen Empfehlungen.
 
 RLS muss diese Regeln serverseitig absichern. Das Frontend filtert zusaetzlich, ersetzt aber keine Datenbankrechte.
@@ -51,4 +51,4 @@ Smart Coach ist keine medizinische Beratung und ersetzt keinen Trainer, Arzt ode
 
 ## Vorbereitung KI-Coach 3.6+
 
-Die deterministischen Regeln erzeugen stabile Empfehlungstypen und Statuswerte. Ein spaeterer KI-Coach kann diese Daten nutzen, um bessere Sprache, persoenlichere Priorisierung und langfristige Muster zu erzeugen, ohne die Datenstruktur neu zu erfinden.
+Die deterministischen Regeln erzeugen stabile Empfehlungstypen und Statuswerte. Ein späterer KI-Coach kann diese Daten nutzen, um bessere Sprache, persönlichere Priorisierung und langfristige Muster zu erzeugen, ohne die Datenstruktur neu zu erfinden.

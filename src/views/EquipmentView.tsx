@@ -9,7 +9,7 @@ type EquipmentViewProps = {
   onDelete: (id: string) => void;
 };
 
-const categories: MaterialCategory[] = ["Boot", "Paddel", "Zubehoer"];
+const categories: MaterialCategory[] = ["Boot", "Paddel", "Zubehör"];
 const statuses: MaterialStatus[] = ["bereit", "pruefen", "wartung", "defekt"];
 
 const statusLabel: Record<MaterialStatus, string> = {
@@ -179,7 +179,7 @@ export function EquipmentView({ material, onSave, onDelete }: EquipmentViewProps
               </article>
             ))
           ) : (
-            <p className="empty-state">Noch kein Material gespeichert. Fuege Boote, Paddel oder Zubehoer ueber den Plus-Button hinzu.</p>
+            <p className="empty-state">Noch kein Material gespeichert. Fuege Boote, Paddel oder Zubehör ueber den Plus-Button hinzu.</p>
           )}
         </div>
       </section>

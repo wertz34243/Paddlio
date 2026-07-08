@@ -12,7 +12,7 @@ Der Admin-Bereich `Mehr > Beta-Check` prueft und dokumentiert:
 - Trainingsplanung
 - Kommunikation
 - Aufgaben und Anwesenheit
-- Wettkaempfe und Ergebnisse
+- Wettkämpfe und Ergebnisse
 - Analyse und Smart Coach
 - Integrationen/Polar-Vorbereitung
 - Feedback-System
@@ -20,13 +20,13 @@ Der Admin-Bereich `Mehr > Beta-Check` prueft und dokumentiert:
 - Testanleitung und bekannte Grenzen
 - Datenschutz/RLS
 
-Einige Punkte sind bewusst `manual`, weil sie im echten Supabase-/Vercel-/Geraete-Setup bestaetigt werden muessen.
+Einige Punkte sind bewusst `manual`, weil sie im echten Supabase-/Vercel-/Geräte-Setup bestaetigt werden muessen.
 
 ## Supabase Health Check
 
 Aktuelle App-Signale:
 
-- `CloudStatusBadge` zeigt verbunden, synchronisiert, wartende Aenderungen, offline oder Fehler.
+- `CloudStatusBadge` zeigt verbunden, synchronisiert, wartende Änderungen, offline oder Fehler.
 - Admins sehen Sync-Anzahl und letzten Sync-Zeitpunkt.
 - Cloud-Fehler werden in der Konsole mit `[Paddlio Cloud]` protokolliert.
 
@@ -45,8 +45,8 @@ RLS muss im Supabase Dashboard zusaetzlich geprueft werden. UI-Filter ersetzen k
 
 Beta-Freigabe ist sinnvoll, wenn:
 
-- Build gruen ist.
-- Vercel Deployment gruen ist.
+- Build grün ist.
+- Vercel Deployment grün ist.
 - Admin Login funktioniert.
 - Feedback gespeichert werden kann.
 - Ein Athlete keine Admin-/Coach-Daten sieht.

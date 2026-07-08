@@ -23,7 +23,7 @@ export function CompetitionSeasonStatsView({ competitions }: CompetitionSeasonSt
   return (
     <div className="stack">
       <section className="summary-strip">
-        <div><span>Wettkaempfe</span><strong>{competitions.length}</strong></div>
+        <div><span>Wettkämpfe</span><strong>{competitions.length}</strong></div>
         <div><span>Strafschnitt</span><strong>{competitions.length ? formatSeconds(getAveragePenalty(competitions)) : "--"}</strong></div>
         <div><span>Ø Platz</span><strong>{averagePlacement ? averagePlacement.toLocaleString("de-DE", { maximumFractionDigits: 1 }) : "--"}</strong></div>
       </section>

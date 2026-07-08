@@ -1110,7 +1110,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
               <div className="card-actions">
                 <button type="button" onClick={() => setSelectedProfileAthleteId(athlete.id)}>Profil</button>
                 <button type="button" onClick={() => startEditingAthlete(athlete)}>Bearbeiten</button>
-                <button type="button" onClick={() => startEditingAthlete(athlete)}>Gruppe aendern</button>
+                <button type="button" onClick={() => startEditingAthlete(athlete)}>Gruppe ändern</button>
               </div>
             </article>
             );
@@ -1135,9 +1135,9 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
             <div className="profile-insight-grid">
               <div><strong>Ziele</strong><span>{profileAthlete.goals || "Noch keine Ziele hinterlegt."}</span></div>
               <div><strong>Trainings</strong><span>{coachPlan.filter((entry) => entry.assignedAthleteId === profileAthlete.id).length} geplante Einheiten</span></div>
-              <div><strong>Wettkaempfe</strong><span>Wettkampfdaten werden mit dem Athletenprofil verknuepft vorbereitet.</span></div>
+              <div><strong>Wettkämpfe</strong><span>Wettkampfdaten werden mit dem Athletenprofil verknuepft vorbereitet.</span></div>
               <div><strong>Material</strong><span>Materialäbersicht wird fär Coach-Freigaben vorbereitet.</span></div>
-              <div><strong>Journal</strong><span>Räckmeldungen und Befinden werden hier zusammengefuehrt.</span></div>
+              <div><strong>Journal</strong><span>Räckmeldungen und Befinden werden hier zusammengeführt.</span></div>
               <div><strong>Trainernotizen</strong><span>{profileAthlete.trainerNotes || "Keine Trainernotizen."}</span></div>
             </div>
             <div className="card-actions">
@@ -1291,7 +1291,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
               ))}
             </div>
             <p className="card-note">Ziele: {previewAthlete.goals || "Noch keine Ziele hinterlegt."}</p>
-            <label className="profile-form">Räckmeldung<textarea rows={3} placeholder="Spaeter sendet der Sportler hier Feedback." /></label>
+            <label className="profile-form">Räckmeldung<textarea rows={3} placeholder="Später sendet der Sportler hier Feedback." /></label>
           </div>
         ) : <p className="empty-state">Lege zuerst einen Sportler an.</p>}
       </section>

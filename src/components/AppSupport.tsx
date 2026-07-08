@@ -81,7 +81,7 @@ export function AdminUserList({ currentUserRole, users }: { currentUserRole: Sup
                 {roleLabels[user.role]} &middot; {user.status === "active" ? "aktiv" : "deaktiviert"}
               </p>
             </div>
-            <PrivacyValue canReveal={canSeePrivateData} value={user.email} fallback="E-Mail geschuetzt" />
+            <PrivacyValue canReveal={canSeePrivateData} value={user.email} fallback="E-Mail geschützt" />
           </article>
         ))}
       </div>

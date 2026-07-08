@@ -113,7 +113,7 @@ export const seedData: PaddleMotionData = {
       rank: 3,
       gapToWinnerSeconds: 4.1,
       feeling: 7,
-      note: "Guter Rhythmus, Tor 12 spaeter analysieren.",
+      note: "Guter Rhythmus, Tor 12 später analysieren.",
       createdAt: now,
       updatedAt: now,
     },

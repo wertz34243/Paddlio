@@ -6,8 +6,8 @@ Paddlio wird architekturgetrieben entwickelt. Vor jeder groesseren Implementieru
 
 - welche fachliche Domaene betroffen ist
 - welche Daten und Regeln entstehen
-- welche UI-Flows benoetigt werden
-- welche Erweiterung in spaeteren Phasen wahrscheinlich ist
+- welche UI-Flows benötigt werden
+- welche Erweiterung in späteren Phasen wahrscheinlich ist
 - welche Tests die Funktion absichern sollen
 
 Code wird erst geschrieben, wenn diese Punkte ausreichend geklaert sind.
@@ -16,13 +16,13 @@ Code wird erst geschrieben, wenn diese Punkte ausreichend geklaert sind.
 
 ### Phase 1: Athleten-App
 
-Ziel: Einzelne Athleten koennen Training, Wettkaempfe, Analyse, Material und Ziele eigenstaendig verwalten.
+Ziel: Einzelne Athleten können Training, Wettkämpfe, Analyse, Material und Ziele eigenständig verwalten.
 
 Module:
 
 - Dashboard
 - Training
-- Wettkaempfe
+- Wettkämpfe
 - Analyse
 - Material
 - Ziele
@@ -30,11 +30,11 @@ Module:
 
 Architekturannahme:
 
-Phase 1 wird bewusst als Single-Athlete-Erlebnis gebaut, aber nicht als technische Einbahnstrasse. Datenmodelle enthalten bereits klare Ownership-Felder, damit spaeter Trainer-, Sportler- und Vereinskontexte angebunden werden koennen.
+Phase 1 wird bewusst als Single-Athlete-Erlebnis gebaut, aber nicht als technische Einbahnstrasse. Datenmodelle enthalten bereits klare Ownership-Felder, damit später Trainer-, Sportler- und Vereinskontexte angebunden werden können.
 
 ### Phase 2: Trainerbereich
 
-Ziel: Trainer koennen mehrere Athleten betreuen, Plaene erstellen, Fortschritte beobachten und Feedback geben.
+Ziel: Trainer können mehrere Athleten betreuen, Pläne erstellen, Fortschritte beobachten und Feedback geben.
 
 Erweiterungen:
 
@@ -49,30 +49,30 @@ Technische Vorbereitung in Phase 1:
 
 - Athleten-Daten werden nicht global angenommen
 - Fachlogik wird nicht direkt an UI-Komponenten gekoppelt
-- Berechtigungen werden frueh als Konzept vorgesehen
+- Berechtigungen werden früh als Konzept vorgesehen
 - Analysefunktionen werden als wiederverwendbare Services geplant
 
 ### Phase 3: Sportlerbereich
 
-Ziel: Vereinfachter Modus fuer juengere oder weniger datenorientierte Sportler.
+Ziel: Vereinfachter Modus für jüngere oder weniger datenorientierte Sportler.
 
 Erweiterungen:
 
 - reduzierte Eingabemasken
-- gefuehrte Trainingsdokumentation
+- geführte Trainingsdokumentation
 - einfache Fortschrittsanzeigen
 - motivierende Zielerreichung
 - optionaler Trainerzugriff
 
 Technische Vorbereitung:
 
-- UI-Varianten duerfen nicht zu Datenmodell-Varianten fuehren
+- UI-Varianten dürfen nicht zu Datenmodell-Varianten führen
 - Komplexitaet wird ueber Rollen, Views und Feature Flags gesteuert
 - Kernobjekte wie Training, Wettkampf und Ziel bleiben dieselben
 
 ### Phase 4: Vereinsbereich
 
-Ziel: Vereine koennen Athleten, Trainer, Gruppen, Material und Termine organisieren.
+Ziel: Vereine können Athleten, Trainer, Gruppen, Material und Termine organisieren.
 
 Erweiterungen:
 
@@ -85,29 +85,29 @@ Erweiterungen:
 
 Technische Vorbereitung:
 
-- Organisationszugehoerigkeit wird als spaeteres Ownership-Modell vorgesehen
+- Organisationszugehoerigkeit wird als späteres Ownership-Modell vorgesehen
 - Material kann perspektivisch privat oder vereinsbezogen sein
-- Kalenderdaten bleiben generisch genug fuer Training, Wettkampf und Vereinsevents
+- Kalenderdaten bleiben generisch genug für Training, Wettkampf und Vereinsevents
 
 ## Empfohlene technische Zielarchitektur
 
 Die Plattform sollte als moderne Web-App mit klarer Trennung zwischen UI, Domain-Logik und Datenzugriff aufgebaut werden.
 
-Empfohlener Stack fuer den Projektstart:
+Empfohlener Stack für den Projektstart:
 
 - Frontend: React mit TypeScript
-- App Framework: Next.js oder Vite, abhaengig von Hosting- und Backend-Entscheidung
+- App Framework: Next.js oder Vite, abhängig von Hosting- und Backend-Entscheidung
 - Styling: Tailwind CSS oder ein leichtes Design-System auf CSS-Variablen
-- Backend: zunaechst API-Schicht mit klaren Domain-Services
+- Backend: zunächst API-Schicht mit klaren Domain-Services
 - Datenbank: PostgreSQL
 - ORM: Prisma oder Drizzle
-- Authentifizierung: rollenfaehig, auch wenn V1 nur Athleten nutzt
-- Tests: Unit-Tests fuer Domain-Logik, Integrationstests fuer Datenzugriff, UI-Tests fuer Kernflows
+- Authentifizierung: rollenfähig, auch wenn V1 nur Athleten nutzt
+- Tests: Unit-Tests für Domain-Logik, Integrationstests für Datenzugriff, UI-Tests für Kernflows
 
 Noch offen vor Implementierungsstart:
 
 - Soll die App serverseitig gerendert werden oder als reine SPA starten?
-- Soll Authentifizierung direkt eingebaut oder fuer einen Prototyp simuliert werden?
+- Soll Authentifizierung direkt eingebaut oder für einen Prototyp simuliert werden?
 - Soll lokal zuerst mit Mock-Daten oder sofort mit Datenbank entwickelt werden?
 - Wird Offline-Nutzung am Trainingsort in V1 gebraucht?
 
@@ -115,19 +115,19 @@ Noch offen vor Implementierungsstart:
 
 ### Dashboard
 
-Das Dashboard aggregiert Daten, besitzt aber moeglichst wenig eigene Fachlogik.
+Das Dashboard aggregiert Daten, besitzt aber möglichst wenig eigene Fachlogik.
 
 Abhaengigkeiten:
 
 - liest Training
-- liest Wettkaempfe
+- liest Wettkämpfe
 - liest Ziele
 - liest Materialhinweise
 - liest Analyse-Summaries
 
 Regel:
 
-Dashboard-Komponenten duerfen keine Trainings- oder Analyseberechnung selbst implementieren.
+Dashboard-Komponenten dürfen keine Trainings- oder Analyseberechnung selbst implementieren.
 
 ### Training
 
@@ -142,7 +142,7 @@ Enthaelt:
 - technische Schwerpunkte
 - Notizen
 
-Spaetere Erweiterung:
+Spätere Erweiterung:
 
 - Trainerfeedback
 - Trainingsplaene
@@ -150,9 +150,9 @@ Spaetere Erweiterung:
 - Abschnittszeiten
 - Sensorwerte
 
-### Wettkaempfe
+### Wettkämpfe
 
-Wettkaempfe sind eine eigene Kerndomaene, auch wenn sie aehnliche Daten wie Training enthalten.
+Wettkämpfe sind eine eigene Kerndomaene, auch wenn sie aehnliche Daten wie Training enthalten.
 
 Enthaelt:
 
@@ -163,7 +163,7 @@ Enthaelt:
 - Ziele und Learnings
 - eingesetztes Material
 
-Spaetere Erweiterung:
+Spätere Erweiterung:
 
 - offizieller Ergebnisimport
 - Team- oder Vereinskalender
@@ -187,7 +187,7 @@ Analysefunktionen werden als reine, testbare Berechnungen geplant. UI-Komponente
 
 ### Material
 
-Material ist eine eigenstaendige Domaene, nicht nur ein Freitextfeld.
+Material ist eine eigenständige Domaene, nicht nur ein Freitextfeld.
 
 Enthaelt:
 
@@ -197,7 +197,7 @@ Enthaelt:
 - Setup-Notizen
 - Verwendung in Training und Wettkampf
 
-Spaetere Erweiterung:
+Spätere Erweiterung:
 
 - Vereinsmaterial
 - Ausleihe
@@ -216,14 +216,14 @@ Enthaelt:
 - Trainingsziele
 - Status und Fortschritt
 
-Spaetere Erweiterung:
+Spätere Erweiterung:
 
 - Trainerfreigabe
 - Zielvorschlaege
 - Meilensteine
-- Rueckblick pro Saison
+- Rückblick pro Saison
 
-## Domaenenmodell: Erweiterbare Ownership
+## Domänenmodell: Erweiterbare Ownership
 
 Jedes zentrale Objekt sollte langfristig eindeutig zuordenbar sein.
 
@@ -231,14 +231,14 @@ V1:
 
 - athleteId als primaerer Besitzer
 
-Spaeter:
+Später:
 
-- coachId fuer Trainerkontext
-- clubId fuer Vereinskontext
-- visibility fuer Freigaben
-- createdBy und updatedBy fuer Nachvollziehbarkeit
+- coachId für Trainerkontext
+- clubId für Vereinskontext
+- visibility für Freigaben
+- createdBy und updatedBy für Nachvollziehbarkeit
 
-Empfohlene Basiseigenschaften fuer zentrale Entitaeten:
+Empfohlene Basiseigenschaften für zentrale Entitäten:
 
 - id
 - createdAt
@@ -247,7 +247,7 @@ Empfohlene Basiseigenschaften fuer zentrale Entitaeten:
 - createdBy
 - updatedBy
 
-Bei spaeter gemeinschaftlich genutzten Objekten:
+Bei später gemeinschaftlich genutzten Objekten:
 
 - clubId
 - ownerType
@@ -256,7 +256,7 @@ Bei spaeter gemeinschaftlich genutzten Objekten:
 
 ## Rollenmodell
 
-Auch wenn V1 nur Athleten adressiert, sollte das Rollenmodell frueh mitgedacht werden.
+Auch wenn V1 nur Athleten adressiert, sollte das Rollenmodell früh mitgedacht werden.
 
 Geplante Rollen:
 
@@ -282,13 +282,13 @@ Empfohlener Datenfluss:
 Regeln:
 
 - Validierung nah am Use Case
-- zentrale Typen fuer Domaenenobjekte
+- zentrale Typen für Domänenobjekte
 - keine doppelten Berechnungen in mehreren Komponenten
 - keine direkten Datenbankdetails in UI-Code
 
 ## Teststrategie
 
-Mindeststandard fuer neue Funktionen:
+Mindeststandard für neue Funktionen:
 
 - Domain-Logik: Unit-Test
 - Datenzugriff: Integrationstest oder Repository-Test
@@ -304,11 +304,11 @@ Besonders testpflichtig:
 - Materialverknuepfungen
 - Berechtigungen
 
-## Qualitaetsregeln
+## Qualitätsregeln
 
 - TypeScript strikt verwenden
 - fachliche Typen statt lose Strings
-- Validierung fuer Nutzereingaben
+- Validierung für Nutzereingaben
 - klare Modulstruktur
 - kleine, testbare Domain-Funktionen
 - keine Vermischung von UI, Fachlogik und Persistenz

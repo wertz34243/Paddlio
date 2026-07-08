@@ -390,7 +390,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
       ...current,
       trainingTemplates: current.trainingTemplates.filter((item) => item.id !== template.id),
     }));
-    setFormMessage("Vorlage geloescht.");
+    setFormMessage("Vorlage gelöscht.");
   };
 
   const copyPlanEntry = (
@@ -673,7 +673,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
     defaultGroupIds: string[] = [],
   ) => (
     <>
-      <label>Zuweisung<select name="assignedType" defaultValue={defaultType}><option value="self">Fuer mich</option>{isCoach ? <option value="athlete">Einzelner Sportler</option> : null}{isCoach ? <option value="group">Trainingsgruppe</option> : null}</select></label>
+      <label>Zuweisung<select name="assignedType" defaultValue={defaultType}><option value="self">Für mich</option>{isCoach ? <option value="athlete">Einzelner Sportler</option> : null}{isCoach ? <option value="group">Trainingsgruppe</option> : null}</select></label>
       {isCoach ? <div className="choice-group"><span>Sportler</span><div className="tag-row">{visibleAthletes.map((athlete) => <label className="toggle-row" key={athlete.id}><span>{getAthleteName(athlete)}</span><input name="assignedAthleteIds" type="checkbox" value={athlete.id} defaultChecked={defaultAthleteIds.includes(athlete.id)} /></label>)}</div></div> : null}
       {isCoach ? <div className="choice-group"><span>Trainingsgruppen</span><div className="tag-row">{visibleGroups.map((group) => <label className="toggle-row" key={group.id}><span>{group.name}</span><input name="assignedGroupIds" type="checkbox" value={group.id} defaultChecked={defaultGroupIds.includes(group.id)} /></label>)}</div></div> : null}
     </>
@@ -906,7 +906,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
               <label>Startzeit<input name="startTime" type="time" defaultValue={draft.startTime || draft.time} /></label>
               <label>Endzeit<input name="endTime" type="time" defaultValue={draft.endTime} /></label>
               <label>Dauer<input name="durationMinutes" type="number" min="0" step="5" defaultValue={draft.durationMinutes} /></label>
-              <label>Zuweisung<select name="assignedType" defaultValue={draft.assignedType}><option value="self">Fuer mich</option>{isCoach ? <option value="athlete">Einzelner Sportler</option> : null}{isCoach ? <option value="group">Trainingsgruppe</option> : null}</select></label>
+              <label>Zuweisung<select name="assignedType" defaultValue={draft.assignedType}><option value="self">Für mich</option>{isCoach ? <option value="athlete">Einzelner Sportler</option> : null}{isCoach ? <option value="group">Trainingsgruppe</option> : null}</select></label>
               <label>Trainingsbereich<select name="area" defaultValue={draft.area} onChange={(event) => setSelectedArea(event.currentTarget.value as TrainingArea)}>{trainingAreas.map((area) => <option key={area} value={area}>{area}</option>)}</select></label>
               <label>Trainingsart<select name="trainingType" defaultValue={draft.trainingType}>{trainingTypeGroups[selectedArea].map((trainingType) => <option key={trainingType} value={trainingType}>{trainingType}</option>)}</select></label>
               <label>Bootsklasse<select name="boatClass" defaultValue={draft.boatClass}><option value="K1">K1</option><option value="C1">C1</option><option value="K1+C1">K1+C1</option><option value="none">ohne Boot</option></select></label>
@@ -973,7 +973,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
 
       {workflowTab === "today" && calendarView !== "day" ? (
         <section className="section-block">
-          <div className="section-heading"><div><p className="eyebrow">Heute</p><h3>{todayEntries.length > 0 ? "Heutiges Training" : "Fuer heute ist kein Training geplant."}</h3></div></div>
+          <div className="section-heading"><div><p className="eyebrow">Heute</p><h3>{todayEntries.length > 0 ? "Heutiges Training" : "Für heute ist kein Training geplant."}</h3></div></div>
           <div className="calendar-list">{todayEntries.length > 0 ? todayEntries.map(renderEntryCard) : <p className="empty-state">Plane dein erstes Training.</p>}</div>
         </section>
       ) : null}
@@ -981,7 +981,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
       {workflowTab === "week" && calendarView === "week" ? (
         <section className="calendar-week-grid">{weekDates.map((date, index) => <article className="calendar-day-column" key={date}><div className="plan-day-heading"><strong>{weekdays[index]}</strong><span>{new Date(date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}</span></div>{visibleEntries.filter((entry) => entry.date === date).map(renderEntryCard)}{visibleEntries.filter((entry) => entry.date === date).length === 0 ? <p className="empty-state compact">Noch kein Training geplant.</p> : null}</article>)}</section>
       ) : workflowTab === "today" && calendarView === "day" ? (
-        <section className="calendar-list">{visibleEntries.filter((entry) => entry.date === selectedDate).map(renderEntryCard)}{visibleEntries.filter((entry) => entry.date === selectedDate).length === 0 ? <p className="empty-state">Fuer diesen Tag ist noch kein Training geplant.</p> : null}</section>
+        <section className="calendar-list">{visibleEntries.filter((entry) => entry.date === selectedDate).map(renderEntryCard)}{visibleEntries.filter((entry) => entry.date === selectedDate).length === 0 ? <p className="empty-state">Für diesen Tag ist noch kein Training geplant.</p> : null}</section>
       ) : workflowTab === "month" && calendarView === "month" ? (
         <section className="calendar-month-grid">{getMonthDates(selectedDate).map((date) => { const count = visibleEntries.filter((entry) => entry.date === date).length; return <button className={count > 0 ? "has-training" : ""} key={date} type="button" onClick={() => { setSelectedDate(date); setCalendarView("day"); setWorkflowTab("today"); }}><strong>{new Date(date).getDate()}</strong><span>{count > 0 ? `${count} Einheiten` : "frei"}</span></button>; })}</section>
       ) : workflowTab === "upcoming" ? (

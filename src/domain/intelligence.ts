@@ -158,7 +158,7 @@ export const getSmartCoachAdvice = (
     return {
       title: "Paddlio Coach",
       recommendation: "Starte mit einer lockeren GA1-Einheit.",
-      reason: `Deine letzte dokumentierte Einheit liegt ${daysSinceTraining} Tage zurueck.`,
+      reason: `Deine letzte dokumentierte Einheit liegt ${daysSinceTraining} Tage zurück.`,
     };
   }
 

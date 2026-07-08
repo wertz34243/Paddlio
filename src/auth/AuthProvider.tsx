@@ -611,7 +611,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .catch((error) => {
               logCloudError("änderungen speichern", error);
               setCloudStatus(navigator.onLine ? "error" : "offline");
-              setCloudMessage(`änderungen wurden lokal gespeichert und werden spaeter synchronisiert. ${describeCloudError(error)}`);
+              setCloudMessage(`änderungen wurden lokal gespeichert und werden später synchronisiert. ${describeCloudError(error)}`);
             });
         }
       }
@@ -687,7 +687,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return {
       ok: true,
       message: result.session
-        ? "Konto erstellt. Du bist als Athlete angemeldet. Rollen koennen spaeter im Adminbereich vergeben werden."
+        ? "Konto erstellt. Du bist als Athlete angemeldet. Rollen können später im Adminbereich vergeben werden."
         : "Konto erstellt. Bitte bestätige deine E-Mail, bevor du dich einloggst. Wenn Auto Confirm in Supabase aktiv ist, wirst du direkt angemeldet.",
     };
   };
@@ -706,7 +706,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!client) return { ok: false, message: getSupabaseConfigMessage() };
     const { error } = await client.auth.resetPasswordForEmail(email.trim().toLowerCase());
     if (error) return { ok: false, message: error.message };
-    return { ok: true, message: "Wenn die E-Mail existiert, wurde ein Link zum Zuruecksetzen gesendet." };
+    return { ok: true, message: "Wenn die E-Mail existiert, wurde ein Link zum Zurücksetzen gesendet." };
   };
 
   const value = useMemo<AuthContextValue>(() => ({

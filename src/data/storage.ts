@@ -337,7 +337,7 @@ const normalizeMaterialItems = (items: Array<Partial<MaterialItem> & Pick<Materi
   items.map((item) => ({
     id: item.id,
     athleteId: item.athleteId ?? seedData.athlete.id,
-    category: item.category ?? "Zubehoer",
+    category: item.category ?? "Zubehör",
     name: item.name,
     weightKg: item.weightKg ?? 0,
     lengthCm: item.lengthCm ?? 0,
@@ -1617,7 +1617,7 @@ export const acceptInvitationLocalUser = (input: InvitationAcceptInput): AuthRes
   }
 
   if (!invite.email || !invite.firstName) {
-    return { ok: false, message: "Diese Einladung ist unvollstaendig. Bitte den Admin um eine neue Einladung." };
+    return { ok: false, message: "Diese Einladung ist unvollständig. Bitte den Admin um eine neue Einladung." };
   }
 
   const email = normalizeEmail(invite.email);
@@ -1981,7 +1981,7 @@ const migrateLegacyData = (legacy: LegacyData): PaddleMotionData => {
   const material: MaterialItem[] = (legacy.equipment ?? []).map((item) => ({
     id: item.id.replace("equipment", "material"),
     athleteId: item.athleteId,
-    category: item.type === "Paddel" ? "Paddel" : item.type === "Boot" ? "Boot" : "Zubehoer",
+    category: item.type === "Paddel" ? "Paddel" : item.type === "Boot" ? "Boot" : "Zubehör",
     name: item.name,
     weightKg: 0,
     lengthCm: 0,

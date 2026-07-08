@@ -187,7 +187,7 @@ export function GoalsView({ user, goals, competitions, training, onSave, onDelet
               </select>
             </label>
             <label>
-              Prioritaet
+              Priorität
               <select name="priority" defaultValue={editingGoal?.priority ?? "medium"}>
                 {priorities.map((priority) => <option key={priority.value} value={priority.value}>{priority.label}</option>)}
               </select>
@@ -207,7 +207,7 @@ export function GoalsView({ user, goals, competitions, training, onSave, onDelet
           </label>
           <label>
             Trainernotiz
-            <textarea name="coachNote" defaultValue={editingGoal?.coachNote ?? ""} rows={3} placeholder="Fuer Coach-Kommentare vorbereitet" />
+            <textarea name="coachNote" defaultValue={editingGoal?.coachNote ?? ""} rows={3} placeholder="Für Coach-Kommentare vorbereitet" />
           </label>
           <button className="save-button" type="submit">{editingGoal ? "Ziel speichern" : "Ziel erstellen"}</button>
           {message ? <p className="auth-message">{message}</p> : null}

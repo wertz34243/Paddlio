@@ -2,11 +2,11 @@
 
 ## Leitidee
 
-Paddlio hilft Kanuslalom-Athleten, ihr Training, ihre Wettkaempfe, ihre Analyse und ihr Material an einem Ort zu organisieren. Die Plattform soll sich wie ein ruhiges, leistungsorientiertes Cockpit anfuehlen: schnell erfassbar, praktisch im Alltag und stark genug fuer langfristige Entwicklung.
+Paddlio hilft Kanuslalom-Athleten, ihr Training, ihre Wettkämpfe, ihre Analyse und ihr Material an einem Ort zu organisieren. Die Plattform soll sich wie ein ruhiges, leistungsorientiertes Cockpit anfühlen: schnell erfassbar, praktisch im Alltag und stark genug für langfristige Entwicklung.
 
 Slogan: Train. Analyze. Improve.
 
-## Zielgruppe fuer Version 1
+## Zielgruppe für Version 1
 
 Version 1 richtet sich an einzelne Athletinnen und Athleten im Kanuslalom.
 
@@ -25,8 +25,8 @@ Noch nicht Teil von V1:
 
 ## Produktziele
 
-1. Athleten koennen ihr Training schnell und konsistent dokumentieren.
-2. Wettkaempfe und Ergebnisse werden mit relevanten Kanuslalom-Daten abgebildet.
+1. Athleten können ihr Training schnell und konsistent dokumentieren.
+2. Wettkämpfe und Ergebnisse werden mit relevanten Kanuslalom-Daten abgebildet.
 3. Entwicklungen werden ueber Zeit sichtbar: Technik, Zeiten, Strafsekunden, Belastung und Material.
 4. Material wird nicht als Nebenliste behandelt, sondern mit Training und Wettkampf verknuepft.
 5. Die Plattform bleibt fokussiert genug, um als taegliches Arbeitswerkzeug genutzt zu werden.
@@ -35,16 +35,16 @@ Noch nicht Teil von V1:
 
 ### Dashboard
 
-Das Dashboard ist der Startpunkt fuer den Athleten.
+Das Dashboard ist der Startpunkt für den Athleten.
 
 Inhalte:
 
-- naechste Trainingseinheiten
-- anstehende Wettkaempfe
+- nächste Trainingseinheiten
+- anstehende Wettkämpfe
 - letzte Fahrten und wichtigste Kennzahlen
 - Wochenbelastung
 - offene Notizen oder Analysepunkte
-- Materialhinweise, zum Beispiel Wartung oder Setup-Aenderungen
+- Materialhinweise, zum Beispiel Wartung oder Setup-Änderungen
 
 ### Training
 
@@ -70,14 +70,14 @@ Wichtige Kennzahlen:
 - Belastung
 - Technikfokus
 
-### Wettkaempfe
+### Wettkämpfe
 
 Das Wettkampfmodul hilft bei Vorbereitung, Durchfuehrung und Nachbereitung.
 
 Funktionen:
 
 - Wettkampf anlegen mit Ort, Datum, Kategorie und Bootsklasse
-- Ziele fuer den Wettkampf erfassen
+- Ziele für den Wettkampf erfassen
 - Qualifikation, Halbfinale und Finale dokumentieren
 - Zeiten, Strafsekunden, Platzierung und Abstand zur Spitze speichern
 - Streckennotizen und Learnings festhalten
@@ -99,7 +99,7 @@ Die Analyse verdichtet Trainings- und Wettkampfdaten.
 
 Ansichten:
 
-- Wochen- und Monatsuebersicht
+- Wochen- und Monatsübersicht
 - Entwicklung der Laufzeiten
 - Strafsekunden und Fehlerhaeufigkeit
 - Vergleich Training gegen Wettkampf
@@ -235,20 +235,20 @@ Hauptnavigation:
 
 - Dashboard
 - Training
-- Wettkaempfe
+- Wettkämpfe
 - Analyse
 - Material
 - Profil
 
 ## Wichtige User Stories
 
-1. Als Athlet moechte ich eine Trainingseinheit in unter zwei Minuten erfassen, damit mein Trainingstagebuch vollstaendig bleibt.
+1. Als Athlet moechte ich eine Trainingseinheit in unter zwei Minuten erfassen, damit mein Trainingstagebuch vollständig bleibt.
 2. Als Athlet moechte ich einzelne Laeufe mit Zeit und Strafsekunden speichern, damit ich meine technische Entwicklung sehe.
-3. Als Athlet moechte ich Wettkampfergebnisse nach Runden dokumentieren, damit ich spaeter nachvollziehen kann, wo ich Zeit verloren habe.
-4. Als Athlet moechte ich Material mit Trainings und Wettkaempfen verknuepfen, damit Setup-Aenderungen nicht verloren gehen.
+3. Als Athlet moechte ich Wettkampfergebnisse nach Runden dokumentieren, damit ich später nachvollziehen kann, wo ich Zeit verloren habe.
+4. Als Athlet moechte ich Material mit Trainings und Wettkämpfen verknuepfen, damit Setup-Änderungen nicht verloren gehen.
 5. Als Athlet moechte ich Trends ueber Wochen und Monate sehen, damit ich meine Saison besser steuern kann.
 
-## Nichtziele fuer V1
+## Nichtziele für V1
 
 - Trainer-Dashboard
 - Athletenfreigaben
@@ -259,7 +259,7 @@ Hauptnavigation:
 - Integration mit offiziellen Ergebnisdiensten
 - komplexe Trainingsperiodisierung mit Trainerfreigabe
 
-## Spaetere Ausbaustufen
+## Spätere Ausbaustufen
 
 ### Trainer-Modus
 
@@ -271,9 +271,9 @@ Hauptnavigation:
 
 ### Sportler-Modus
 
-- vereinfachte Ansicht fuer juengere oder breitensportliche Nutzer
+- vereinfachte Ansicht für jüngere oder breitensportliche Nutzer
 - weniger Kennzahlen
-- staerker gefuehrte Eingabe
+- staerker geführte Eingabe
 - Motivation und Fortschrittsmarker
 
 ### Erweiterte Analyse
@@ -290,15 +290,15 @@ Ein erster MVP sollte diese Funktionen enthalten:
 
 1. Athletenprofil
 2. Trainingseinheiten mit Laeufen
-3. Wettkaempfe mit Ergebnisrunden
+3. Wettkämpfe mit Ergebnisrunden
 4. Materialliste
-5. Dashboard mit naechsten Terminen und letzten Ergebnissen
-6. einfache Analyse fuer Zeiten, Strafsekunden und Wochenbelastung
+5. Dashboard mit nächsten Terminen und letzten Ergebnissen
+6. einfache Analyse für Zeiten, Strafsekunden und Wochenbelastung
 
 ## Offene Produktfragen
 
 - Soll V1 als mobile-first Web-App, Desktop-Web-App oder responsive Plattform starten?
 - Sollen Videos nur verlinkt oder direkt hochgeladen werden?
 - Welche Bootsklassen muessen zu Beginn unterstuetzt werden?
-- Wird eine Offline-Funktion fuer Trainings am Kanal gebraucht?
+- Wird eine Offline-Funktion für Trainings am Kanal gebraucht?
 - Soll es bereits in V1 Datenexport als CSV oder PDF geben?

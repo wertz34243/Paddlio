@@ -34,5 +34,5 @@ export const isSupabaseConfigured = supabaseConfigIssues.length === 0;
 
 export const getSupabaseConfigMessage = (): string => {
   if (isSupabaseConfigured) return "Supabase ist konfiguriert.";
-  return `Supabase ist noch nicht vollstaendig konfiguriert: ${supabaseConfigIssues.join(", ")}. Bitte VITE_SUPABASE_ANON_KEY in Vercel oder .env.local eintragen.`;
+  return `Supabase ist noch nicht vollständig konfiguriert: ${supabaseConfigIssues.join(", ")}. Bitte VITE_SUPABASE_ANON_KEY in Vercel oder .env.local eintragen.`;
 };

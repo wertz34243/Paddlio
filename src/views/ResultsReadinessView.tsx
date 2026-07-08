@@ -140,7 +140,7 @@ export function ResultsReadinessView({ data, user, mode, onDataChange }: Results
       { id: "beta-integrations", checkedBy: user.userId, checkKey: "Integrationen/Polar crasht nicht", status: "manual", message: "Integrationen äffnen und Polar-Vorbereitung präfen.", createdAt: timestamp },
       { id: "beta-feedback", checkedBy: user.userId, checkKey: "Feedback-System", status: data.betaFeedback.length > 0 ? "ok" : "manual", message: `${data.betaFeedback.length} Feedbacks gespeichert.`, createdAt: timestamp },
       { id: "beta-mobile", checkedBy: user.userId, checkKey: "Mobile Ansicht", status: "manual", message: "Bitte auf iPhone/iPad im echten Browser präfen.", createdAt: timestamp },
-      { id: "beta-bottom-nav", checkedBy: user.userId, checkKey: "Bottom Navigation nicht ueberladen", status: "ok", message: "Mobile Navigation ist auf fuenf Hauptpunkte reduziert.", createdAt: timestamp },
+      { id: "beta-bottom-nav", checkedBy: user.userId, checkKey: "Bottom Navigation nicht ueberladen", status: "ok", message: "Mobile Navigation ist auf fünf Hauptpunkte reduziert.", createdAt: timestamp },
       { id: "beta-docs", checkedBy: user.userId, checkKey: "Testanleitung und Grenzen", status: "ok", message: "Beta-Anleitung und bekannte Grenzen sind unter Mehr sichtbar und dokumentiert.", createdAt: timestamp },
       { id: "beta-rls", checkedBy: user.userId, checkKey: "Datenschutz/RLS", status: "manual", message: "RLS im Supabase Dashboard präfen.", createdAt: timestamp },
     ];
@@ -223,7 +223,7 @@ export function ResultsReadinessView({ data, user, mode, onDataChange }: Results
                 <div><strong>{item.checkKey}</strong><span>{item.message}</span><small>{new Date(item.createdAt).toLocaleString("de-DE")}</small></div>
                 <b className={`status-pill ${item.status === "ok" ? "done" : item.status === "error" ? "skipped" : "planned"}`}>{item.status}</b>
               </article>
-            )) : <p className="empty-state">Noch kein Beta-Check ausgefuehrt.</p>}
+            )) : <p className="empty-state">Noch kein Beta-Check ausgeführt.</p>}
           </div>
         )}
       </section>
@@ -234,7 +234,7 @@ export function ResultsReadinessView({ data, user, mode, onDataChange }: Results
     <section className="section-block segment-panel">
       <div className="section-heading"><div><p className="eyebrow">Ergebnisverwaltung</p><h3>Bestzeiten und Saisonvergleich</h3></div></div>
       <div className="metric-grid two-columns">
-        <article className="metric-card tone-k1"><span>Ergebnisse</span><strong>{resultStats.count}</strong><small>{Object.entries(resultStats.byBoat).map(([boat, count]) => `${boat}: ${count}`).join(" Â· ") || "keine Starts"}</small></article>
+        <article className="metric-card tone-k1"><span>Ergebnisse</span><strong>{resultStats.count}</strong><small>{Object.entries(resultStats.byBoat).map(([boat, count]) => `${boat}: ${count}`).join(" · ") || "keine Starts"}</small></article>
         <article className="metric-card tone-c1"><span>Beste Zeit</span><strong>{resultStats.best ? formatSeconds(getBestTotalTime(resultStats.best)) : "--"}</strong><small>{resultStats.best ? `${resultStats.best.location} ${resultStats.best.boatClass}` : "noch offen"}</small></article>
         <article className="metric-card tone-penalty"><span>Strafschnitt</span><strong>{formatSeconds(resultStats.averagePenalty)}</strong><small>ueber alle Laeufe</small></article>
         <article className="metric-card tone-success"><span>Persänliche Bestzeiten</span><strong>{personalBests.length}</strong><small>automatisch berechnet</small></article>

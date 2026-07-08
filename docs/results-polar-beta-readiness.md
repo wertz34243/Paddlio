@@ -8,15 +8,15 @@ Version 3.9 schliesst die wichtigsten Funktionsbereiche vor der 4.0-Beta: besser
 
 Paddlio erweitert `competition_results` um:
 
-- Laufzeiten, Strafsekunden und Gesamtzeiten fuer Lauf 1 und Lauf 2
+- Laufzeiten, Strafsekunden und Gesamtzeiten für Lauf 1 und Lauf 2
 - besten Lauf
-- Platzierung, Starterzahl, Abstand zum Sieger, Podium und persoenlicher Bestzeit
+- Platzierung, Starterzahl, Abstand zum Sieger, Podium und persönlicher Bestzeit
 - Strecke, Ort, Altersklasse und Bootsklasse
 - Ergebnisquelle, Importquelle und Trainerkommentar
 
-Bestehende Felder bleiben erhalten. Die Migration fuegt nur fehlende Spalten hinzu.
+Bestehende Felder bleiben erhalten. Die Migration fügt nur fehlende Spalten hinzu.
 
-## Persoenliche Bestzeiten
+## Persönliche Bestzeiten
 
 Bestzeiten werden aus geladenen Ergebnissen berechnet nach:
 
@@ -25,7 +25,7 @@ Bestzeiten werden aus geladenen Ergebnissen berechnet nach:
 - Strecke
 - Ort
 
-Die Tabelle `personal_bests` speichert berechnete Bestzeiten fuer Cloud-Sync und spaetere Auswertungen.
+Die Tabelle `personal_bests` speichert berechnete Bestzeiten für Cloud-Sync und spätere Auswertungen.
 
 ## Import-Vorbereitung
 
@@ -40,7 +40,7 @@ Statuswerte:
 
 ## Polar und externe Trainingsdaten
 
-`external_connections` und `external_training_sessions` bereiten Polar Flow und spaetere Anbieter vor.
+`external_connections` und `external_training_sessions` bereiten Polar Flow und spätere Anbieter vor.
 
 Wichtig:
 
@@ -57,7 +57,7 @@ Unterstuetzte vorbereitete Provider:
 
 ## Belastung
 
-Die 3.9-Belastungsansicht nutzt externe Trainingsdaten fuer:
+Die 3.9-Belastungsansicht nutzt externe Trainingsdaten für:
 
 - Trainingsdauer pro Woche
 - Vergleich zur Vorwoche
@@ -71,14 +71,14 @@ Das ist Trainingssteuerung, keine medizinische Bewertung.
 Neue Regeln:
 
 - Wettkampf in sieben Tagen: Umfang reduzieren, Technik sauber halten
-- Ergebnis verbessert: positive Rueckmeldung
+- Ergebnis verbessert: positive Rückmeldung
 - lange kein Ergebnis: Ergebnis nachtragen
 - externe Einheit unverknuepft: Training verknuepfen
 - externe Belastung stark gestiegen: Erholung bewusst planen
 
 ## Beta-Check
 
-Admins koennen eine Checkliste ausfuehren fuer:
+Admins können eine Checkliste ausführen für:
 
 - Supabase
 - Nutzer/Rollen
@@ -121,5 +121,5 @@ RLS bleibt Pflicht. UI-Filter sind nur zusaetzliche UX.
 
 - Polar OAuth ist vorbereitet, aber noch nicht aktiv.
 - CSV/PDF/Excel Import ist als Struktur vorbereitet, aber noch ohne Parser.
-- Beta-Check ersetzt keine echte Security-Pruefung in Supabase.
+- Beta-Check ersetzt keine echte Security-Prüfung in Supabase.
 - LocalStorage bleibt nur Cache und Offline-Fallback.

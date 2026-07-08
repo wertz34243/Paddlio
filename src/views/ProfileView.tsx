@@ -166,7 +166,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
       ...trainerRequestDraft,
     });
     setTrainerRequestStatus(request.status);
-    setTrainerRequestMessage("Vielen Dank. Deine Anfrage wurde an den Admin gesendet. Nach erfolgreicher Pruefung werden Trainerrechte automatisch freigeschaltet.");
+    setTrainerRequestMessage("Vielen Dank. Deine Anfrage wurde an den Admin gesendet. Nach erfolgreicher Prüfung werden Trainerrechte automatisch freigeschaltet.");
   };
 
   const updateTrainerDraft = (key: keyof typeof trainerRequestDraft, value: string | boolean) => {
@@ -335,7 +335,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
             </div>
           </div>
           {trainerRequestStatus === "open" ? (
-            <p className="card-note">Deine Traineranfrage liegt beim Admin und wartet auf Pruefung.</p>
+            <p className="card-note">Deine Traineranfrage liegt beim Admin und wartet auf Prüfung.</p>
           ) : (
             <div className="stack">
               <div className="form-grid">

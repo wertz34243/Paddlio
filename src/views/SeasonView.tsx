@@ -28,7 +28,7 @@ export function SeasonView({ competitions, training, plan }: SeasonViewProps) {
           <small>{summary.minutes} Minuten</small>
         </article>
         <article className="metric-card tone-k1">
-          <span>Wettkaempfe</span>
+          <span>Wettkämpfe</span>
           <strong>{summary.races}</strong>
           <small>Strafschnitt {summary.penaltyAverage}</small>
         </article>
@@ -58,7 +58,7 @@ export function SeasonView({ competitions, training, plan }: SeasonViewProps) {
                 <div>
                   <strong>{month.label}</strong>
                   <span>
-                    {month.trainingCount} Trainings - {month.competitionCount} Wettkaempfe
+                    {month.trainingCount} Trainings - {month.competitionCount} Wettkämpfe
                   </span>
                 </div>
                 <div className="progress-track large">

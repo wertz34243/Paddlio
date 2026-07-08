@@ -50,7 +50,7 @@ const calcMinutes = (entries: PlanEntry[]): number =>
 const loadTone = (score: number): { label: string; advice: string } => {
   if (score >= 85) return { label: "sehr hoch", advice: "Regeneration sinnvoll. Viele harte Signale in kurzer Zeit." };
   if (score >= 62) return { label: "hoch", advice: "Viele harte Einheiten diese Woche. Plane bewusst locker." };
-  if (score <= 28) return { label: "niedrig", advice: "Grundlagenausdauer fehlt moeglicherweise. Eine lockere Einheit passt gut." };
+  if (score <= 28) return { label: "niedrig", advice: "Grundlagenausdauer fehlt möglicherweise. Eine lockere Einheit passt gut." };
   return { label: "normal", advice: "Techniktraining passt gut. Belastung wirkt kontrolliert." };
 };
 
@@ -207,7 +207,7 @@ export function AnalyticsCenterView({ data, user, mode, onNavigate }: AnalyticsC
           const athletePlan = data.plan.filter((entry) => entry.assignedAthleteIds.includes(athlete.id) || entry.assignedAthleteId === athlete.id);
           const athleteCompetitions = data.competitions.filter((competition) => competition.athleteId === athlete.id);
           const athleteGoals = data.goals.filter((goal) => goal.athleteId === athlete.id);
-          return <article className="calendar-training-card" key={athlete.id}><div className="plan-card-head"><div><span>{athlete.ageClass || "Alle"} - {athlete.boatClasses.join(" + ")}</span><h4>{athlete.name}</h4></div><b className="status-pill planned">{calcMinutes(athletePlan)} min</b></div><div className="smart-detail-grid"><span>{athletePlan.filter((entry) => isDoneStatus(entry.status)).length} erledigt</span><span>{athleteCompetitions.length} Wettkaempfe</span><span>{athleteGoals.length} Ziele</span></div></article>;
+          return <article className="calendar-training-card" key={athlete.id}><div className="plan-card-head"><div><span>{athlete.ageClass || "Alle"} - {athlete.boatClasses.join(" + ")}</span><h4>{athlete.name}</h4></div><b className="status-pill planned">{calcMinutes(athletePlan)} min</b></div><div className="smart-detail-grid"><span>{athletePlan.filter((entry) => isDoneStatus(entry.status)).length} erledigt</span><span>{athleteCompetitions.length} Wettkämpfe</span><span>{athleteGoals.length} Ziele</span></div></article>;
         }) : <p className="empty-state">Noch keine Sportler fär die Coach Analyse.</p>}
       </div>
     </section>
@@ -218,7 +218,7 @@ export function AnalyticsCenterView({ data, user, mode, onNavigate }: AnalyticsC
       <article className="metric-card tone-training"><span>Nutzer</span><strong>{data.users.length}</strong><small>lokal geladene Profile</small></article>
       <article className="metric-card tone-c1"><span>Vereine/Sportler</span><strong>{new Set(data.coachAthletes.map((item) => item.clubId)).size}</strong><small>{data.coachAthletes.length} Sportler</small></article>
       <article className="metric-card tone-k1"><span>Trainings</span><strong>{data.plan.length}</strong><small>Plan Items</small></article>
-      <article className="metric-card tone-penalty"><span>Wettkaempfe</span><strong>{data.competitions.length}</strong><small>Ergebnisse</small></article>
+      <article className="metric-card tone-penalty"><span>Wettkämpfe</span><strong>{data.competitions.length}</strong><small>Ergebnisse</small></article>
       <article className="metric-card tone-success"><span>Gruppen</span><strong>{data.coachGroups.length}</strong><small>Training Groups</small></article>
       <article className="metric-card tone-penalty"><span>Offene Räckmeldungen</span><strong>{analytics.openFeedback}</strong><small>plattformweit geladen</small></article>
     </section>

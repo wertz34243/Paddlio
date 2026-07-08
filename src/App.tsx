@@ -81,7 +81,7 @@ const trainingSegments: SegmentItem<TrainingSegment>[] = [
 ];
 
 const competitionSegments: SegmentItem<CompetitionSegment>[] = [
-  { id: "races", label: "Meine Wettkaempfe" },
+  { id: "races", label: "Meine Wettkämpfe" },
   { id: "results", label: "Ergebnisse" },
   { id: "bests", label: "Bestzeiten" },
   { id: "stats", label: "Saisonstatistik" },
@@ -118,7 +118,7 @@ const baseMoreSegments: SegmentItem<MoreSegment>[] = [
 const pageTitles: Record<PageId, string> = {
   dashboard: "Heute",
   training: "Training",
-  competitions: "Wettkaempfe",
+  competitions: "Wettkämpfe",
   analysis: "Analyse",
   club: "Verein",
   communication: "Kommunikation",
@@ -404,7 +404,7 @@ function AppContent() {
       if (userId && userId !== activeUser.userId) {
         void createCloudNotification({
           userId,
-          title: entry.id ? "Training wurde geaendert" : "Neues Training zugewiesen",
+          title: entry.id ? "Training wurde geändert" : "Neues Training zugewiesen",
           message: `${entry.title || entry.trainingType} am ${entry.date}${entry.startTime ? ` um ${entry.startTime}` : ""}`,
           type: entry.status === "cancelled" ? "training_cancelled" : entry.id ? "training_updated" : "training_assigned",
           relatedEntityType: "training_plan_items",
@@ -852,7 +852,7 @@ function AppContent() {
             <p className="brand-slogan">{APP_SLOGAN}</p>
           </div>
           <div className="page-title-lockup">
-            <span>Version {APP_VERSION} Â· Paddlio Beta</span>
+            <span>Version {APP_VERSION} · Paddlio Beta</span>
             <h1>{pageTitles[activePage]}</h1>
           </div>
         </header>

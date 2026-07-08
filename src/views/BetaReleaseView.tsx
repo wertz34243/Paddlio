@@ -136,7 +136,7 @@ export function BetaReleaseView({ data, user, mode, onDataChange }: BetaReleaseV
       <section className="section-block segment-panel">
         <div className="section-heading"><div><p className="eyebrow">Beta-Grenzen</p><h3>Was bewusst noch nicht fertig ist</h3></div></div>
         <div className="result-list">
-          {["Polar Sync ist vorbereitet, aber OAuth folgt spaeter.", "Excel Import kommt in Version 4.2.", "Design Redesign kommt in Version 4.1.", "Technik-Check nach DKV Manual kommt spaeter.", "Paddlio Academy kommt spaeter.", "Native Push-Benachrichtigungen sind noch nicht aktiv.", "Videoanalyse ist vorbereitet, aber nicht Teil dieser Beta."].map((item) => (
+          {["Polar Sync ist vorbereitet, aber OAuth folgt später.", "Excel Import kommt in Version 4.2.", "Design Redesign kommt in Version 4.1.", "Technik-Check nach DKV Manual kommt später.", "Paddlio Academy kommt später.", "Native Push-Benachrichtigungen sind noch nicht aktiv.", "Videoanalyse ist vorbereitet, aber nicht Teil dieser Beta."].map((item) => (
             <article className="result-row" key={item}><div><strong>{item}</strong><span>Bitte diesen Punkt in der Beta nicht als Fehler werten.</span></div><b>geplant</b></article>
           ))}
         </div>
@@ -155,7 +155,7 @@ export function BetaReleaseView({ data, user, mode, onDataChange }: BetaReleaseV
             const count = data.betaFeedback.filter((item) => item.userId === tester.userId).length;
             return (
               <article className="result-row beta-row" key={tester.userId}>
-                <div><strong>{appUser?.profile.firstName || "Nutzer"} {appUser?.profile.lastName || ""}</strong><span>{tester.testerRole} - {tester.status}</span><small>{count} Feedbacks Â· letzter Stand {tester.lastSeenAt ? new Date(tester.lastSeenAt).toLocaleString("de-DE") : "noch offen"}</small></div>
+                <div><strong>{appUser?.profile.firstName || "Nutzer"} {appUser?.profile.lastName || ""}</strong><span>{tester.testerRole} - {tester.status}</span><small>{count} Feedbacks · letzter Stand {tester.lastSeenAt ? new Date(tester.lastSeenAt).toLocaleString("de-DE") : "noch offen"}</small></div>
                 <div className="inline-actions">
                   <button type="button" onClick={() => markTester(tester.userId, "active")}>aktiv</button>
                   <button type="button" onClick={() => markTester(tester.userId, "paused")}>pausieren</button>
@@ -173,7 +173,7 @@ export function BetaReleaseView({ data, user, mode, onDataChange }: BetaReleaseV
     <div className="stack">
       <section className="section-block segment-panel">
         <div className="section-heading"><div><p className="eyebrow">Feedback geben</p><h3>Paddlio Beta verbessern</h3></div><span className="status-pill planned">{APP_VERSION}</span></div>
-        <p className="card-note">Diese Version ist eine Testversion. Funktionen koennen sich noch aendern. Bitte Fehler und Feedback melden.</p>
+        <p className="card-note">Diese Version ist eine Testversion. Funktionen können sich noch ändern. Bitte Fehler und Feedback melden.</p>
         <div className="form-grid">
           <label>Kategorie<select value={category} onChange={(event) => setCategory(event.target.value as BetaFeedbackCategory)}>{categories.map((item) => <option key={item}>{item}</option>)}</select></label>
           <label>Dringlichkeit<select value={priority} onChange={(event) => setPriority(event.target.value as BetaFeedbackPriority)}>{priorities.map((item) => <option key={item}>{item}</option>)}</select></label>
@@ -190,7 +190,7 @@ export function BetaReleaseView({ data, user, mode, onDataChange }: BetaReleaseV
         <div className="result-list">
           {visibleFeedback.length ? visibleFeedback.map((item) => (
             <article className="result-row beta-row" key={item.id}>
-              <div><strong>{item.title}</strong><span>{item.category} Â· {item.priority} Â· {item.status}</span><small>{item.description}</small></div>
+              <div><strong>{item.title}</strong><span>{item.category} · {item.priority} · {item.status}</span><small>{item.description}</small></div>
               {isAdmin(user) ? <select value={item.status} onChange={(event) => updateFeedbackStatus(item, event.target.value as BetaFeedbackStatus)}>{statuses.map((status) => <option key={status}>{status}</option>)}</select> : <b>{item.status}</b>}
             </article>
           )) : <p className="empty-state">Noch kein Feedback vorhanden.</p>}

@@ -11,7 +11,7 @@ export type TrainingType =
   | "Kindertraining"
   | "Pause";
 
-export type MaterialCategory = "Boot" | "Paddel" | "Zubehoer";
+export type MaterialCategory = "Boot" | "Paddel" | "Zubehör";
 
 export type MaterialStatus = "bereit" | "pruefen" | "wartung" | "defekt";
 
@@ -636,7 +636,7 @@ export type NotificationItem = {
 
 export type ClubPortalStatus = "active" | "inactive";
 export type ClubEventCategory = "training" | "competition" | "meeting" | "club_party" | "workday";
-export type ClubDocumentFolder = "Trainer" | "Sportler" | "Vorstand" | "Wettkaempfe" | "Formulare";
+export type ClubDocumentFolder = "Trainer" | "Sportler" | "Vorstand" | "Wettkämpfe" | "Formulare";
 export type ClubMessageAudience = "club" | "coaches" | "athletes" | "group" | "athlete";
 export type ClubMaterialCategory = "Boot" | "Paddel" | "Helm" | "Schwimmweste" | "Spritzdecke" | "Anhaenger" | "Vereinsmaterial";
 

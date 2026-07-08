@@ -2,20 +2,20 @@
 
 ## Bewusst nicht Teil von 4.0
 
-- Vollstaendiger Polar OAuth Sync.
-- Vollstaendiger Excel Import.
-- Vollstaendige Videoanalyse.
+- Vollständiger Polar OAuth Sync.
+- Vollständiger Excel Import.
+- Vollständige Videoanalyse.
 - Externe KI oder medizinische Empfehlungen.
 - Paddlio Academy.
 - DKV Technik-Check.
-- Grosses Design-Redesign.
+- Großes Design-Redesign.
 - Native Push-Benachrichtigungen.
 
 ## Warum
 
 Version 4.0 ist ein Beta-Test-Release. Der Fokus liegt auf Stabilitaet, Rollenrechten, Verstaendlichkeit und echten Vereinsablaeufen.
 
-## Geplante naechste Versionen
+## Geplante nächste Versionen
 
 - 4.1: Dark Water Performance Design Redesign.
 - 4.2: Excel Import.

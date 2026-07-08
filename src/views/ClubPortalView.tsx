@@ -50,7 +50,7 @@ const segments: SegmentItem<ClubPortalSegment>[] = [
 
 const materialCategories: ClubMaterialCategory[] = ["Boot", "Paddel", "Helm", "Schwimmweste", "Spritzdecke", "Anhaenger", "Vereinsmaterial"];
 const eventCategories: ClubEventCategory[] = ["training", "competition", "meeting", "club_party", "workday"];
-const documentFolders: ClubDocumentFolder[] = ["Trainer", "Sportler", "Vorstand", "Wettkaempfe", "Formulare"];
+const documentFolders: ClubDocumentFolder[] = ["Trainer", "Sportler", "Vorstand", "Wettkämpfe", "Formulare"];
 const audiences: ClubMessageAudience[] = ["club", "coaches", "athletes", "group", "athlete"];
 
 const roleLabel: Record<UserRole, string> = {
@@ -172,7 +172,7 @@ export function ClubPortalView({ data, user, onDataChange }: ClubPortalViewProps
       <section className="section-block">
         <p className="eyebrow">Verein</p>
         <h3>{user.profile.club || "Mein Verein"}</h3>
-        <p className="card-note">Athleten sehen hier aktuell die eigene Vereinszuordnung. Das vollstaendige Vereinsportal ist fär Coach, ClubAdmin und Admin freigeschaltet.</p>
+        <p className="card-note">Athleten sehen hier aktuell die eigene Vereinszuordnung. Das vollständige Vereinsportal ist fär Coach, ClubAdmin und Admin freigeschaltet.</p>
       </section>
     );
   }
@@ -330,7 +330,7 @@ export function ClubPortalView({ data, user, onDataChange }: ClubPortalViewProps
         ["Trainer", trainers.length],
         ["Trainingsgruppen", clubGroups.length],
         ["Trainings diese Woche", scopedPlan.filter((entry) => isThisWeek(entry.date)).length],
-        ["Wettkaempfe", scopedCompetitions.length],
+        ["Wettkämpfe", scopedCompetitions.length],
         ["Neue Mitglieder", members.filter((member) => member.joinedAt.slice(0, 10) >= todayKey().slice(0, 8) + "01").length],
         ["Vereinsmaterial", material.length],
         ["Vereinsziele", data.goals.filter((goal) => isAdmin || clubAthletes.some((athlete) => athlete.id === goal.athleteId)).length],
@@ -401,13 +401,13 @@ export function ClubPortalView({ data, user, onDataChange }: ClubPortalViewProps
           <label>Name<input name="name" required /></label>
           <label>Zustand<input name="condition" placeholder="bereit, präfen, defekt" /></label>
           <label>Besitzer<input name="ownerName" /></label>
-          <label>Letzte Pruefung<input name="lastInspectionDate" type="date" /></label>
+          <label>Letzte Prüfung<input name="lastInspectionDate" type="date" /></label>
           <label>Foto URL<input name="photoUrl" /></label>
         </div>
         <label>Bemerkung<textarea name="remark" rows={3} /></label>
         <button className="save-button" type="submit">Material speichern</button>
       </form>
-      <div className="wallet-list">{material.length ? material.map((item) => <article className="wallet-card" key={item.id}><div className="wallet-image">{item.photoUrl ? <img src={item.photoUrl} alt="" /> : <span>{item.category.slice(0, 1)}</span>}</div><div className="wallet-content"><div className="wallet-topline"><div><span>{item.inventoryNumber || item.category}</span><h4>{item.name}</h4></div><b className="status-pill planned">{item.condition}</b></div><p>{item.remark || "Keine Bemerkung."}</p><div className="smart-detail-grid"><span>{item.ownerName || "Verein"}</span><span>Pruefung {item.lastInspectionDate || "--"}</span></div></div></article>) : <p className="empty-state">Noch kein Vereinsmaterial eingetragen.</p>}</div>
+      <div className="wallet-list">{material.length ? material.map((item) => <article className="wallet-card" key={item.id}><div className="wallet-image">{item.photoUrl ? <img src={item.photoUrl} alt="" /> : <span>{item.category.slice(0, 1)}</span>}</div><div className="wallet-content"><div className="wallet-topline"><div><span>{item.inventoryNumber || item.category}</span><h4>{item.name}</h4></div><b className="status-pill planned">{item.condition}</b></div><p>{item.remark || "Keine Bemerkung."}</p><div className="smart-detail-grid"><span>{item.ownerName || "Verein"}</span><span>Prüfung {item.lastInspectionDate || "--"}</span></div></div></article>) : <p className="empty-state">Noch kein Vereinsmaterial eingetragen.</p>}</div>
     </section>
   );
 

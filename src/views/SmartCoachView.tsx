@@ -82,7 +82,7 @@ export function SmartCoachView({ data, user, compact = false, onOpenDetails, onU
       {!compact ? (
         <div className="smart-coach-filters">
           <label>
-            Prioritaet
+            Priorität
             <select value={priority} onChange={(event) => setPriority(event.target.value as PriorityFilter)}>
               {priorityOptions.map((option) => (
                 <option value={option} key={option}>{option === "all" ? "Alle" : priorityLabel[option]}</option>

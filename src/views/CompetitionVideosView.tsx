@@ -9,7 +9,7 @@ export function CompetitionVideosView() {
       </div>
       <div className="placeholder-card">
         <strong>Rennvideos</strong>
-        <span>Videoimport, Laufanalyse und Linienvergleich werden hier spaeter gebuendelt.</span>
+        <span>Videoimport, Laufanalyse und Linienvergleich werden hier später gebündelt.</span>
       </div>
     </section>
   );

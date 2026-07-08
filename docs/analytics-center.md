@@ -6,8 +6,8 @@ Paddlio 3.5 berechnet im Analysezentrum:
 
 - Trainingsminuten im Zeitraum und Monat
 - Anzahl Trainings und Statusverteilung erledigt/geplant/ausgelassen
-- offene Rueckmeldungen und Feedbackquote
-- Trainingsbereiche und Intensitaetsverteilung
+- offene Rückmeldungen und Feedbackquote
+- Trainingsbereiche und Intensitätsverteilung
 - beste K1- und C1-Zeiten
 - Strafsekunden-Schnitt
 - K1/C1-Differenz am gleichen Datum und Ort
@@ -35,19 +35,19 @@ Der Client berechnet aus dem rollenbasiert geladenen Daten-Snapshot. Supabase RL
 
 - Athlete sieht nur eigene Analyse.
 - Coach sieht eigene Daten, Sportler im eigenen Verein und eigene Gruppen.
-- Admin sieht die Plattformuebersicht.
+- Admin sieht die Plattformübersicht.
 
-Die UI blendet Views passend zur Rolle ein. Die Datenabfragen muessen weiterhin in Supabase nach Rolle, `userId` und `clubId` geschuetzt sein.
+Die UI blendet Views passend zur Rolle ein. Die Datenabfragen muessen weiterhin in Supabase nach Rolle, `userId` und `clubId` geschützt sein.
 
 ## Belastungsanalyse
 
 Die Belastung ist regelbasiert und nutzt:
 
 - Trainingsdauer
-- Intensitaet
+- Intensität
 - harte Einheiten
 - Regenerationseinheiten
-- Feedbackwerte fuer Muedigkeit, Gefuehl, Motivation und Schlaf
+- Feedbackwerte für Müdigkeit, Gefühl, Motivation und Schlaf
 
 Ausgabe:
 
@@ -62,11 +62,11 @@ Die Empfehlungen sind sportliche Trainingshinweise und keine medizinischen Aussa
 
 - Diagramme sind bewusst leichte CSS/SVG-nahe Komponenten und keine externe Chart-Bibliothek.
 - Coach-/Admin-Auswertungen nutzen den aktuell geladenen Daten-Snapshot.
-- Sehr grosse Vereine brauchen spaeter Pagination und serverseitige Aggregationen.
+- Sehr große Vereine brauchen später Pagination und serverseitige Aggregationen.
 
 ## Vorbereitung KI-Coach 3.6
 
-Die Kennzahlen sind so strukturiert, dass ein spaeter KI-Coach daraus Empfehlungen ableiten kann:
+Die Kennzahlen sind so strukturiert, dass ein später KI-Coach daraus Empfehlungen ableiten kann:
 
 - Trainingskonsistenz
 - Belastungstrend

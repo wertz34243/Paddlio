@@ -1,6 +1,6 @@
 # Paddlio Cloud Sync
 
-Paddlio 3.0.3 macht Supabase zum Hauptspeicher fuer migrierte App-Daten. LocalStorage bleibt als Offline- und Performance-Cache erhalten.
+Paddlio 3.0.3 macht Supabase zum Hauptspeicher für migrierte App-Daten. LocalStorage bleibt als Offline- und Performance-Cache erhalten.
 
 ## Migration
 
@@ -17,14 +17,14 @@ Wenn die Migration noch nicht abgeschlossen ist, werden vorhandene LocalStorage-
 - Trainingsfeedback
 - Trainingsvorlagen
 - Saisonziele
-- Wettkaempfe und Ergebnisse
+- Wettkämpfe und Ergebnisse
 - Material
 
-Nach erfolgreichem Durchlauf wird `migrationCompleted = true` ueber den lokalen Key markiert. Dadurch wird keine doppelte Migration ausgefuehrt.
+Nach erfolgreichem Durchlauf wird `migrationCompleted = true` ueber den lokalen Key markiert. Dadurch wird keine doppelte Migration ausgeführt.
 
 ## Offline Queue
 
-Wenn Supabase nicht erreichbar ist oder das Geraet offline ist, landen Aenderungen in:
+Wenn Supabase nicht erreichbar ist oder das Gerät offline ist, landen Änderungen in:
 
 ```text
 paddlio_sync_queue
@@ -34,7 +34,7 @@ Beim Onlinegehen wird die Queue automatisch abgearbeitet. Gelingt ein Eintrag ni
 
 ## Realtime
 
-Paddlio abonniert Supabase Realtime fuer:
+Paddlio abonniert Supabase Realtime für:
 
 - `training_plan_items`
 - `training_feedback`
@@ -43,7 +43,7 @@ Paddlio abonniert Supabase Realtime fuer:
 - `trainer_requests`
 - `profiles`
 
-Wenn sich Daten aendern, wird der Cloud-Cache neu geladen. Das Dashboard reagiert dadurch ohne manuellen Reload.
+Wenn sich Daten ändern, wird der Cloud-Cache neu geladen. Das Dashboard reagiert dadurch ohne manuellen Reload.
 
 ## Konflikte
 
@@ -53,7 +53,7 @@ Aktuelle Strategie:
 Neueste Aenderung gewinnt.
 ```
 
-Die App zeigt einen Hinweis, wenn Daten zwischen Geraeten synchronisiert wurden. Fuer spaetere Versionen kann daraus eine detaillierte Konfliktansicht entstehen.
+Die App zeigt einen Hinweis, wenn Daten zwischen Geräten synchronisiert wurden. Für spätere Versionen kann daraus eine detaillierte Konfliktansicht entstehen.
 
 ## Datenschutz
 
@@ -65,14 +65,14 @@ Alle Cloud-Daten laufen ueber Supabase Row Level Security. Das Frontend versteck
 
 ## Version 3.0.4 Vorbereitung
 
-Als naechstes sollten Schreibpfade in den einzelnen Feature-Views noch granularer auf Services umgestellt werden. Aktuell synchronisiert der AuthProvider den lokalen Snapshot best-effort in die Cloud.
+Als nächstes sollten Schreibpfade in den einzelnen Feature-Views noch granularer auf Services umgestellt werden. Aktuell synchronisiert der AuthProvider den lokalen Snapshot best-effort in die Cloud.
 
 ## Version 3.2 Trainingsplanung
 
-Die Trainingsplanung nutzt weiterhin den lokalen Snapshot als Offline-faehige Arbeitskopie und synchronisiert ueber den AuthProvider in die Cloud. Fuer Coach-Workflows sind folgende Tabellen performancekritisch:
+Die Trainingsplanung nutzt weiterhin den lokalen Snapshot als Offline-fähige Arbeitskopie und synchronisiert ueber den AuthProvider in die Cloud. Für Coach-Workflows sind folgende Tabellen performancekritisch:
 
 - `training_plan_items`: Tages-, Wochen-, Monats- und Blockplanung.
-- `training_feedback`: Rueckmeldungen von Athleten an Coaches.
+- `training_feedback`: Rückmeldungen von Athleten an Coaches.
 - `training_templates`: private und vereinsweite Trainingsvorlagen.
 
-Migration `0006_training_planning_2_0.sql` legt Indizes fuer Datum, Verein, Athlet, Coach, Gruppen-/Athletenlisten und Vorlagen-Sichtbarkeit an. Ausserdem wird Supabase Realtime fuer Training, Feedback und Vorlagen vorbereitet, damit Coach und Athlet denselben Plan ohne manuelles Neuladen sehen koennen.
+Migration `0006_training_planning_2_0.sql` legt Indizes für Datum, Verein, Athlet, Coach, Gruppen-/Athletenlisten und Vorlagen-Sichtbarkeit an. Ausserdem wird Supabase Realtime für Training, Feedback und Vorlagen vorbereitet, damit Coach und Athlet denselben Plan ohne manuelles Neuladen sehen können.

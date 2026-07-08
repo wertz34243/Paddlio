@@ -1,8 +1,8 @@
-# ADR 0003: Abgeleitete Kennzahlen und Wochenplan fuer Version 0.3
+# ADR 0003: Abgeleitete Kennzahlen und Wochenplan für Version 0.3
 
 ## Kontext
 
-Paddlio 0.3 soll intelligenter werden. Dashboard und Analyse duerfen nicht mehr mit festen Werten arbeiten, sondern muessen Kennzahlen aus gespeicherten Wettkampf- und Trainingsdaten berechnen. Zusaetzlich braucht die Athleten-App einen einfachen Wochenplan.
+Paddlio 0.3 soll intelligenter werden. Dashboard und Analyse dürfen nicht mehr mit festen Werten arbeiten, sondern muessen Kennzahlen aus gespeicherten Wettkampf- und Trainingsdaten berechnen. Zusätzlich braucht die Athleten-App einen einfachen Wochenplan.
 
 ## Entscheidung
 
@@ -23,5 +23,5 @@ Kennzahlen werden als reine Funktionen in `src/domain/metrics.ts` berechnet. Der
 
 - UI-Komponenten zeigen Kennzahlen nur an und berechnen sie nicht selbst.
 - Fehlende Daten werden als Platzhalter dargestellt.
-- Der Plan kann spaeter mit echten Trainingssessions, Trainerfreigaben oder Kalenderexporten verbunden werden.
-- Bestehende 0.2-Daten werden migriert, indem der Wochenplan ergaenzt wird.
+- Der Plan kann später mit echten Trainingssessions, Trainerfreigaben oder Kalenderexporten verbunden werden.
+- Bestehende 0.2-Daten werden migriert, indem der Wochenplan ergänzt wird.
