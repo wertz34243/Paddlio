@@ -1,10 +1,10 @@
 # Paddlio Project Analysis
 
-## Stand Version 4.1.1
+## Stand Version 4.1.2
 
 Paddlio ist eine React/Vite/TypeScript-PWA fuer Kanuslalom mit Supabase Auth und Supabase als Hauptspeicher fuer die Plattformbereiche. LocalStorage bleibt als Cache und Offline-Fallback erhalten.
 
-Version 4.1.1 ist ein Beta-Stabilisierung-Hotfix. Der Schwerpunkt liegt auf schnellerem Start, robustem Cloud-Fallback, idempotenter Supabase-Schema-Reparatur, korrekter Datumslogik, mobiler Analyse-Stabilität und Accessibility-Fixes. Grosse neue Fachfunktionen bleiben eingefroren.
+Version 4.1.2 ist ein Cloud-Sync- und Encoding-Stabilisierungshotfix. Der Schwerpunkt liegt auf robusterem Profil-Sync, saubererem CloudStatus, eigener Profil-RLS fuer Supabase und stabilerer Navigation. Grosse neue Fachfunktionen bleiben eingefroren.
 
 ## Architektur
 
@@ -16,6 +16,14 @@ Version 4.1.1 ist ein Beta-Stabilisierung-Hotfix. Der Schwerpunkt liegt auf schn
 - Bottom Navigation ist fuer mobile Beta-Tests auf fuenf Hauptpunkte reduziert; weitere Bereiche liegen unter `Mehr`.
 - Beta-Feedback und Beta-Tester liegen in Supabase und werden lokal nur gecacht.
 - Das visuelle Grundsystem liegt zentral in `src/styles.css` mit 4.1-Overlay fuer Tokens, Karten, Navigation, Buttons, Empty/Error/Offline States und mobile Safe Areas.
+
+## Version 4.1.2 Schwerpunkt
+
+- Profil-Sync wird nicht mehr als harter App-Blocker behandelt.
+- Bei Profil-Timeout nutzt Paddlio ein lokales Fallback-Profil und markiert CloudStatus als eingeschraenkt.
+- Migration `0015_profile_sync_rls_hotfix.sql` stellt eigene `profiles` Select/Insert/Update-Policies bereit.
+- Bottom-Navigation erhaelt eindeutige `aria-labels`.
+- Build ist gruen; verbleibende Bundle-Size-Warnung ist bekannt und nicht blockierend.
 
 ## Version 4.1.1 Schwerpunkt
 

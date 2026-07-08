@@ -859,7 +859,7 @@ function AppContent() {
       ) : null}
 
       <main className="page-content" id="main">{renderPage()}</main>
-      <CloudStatusBadge status={cloudStatus} syncCount={syncCount} pendingSyncCount={pendingSyncCount} lastSyncAt={lastSyncAt} isAdmin={activeUser.role === "admin"} message={cloudMessage} />
+      <CloudStatusBadgeStable status={cloudStatus} syncCount={syncCount} pendingSyncCount={pendingSyncCount} lastSyncAt={lastSyncAt} isAdmin={activeUser.role === "admin"} message={cloudMessage} />
 
       <nav className="bottom-nav" aria-label="Hauptnavigation">
         {navItems.map((item) => (
@@ -869,6 +869,7 @@ function AppContent() {
             type="button"
             onClick={() => setActivePage(item.id)}
             aria-current={activeNavPage === item.id ? "page" : undefined}
+            aria-label={`Hauptnavigation: ${item.label}`}
           >
             <span className="nav-icon" aria-hidden="true">
               <Icon name={item.icon} />
@@ -906,6 +907,27 @@ function App() {
     <AuthProvider>
       <AppContent />
     </AuthProvider>
+  );
+}
+
+function CloudStatusBadgeStable({ status, syncCount, pendingSyncCount, lastSyncAt, isAdmin, message }: { status: string; syncCount: number; pendingSyncCount: number; lastSyncAt: string; isAdmin: boolean; message: string }) {
+  const label =
+    status === "connected" ? "Synchronisiert" :
+      status === "syncing" ? "Synchronisiert..." :
+        status === "pending" ? "Wartende Änderungen" :
+          status === "limited" ? "Cloud eingeschränkt" :
+            status === "offline" ? "Offline" :
+              status === "error" ? "Cloud Fehler" :
+                "Cloud deaktiviert";
+  const dot = status === "connected" ? "green" : status === "syncing" || status === "pending" || status === "limited" ? "yellow" : "red";
+  const syncLabel = lastSyncAt ? new Date(lastSyncAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) : "";
+  return (
+    <div className={`cloud-status ${dot}`}>
+      <span>{label}</span>
+      {pendingSyncCount > 0 ? <small>{pendingSyncCount} Änderungen warten auf Synchronisation</small> : null}
+      {isAdmin ? <small>{syncCount} Datensätze{syncLabel ? ` - letzter Sync ${syncLabel}` : ""}</small> : null}
+      {message ? <small>{message}</small> : null}
+    </div>
   );
 }
 

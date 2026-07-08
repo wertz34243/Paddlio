@@ -62,7 +62,7 @@ import {
 import { migrateLocalDataToCloud, syncDataSnapshotToCloud } from "../services/migrationService";
 import { subscribeToCoachClub, subscribeToNotifications, subscribeToTrainingFeedback, subscribeToUserTrainings, unsubscribeAll } from "../services/realtimeService";
 
-export type CloudConnectionState = "connected" | "syncing" | "offline" | "pending" | "disabled" | "error";
+export type CloudConnectionState = "connected" | "syncing" | "offline" | "pending" | "limited" | "disabled" | "error";
 
 export type CloudAuthResult = { ok: true; message?: string } | { ok: false; message: string };
 
@@ -145,6 +145,31 @@ const getPrimaryRole = (roles: string[]): UserRole => {
   if (roles.includes("Coach")) return "coach";
   if (roles.includes("TeamAdmin")) return "teamAdmin";
   return "athlete";
+};
+
+const createFallbackProfile = (user: SupabaseUser): CloudProfile => {
+  const metadata = user.user_metadata ?? {};
+  const firstName = String(metadata.firstName ?? "");
+  const lastName = String(metadata.lastName ?? "");
+  const email = user.email ?? "";
+  const now = new Date().toISOString();
+
+  return {
+    id: user.id,
+    email,
+    first_name: firstName,
+    last_name: lastName,
+    display_name: `${firstName} ${lastName}`.trim() || email,
+    club_id: null,
+    roles: ["Athlete"],
+    status: "active",
+    avatar_url: null,
+    age_category: null,
+    boat_classes: ["K1"],
+    paddle_side: null,
+    created_at: now,
+    updated_at: now,
+  };
 };
 
 const toAuthUser = (profile: CloudProfile, clubName = ""): AuthUser => {
@@ -379,8 +404,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const cachedSnapshot = loadData(activeSession.user.id);
       setDataState(cachedSnapshot);
       setLoading(false);
-      const nextProfile = (await withTimeout("Profil sicherstellen", ensureCloudProfile(activeSession.user), 4500)) ?? (await withTimeout("Profil laden", getCloudProfile(activeSession.user.id), 4500));
-      if (!nextProfile) throw new Error("Profil konnte nicht geladen werden.");
+      let profileIsFallback = false;
+      let nextProfile: CloudProfile | null = null;
+
+      try {
+        nextProfile = (await withTimeout("Profil sicherstellen", ensureCloudProfile(activeSession.user), 8000)) ?? (await withTimeout("Profil laden", getCloudProfile(activeSession.user.id), 5000));
+      } catch (error) {
+        profileIsFallback = true;
+        logCloudError("Profil synchronisieren", error);
+        nextProfile = createFallbackProfile(activeSession.user);
+      }
+
+      if (!nextProfile) {
+        profileIsFallback = true;
+        nextProfile = createFallbackProfile(activeSession.user);
+      }
       const clubs = (await loadOptionalCloudData("clubs lesen", listCloudClubs, [])).map(toClub);
       const allProfiles = await loadOptionalCloudData("profiles listen", () => listCloudProfiles(nextProfile), [nextProfile]);
       const requests = (await loadOptionalCloudData("trainer_requests lesen", listCloudTrainerRequests, [])).map(toTrainerRequest);
@@ -491,6 +529,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSyncCount(allProfiles.length + clubs.length + requests.length + clubRequests.length + groups.length + groupMembers.length + cloudPlan.length + cloudFeedback.length + cloudTemplates.length + cloudGoals.length + cloudPersonalBests.length + cloudResultImports.length + cloudExternalConnections.length + cloudExternalTrainingSessions.length + cloudBetaReadinessChecks.length + cloudBetaFeedback.length + cloudBetaTesters.length + cloudCompetitions.length + cloudMaterials.length + cloudNotifications.length + cloudSmartCoach.length + cloudClubMaterial.length + cloudClubBoats.length + cloudClubEvents.length + cloudClubDocuments.length + cloudClubMessages.length + cloudClubSettings.length + cloudDirectMessages.length + cloudGroupMessages.length + cloudClubPosts.length + cloudTasks.length + cloudTaskAssignments.length + cloudTrainingAttendance.length + cloudFileAttachments.length + pendingCount);
       setCloudMessage(pendingCount > 0 ? `${pendingCount} ï¿½nderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensï¿½tze wurden in die Cloud migriert.` : "");
       setCloudStatus(!navigator.onLine ? "offline" : pendingCount > 0 ? "pending" : "connected");
+      if (profileIsFallback) {
+        setCloudMessage("Cloud eingeschränkt: Profil konnte nicht bestätigt werden, lokaler Cache bleibt aktiv.");
+        setCloudStatus(navigator.onLine ? "limited" : "offline");
+      } else {
+        setCloudMessage(pendingCount > 0 ? `${pendingCount} Änderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensätze wurden in die Cloud migriert.` : "");
+      }
     } catch (error) {
       logCloudError("Login-Synchronisation", error);
       setCloudMessage(`Cloud-Synchronisation ist fehlgeschlagen. Lokaler Cache wird verwendet. ${describeCloudError(error)}`);

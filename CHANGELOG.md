@@ -1,5 +1,14 @@
 # Changelog
 
+## 4.1.2
+
+- Improved profile sync fallback: profile timeouts now keep the app usable with local cache instead of forcing a hard Cloud error.
+- Added `limited` CloudStatus state for "Cloud eingeschränkt" when the profile cannot be confirmed but the app remains usable.
+- Added Supabase migration `0015_profile_sync_rls_hotfix.sql` so authenticated users can select, insert and update their own `profiles` row.
+- Added explicit bottom-navigation aria labels.
+- Set app version to `4.1.2`.
+- Verified production build.
+
 ## 4.1.1
 
 - Stabilized startup by showing cached user data immediately after session restore and guarding cloud/profile loading with timeouts.
