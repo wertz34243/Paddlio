@@ -1,5 +1,14 @@
 # Changelog
 
+## 4.1.3
+
+- Added idempotent Supabase schema sync migration `0016_schema_sync_413.sql`.
+- Covered missing beta/communication/club/results/external tables and `competitions.organizer`.
+- Added safer CloudStatus handling for optional module sync failures.
+- Kept app usable with local cache when optional Supabase modules fail.
+- Set version to `4.1.3`.
+- Verified production build.
+
 ## 4.1.2
 
 - Improved profile sync fallback: profile timeouts now keep the app usable with local cache instead of forcing a hard Cloud error.

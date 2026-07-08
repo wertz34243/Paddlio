@@ -117,6 +117,8 @@ const logCloudError = (scope: string, error: unknown) => {
   console.error(`[Paddlio Cloud] ${scope} fehlgeschlagen: ${describeCloudError(error)}`, error);
 };
 
+let optionalCloudErrorCount = 0;
+
 const withTimeout = async <T,>(scope: string, promise: Promise<T>, timeoutMs = 4500): Promise<T> => {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
@@ -134,6 +136,7 @@ const loadOptionalCloudData = async <T,>(scope: string, loader: () => Promise<T>
   try {
     return await withTimeout(scope, loader(), 4500);
   } catch (error) {
+    optionalCloudErrorCount += 1;
     logCloudError(scope, error);
     return fallback;
   }
@@ -398,6 +401,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      optionalCloudErrorCount = 0;
       setCloudStatus(navigator.onLine ? "syncing" : "offline");
       setSession(activeSession);
       setCurrentUser(activeSession.user);
@@ -531,6 +535,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCloudStatus(!navigator.onLine ? "offline" : pendingCount > 0 ? "pending" : "connected");
       if (profileIsFallback) {
         setCloudMessage("Cloud eingeschränkt: Profil konnte nicht bestätigt werden, lokaler Cache bleibt aktiv.");
+        setCloudStatus(navigator.onLine ? "limited" : "offline");
+      } else if (optionalCloudErrorCount > 0) {
+        setCloudMessage(`Cloud eingeschränkt: ${optionalCloudErrorCount} optionale Module konnten nicht synchronisiert werden.`);
         setCloudStatus(navigator.onLine ? "limited" : "offline");
       } else {
         setCloudMessage(pendingCount > 0 ? `${pendingCount} Änderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensätze wurden in die Cloud migriert.` : "");

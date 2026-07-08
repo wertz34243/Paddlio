@@ -1,10 +1,10 @@
 # Paddlio Project Analysis
 
-## Stand Version 4.1.2
+## Stand Version 4.1.3
 
 Paddlio ist eine React/Vite/TypeScript-PWA fuer Kanuslalom mit Supabase Auth und Supabase als Hauptspeicher fuer die Plattformbereiche. LocalStorage bleibt als Cache und Offline-Fallback erhalten.
 
-Version 4.1.2 ist ein Cloud-Sync- und Encoding-Stabilisierungshotfix. Der Schwerpunkt liegt auf robusterem Profil-Sync, saubererem CloudStatus, eigener Profil-RLS fuer Supabase und stabilerer Navigation. Grosse neue Fachfunktionen bleiben eingefroren.
+Version 4.1.3 ist ein Schema-Sync- und Encoding-Hotfix. Der Schwerpunkt liegt auf einer zentralen idempotenten Supabase-Migration fuer optionale Beta-Tabellen, realistischeren CloudStatus-Zustaenden und weiterem Stabilisieren des Cloud-Fallbacks. Grosse neue Fachfunktionen bleiben eingefroren.
 
 ## Architektur
 
@@ -16,6 +16,13 @@ Version 4.1.2 ist ein Cloud-Sync- und Encoding-Stabilisierungshotfix. Der Schwer
 - Bottom Navigation ist fuer mobile Beta-Tests auf fuenf Hauptpunkte reduziert; weitere Bereiche liegen unter `Mehr`.
 - Beta-Feedback und Beta-Tester liegen in Supabase und werden lokal nur gecacht.
 - Das visuelle Grundsystem liegt zentral in `src/styles.css` mit 4.1-Overlay fuer Tokens, Karten, Navigation, Buttons, Empty/Error/Offline States und mobile Safe Areas.
+
+## Version 4.1.3 Schwerpunkt
+
+- Migration `0016_schema_sync_413.sql` synchronisiert fehlende optionale Tabellen fuer Kommunikation, Verein, Beta, Ergebnisse, externe Trainings, Material, Boote und Smart Coach.
+- `competitions.organizer` wird idempotent ergaenzt.
+- Optionale Cloud-Fehler setzen CloudStatus auf eingeschraenkt statt auf synchronisiert.
+- Build ist gruen; verbleibende Bundle-Size-Warnung ist bekannt und nicht blockierend.
 
 ## Version 4.1.2 Schwerpunkt
 

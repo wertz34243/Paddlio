@@ -4,13 +4,21 @@ Paddlio ist eine moderne Trainings- und Wettkampfplattform fuer Kanuslalom.
 
 **Train. Analyze. Improve.**
 
-Version 4.1.2 ist der Cloud-Sync- und Encoding-Stabilisierungshotfix auf Basis des Dark-Water-Performance-Designs. Paddlio kombiniert Training, Wettkaempfe, Analyse, Material, Profil, Kommunikation, Verein, Aufgaben, Anwesenheit, Beta-Feedback und regelbasierte Athlete Intelligence in einer mobilen Web-App.
+Version 4.1.3 ist der Schema-Sync- und Encoding-Hotfix auf Basis des Dark-Water-Performance-Designs. Paddlio kombiniert Training, Wettkaempfe, Analyse, Material, Profil, Kommunikation, Verein, Aufgaben, Anwesenheit, Beta-Feedback und regelbasierte Athlete Intelligence in einer mobilen Web-App.
 
 ## Datenschutz und Auth
 
 Paddlio nutzt Supabase Auth fuer Registrierung, Login, Logout und Session-Wiederherstellung. App-Daten werden in Supabase gespeichert und lokal nur als Offline-/Performance-Cache gehalten. Rollen duerfen nicht aus Formularwerten entstehen: neue Konten starten immer als `Athlete`, Coach-, TeamAdmin- und Admin-Rechte werden ausschliesslich im Adminbereich beziehungsweise direkt in Supabase durch berechtigte Admins vergeben.
 
 Wenn Supabase Auth `email rate limit exceeded` meldet, hat das Projekt zu viele E-Mail-/Registrierungsanfragen in kurzer Zeit erzeugt. Ein Browser-Client darf dieses Limit ohne serverseitigen Admin-Schluessel nicht umgehen. Fuer produktive Tests sollten in Supabase Auth die unten dokumentierten E-Mail- und Rate-Limit-Einstellungen passend gesetzt werden.
+
+## Version 4.1.3 - Schema Sync and Encoding Hotfix
+
+- Neue zentrale Supabase-Migration `0016_schema_sync_413.sql`.
+- Fehlende optionale Tabellen fuer Kommunikation, Verein, Beta, Ergebnisse, externe Trainings, Material, Boote und Smart Coach werden idempotent angelegt.
+- `competitions.organizer` wird ergaenzt.
+- CloudStatus meldet optionale Modulfehler als `Cloud eingeschraenkt`.
+- App bleibt mit lokalem Cache nutzbar, wenn optionale Supabase-Module fehlen oder langsam sind.
 
 ## Version 4.1.2 - Cloud Sync and Encoding Fix
 
