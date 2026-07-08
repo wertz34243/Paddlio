@@ -1,4 +1,4 @@
-export type BoatClass = "K1" | "C1" | "C2" | "Mannschaft";
+export type BoatClass = "K1" | "C1" | "C2" | "Mannschaft" | "K1 Mannschaft" | "C1 Mannschaft" | "C2 Mannschaft";
 
 export type AgeClass = "U10" | "U12" | "U14" | "U16" | "U18" | "U23" | "Leistungsklasse" | "Masters";
 
@@ -220,27 +220,131 @@ export type Weekday =
 export type Competition = {
   id: string;
   athleteId: string;
+  clubId?: string;
+  competitionId?: string;
   name?: string;
   date: string;
   location: string;
   organizer?: string;
   course?: string;
+  courseName?: string;
   level?: "Training" | "Vereinsrennen" | "Bezirk" | "Westdeutsch" | "DM" | "International";
   boatClass: BoatClass;
+  ageClass?: string;
   run1TimeSeconds: number;
   run1PenaltySeconds: number;
+  run1TotalSeconds?: number;
   run2TimeSeconds: number;
   run2PenaltySeconds: number;
+  run2TotalSeconds?: number;
+  bestTotalSeconds?: number;
   rank: number;
   starterField?: number;
   gapToWinnerSeconds: number;
+  gapToPodiumSeconds?: number;
+  gapToPersonalBestSeconds?: number;
   feeling: number;
   note: string;
+  coachNote?: string;
   source?: string;
+  sourceType?: string;
   externalId?: string;
   sourceUrl?: string;
+  createdBy?: string;
+  deletedAt?: string;
   createdAt: string;
   updatedAt: string;
+};
+
+export type PersonalBest = {
+  id: string;
+  athleteId: string;
+  clubId: string;
+  boatClass: BoatClass;
+  courseName: string;
+  location: string;
+  bestTimeSeconds: number;
+  resultId: string;
+  achievedAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ResultImportStatus = "draft" | "preview" | "imported" | "failed";
+
+export type ResultImport = {
+  id: string;
+  clubId: string;
+  uploadedBy: string;
+  sourceType: "csv" | "excel" | "pdf" | "web" | "manual";
+  sourceName: string;
+  sourceUrl: string;
+  filePath: string;
+  importStatus: ResultImportStatus;
+  detectedResultsCount: number;
+  importedResultsCount: number;
+  errorMessage: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ExternalProvider = "polar" | "garmin_prepared" | "apple_health_prepared" | "manual";
+export type ExternalConnectionStatus = "disconnected" | "prepared" | "connected" | "expired" | "error";
+
+export type ExternalConnection = {
+  id: string;
+  userId: string;
+  provider: ExternalProvider;
+  providerUserId: string;
+  status: ExternalConnectionStatus;
+  lastSyncAt: string;
+  errorMessage: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ExternalTrainingSportType =
+  | "paddling"
+  | "kayak"
+  | "canoe"
+  | "strength"
+  | "running"
+  | "cycling"
+  | "mobility"
+  | "other";
+
+export type ExternalTrainingSession = {
+  id: string;
+  userId: string;
+  athleteId: string;
+  clubId: string;
+  provider: ExternalProvider;
+  providerActivityId: string;
+  title: string;
+  sportType: ExternalTrainingSportType;
+  startedAt: string;
+  durationSeconds: number;
+  distanceMeters: number;
+  avgHeartRate: number;
+  maxHeartRate: number;
+  calories: number;
+  trainingLoad: number;
+  recoveryStatus: string;
+  rawData: Record<string, unknown>;
+  linkedTrainingId: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type BetaReadinessStatus = "ok" | "warning" | "error" | "manual";
+
+export type BetaReadinessCheck = {
+  id: string;
+  checkedBy: string;
+  checkKey: string;
+  status: BetaReadinessStatus;
+  message: string;
+  createdAt: string;
 };
 
 export type TrainingSession = {
@@ -746,6 +850,11 @@ export type PaddleMotionData = {
   trainingTemplates: TrainingTemplate[];
   trainingFeedback: TrainingFeedback[];
   goals: SeasonGoal[];
+  personalBests: PersonalBest[];
+  resultImports: ResultImport[];
+  externalConnections: ExternalConnection[];
+  externalTrainingSessions: ExternalTrainingSession[];
+  betaReadinessChecks: BetaReadinessCheck[];
   coachAthletes: CoachAthlete[];
   coachGroups: CoachGroup[];
   notifications: NotificationItem[];

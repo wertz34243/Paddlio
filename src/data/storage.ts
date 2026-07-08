@@ -5,6 +5,7 @@ import type {
   Athlete,
   AuthSession,
   AuthUser,
+  BetaReadinessCheck,
   BoatClass,
   Club,
   ClubBoat,
@@ -23,12 +24,16 @@ import type {
   CoachAthlete,
   CoachGroup,
   Competition,
+  ExternalConnection,
+  ExternalTrainingSession,
   InvitationCode,
   InvitationRole,
   MaterialItem,
   NotificationItem,
   PaddleMotionData,
+  PersonalBest,
   PlanEntry,
+  ResultImport,
   SeasonGoal,
   SmartCoachRecommendation,
   TeamTask,
@@ -494,6 +499,85 @@ const normalizeSmartCoachRecommendations = (
     updatedAt: item.updatedAt ?? now(),
   }));
 
+const normalizePersonalBests = (items: Array<Partial<PersonalBest> & Pick<PersonalBest, "id">>): PersonalBest[] =>
+  items.map((item) => ({
+    id: item.id,
+    athleteId: item.athleteId ?? "",
+    clubId: item.clubId ?? "",
+    boatClass: item.boatClass ?? "K1",
+    courseName: item.courseName ?? "",
+    location: item.location ?? "",
+    bestTimeSeconds: item.bestTimeSeconds ?? 0,
+    resultId: item.resultId ?? "",
+    achievedAt: item.achievedAt ?? now().slice(0, 10),
+    createdAt: item.createdAt ?? now(),
+    updatedAt: item.updatedAt ?? now(),
+  }));
+
+const normalizeResultImports = (items: Array<Partial<ResultImport> & Pick<ResultImport, "id">>, userId: string): ResultImport[] =>
+  items.map((item) => ({
+    id: item.id,
+    clubId: item.clubId ?? "",
+    uploadedBy: item.uploadedBy ?? userId,
+    sourceType: item.sourceType ?? "manual",
+    sourceName: item.sourceName ?? "",
+    sourceUrl: item.sourceUrl ?? "",
+    filePath: item.filePath ?? "",
+    importStatus: item.importStatus ?? "draft",
+    detectedResultsCount: item.detectedResultsCount ?? 0,
+    importedResultsCount: item.importedResultsCount ?? 0,
+    errorMessage: item.errorMessage ?? "",
+    createdAt: item.createdAt ?? now(),
+    updatedAt: item.updatedAt ?? now(),
+  }));
+
+const normalizeExternalConnections = (items: Array<Partial<ExternalConnection> & Pick<ExternalConnection, "id">>, userId: string): ExternalConnection[] =>
+  items.map((item) => ({
+    id: item.id,
+    userId: item.userId ?? userId,
+    provider: item.provider ?? "polar",
+    providerUserId: item.providerUserId ?? "",
+    status: item.status ?? "disconnected",
+    lastSyncAt: item.lastSyncAt ?? "",
+    errorMessage: item.errorMessage ?? "",
+    createdAt: item.createdAt ?? now(),
+    updatedAt: item.updatedAt ?? now(),
+  }));
+
+const normalizeExternalTrainingSessions = (items: Array<Partial<ExternalTrainingSession> & Pick<ExternalTrainingSession, "id">>, userId: string): ExternalTrainingSession[] =>
+  items.map((item) => ({
+    id: item.id,
+    userId: item.userId ?? userId,
+    athleteId: item.athleteId ?? "",
+    clubId: item.clubId ?? "",
+    provider: item.provider ?? "manual",
+    providerActivityId: item.providerActivityId ?? "",
+    title: item.title ?? "Externes Training",
+    sportType: item.sportType ?? "other",
+    startedAt: item.startedAt ?? now(),
+    durationSeconds: item.durationSeconds ?? 0,
+    distanceMeters: item.distanceMeters ?? 0,
+    avgHeartRate: item.avgHeartRate ?? 0,
+    maxHeartRate: item.maxHeartRate ?? 0,
+    calories: item.calories ?? 0,
+    trainingLoad: item.trainingLoad ?? 0,
+    recoveryStatus: item.recoveryStatus ?? "",
+    rawData: item.rawData ?? {},
+    linkedTrainingId: item.linkedTrainingId ?? "",
+    createdAt: item.createdAt ?? now(),
+    updatedAt: item.updatedAt ?? now(),
+  }));
+
+const normalizeBetaReadinessChecks = (items: Array<Partial<BetaReadinessCheck> & Pick<BetaReadinessCheck, "id" | "checkKey">>, userId: string): BetaReadinessCheck[] =>
+  items.map((item) => ({
+    id: item.id,
+    checkedBy: item.checkedBy ?? userId,
+    checkKey: item.checkKey,
+    status: item.status ?? "manual",
+    message: item.message ?? "",
+    createdAt: item.createdAt ?? now(),
+  }));
+
 const normalizeClubMaterial = (items: Array<Partial<ClubMaterial> & Pick<ClubMaterial, "id" | "name">>): ClubMaterial[] =>
   items.map((item) => ({
     id: item.id,
@@ -700,6 +784,11 @@ const normalizeDataShape = (data: PaddleMotionData): PaddleMotionData => ({
   journal: Array.isArray(data.journal) ? normalizeJournalEntries(data.journal) : [],
   material: normalizeMaterialItems(data.material),
   goals: Array.isArray(data.goals) ? normalizeSeasonGoals(data.goals, data.athlete.id, data.activeUserId) : [],
+  personalBests: Array.isArray(data.personalBests) ? normalizePersonalBests(data.personalBests) : [],
+  resultImports: Array.isArray(data.resultImports) ? normalizeResultImports(data.resultImports, data.activeUserId) : [],
+  externalConnections: Array.isArray(data.externalConnections) ? normalizeExternalConnections(data.externalConnections, data.activeUserId) : [],
+  externalTrainingSessions: Array.isArray(data.externalTrainingSessions) ? normalizeExternalTrainingSessions(data.externalTrainingSessions, data.activeUserId) : [],
+  betaReadinessChecks: Array.isArray(data.betaReadinessChecks) ? normalizeBetaReadinessChecks(data.betaReadinessChecks, data.activeUserId) : [],
   coachAthletes: Array.isArray(data.coachAthletes) ? normalizeCoachAthletes(data.coachAthletes, data.athlete.club, "") : [],
   coachGroups: Array.isArray(data.coachGroups) ? normalizeCoachGroups(data.coachGroups, "") : [],
   trainingTemplates: Array.isArray(data.trainingTemplates) ? normalizeTrainingTemplates(data.trainingTemplates, data.activeUserId, data.athlete.club) : [],
@@ -1657,6 +1746,11 @@ const createEmptyDataForUser = (authUser: AuthUser): PaddleMotionData => {
     trainingTemplates: [],
     trainingFeedback: [],
     goals: [],
+    personalBests: [],
+    resultImports: [],
+    externalConnections: [],
+    externalTrainingSessions: [],
+    betaReadinessChecks: [],
     coachAthletes: [],
     coachGroups: [],
     notifications: [],
@@ -1693,6 +1787,11 @@ const withUsers = (data: V03Data): PaddleMotionData => {
     trainingTemplates: data.trainingTemplates ?? [],
     trainingFeedback: data.trainingFeedback ?? [],
     goals: data.goals ?? [],
+    personalBests: data.personalBests ?? [],
+    resultImports: data.resultImports ?? [],
+    externalConnections: data.externalConnections ?? [],
+    externalTrainingSessions: data.externalTrainingSessions ?? [],
+    betaReadinessChecks: data.betaReadinessChecks ?? [],
     coachAthletes: data.coachAthletes ?? [],
     coachGroups: data.coachGroups ?? [],
     notifications: data.notifications ?? [],
@@ -1863,6 +1962,11 @@ const migrateLegacyData = (legacy: LegacyData): PaddleMotionData => {
     trainingTemplates: [],
     trainingFeedback: [],
     goals: [],
+    personalBests: [],
+    resultImports: [],
+    externalConnections: [],
+    externalTrainingSessions: [],
+    betaReadinessChecks: [],
     coachAthletes: [],
     coachGroups: [],
     notifications: [],

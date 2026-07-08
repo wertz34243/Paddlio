@@ -110,6 +110,7 @@ const buildAthleteRecommendations = (data: PaddleMotionData, user: User): Recomm
   const competitions = data.competitions;
   const feedback = data.trainingFeedback;
   const material = data.material;
+  const externalSessions = data.externalTrainingSessions ?? [];
   const drafts: RecommendationDraft[] = [];
   const today = todayKey();
   const lastDoneDate = getLastDoneTrainingDate(plan);
@@ -198,6 +199,78 @@ const buildAthleteRecommendations = (data: PaddleMotionData, user: User): Recomm
       "Plane kurze Wettkampfsimulation, Materialcheck und ruhige Aktivierung.",
       "competition",
       nextRace.id,
+    ));
+  }
+
+  const latestResults = [...competitions].sort((a, b) => b.date.localeCompare(a.date));
+  const latestResult = latestResults[0];
+  const previousSameBoat = latestResult
+    ? latestResults.find((item) => item.id !== latestResult.id && item.boatClass === latestResult.boatClass && item.date < latestResult.date)
+    : undefined;
+  if (latestResult && previousSameBoat && getBestTotalTime(latestResult) < getBestTotalTime(previousSameBoat)) {
+    drafts.push(createDraft(
+      user,
+      "result-improved",
+      "motivation",
+      "low",
+      "Deine Ergebniszeit verbessert sich",
+      `${latestResult.boatClass} in ${latestResult.location}: Du bist schneller als beim vorherigen vergleichbaren Ergebnis.`,
+      `Verbesserung um ${(getBestTotalTime(previousSameBoat) - getBestTotalTime(latestResult)).toLocaleString("de-DE", { maximumFractionDigits: 2 })} Sekunden.`,
+      "Halte fest, welche Linienwahl und Vorbereitung gut funktioniert haben.",
+      "competition",
+      latestResult.id,
+    ));
+  }
+
+  if (!latestResult || daysBetween(today, latestResult.date) >= 90) {
+    drafts.push(createDraft(
+      user,
+      "no-result-90-days",
+      "wettkampf",
+      "low",
+      "Ergebnis nachtragen",
+      "Es ist lange kein Wettkampfergebnis dokumentiert.",
+      latestResult ? `Letztes Ergebnis: ${latestResult.date}.` : "Noch kein Ergebnis vorhanden.",
+      "Trage den letzten Start ein, damit Bestzeiten und Saisonvergleich sauber bleiben.",
+    ));
+  }
+
+  const unlinkedExternal = externalSessions.find((session) => !session.linkedTrainingId);
+  if (unlinkedExternal) {
+    drafts.push(createDraft(
+      user,
+      "external-session-unlinked",
+      "training",
+      "medium",
+      "Externes Training verknuepfen",
+      "Eine Polar- oder externe Trainingseinheit ist noch keinem Paddlio-Training zugeordnet.",
+      `${unlinkedExternal.title} von ${new Date(unlinkedExternal.startedAt).toLocaleDateString("de-DE")}.`,
+      "Verknuepfe die Einheit mit dem geplanten Training, damit Belastung und Analyse stimmen.",
+      "external_training_session",
+      unlinkedExternal.id,
+    ));
+  }
+
+  const currentWeekMinutes = externalSessions
+    .filter((session) => inLastDays(session.startedAt.slice(0, 10), 7))
+    .reduce((sum, session) => sum + Math.round(session.durationSeconds / 60), 0);
+  const previousWeekMinutes = externalSessions
+    .filter((session) => {
+      const date = session.startedAt.slice(0, 10);
+      const age = daysBetween(today, date);
+      return age > 7 && age <= 14;
+    })
+    .reduce((sum, session) => sum + Math.round(session.durationSeconds / 60), 0);
+  if (previousWeekMinutes > 0 && currentWeekMinutes > previousWeekMinutes * 1.5) {
+    drafts.push(createDraft(
+      user,
+      "external-load-jump",
+      "regeneration",
+      "medium",
+      "Trainingsbelastung steigt deutlich",
+      "Die externe Trainingsdauer dieser Woche liegt deutlich ueber der Vorwoche.",
+      `${currentWeekMinutes} min diese Woche gegenueber ${previousWeekMinutes} min in der Vorwoche.`,
+      "Plane bewusst Erholung und pruefe die Rueckmeldungen nach harten Einheiten.",
     ));
   }
 

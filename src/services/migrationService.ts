@@ -4,6 +4,14 @@ import { upsertCloudTraining, upsertCloudFeedback } from "./trainingService";
 import { upsertCloudTrainingTemplate } from "./trainingTemplateService";
 import { upsertCloudGoal } from "./goalService";
 import { upsertCloudCompetition } from "./competitionService";
+import {
+  calculatePersonalBests,
+  upsertCloudBetaReadinessCheck,
+  upsertCloudExternalConnection,
+  upsertCloudExternalTrainingSession,
+  upsertCloudPersonalBest,
+  upsertCloudResultImport,
+} from "./resultsReadinessService";
 import { upsertCloudMaterial } from "./materialService";
 import { upsertCloudSmartCoachRecommendation } from "./smartCoachService";
 import {
@@ -73,6 +81,27 @@ export const syncDataSnapshotToCloud = async (data: PaddleMotionData, profile: C
   }
   for (const competition of data.competitions) {
     await upsertCloudCompetition(competition, clubId);
+    migrated += 1;
+  }
+  const personalBests = data.personalBests.length > 0 ? data.personalBests : calculatePersonalBests(data.competitions);
+  for (const item of personalBests) {
+    await upsertCloudPersonalBest(item);
+    migrated += 1;
+  }
+  for (const item of data.resultImports) {
+    await upsertCloudResultImport(item);
+    migrated += 1;
+  }
+  for (const item of data.externalConnections) {
+    await upsertCloudExternalConnection(item);
+    migrated += 1;
+  }
+  for (const item of data.externalTrainingSessions) {
+    await upsertCloudExternalTrainingSession(item);
+    migrated += 1;
+  }
+  for (const item of data.betaReadinessChecks) {
+    await upsertCloudBetaReadinessCheck(item);
     migrated += 1;
   }
   for (const material of data.material) {

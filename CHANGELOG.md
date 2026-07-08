@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.9
+
+- Expanded competition results with richer run, source, ranking, gap and coach-note fields.
+- Added result intelligence view for personal bests, boat-class distribution, penalty averages and beta-safe season comparison basics.
+- Added import preparation for CSV, Excel, PDF, web and manual result sources through `result_imports`.
+- Added Polar/external integration preparation with explicit no-frontend-secret architecture.
+- Added external training sessions and basic load comparison in Analytics.
+- Extended Smart Coach rules for race-week tapering context, result improvements, stale results, unlinked external sessions and load jumps.
+- Added Admin Beta-Check with automatic/manual readiness items.
+- Added Supabase migration `0012_results_polar_beta_readiness.sql`.
+- Documented 3.9 in `docs/results-polar-beta-readiness.md`.
+
 ## 3.8
 
 - Added communication module under Mehr with direct messages, group chats, club news, tasks, attendance and file attachment preparation.

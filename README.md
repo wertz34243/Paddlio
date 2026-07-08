@@ -12,6 +12,19 @@ Paddlio nutzt Supabase Auth fuer Registrierung, Login, Logout und Session-Wieder
 
 Wenn Supabase Auth `email rate limit exceeded` meldet, hat das Projekt zu viele E-Mail-/Registrierungsanfragen in kurzer Zeit erzeugt. Ein Browser-Client darf dieses Limit ohne serverseitigen Admin-Schluessel nicht umgehen. Fuer produktive Tests sollten in Supabase Auth die unten dokumentierten E-Mail- und Rate-Limit-Einstellungen passend gesetzt werden.
 
+## Version 3.9 - Results, Polar Sync & Beta Readiness
+
+- Ergebnisverwaltung erweitert um Laufdetails, Abstaende, Quellen, Trainerkommentar und automatische Bestzeiten
+- Neues Wettkampfsegment `Ergebnisanalyse` mit Bestzeiten, Strafschnitt, Bootsklassenverteilung und Saisonvergleich-Grundlage
+- Importbereich fuer CSV, Excel, PDF und Web-Quellen vorbereitet, ohne fragile Scraper zu erzwingen
+- Integrationen-Bereich fuer Polar Flow vorbereitet; echte OAuth-Aktivierung muss spaeter ueber Backend oder Supabase Edge Functions erfolgen
+- Externe Trainingseinheiten, Trainingsbelastung und Verknuepfung mit Paddlio-Trainings vorbereitet
+- Smart Coach erkennt jetzt externe unverknuepfte Trainings, Ergebnisverbesserungen, lange Ergebnispausen und Belastungsspruenge
+- Admin-Bereich `Beta-Check` mit Checkliste fuer Supabase, Rollen, Gruppen, Training, Kommunikation, Ergebnisse, Mobile und RLS
+- Supabase-Migration `0012_results_polar_beta_readiness.sql` ergaenzt Ergebnisfelder, `personal_bests`, `result_imports`, `external_connections`, `external_training_sessions` und `beta_readiness_checks`
+
+Polar-Hinweis: Paddlio speichert keine echten Polar-Secrets im Frontend. `VITE_*` Variablen duerfen nur oeffentliche Werte enthalten. Sichere Token-Verarbeitung gehoert in eine Supabase Edge Function oder ein separates Backend.
+
 ## Version 3.8 - Communication & Team System
 
 - Neues Kommunikationsmodul unter `Mehr > Kommunikation`

@@ -44,6 +44,7 @@ import { PlanView } from "./views/PlanView";
 import { NotificationsView } from "./views/NotificationsView";
 import { ProfileView } from "./views/ProfileView";
 import { RecordsView } from "./views/RecordsView";
+import { ResultsReadinessView } from "./views/ResultsReadinessView";
 import { SeasonView } from "./views/SeasonView";
 import { SettingsView } from "./views/SettingsView";
 import { SmartCoachView } from "./views/SmartCoachView";
@@ -51,9 +52,9 @@ import { TrainingJournalView } from "./views/TrainingJournalView";
 import { TrainingView } from "./views/TrainingView";
 
 type TrainingSegment = "plan" | "sessions" | "journal";
-type CompetitionSegment = "races" | "results" | "bests" | "stats" | "coach" | "admin" | "videos";
+type CompetitionSegment = "races" | "results" | "bests" | "stats" | "advanced" | "imports" | "coach" | "admin" | "videos";
 type AnalysisSegment = "overview" | "smartCoach" | "training" | "competition" | "goals" | "load" | "boats" | "season" | "coach" | "admin";
-type MoreSegment = "profile" | "communication" | "equipment" | "goals" | "records" | "notifications" | "coach" | "settings";
+type MoreSegment = "profile" | "communication" | "equipment" | "goals" | "records" | "notifications" | "integrations" | "beta" | "coach" | "settings";
 
 const navItems: Array<{ id: PageId; label: string; icon: IconName }> = [
   { id: "dashboard", label: "Home", icon: "home" },
@@ -84,6 +85,8 @@ const competitionSegments: SegmentItem<CompetitionSegment>[] = [
   { id: "results", label: "Ergebnisse" },
   { id: "bests", label: "Bestzeiten" },
   { id: "stats", label: "Saisonstatistik" },
+  { id: "advanced", label: "Ergebnisanalyse" },
+  { id: "imports", label: "Import" },
   { id: "videos", label: "Videos" },
 ];
 
@@ -104,6 +107,7 @@ const baseMoreSegments: SegmentItem<MoreSegment>[] = [
   { id: "goals", label: "Ziele" },
   { id: "records", label: "Rekorde" },
   { id: "notifications", label: "Updates" },
+  { id: "integrations", label: "Integrationen" },
   { id: "settings", label: "Einstellungen" },
 ];
 
@@ -155,6 +159,7 @@ function AppContent() {
   const moreSegments = canUseCoachArea(activeUser.role)
     ? [
         ...baseMoreSegments.filter((segment) => segment.id !== "settings"),
+        ...(activeUser.role === "admin" ? [{ id: "beta" as const, label: "Beta-Check" }] : []),
         { id: "coach" as const, label: activeUser.role === "admin" ? "Admin" : "Coach" },
         baseMoreSegments.find((segment) => segment.id === "settings")!,
       ]
@@ -594,6 +599,10 @@ function AppContent() {
         return <CompetitionBestTimesView competitions={data.competitions} />;
       case "stats":
         return <CompetitionSeasonStatsView competitions={data.competitions} />;
+      case "advanced":
+        return <ResultsReadinessView data={data} user={activeUser} mode="results" onDataChange={updateData} />;
+      case "imports":
+        return <ResultsReadinessView data={data} user={activeUser} mode="imports" onDataChange={updateData} />;
       case "coach":
       case "admin":
         return <CompetitionCoachAdminView competitions={data.competitions} user={activeUser} />;
@@ -642,8 +651,14 @@ function AppContent() {
       case "training":
       case "competition":
       case "goals":
-      case "load":
         return <AnalyticsCenterView data={data} user={activeUser} mode={segment as AnalyticsMode} />;
+      case "load":
+        return (
+          <div className="stack">
+            <AnalyticsCenterView data={data} user={activeUser} mode="load" />
+            <ResultsReadinessView data={data} user={activeUser} mode="load" onDataChange={updateData} />
+          </div>
+        );
       case "overview":
       default:
         return (
@@ -716,6 +731,10 @@ function AppContent() {
         return <RecordsView competitions={data.competitions} training={data.training} />;
       case "notifications":
         return <NotificationsView notifications={data.notifications} onMarkRead={markNotificationRead} onMarkAllRead={markAllNotificationsRead} />;
+      case "integrations":
+        return <ResultsReadinessView data={data} user={activeUser} mode="integrations" onDataChange={updateData} />;
+      case "beta":
+        return <ResultsReadinessView data={data} user={activeUser} mode="beta" onDataChange={updateData} />;
       case "coach":
         return <CoachView data={data} user={activeUser} onDataChange={updateData} />;
       case "settings":
