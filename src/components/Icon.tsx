@@ -4,6 +4,7 @@ export type IconName =
   | "trophy"
   | "chart"
   | "club"
+  | "message"
   | "calendar"
   | "wallet"
   | "user"
@@ -24,6 +25,7 @@ const paths: Record<IconName, string[]> = {
   trophy: ["M8 4h8v4a4 4 0 0 1-8 0V4Z", "M6 6H4v2a4 4 0 0 0 4 4", "M18 6h2v2a4 4 0 0 1-4 4", "M12 12v5", "M8 20h8"],
   chart: ["M4 19V5", "M4 19h16", "M8 15l3-4 3 2 4-7"],
   club: ["M4 21V8l8-5 8 5v13", "M9 21v-6h6v6", "M8 10h.01", "M12 10h.01", "M16 10h.01"],
+  message: ["M4 5h16v11H8l-4 4V5Z", "M8 9h8", "M8 13h5"],
   calendar: ["M7 3v4", "M17 3v4", "M4 8h16", "M5 5h14v15H5z"],
   wallet: ["M4 7h15a2 2 0 0 1 2 2v9H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h12", "M16 13h4"],
   user: ["M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z", "M4 21a8 8 0 0 1 16 0"],

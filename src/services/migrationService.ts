@@ -14,6 +14,15 @@ import {
   upsertCloudClubMessage,
   upsertCloudClubSettings,
 } from "./clubPortalService";
+import {
+  upsertCloudClubPost,
+  upsertCloudDirectMessage,
+  upsertCloudFileAttachment,
+  upsertCloudGroupMessage,
+  upsertCloudTask,
+  upsertCloudTaskAssignment,
+  upsertCloudTrainingAttendance,
+} from "./communicationService";
 
 const migrationKey = (userId: string): string => `paddlio_cloud_migration_${userId}`;
 
@@ -96,6 +105,34 @@ export const syncDataSnapshotToCloud = async (data: PaddleMotionData, profile: C
   }
   for (const settings of data.clubSettings) {
     await upsertCloudClubSettings(settings);
+    migrated += 1;
+  }
+  for (const message of data.directMessages) {
+    await upsertCloudDirectMessage(message);
+    migrated += 1;
+  }
+  for (const message of data.groupMessages) {
+    await upsertCloudGroupMessage(message);
+    migrated += 1;
+  }
+  for (const post of data.clubPosts) {
+    await upsertCloudClubPost(post);
+    migrated += 1;
+  }
+  for (const task of data.tasks) {
+    await upsertCloudTask(task);
+    migrated += 1;
+  }
+  for (const assignment of data.taskAssignments) {
+    await upsertCloudTaskAssignment(assignment);
+    migrated += 1;
+  }
+  for (const attendance of data.trainingAttendance) {
+    await upsertCloudTrainingAttendance(attendance);
+    migrated += 1;
+  }
+  for (const attachment of data.fileAttachments) {
+    await upsertCloudFileAttachment(attachment);
     migrated += 1;
   }
 

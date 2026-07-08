@@ -12,6 +12,14 @@ Paddlio nutzt Supabase Auth fuer Registrierung, Login, Logout und Session-Wieder
 
 Wenn Supabase Auth `email rate limit exceeded` meldet, hat das Projekt zu viele E-Mail-/Registrierungsanfragen in kurzer Zeit erzeugt. Ein Browser-Client darf dieses Limit ohne serverseitigen Admin-Schluessel nicht umgehen. Fuer produktive Tests sollten in Supabase Auth die unten dokumentierten E-Mail- und Rate-Limit-Einstellungen passend gesetzt werden.
 
+## Version 3.8 - Communication & Team System
+
+- Neues Kommunikationsmodul unter `Mehr > Kommunikation`
+- Direktnachrichten, Gruppenchats, Vereinsnews, Aufgaben, Anwesenheit und Datei-Anhaenge vorbereitet
+- Dashboard zeigt neue Nachrichten, Gruppenaktivitaet, offene Aufgaben, offene Anwesenheit und aktuelle Vereinsnews
+- Supabase-Migration `0011_communication_team_system.sql` erstellt Kommunikationstabellen, RLS-Policies und bereitet den Storage-Bucket `paddlio-files` vor
+- Offline-Queue-Fallback fuer Nachrichten, Aufgaben, Anwesenheit und Anhang-Metadaten
+
 ## Version 3.7 - Vereinsportal & Organisationsmanagement
 
 - Neuer Hauptbereich `Verein` fuer Coach, ClubAdmin und Admin

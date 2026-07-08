@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.8
+
+- Added communication module under Mehr with direct messages, group chats, club news, tasks, attendance and file attachment preparation.
+- Added dashboard cards for unread messages, group activity, open tasks, pending attendance and latest club news.
+- Added Supabase migration `0011_communication_team_system.sql` for messages, posts, tasks, attendance, attachments, RLS and storage bucket preparation.
+- Added communication service layer with offline queue fallback.
+- Extended realtime subscriptions for communication and team tables.
+- Documented communication architecture in `docs/communication-system.md`.
+
 ## 3.7
 
 - Added main navigation area `Verein` with Dashboard, members, trainers, groups, material, boats, calendar, documents, messages and settings.

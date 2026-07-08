@@ -306,4 +306,11 @@ export const seedData: PaddleMotionData = {
   clubDocuments: [],
   clubMessages: [],
   clubSettings: [],
+  directMessages: [],
+  groupMessages: [],
+  clubPosts: [],
+  tasks: [],
+  taskAssignments: [],
+  trainingAttendance: [],
+  fileAttachments: [],
 };

@@ -36,6 +36,9 @@ export const subscribeToUserTrainings = (userId: string, onChange: RealtimeHandl
     .on("postgres_changes", { event: "*", schema: "public", table: "season_goals", filter: `athlete_id=eq.${userId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "smart_coach_recommendations", filter: `created_for_user_id=eq.${userId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "group_members", filter: `athlete_id=eq.${userId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "direct_messages", filter: `receiver_id=eq.${userId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "task_assignments", filter: `assigned_to=eq.${userId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "training_attendance", filter: `athlete_id=eq.${userId}` }, onChange)
     .subscribe();
 
   return registerChannel(channel);
@@ -57,6 +60,10 @@ export const subscribeToCoachClub = (clubId: string, onChange: RealtimeHandler):
     .on("postgres_changes", { event: "*", schema: "public", table: "club_documents", filter: `club_id=eq.${clubId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "club_messages", filter: `club_id=eq.${clubId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "club_settings", filter: `club_id=eq.${clubId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "group_messages", filter: `club_id=eq.${clubId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "club_posts", filter: `club_id=eq.${clubId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "tasks", filter: `club_id=eq.${clubId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "training_attendance", filter: `club_id=eq.${clubId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "profiles", filter: `club_id=eq.${clubId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "trainer_requests", filter: `club_id=eq.${clubId}` }, onChange)
     .subscribe();
@@ -113,6 +120,13 @@ export const subscribeToGeneralCloudChanges = (onChange: RealtimeHandler): (() =
     .on("postgres_changes", { event: "*", schema: "public", table: "club_documents" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "club_messages" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "club_settings" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "direct_messages" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "group_messages" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "club_posts" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "tasks" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "task_assignments" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "training_attendance" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "file_attachments" }, onChange)
     .subscribe();
 
   return registerChannel(channel);

@@ -1,6 +1,6 @@
 # Paddlio Project Analysis
 
-## Stand Version 3.7
+## Stand Version 3.8
 
 Paddlio ist eine React/Vite/TypeScript-PWA fuer Kanuslalom mit Supabase Auth und Supabase als Hauptspeicher fuer die Plattformbereiche. LocalStorage bleibt als Cache und Offline-Fallback erhalten.
 
@@ -64,6 +64,14 @@ Paddlio ist eine React/Vite/TypeScript-PWA fuer Kanuslalom mit Supabase Auth und
 - Vereinsdaten liegen in eigenen Supabase-Tabellen und bleiben lokal nur Cache/Offline-Fallback.
 - Datei-Uploads sind als Dokument-Metadaten vorbereitet; echte Storage-Buckets folgen spaeter.
 
+## Version 3.8 Schwerpunkt
+
+- Kommunikation ist als eigener Bereich unter Mehr integriert.
+- Direktnachrichten, Gruppenchats, Vereinsnews, Aufgaben, Anwesenheit und Anhang-Metadaten sind als eigene Modelle und Supabase-Tabellen vorbereitet.
+- Dashboard zeigt Kommunikations- und Team-Signale direkt auf Home.
+- Offline-Queue und Realtime-Service kennen die neuen Kommunikationstabellen.
+- Supabase RLS schuetzt private Nachrichten, Gruppendaten, Aufgaben und Anwesenheit.
+
 ## Datenmodelle in Nutzung
 
 - `profiles`: Nutzerprofil, Rollen, Status, Verein, Bootsklassen.
@@ -85,6 +93,13 @@ Paddlio ist eine React/Vite/TypeScript-PWA fuer Kanuslalom mit Supabase Auth und
 - `club_documents`: Dokument-Metadaten und Ordnerstruktur.
 - `club_messages`: interne Vereinsnachrichten.
 - `club_settings`: Logo, Farben, Adresse, Homepage, Ansprechpartner, Vereinsnummer und Impressum.
+- `direct_messages`: private 1:1 Nachrichten.
+- `group_messages`: Gruppenchats fuer Trainingsgruppen.
+- `club_posts`: Vereinsnews und Pinnwand.
+- `tasks`: Aufgabenstammdaten.
+- `task_assignments`: Aufgabenstatus pro Nutzer.
+- `training_attendance`: Anwesenheitsantworten pro Training.
+- `file_attachments`: Anhang-Metadaten fuer spaetere Storage-Uploads.
 
 ## Naechste Risiken
 
@@ -94,3 +109,4 @@ Paddlio ist eine React/Vite/TypeScript-PWA fuer Kanuslalom mit Supabase Auth und
 - Breite Admin-Listen brauchen mittelfristig Pagination.
 - Smart-Coach-Regeln sollten mit echten Vereinsdaten validiert werden, bevor daraus automatisierte Trainingsentscheidungen entstehen.
 - Supabase Storage fuer echte Dokument-Uploads braucht eigene Bucket- und RLS-Policies.
+- Kommunikation braucht spaeter Benachrichtigungs-Routing und echte Push-Benachrichtigungen.

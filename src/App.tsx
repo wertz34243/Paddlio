@@ -35,6 +35,7 @@ import { CompetitionBestTimesView } from "./views/CompetitionBestTimesView";
 import { CompetitionCoachAdminView } from "./views/CompetitionCoachAdminView";
 import { CompetitionSeasonStatsView } from "./views/CompetitionSeasonStatsView";
 import { ClubPortalView } from "./views/ClubPortalView";
+import { CommunicationView } from "./views/CommunicationView";
 import { CoachView } from "./views/CoachView";
 import { DashboardView, type DashboardQuickAction } from "./views/DashboardView";
 import { EquipmentView } from "./views/EquipmentView";
@@ -52,7 +53,7 @@ import { TrainingView } from "./views/TrainingView";
 type TrainingSegment = "plan" | "sessions" | "journal";
 type CompetitionSegment = "races" | "results" | "bests" | "stats" | "coach" | "admin" | "videos";
 type AnalysisSegment = "overview" | "smartCoach" | "training" | "competition" | "goals" | "load" | "boats" | "season" | "coach" | "admin";
-type MoreSegment = "profile" | "equipment" | "goals" | "records" | "notifications" | "coach" | "settings";
+type MoreSegment = "profile" | "communication" | "equipment" | "goals" | "records" | "notifications" | "coach" | "settings";
 
 const navItems: Array<{ id: PageId; label: string; icon: IconName }> = [
   { id: "dashboard", label: "Home", icon: "home" },
@@ -98,6 +99,7 @@ const analysisSegments: SegmentItem<AnalysisSegment>[] = [
 
 const baseMoreSegments: SegmentItem<MoreSegment>[] = [
   { id: "profile", label: "Profil" },
+  { id: "communication", label: "Kommunikation" },
   { id: "equipment", label: "Material" },
   { id: "goals", label: "Ziele" },
   { id: "records", label: "Rekorde" },
@@ -111,6 +113,7 @@ const pageTitles: Record<PageId, string> = {
   competitions: "Wettkaempfe",
   analysis: "Analyse",
   club: "Verein",
+  communication: "Kommunikation",
   more: "Mehr",
   goals: "Ziele",
   records: "Rekorde",
@@ -151,10 +154,9 @@ function AppContent() {
   const activeNavPage = navPageByPage[activePage] ?? activePage;
   const moreSegments = canUseCoachArea(activeUser.role)
     ? [
-        ...baseMoreSegments.slice(0, 4),
-        baseMoreSegments[4],
+        ...baseMoreSegments.filter((segment) => segment.id !== "settings"),
         { id: "coach" as const, label: activeUser.role === "admin" ? "Admin" : "Coach" },
-        baseMoreSegments[5],
+        baseMoreSegments.find((segment) => segment.id === "settings")!,
       ]
     : baseMoreSegments;
   const unreadNotificationCount = data.notifications.filter((notification) => !notification.read).length;
@@ -697,6 +699,8 @@ function AppContent() {
             onDelete={deleteMaterial}
           />
         );
+      case "communication":
+        return <CommunicationView data={data} user={activeUser} onDataChange={updateData} />;
       case "goals":
         return (
           <GoalsView
@@ -780,6 +784,8 @@ function AppContent() {
         return renderAnalysisArea();
       case "club":
         return <ClubPortalView data={data} user={activeUser} onDataChange={updateData} />;
+      case "communication":
+        return <CommunicationView data={data} user={activeUser} onDataChange={updateData} />;
       case "more":
         return renderMoreArea();
       case "goals":

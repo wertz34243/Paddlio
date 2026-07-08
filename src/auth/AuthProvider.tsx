@@ -42,6 +42,15 @@ import {
   listCloudClubMessages,
   listCloudClubSettings,
 } from "../services/clubPortalService";
+import {
+  listCloudClubPosts,
+  listCloudDirectMessages,
+  listCloudFileAttachments,
+  listCloudGroupMessages,
+  listCloudTaskAssignments,
+  listCloudTasks,
+  listCloudTrainingAttendance,
+} from "../services/communicationService";
 import { migrateLocalDataToCloud, syncDataSnapshotToCloud } from "../services/migrationService";
 import { subscribeToCoachClub, subscribeToNotifications, subscribeToTrainingFeedback, subscribeToUserTrainings, unsubscribeAll } from "../services/realtimeService";
 
@@ -291,6 +300,13 @@ const mergeCloudData = (
     clubDocuments: cloudData?.clubDocuments ?? cached.clubDocuments ?? [],
     clubMessages: cloudData?.clubMessages ?? cached.clubMessages ?? [],
     clubSettings: cloudData?.clubSettings ?? cached.clubSettings ?? [],
+    directMessages: cloudData?.directMessages ?? cached.directMessages ?? [],
+    groupMessages: cloudData?.groupMessages ?? cached.groupMessages ?? [],
+    clubPosts: cloudData?.clubPosts ?? cached.clubPosts ?? [],
+    tasks: cloudData?.tasks ?? cached.tasks ?? [],
+    taskAssignments: cloudData?.taskAssignments ?? cached.taskAssignments ?? [],
+    trainingAttendance: cloudData?.trainingAttendance ?? cached.trainingAttendance ?? [],
+    fileAttachments: cloudData?.fileAttachments ?? cached.fileAttachments ?? [],
   };
 
   saveData(userId, nextData);
@@ -361,6 +377,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         cloudClubDocuments,
         cloudClubMessages,
         cloudClubSettings,
+        cloudDirectMessages,
+        cloudGroupMessages,
+        cloudClubPosts,
+        cloudTasks,
+        cloudTaskAssignments,
+        cloudTrainingAttendance,
+        cloudFileAttachments,
       ] = await Promise.all([
         loadOptionalCloudData("training_plan_items lesen", () => listCloudTraining(activeSession.user.id), []),
         loadOptionalCloudData("training_feedback lesen", listCloudFeedback, []),
@@ -376,6 +399,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loadOptionalCloudData("club_documents lesen", listCloudClubDocuments, []),
         loadOptionalCloudData("club_messages lesen", listCloudClubMessages, []),
         loadOptionalCloudData("club_settings lesen", listCloudClubSettings, []),
+        loadOptionalCloudData("direct_messages lesen", listCloudDirectMessages, []),
+        loadOptionalCloudData("group_messages lesen", listCloudGroupMessages, []),
+        loadOptionalCloudData("club_posts lesen", listCloudClubPosts, []),
+        loadOptionalCloudData("tasks lesen", listCloudTasks, []),
+        loadOptionalCloudData("task_assignments lesen", listCloudTaskAssignments, []),
+        loadOptionalCloudData("training_attendance lesen", listCloudTrainingAttendance, []),
+        loadOptionalCloudData("file_attachments lesen", listCloudFileAttachments, []),
       ]);
       const nextData = mergeCloudData(activeSession.user.id, nextProfile, clubs, allProfiles.length > 0 ? allProfiles : [nextProfile], groups, groupMembers, {
         plan: cloudPlan,
@@ -392,6 +422,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clubDocuments: cloudClubDocuments,
         clubMessages: cloudClubMessages,
         clubSettings: cloudClubSettings,
+        directMessages: cloudDirectMessages,
+        groupMessages: cloudGroupMessages,
+        clubPosts: cloudClubPosts,
+        tasks: cloudTasks,
+        taskAssignments: cloudTaskAssignments,
+        trainingAttendance: cloudTrainingAttendance,
+        fileAttachments: cloudFileAttachments,
       });
       const pendingCount = getPendingSyncCount();
       setProfile(nextProfile);
@@ -399,7 +436,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setDataState(nextData);
       setPendingSyncCount(pendingCount);
       setLastSyncAt(new Date().toISOString());
-      setSyncCount(allProfiles.length + clubs.length + requests.length + clubRequests.length + groups.length + groupMembers.length + cloudPlan.length + cloudFeedback.length + cloudTemplates.length + cloudGoals.length + cloudCompetitions.length + cloudMaterials.length + cloudNotifications.length + cloudSmartCoach.length + cloudClubMaterial.length + cloudClubBoats.length + cloudClubEvents.length + cloudClubDocuments.length + cloudClubMessages.length + cloudClubSettings.length + pendingCount);
+      setSyncCount(allProfiles.length + clubs.length + requests.length + clubRequests.length + groups.length + groupMembers.length + cloudPlan.length + cloudFeedback.length + cloudTemplates.length + cloudGoals.length + cloudCompetitions.length + cloudMaterials.length + cloudNotifications.length + cloudSmartCoach.length + cloudClubMaterial.length + cloudClubBoats.length + cloudClubEvents.length + cloudClubDocuments.length + cloudClubMessages.length + cloudClubSettings.length + cloudDirectMessages.length + cloudGroupMessages.length + cloudClubPosts.length + cloudTasks.length + cloudTaskAssignments.length + cloudTrainingAttendance.length + cloudFileAttachments.length + pendingCount);
       setCloudMessage(pendingCount > 0 ? `${pendingCount} Aenderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensaetze wurden in die Cloud migriert.` : "");
       setCloudStatus(!navigator.onLine ? "offline" : pendingCount > 0 ? "pending" : "connected");
     } catch (error) {

@@ -2303,6 +2303,133 @@ p {
   flex: 0 1 auto;
 }
 
+.communication-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.85fr) minmax(0, 1.45fr);
+  gap: var(--space);
+}
+
+.communication-contact {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  padding: 13px;
+  border: 1px solid rgba(144, 224, 239, 0.16);
+  border-radius: var(--radius);
+  background: rgba(15, 23, 42, 0.52);
+  color: var(--text);
+  text-align: left;
+  font: inherit;
+}
+
+.communication-contact.active {
+  border-color: rgba(0, 180, 216, 0.7);
+  background: rgba(0, 180, 216, 0.14);
+}
+
+.communication-contact span,
+.communication-contact small {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.chat-panel {
+  min-height: 420px;
+}
+
+.chat-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 260px;
+  max-height: 52vh;
+  overflow: auto;
+  padding: 8px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.chat-bubble {
+  width: fit-content;
+  max-width: min(78%, 520px);
+  padding: 10px 12px;
+  border: 1px solid rgba(144, 224, 239, 0.16);
+  border-radius: 16px 16px 16px 4px;
+  background: rgba(30, 41, 59, 0.9);
+}
+
+.chat-bubble.own {
+  align-self: flex-end;
+  border-radius: 16px 16px 4px 16px;
+  background: linear-gradient(135deg, rgba(0, 180, 216, 0.85), rgba(0, 119, 182, 0.88));
+  color: #06121f;
+}
+
+.chat-bubble p,
+.chat-bubble small {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.chat-bubble small {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.chat-bubble.own small {
+  color: rgba(6, 18, 31, 0.72);
+}
+
+.chat-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.chat-form input {
+  min-height: 46px;
+  border: 1px solid rgba(144, 224, 239, 0.18);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.68);
+  color: var(--text);
+  font: inherit;
+  padding: 0 14px;
+}
+
+.club-post-card,
+.task-card,
+.attendance-card {
+  display: grid;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid rgba(144, 224, 239, 0.16);
+  border-radius: var(--radius);
+  background: rgba(30, 41, 59, 0.72);
+}
+
+.club-post-card.priority-urgent,
+.task-card:has(.status-pill) {
+  border-left: 4px solid var(--warning);
+}
+
+.attendance-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.attendance-actions button {
+  min-height: 42px;
+  border: 1px solid rgba(144, 224, 239, 0.2);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.62);
+  color: var(--text);
+  font-weight: 800;
+}
+
 .placeholder-card {
   display: grid;
   gap: 8px;
@@ -2696,7 +2823,10 @@ p {
   }
 
   .smart-coach-filters,
-  .smart-coach-recommendation {
+  .smart-coach-recommendation,
+  .communication-layout,
+  .chat-form,
+  .attendance-actions {
     grid-template-columns: 1fr;
   }
 

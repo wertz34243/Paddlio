@@ -13,6 +13,10 @@ import type {
   ClubMaterial,
   ClubMessage,
   ClubSettings,
+  ClubPost,
+  DirectMessage,
+  FileAttachment,
+  GroupMessage,
   ClubRequest,
   ClubRequestStatus,
   ClubStatus,
@@ -27,7 +31,10 @@ import type {
   PlanEntry,
   SeasonGoal,
   SmartCoachRecommendation,
+  TeamTask,
+  TeamTaskAssignment,
   TrainingFeedback,
+  TrainingAttendance,
   TrainingJournalEntry,
   TrainingTemplate,
   TrainerRequest,
@@ -584,6 +591,110 @@ const normalizeClubSettings = (items: Array<Partial<ClubSettings> & Pick<ClubSet
     updatedAt: item.updatedAt ?? now(),
   }));
 
+const normalizeDirectMessages = (items: Array<Partial<DirectMessage> & Pick<DirectMessage, "id" | "message">>): DirectMessage[] =>
+  items.map((item) => ({
+    id: item.id,
+    clubId: item.clubId ?? "",
+    senderId: item.senderId ?? "",
+    receiverId: item.receiverId ?? "",
+    message: item.message,
+    isRead: Boolean(item.isRead),
+    readAt: item.readAt ?? "",
+    createdAt: item.createdAt ?? now(),
+    updatedAt: item.updatedAt ?? now(),
+    deletedAt: item.deletedAt ?? "",
+  }));
+
+const normalizeGroupMessages = (items: Array<Partial<GroupMessage> & Pick<GroupMessage, "id" | "message">>): GroupMessage[] =>
+  items.map((item) => ({
+    id: item.id,
+    clubId: item.clubId ?? "",
+    groupId: item.groupId ?? "",
+    senderId: item.senderId ?? "",
+    message: item.message,
+    createdAt: item.createdAt ?? now(),
+    updatedAt: item.updatedAt ?? now(),
+    deletedAt: item.deletedAt ?? "",
+  }));
+
+const normalizeClubPosts = (items: Array<Partial<ClubPost> & Pick<ClubPost, "id" | "title">>): ClubPost[] =>
+  items.map((item) => ({
+    id: item.id,
+    clubId: item.clubId ?? "",
+    authorId: item.authorId ?? "",
+    title: item.title,
+    content: item.content ?? "",
+    category: item.category ?? "info",
+    priority: item.priority ?? "normal",
+    targetType: item.targetType ?? "club",
+    targetGroupId: item.targetGroupId ?? "",
+    targetUserId: item.targetUserId ?? "",
+    expiresAt: item.expiresAt ?? "",
+    isPinned: Boolean(item.isPinned),
+    createdAt: item.createdAt ?? now(),
+    updatedAt: item.updatedAt ?? now(),
+    deletedAt: item.deletedAt ?? "",
+  }));
+
+const normalizeTasks = (items: Array<Partial<TeamTask> & Pick<TeamTask, "id" | "title">>): TeamTask[] =>
+  items.map((item) => ({
+    id: item.id,
+    clubId: item.clubId ?? "",
+    createdBy: item.createdBy ?? "",
+    title: item.title,
+    description: item.description ?? "",
+    taskType: item.taskType ?? "general",
+    priority: item.priority ?? "normal",
+    dueDate: item.dueDate ?? "",
+    relatedTrainingId: item.relatedTrainingId ?? "",
+    relatedCompetitionId: item.relatedCompetitionId ?? "",
+    createdAt: item.createdAt ?? now(),
+    updatedAt: item.updatedAt ?? now(),
+    deletedAt: item.deletedAt ?? "",
+  }));
+
+const normalizeTaskAssignments = (items: Array<Partial<TeamTaskAssignment> & Pick<TeamTaskAssignment, "id" | "taskId">>): TeamTaskAssignment[] =>
+  items.map((item) => ({
+    id: item.id,
+    taskId: item.taskId,
+    assignedTo: item.assignedTo ?? "",
+    status: item.status ?? "open",
+    completedAt: item.completedAt ?? "",
+    responseNote: item.responseNote ?? "",
+    createdAt: item.createdAt ?? now(),
+    updatedAt: item.updatedAt ?? now(),
+  }));
+
+const normalizeTrainingAttendance = (items: Array<Partial<TrainingAttendance> & Pick<TrainingAttendance, "id" | "trainingId">>): TrainingAttendance[] =>
+  items.map((item) => ({
+    id: item.id,
+    trainingId: item.trainingId,
+    athleteId: item.athleteId ?? "",
+    clubId: item.clubId ?? "",
+    groupId: item.groupId ?? "",
+    status: item.status ?? "pending",
+    reason: item.reason ?? "",
+    note: item.note ?? "",
+    respondedAt: item.respondedAt ?? "",
+    createdAt: item.createdAt ?? now(),
+    updatedAt: item.updatedAt ?? now(),
+  }));
+
+const normalizeFileAttachments = (items: Array<Partial<FileAttachment> & Pick<FileAttachment, "id" | "fileName">>): FileAttachment[] =>
+  items.map((item) => ({
+    id: item.id,
+    clubId: item.clubId ?? "",
+    ownerId: item.ownerId ?? "",
+    relatedType: item.relatedType ?? "training",
+    relatedId: item.relatedId ?? "",
+    fileName: item.fileName,
+    filePath: item.filePath ?? "",
+    fileType: item.fileType ?? "",
+    fileSize: item.fileSize ?? 0,
+    createdAt: item.createdAt ?? now(),
+    deletedAt: item.deletedAt ?? "",
+  }));
+
 const normalizeDataShape = (data: PaddleMotionData): PaddleMotionData => ({
   ...data,
   journal: Array.isArray(data.journal) ? normalizeJournalEntries(data.journal) : [],
@@ -601,6 +712,13 @@ const normalizeDataShape = (data: PaddleMotionData): PaddleMotionData => ({
   clubDocuments: Array.isArray(data.clubDocuments) ? normalizeClubDocuments(data.clubDocuments) : [],
   clubMessages: Array.isArray(data.clubMessages) ? normalizeClubMessages(data.clubMessages) : [],
   clubSettings: Array.isArray(data.clubSettings) ? normalizeClubSettings(data.clubSettings) : [],
+  directMessages: Array.isArray(data.directMessages) ? normalizeDirectMessages(data.directMessages) : [],
+  groupMessages: Array.isArray(data.groupMessages) ? normalizeGroupMessages(data.groupMessages) : [],
+  clubPosts: Array.isArray(data.clubPosts) ? normalizeClubPosts(data.clubPosts) : [],
+  tasks: Array.isArray(data.tasks) ? normalizeTasks(data.tasks) : [],
+  taskAssignments: Array.isArray(data.taskAssignments) ? normalizeTaskAssignments(data.taskAssignments) : [],
+  trainingAttendance: Array.isArray(data.trainingAttendance) ? normalizeTrainingAttendance(data.trainingAttendance) : [],
+  fileAttachments: Array.isArray(data.fileAttachments) ? normalizeFileAttachments(data.fileAttachments) : [],
 });
 
 const normalizeSeasonGoals = (
@@ -1549,6 +1667,13 @@ const createEmptyDataForUser = (authUser: AuthUser): PaddleMotionData => {
     clubDocuments: [],
     clubMessages: [],
     clubSettings: [],
+    directMessages: [],
+    groupMessages: [],
+    clubPosts: [],
+    tasks: [],
+    taskAssignments: [],
+    trainingAttendance: [],
+    fileAttachments: [],
   };
 };
 
@@ -1578,6 +1703,13 @@ const withUsers = (data: V03Data): PaddleMotionData => {
     clubDocuments: data.clubDocuments ?? [],
     clubMessages: data.clubMessages ?? [],
     clubSettings: data.clubSettings ?? [],
+    directMessages: data.directMessages ?? [],
+    groupMessages: data.groupMessages ?? [],
+    clubPosts: data.clubPosts ?? [],
+    tasks: data.tasks ?? [],
+    taskAssignments: data.taskAssignments ?? [],
+    trainingAttendance: data.trainingAttendance ?? [],
+    fileAttachments: data.fileAttachments ?? [],
   };
 };
 
@@ -1741,6 +1873,13 @@ const migrateLegacyData = (legacy: LegacyData): PaddleMotionData => {
     clubDocuments: [],
     clubMessages: [],
     clubSettings: [],
+    directMessages: [],
+    groupMessages: [],
+    clubPosts: [],
+    tasks: [],
+    taskAssignments: [],
+    trainingAttendance: [],
+    fileAttachments: [],
   };
 };
 

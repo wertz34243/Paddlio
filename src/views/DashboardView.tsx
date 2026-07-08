@@ -66,6 +66,12 @@ export function DashboardView({ data, user, onNavigate, onOpenSmartCoach, onUpda
   ).length;
   const daysUntilRace = getDaysUntil(nextCompetition?.date);
   const raceRing = daysUntilRace === undefined ? 0 : Math.max(8, Math.min(100, 100 - daysUntilRace * 3));
+  const unreadDirect = data.directMessages.filter((item) => item.receiverId === user.userId && !item.isRead && !item.deletedAt).length;
+  const groupIds = data.coachGroups.filter((group) => group.athleteIds.includes(user.userId) || group.coachUserId === user.userId || user.role === "admin").map((group) => group.id);
+  const groupActivity = data.groupMessages.filter((item) => groupIds.includes(item.groupId) && item.senderId !== user.userId && !item.deletedAt).length;
+  const openTasks = data.taskAssignments.filter((item) => item.assignedTo === user.userId && item.status !== "done").length;
+  const pendingAttendance = scopedPlan.filter((entry) => !data.trainingAttendance.some((item) => item.trainingId === entry.id && item.athleteId === user.userId)).length;
+  const latestNews = data.clubPosts.filter((post) => !post.deletedAt).sort((a, b) => Number(b.isPinned) - Number(a.isPinned) || b.createdAt.localeCompare(a.createdAt))[0];
 
   return (
     <div className="stack intelligence-dashboard">
@@ -163,6 +169,23 @@ export function DashboardView({ data, user, onNavigate, onOpenSmartCoach, onUpda
         >
           <p className="card-note">{intelligence.athleteStatus.detail}</p>
         </AppCard>
+
+        <AppCard icon="message" title="Kommunikation" subtitle="Nachrichten & Gruppen" value={`${unreadDirect + groupActivity} neu`} tone="accent">
+          <div className="smart-detail-grid">
+            <span>Direkt: {unreadDirect}</span>
+            <span>Gruppen: {groupActivity}</span>
+          </div>
+          <button className="ghost-button wide" type="button" onClick={() => onNavigate("communication")}>
+            Oeffnen
+          </button>
+        </AppCard>
+
+        <AppCard icon="calendar" title="Team-Orga" subtitle="Aufgaben & Anwesenheit" value={`${openTasks + pendingAttendance} offen`} tone="warning">
+          <div className="smart-detail-grid">
+            <span>Aufgaben: {openTasks}</span>
+            <span>Anwesenheit: {pendingAttendance}</span>
+          </div>
+        </AppCard>
       </section>
 
       <section className="section-block smart-coach-card">
@@ -218,6 +241,22 @@ export function DashboardView({ data, user, onNavigate, onOpenSmartCoach, onUpda
         onOpenDetails={onOpenSmartCoach}
         onUpdateRecommendation={onUpdateRecommendation}
       />
+
+      {latestNews ? (
+        <section className="section-block smart-coach-card">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Vereinsnews</p>
+              <h3>{latestNews.title}</h3>
+            </div>
+            {latestNews.isPinned ? <span className="status-pill planned">Wichtig</span> : null}
+          </div>
+          <p>{latestNews.content}</p>
+          <button className="ghost-button wide" type="button" onClick={() => onNavigate("communication")}>
+            Kommunikation oeffnen
+          </button>
+        </section>
+      ) : null}
 
       <section className="dashboard-card-grid">
         <AppCard icon="target" title="Persoenliche Rekorde" subtitle="Automatisch erkannt" value={records.k1Best} tone="k1">

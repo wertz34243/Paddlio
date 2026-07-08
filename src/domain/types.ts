@@ -574,6 +574,116 @@ export type ClubMessage = {
   updatedAt: string;
 };
 
+export type DirectMessage = {
+  id: string;
+  clubId: string;
+  senderId: string;
+  receiverId: string;
+  message: string;
+  isRead: boolean;
+  readAt: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string;
+};
+
+export type GroupMessage = {
+  id: string;
+  clubId: string;
+  groupId: string;
+  senderId: string;
+  message: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string;
+};
+
+export type ClubPostCategory = "info" | "training" | "competition" | "material" | "urgent" | "organization";
+export type ClubPostPriority = "normal" | "important" | "urgent";
+export type ClubPostTargetType = "club" | "coaches" | "group" | "athlete";
+
+export type ClubPost = {
+  id: string;
+  clubId: string;
+  authorId: string;
+  title: string;
+  content: string;
+  category: ClubPostCategory;
+  priority: ClubPostPriority;
+  targetType: ClubPostTargetType;
+  targetGroupId: string;
+  targetUserId: string;
+  expiresAt: string;
+  isPinned: boolean;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string;
+};
+
+export type TeamTaskType = "general" | "technique" | "material" | "video" | "competition" | "training" | "mental" | "recovery";
+export type TeamTaskPriority = "normal" | "important" | "urgent";
+export type TeamTaskStatus = "open" | "in_progress" | "done" | "skipped";
+
+export type TeamTask = {
+  id: string;
+  clubId: string;
+  createdBy: string;
+  title: string;
+  description: string;
+  taskType: TeamTaskType;
+  priority: TeamTaskPriority;
+  dueDate: string;
+  relatedTrainingId: string;
+  relatedCompetitionId: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string;
+};
+
+export type TeamTaskAssignment = {
+  id: string;
+  taskId: string;
+  assignedTo: string;
+  status: TeamTaskStatus;
+  completedAt: string;
+  responseNote: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type TrainingAttendanceStatus = "pending" | "attending" | "not_attending" | "unsure";
+export type TrainingAttendanceReason = "" | "Schule" | "Arbeit" | "Krankheit" | "Familie" | "Wettkampf" | "anderes";
+
+export type TrainingAttendance = {
+  id: string;
+  trainingId: string;
+  athleteId: string;
+  clubId: string;
+  groupId: string;
+  status: TrainingAttendanceStatus;
+  reason: TrainingAttendanceReason;
+  note: string;
+  respondedAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type FileAttachmentRelatedType = "direct_message" | "group_message" | "club_post" | "task" | "training" | "competition";
+
+export type FileAttachment = {
+  id: string;
+  clubId: string;
+  ownerId: string;
+  relatedType: FileAttachmentRelatedType;
+  relatedId: string;
+  fileName: string;
+  filePath: string;
+  fileType: string;
+  fileSize: number;
+  createdAt: string;
+  deletedAt: string;
+};
+
 export type ClubSettings = {
   clubId: string;
   logoUrl: string;
@@ -646,6 +756,13 @@ export type PaddleMotionData = {
   clubDocuments: ClubDocument[];
   clubMessages: ClubMessage[];
   clubSettings: ClubSettings[];
+  directMessages: DirectMessage[];
+  groupMessages: GroupMessage[];
+  clubPosts: ClubPost[];
+  tasks: TeamTask[];
+  taskAssignments: TeamTaskAssignment[];
+  trainingAttendance: TrainingAttendance[];
+  fileAttachments: FileAttachment[];
 };
 
 export type PageId =
@@ -654,6 +771,7 @@ export type PageId =
   | "competitions"
   | "analysis"
   | "club"
+  | "communication"
   | "more"
   | "goals"
   | "records"
