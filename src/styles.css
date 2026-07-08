@@ -3026,11 +3026,19 @@ body {
   box-shadow: 0 0 0 4px rgba(38, 211, 255, 0.08);
 }
 
+.home-profile-card h1,
 .home-profile-card h2,
 .profile-hero-card h2,
 .intelligence-hero h2 {
   font-size: clamp(1.45rem, 4.8vw, 2.15rem);
   letter-spacing: 0;
+}
+
+.home-welcome-line {
+  color: var(--text);
+  font-size: clamp(1rem, 3.6vw, 1.25rem);
+  font-weight: 850;
+  line-height: 1.2;
 }
 
 .hero-slogan {
@@ -3235,6 +3243,71 @@ body {
   background: rgba(4, 12, 24, 0.78);
 }
 
+.page-content,
+.category-shell,
+.segment-content,
+.stack,
+.section-block,
+.chart-panel,
+.app-card,
+.metric-card,
+.dashboard-card-grid,
+.metric-grid,
+.communication-layout,
+.calendar-shell,
+.analysis-shell,
+.analytics-center,
+.result-list,
+.competition-timeline,
+.wallet-list {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.chart-panel,
+.analysis-shell,
+.analytics-center,
+.table-scroll,
+.result-table,
+.athlete-table,
+.calendar-week-grid,
+.calendar-month-grid {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+svg,
+canvas,
+img,
+table {
+  max-width: 100%;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+.bar-row,
+.distribution-row,
+.result-row,
+.summary-strip,
+.personal-best-grid,
+.split-grid,
+.wallet-stats {
+  min-width: 0;
+}
+
+.bar-row *,
+.distribution-row *,
+.result-row *,
+.summary-strip *,
+.personal-best-grid *,
+.split-grid *,
+.wallet-stats * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 @keyframes page-rise {
   from {
     opacity: 0.85;
@@ -3326,6 +3399,23 @@ body {
 
   .chat-form {
     grid-template-columns: 1fr auto;
+  }
+
+  .chart-panel,
+  .analysis-shell,
+  .analytics-center,
+  .result-table,
+  .athlete-table {
+    overflow-x: hidden;
+  }
+
+  table,
+  thead,
+  tbody,
+  tr,
+  th,
+  td {
+    max-width: 100%;
   }
 
   .bottom-nav {

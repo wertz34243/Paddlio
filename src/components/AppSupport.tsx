@@ -26,8 +26,8 @@ const roleLabels: Record<SupportUserRole, string> = {
 const friendlyTerms: Record<string, string> = {
   Athletenstatus: "Dein Trainingsstand",
   Trainingsquote: "Wie oft du trainiert hast",
-  Rueckmeldungen: "Antworten vom Trainer",
-  Saisonuebersicht: "Dein Jahr",
+  Rückmeldungen: "Antworten vom Trainer",
+  Saisonübersicht: "Dein Jahr",
   Intensitaet: "Wie anstrengend es ist",
   Regeneration: "Pause und Erholung",
   GA1: "lockeres Ausdauertraining",

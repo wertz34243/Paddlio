@@ -278,7 +278,7 @@ export function TrainingView({
                       </div>
 
                       <form className="journal-form" onSubmit={(event) => handleJournalSubmit(event, session)}>
-                        <p className="eyebrow">Persoenliches Journal</p>
+                        <p className="eyebrow">Persï¿½nliches Journal</p>
                         <div className="form-grid">
                           <label>
                             Wie war das Training?
@@ -325,7 +325,7 @@ export function TrainingView({
               );
             })
           ) : (
-            <p className="empty-state">Keine Einheiten fuer diesen Filter.</p>
+            <p className="empty-state">Keine Einheiten fï¿½r diesen Filter.</p>
           )}
         </div>
       </section>

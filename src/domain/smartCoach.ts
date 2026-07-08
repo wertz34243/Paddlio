@@ -126,7 +126,7 @@ const buildAthleteRecommendations = (data: PaddleMotionData, user: User): Recomm
       "no-training-7-days",
       "training",
       "medium",
-      "Zeit fuer eine lockere Einheit",
+      "Zeit fï¿½r eine lockere Einheit",
       "Du hast seit mindestens sieben Tagen kein erledigtes Training dokumentiert.",
       lastDoneDate ? `Letzte erledigte Einheit: ${lastDoneDate}.` : "Es gibt noch keine erledigte Trainingseinheit.",
       "Plane eine lockere Technik- oder GA1-Einheit.",
@@ -153,7 +153,7 @@ const buildAthleteRecommendations = (data: PaddleMotionData, user: User): Recomm
       "warnung",
       "high",
       "Heute lieber locker trainieren",
-      "Deine letzte Rueckmeldung zeigt erhoehte Muedigkeit oder schwache Erholung.",
+      "Deine letzte Rï¿½ckmeldung zeigt erhoehte Muedigkeit oder schwache Erholung.",
       `Muedigkeit ${weakFeedback.fatigue}/10, Schlaf ${weakFeedback.sleep ?? 7}/10, Gefuehl ${weakFeedback.feeling}/10.`,
       "Reduziere Intensitaet und dokumentiere nach der Einheit erneut dein Gefuehl.",
       "training_feedback",
@@ -182,7 +182,7 @@ const buildAthleteRecommendations = (data: PaddleMotionData, user: User): Recomm
       "medium",
       "Grundlagenausdauer fehlt",
       "In den letzten 14 Tagen ist kein GA1- oder Grundlagenreiz sichtbar.",
-      "Eine stabile Grundlage hilft dir, technische Qualitaet laenger zu halten.",
+      "Eine stabile Grundlage hilft dir, technische Qualitï¿½t laenger zu halten.",
       "Plane 45 bis 90 Minuten locker im GA1-Bereich.",
     ));
   }
@@ -195,7 +195,7 @@ const buildAthleteRecommendations = (data: PaddleMotionData, user: User): Recomm
       "high",
       "Wettkampfvorbereitung starten",
       `${nextRace.location} steht in ${daysBetween(nextRace.date, today)} Tagen an.`,
-      "Der Wettkampf liegt innerhalb der naechsten sieben Tage.",
+      "Der Wettkampf liegt innerhalb der nï¿½chsten sieben Tage.",
       "Plane kurze Wettkampfsimulation, Materialcheck und ruhige Aktivierung.",
       "competition",
       nextRace.id,
@@ -270,7 +270,7 @@ const buildAthleteRecommendations = (data: PaddleMotionData, user: User): Recomm
       "Trainingsbelastung steigt deutlich",
       "Die externe Trainingsdauer dieser Woche liegt deutlich ueber der Vorwoche.",
       `${currentWeekMinutes} min diese Woche gegenueber ${previousWeekMinutes} min in der Vorwoche.`,
-      "Plane bewusst Erholung und pruefe die Rueckmeldungen nach harten Einheiten.",
+      "Plane bewusst Erholung und pruefe die Rï¿½ckmeldungen nach harten Einheiten.",
     ));
   }
 
@@ -284,7 +284,7 @@ const buildAthleteRecommendations = (data: PaddleMotionData, user: User): Recomm
       "Saisonziel braucht Aufmerksamkeit",
       `${riskyGoal.goal.title} ist bald faellig und liegt noch unter 60 Prozent Fortschritt.`,
       `Faellig am ${riskyGoal.goal.dueDate}, aktueller Fortschritt ${Math.round(riskyGoal.progress)}%.`,
-      "Brich das Ziel in eine konkrete Trainingseinheit fuer diese Woche herunter.",
+      "Brich das Ziel in eine konkrete Trainingseinheit fï¿½r diese Woche herunter.",
       "season_goal",
       riskyGoal.goal.id,
     ));
@@ -315,7 +315,7 @@ const buildAthleteRecommendations = (data: PaddleMotionData, user: User): Recomm
       "Du bist im Rhythmus",
       "Deine aktuellen Daten zeigen keine akute Baustelle.",
       "Konstanz und saubere Dokumentation sind gerade dein groesster Hebel.",
-      "Waehle fuer die naechste Einheit einen messbaren Fokus.",
+      "Waehle fï¿½r die nï¿½chste Einheit einen messbaren Fokus.",
     ));
   }
 
@@ -350,7 +350,7 @@ const buildCoachRecommendations = (data: PaddleMotionData, user: User): Recommen
         "medium",
         `${athlete.name}: kein Training geplant`,
         "Dieser Sportler hat in der aktuellen Woche noch keine geplante Einheit.",
-        "Coach-Ansicht: Wochenplanung enthaelt keine Einheit fuer diesen Sportler.",
+        "Coach-Ansicht: Wochenplanung enthaelt keine Einheit fï¿½r diesen Sportler.",
         "Plane eine passende Einheit oder pruefe die Gruppenzuweisung.",
         "coach_athlete",
         athlete.id,
@@ -365,7 +365,7 @@ const buildCoachRecommendations = (data: PaddleMotionData, user: User): Recommen
         "regeneration",
         "high",
         `${athlete.name}: hohe Belastung`,
-        "Mehrere harte Einheiten in kurzer Zeit koennen die Qualitaet senken.",
+        "Mehrere harte Einheiten in kurzer Zeit koennen die Qualitï¿½t senken.",
         `${hardCount} harte oder maximale Einheiten in fuenf Tagen.`,
         "Sprich Regeneration oder eine lockere Einheit ab.",
         "coach_athlete",
@@ -380,10 +380,10 @@ const buildCoachRecommendations = (data: PaddleMotionData, user: User): Recommen
         "coach-athlete-open-feedback",
         "training",
         "medium",
-        `${athlete.name}: Rueckmeldung offen`,
+        `${athlete.name}: Rï¿½ckmeldung offen`,
         "Erledigte Trainings ohne Feedback erschweren die Belastungssteuerung.",
-        `${doneWithoutFeedback.length} erledigte Einheit(en) ohne Rueckmeldung.`,
-        "Bitte um kurze Rueckmeldung zu Gefuehl, Muedigkeit und Motivation.",
+        `${doneWithoutFeedback.length} erledigte Einheit(en) ohne Rï¿½ckmeldung.`,
+        "Bitte um kurze Rï¿½ckmeldung zu Gefuehl, Muedigkeit und Motivation.",
         "coach_athlete",
         athlete.id,
         athlete.id,
@@ -416,7 +416,7 @@ const buildCoachRecommendations = (data: PaddleMotionData, user: User): Recommen
         "training",
         "medium",
         `${group.name}: kein Gruppenplan`,
-        "Diese Gruppe hat fuer die aktuelle Woche noch keine geplante Einheit.",
+        "Diese Gruppe hat fï¿½r die aktuelle Woche noch keine geplante Einheit.",
         "Gruppen ohne Plan koennen im Trainingsalltag leicht untergehen.",
         "Plane eine Gruppeneinheit oder kopiere eine passende Vorlage.",
         "training_group",

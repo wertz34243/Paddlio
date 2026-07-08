@@ -1,5 +1,15 @@
 # Changelog
 
+## 4.1.1
+
+- Stabilized startup by showing cached user data immediately after session restore and guarding cloud/profile loading with timeouts.
+- Added idempotent Supabase repair migration `0014_beta_stabilization_hotfix.sql` for optional beta, communication, club portal, task, attendance, attachment and Smart Coach tables.
+- Fixed pure date weekday handling for Europe/Berlin to avoid UTC date shifts.
+- Added mobile/tablet/desktop overflow guards for analysis, charts, result rows, grids and tables.
+- Updated Heute accessibility with one visible `h1`.
+- Added clearer aria labels for repeated dashboard action buttons.
+- Cleaned visible German umlaut text while keeping stable internal data IDs.
+
 ## 4.1.0
 
 - Introduced Dark Water Performance Design as the current visual direction.

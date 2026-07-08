@@ -14,7 +14,7 @@ const statuses: MaterialStatus[] = ["bereit", "pruefen", "wartung", "defekt"];
 
 const statusLabel: Record<MaterialStatus, string> = {
   bereit: "Bereit",
-  pruefen: "Pruefen",
+  pruefen: "Prüfen",
   wartung: "Wartung",
   defekt: "Defekt",
 };

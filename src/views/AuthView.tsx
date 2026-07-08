@@ -48,7 +48,7 @@ export function AuthView({ onLogin, onRegister, onResetPassword, cloudMessage }:
   };
 
   const handleResetPassword = async () => {
-    const email = window.prompt("E-Mail fuer Passwort-Reset");
+    const email = window.prompt("E-Mail fï¿½r Passwort-Reset");
     if (!email) return;
     const result = await onResetPassword(email);
     setMessage(result.message ?? "Passwort-Reset wurde angefordert.");

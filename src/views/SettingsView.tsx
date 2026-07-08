@@ -117,7 +117,7 @@ export function SettingsView({ user, onSave, onLogout }: SettingsViewProps) {
             <h3>Sitzung</h3>
           </div>
         </div>
-        <p className="card-note">Melde dich ab, wenn du Paddlio auf einem geteilten Geraet nutzt.</p>
+        <p className="card-note">Melde dich ab, wenn du Paddlio auf einem geteilten Gerï¿½t nutzt.</p>
         <button className="danger-button" type="button" onClick={onLogout}>
           Logout
         </button>

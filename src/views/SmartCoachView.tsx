@@ -149,13 +149,13 @@ export function SmartCoachView({ data, user, compact = false, onOpenDetails, onU
             </div>
           </article>
         )) : (
-          <p className="empty-state">Noch nicht genug Daten fuer Smart-Coach-Hinweise. Plane Training, erfasse Feedback oder lege Ziele an.</p>
+          <p className="empty-state">Noch nicht genug Daten fï¿½r Smart-Coach-Hinweise. Plane Training, erfasse Feedback oder lege Ziele an.</p>
         )}
       </div>
 
       {compact ? (
         <button type="button" className="ghost-button wide" onClick={onOpenDetails}>
-          Details oeffnen
+          Details ï¿½ffnen
         </button>
       ) : (
         <p className="muted">Paddlio Smart Coach ersetzt keinen Trainer, Arzt oder medizinische Beratung.</p>

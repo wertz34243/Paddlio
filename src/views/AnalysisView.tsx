@@ -182,9 +182,9 @@ export function AnalysisView({ competitions, training, plan, feedback }: Analysi
             <small>erledigt / geplant / ausgelassen</small>
           </article>
           <article className="metric-card tone-success">
-            <span>Rueckmeldungsquote</span>
+            <span>Rï¿½ckmeldungsquote</span>
             <strong>{feedbackQuote}%</strong>
-            <small>{feedback.length} Rueckmeldungen</small>
+            <small>{feedback.length} Rï¿½ckmeldungen</small>
           </article>
         </section>
       </ChartPanel>

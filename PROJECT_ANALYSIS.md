@@ -1,10 +1,10 @@
 # Paddlio Project Analysis
 
-## Stand Version 4.1.0
+## Stand Version 4.1.1
 
 Paddlio ist eine React/Vite/TypeScript-PWA fuer Kanuslalom mit Supabase Auth und Supabase als Hauptspeicher fuer die Plattformbereiche. LocalStorage bleibt als Cache und Offline-Fallback erhalten.
 
-Version 4.1 ist ein Design- und UX-Release. Der Schwerpunkt liegt auf Dark Water Performance Design, ruhigerer Heute-Ansicht, besserer mobiler Navigation, einheitlichen Karten, konsistenteren Statuszustaenden und einer App-Anmutung fuer echte Beta-Tester. Grosse neue Fachfunktionen bleiben eingefroren.
+Version 4.1.1 ist ein Beta-Stabilisierung-Hotfix. Der Schwerpunkt liegt auf schnellerem Start, robustem Cloud-Fallback, idempotenter Supabase-Schema-Reparatur, korrekter Datumslogik, mobiler Analyse-Stabilität und Accessibility-Fixes. Grosse neue Fachfunktionen bleiben eingefroren.
 
 ## Architektur
 
@@ -16,6 +16,17 @@ Version 4.1 ist ein Design- und UX-Release. Der Schwerpunkt liegt auf Dark Water
 - Bottom Navigation ist fuer mobile Beta-Tests auf fuenf Hauptpunkte reduziert; weitere Bereiche liegen unter `Mehr`.
 - Beta-Feedback und Beta-Tester liegen in Supabase und werden lokal nur gecacht.
 - Das visuelle Grundsystem liegt zentral in `src/styles.css` mit 4.1-Overlay fuer Tokens, Karten, Navigation, Buttons, Empty/Error/Offline States und mobile Safe Areas.
+
+## Version 4.1.1 Schwerpunkt
+
+- Dashboard darf nicht mehr auf optionale Cloud-Module warten: lokaler Cache wird sofort angezeigt, Cloud Sync laeuft nachgelagert.
+- Supabase-Aufrufe fuer Session, Profil und optionale Tabellen sind mit Timeouts und Fallbacks abgesichert.
+- Migration `0014_beta_stabilization_hotfix.sql` repariert fehlende optionale Tabellen/Spalten idempotent.
+- Reine `YYYY-MM-DD` Datumswerte werden ohne UTC-Verschiebung und mit Europe/Berlin-Wochentag verarbeitet.
+- Analyse-, Tabellen-, Chart- und Kartenbereiche erhalten Overflow-Guards fuer Mobile, Tablet und Desktop.
+- Heute-Seite hat genau ein sichtbares `h1`.
+- Wiederholte Dashboard-Buttons besitzen eindeutige `aria-labels`.
+- Sichtbare deutsche Texte wurden auf Umlaute geglaettet; interne Daten-IDs bleiben stabil.
 
 ## Version 4.1 Schwerpunkt
 

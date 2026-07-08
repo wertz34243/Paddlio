@@ -1542,7 +1542,7 @@ export const registerLocalUser = (input: RegisterInput): AuthResult => {
   }
 
   if (password !== passwordRepeat) {
-    return { ok: false, message: "Die Passwoerter stimmen nicht ueberein." };
+    return { ok: false, message: "Die Passwï¿½rter stimmen nicht ueberein." };
   }
 
   if (!club) {

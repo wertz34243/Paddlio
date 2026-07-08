@@ -126,23 +126,23 @@ export function ResultsReadinessView({ data, user, mode, onDataChange }: Results
   const runBetaCheck = () => {
     const timestamp = now();
     const checks: BetaReadinessCheck[] = [
-      { id: "beta-supabase", checkedBy: user.userId, checkKey: "Supabase verbunden", status: "manual", message: "Bitte in Vercel/Supabase final bestaetigen.", createdAt: timestamp },
-      { id: "beta-vercel", checkedBy: user.userId, checkKey: "Vercel Deployment gruen", status: "manual", message: "Nach Push im GitHub/Vercel-Status bestaetigen.", createdAt: timestamp },
-      { id: "beta-login", checkedBy: user.userId, checkKey: "Login/Registrierung/Passwort-Reset", status: "manual", message: "Login, neues Konto und Reset im Browser pruefen.", createdAt: timestamp },
+      { id: "beta-supabase", checkedBy: user.userId, checkKey: "Supabase verbunden", status: "manual", message: "Bitte in Vercel/Supabase final bestï¿½tigen.", createdAt: timestamp },
+      { id: "beta-vercel", checkedBy: user.userId, checkKey: "Vercel Deployment gruen", status: "manual", message: "Nach Push im GitHub/Vercel-Status bestï¿½tigen.", createdAt: timestamp },
+      { id: "beta-login", checkedBy: user.userId, checkKey: "Login/Registrierung/Passwort-Reset", status: "manual", message: "Login, neues Konto und Reset im Browser prï¿½fen.", createdAt: timestamp },
       { id: "beta-cloud-sync", checkedBy: user.userId, checkKey: "Cloud-Sync und Offline-Fallback", status: "manual", message: "CloudStatus und Queue-Verhalten bei Offline testen.", createdAt: timestamp },
       { id: "beta-users", checkedBy: user.userId, checkKey: "Nutzer/Rollen vorhanden", status: data.users.length > 0 ? "ok" : "warning", message: `${data.users.length} geladene Nutzerprofile.`, createdAt: timestamp },
       { id: "beta-groups", checkedBy: user.userId, checkKey: "Trainingsgruppen", status: data.coachGroups.length > 0 ? "ok" : "warning", message: `${data.coachGroups.length} Gruppen geladen.`, createdAt: timestamp },
       { id: "beta-training", checkedBy: user.userId, checkKey: "Trainingsplanung", status: data.plan.length > 0 ? "ok" : "warning", message: `${data.plan.length} Trainings im Cache/Cloud-Snapshot.`, createdAt: timestamp },
       { id: "beta-communication", checkedBy: user.userId, checkKey: "Kommunikation", status: data.tasks.length + data.directMessages.length + data.clubPosts.length > 0 ? "ok" : "manual", message: "Kommunikationsmodul ist vorbereitet.", createdAt: timestamp },
-      { id: "beta-attendance", checkedBy: user.userId, checkKey: "Aufgaben und Anwesenheit", status: data.tasks.length + data.trainingAttendance.length > 0 ? "ok" : "manual", message: "Aufgaben und Anwesenheit im Testverein pruefen.", createdAt: timestamp },
+      { id: "beta-attendance", checkedBy: user.userId, checkKey: "Aufgaben und Anwesenheit", status: data.tasks.length + data.trainingAttendance.length > 0 ? "ok" : "manual", message: "Aufgaben und Anwesenheit im Testverein prï¿½fen.", createdAt: timestamp },
       { id: "beta-results", checkedBy: user.userId, checkKey: "Ergebnisse", status: data.competitions.length > 0 ? "ok" : "warning", message: `${data.competitions.length} Ergebnisse geladen.`, createdAt: timestamp },
-      { id: "beta-analysis-smart-coach", checkedBy: user.userId, checkKey: "Analyse und Smart Coach", status: data.smartCoachRecommendations.length > 0 ? "ok" : "manual", message: "Analysezentrum und Empfehlungen pruefen.", createdAt: timestamp },
-      { id: "beta-integrations", checkedBy: user.userId, checkKey: "Integrationen/Polar crasht nicht", status: "manual", message: "Integrationen oeffnen und Polar-Vorbereitung pruefen.", createdAt: timestamp },
+      { id: "beta-analysis-smart-coach", checkedBy: user.userId, checkKey: "Analyse und Smart Coach", status: data.smartCoachRecommendations.length > 0 ? "ok" : "manual", message: "Analysezentrum und Empfehlungen prï¿½fen.", createdAt: timestamp },
+      { id: "beta-integrations", checkedBy: user.userId, checkKey: "Integrationen/Polar crasht nicht", status: "manual", message: "Integrationen ï¿½ffnen und Polar-Vorbereitung prï¿½fen.", createdAt: timestamp },
       { id: "beta-feedback", checkedBy: user.userId, checkKey: "Feedback-System", status: data.betaFeedback.length > 0 ? "ok" : "manual", message: `${data.betaFeedback.length} Feedbacks gespeichert.`, createdAt: timestamp },
-      { id: "beta-mobile", checkedBy: user.userId, checkKey: "Mobile Ansicht", status: "manual", message: "Bitte auf iPhone/iPad im echten Browser pruefen.", createdAt: timestamp },
+      { id: "beta-mobile", checkedBy: user.userId, checkKey: "Mobile Ansicht", status: "manual", message: "Bitte auf iPhone/iPad im echten Browser prï¿½fen.", createdAt: timestamp },
       { id: "beta-bottom-nav", checkedBy: user.userId, checkKey: "Bottom Navigation nicht ueberladen", status: "ok", message: "Mobile Navigation ist auf fuenf Hauptpunkte reduziert.", createdAt: timestamp },
       { id: "beta-docs", checkedBy: user.userId, checkKey: "Testanleitung und Grenzen", status: "ok", message: "Beta-Anleitung und bekannte Grenzen sind unter Mehr sichtbar und dokumentiert.", createdAt: timestamp },
-      { id: "beta-rls", checkedBy: user.userId, checkKey: "Datenschutz/RLS", status: "manual", message: "RLS im Supabase Dashboard pruefen.", createdAt: timestamp },
+      { id: "beta-rls", checkedBy: user.userId, checkKey: "Datenschutz/RLS", status: "manual", message: "RLS im Supabase Dashboard prï¿½fen.", createdAt: timestamp },
     ];
     updateData((current) => ({ ...current, betaReadinessChecks: checks }));
     void Promise.all(checks.map(upsertCloudBetaReadinessCheck)).catch((error) => console.error("[Paddlio 3.9] Beta-Check konnte nicht synchronisiert werden.", error));
@@ -208,15 +208,15 @@ export function ResultsReadinessView({ data, user, mode, onDataChange }: Results
     return (
       <section className="section-block segment-panel">
         <div className="section-heading">
-          <div><p className="eyebrow">Beta-Readiness</p><h3>Check fuer Paddlio 4.0 Beta</h3></div>
-          {isAdmin(user) ? <button className="secondary-button" type="button" onClick={runBetaCheck}>Jetzt pruefen</button> : null}
+          <div><p className="eyebrow">Beta-Readiness</p><h3>Check fï¿½r Paddlio 4.0 Beta</h3></div>
+          {isAdmin(user) ? <button className="secondary-button" type="button" onClick={runBetaCheck}>Jetzt prï¿½fen</button> : null}
         </div>
         {isAdmin(user) && data.betaReadinessChecks.length > 0 ? (
           <div className="progress-track large">
             <span style={{ width: `${Math.round((data.betaReadinessChecks.filter((item) => item.status === "ok").length / data.betaReadinessChecks.length) * 100)}%` }} />
           </div>
         ) : null}
-        {!isAdmin(user) ? <p className="empty-state">Der Beta-Check ist nur fuer Admins sichtbar.</p> : (
+        {!isAdmin(user) ? <p className="empty-state">Der Beta-Check ist nur fï¿½r Admins sichtbar.</p> : (
           <div className="result-list">
             {data.betaReadinessChecks.length ? data.betaReadinessChecks.map((item) => (
               <article className="result-row" key={item.id}>
@@ -234,10 +234,10 @@ export function ResultsReadinessView({ data, user, mode, onDataChange }: Results
     <section className="section-block segment-panel">
       <div className="section-heading"><div><p className="eyebrow">Ergebnisverwaltung</p><h3>Bestzeiten und Saisonvergleich</h3></div></div>
       <div className="metric-grid two-columns">
-        <article className="metric-card tone-k1"><span>Ergebnisse</span><strong>{resultStats.count}</strong><small>{Object.entries(resultStats.byBoat).map(([boat, count]) => `${boat}: ${count}`).join(" · ") || "keine Starts"}</small></article>
+        <article className="metric-card tone-k1"><span>Ergebnisse</span><strong>{resultStats.count}</strong><small>{Object.entries(resultStats.byBoat).map(([boat, count]) => `${boat}: ${count}`).join(" Â· ") || "keine Starts"}</small></article>
         <article className="metric-card tone-c1"><span>Beste Zeit</span><strong>{resultStats.best ? formatSeconds(getBestTotalTime(resultStats.best)) : "--"}</strong><small>{resultStats.best ? `${resultStats.best.location} ${resultStats.best.boatClass}` : "noch offen"}</small></article>
         <article className="metric-card tone-penalty"><span>Strafschnitt</span><strong>{formatSeconds(resultStats.averagePenalty)}</strong><small>ueber alle Laeufe</small></article>
-        <article className="metric-card tone-success"><span>Persoenliche Bestzeiten</span><strong>{personalBests.length}</strong><small>automatisch berechnet</small></article>
+        <article className="metric-card tone-success"><span>Persï¿½nliche Bestzeiten</span><strong>{personalBests.length}</strong><small>automatisch berechnet</small></article>
       </div>
       <div className="result-list">
         {personalBests.length ? personalBests.map((item) => (

@@ -66,7 +66,7 @@ const coachWorkflowTabs: WorkflowTabConfig[] = [
   { id: "month", label: "Monat", calendarView: "month" },
   { id: "templates", label: "Vorlagen" },
   { id: "groups", label: "Gruppen" },
-  { id: "feedback", label: "Rueckmeldungen" },
+  { id: "feedback", label: "Rï¿½ckmeldungen" },
 ];
 
 const athleteWorkflowTabs: WorkflowTabConfig[] = [
@@ -74,7 +74,7 @@ const athleteWorkflowTabs: WorkflowTabConfig[] = [
   { id: "week", label: "Diese Woche", calendarView: "week" },
   { id: "upcoming", label: "Kommende" },
   { id: "done", label: "Erledigt" },
-  { id: "feedback", label: "Rueckmeldung" },
+  { id: "feedback", label: "Rï¿½ckmeldung" },
 ];
 
 const today = new Date().toISOString().slice(0, 10);
@@ -382,7 +382,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
 
   const deleteTemplate = (template: TrainingTemplate) => {
     if (!canEditTrainingTemplate(user, template)) {
-      setFormMessage("Du hast keine Berechtigung fuer diese Vorlage.");
+      setFormMessage("Du hast keine Berechtigung fï¿½r diese Vorlage.");
       return;
     }
 
@@ -443,7 +443,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
     }
     const { assignedType, assignedAthleteIds, assignedGroupIds } = getTargetSelection(formData);
     if (!validateTargetSelection(assignedType, assignedAthleteIds, assignedGroupIds)) {
-      setFormMessage("Du hast keine Berechtigung fuer diese Gruppe oder diesen Sportler.");
+      setFormMessage("Du hast keine Berechtigung fï¿½r diese Gruppe oder diesen Sportler.");
       return;
     }
 
@@ -558,7 +558,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
     const hasInvalidGroup = assignedGroupIds.some((id) => !allowedGroups.has(id));
 
     if ((assignedType === "athlete" && hasInvalidAthlete) || (assignedType === "group" && hasInvalidGroup)) {
-      setFormMessage("Du hast keine Berechtigung fuer mindestens eine ausgewaehlte Zuweisung.");
+      setFormMessage("Du hast keine Berechtigung fï¿½r mindestens eine ausgewaehlte Zuweisung.");
       return;
     }
 
@@ -705,15 +705,15 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
 
       <section className="summary-strip">
         <div><span>Favorisierte Vorlagen</span><strong>{visibleTemplates.filter((template) => template.isFavorite).length}</strong></div>
-        <div><span>Naechste Woche</span><strong>{nextWeekCount}</strong></div>
-        <div><span>{isCoach ? "Ungeplante Sportler" : "Offene Rueckmeldung"}</span><strong>{isCoach ? unplannedAthletes.length : openFeedbackCount}</strong></div>
+        <div><span>Nï¿½chste Woche</span><strong>{nextWeekCount}</strong></div>
+        <div><span>{isCoach ? "Ungeplante Sportler" : "Offene Rï¿½ckmeldung"}</span><strong>{isCoach ? unplannedAthletes.length : openFeedbackCount}</strong></div>
       </section>
 
       <section className="training-workflow-hero section-block">
         <div>
           <p className="eyebrow">{isCoach ? "Coach Workflow" : "Mein Trainingsplan"}</p>
-          <h3>{isCoach ? "Trainingsplanung 2.0" : "Deine naechsten Einheiten"}</h3>
-          <p>{isCoach ? "Plane Tage, Wochen und Saisonbloecke aus Vorlagen, kopiere Einheiten und pruefe Rueckmeldungen." : "Sieh deine Einheiten, hake Training ab und gib deinem Coach klares Feedback."}</p>
+          <h3>{isCoach ? "Trainingsplanung 2.0" : "Deine nï¿½chsten Einheiten"}</h3>
+          <p>{isCoach ? "Plane Tage, Wochen und Saisonbloecke aus Vorlagen, kopiere Einheiten und pruefe Rï¿½ckmeldungen." : "Sieh deine Einheiten, hake Training ab und gib deinem Coach klares Feedback."}</p>
         </div>
         <div className="training-workflow-actions">
           <button className="primary-button" type="button" onClick={startCreate}>Training planen</button>
@@ -792,7 +792,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
                 {canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => deleteTemplate(template)}>Loeschen</button> : null}
               </div>
             </article>
-          )) : <p className="empty-state">Noch keine Trainingsvorlagen. Erstelle deine erste Vorlage fuer schnelle Trainingsplanung.</p>}
+          )) : <p className="empty-state">Noch keine Trainingsvorlagen. Erstelle deine erste Vorlage fï¿½r schnelle Trainingsplanung.</p>}
         </div>
       </section> : null}
 
@@ -842,7 +842,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
         <section className="section-block">
           <div className="section-heading">
             <div><p className="eyebrow">Gruppenplanung</p><h3>{visibleGroups.length > 0 ? `${visibleGroups.length} Trainingsgruppen` : "Noch keine Trainingsgruppen"}</h3></div>
-            <button className="primary-button" type="button" onClick={startCreate}>Training fuer Gruppe planen</button>
+            <button className="primary-button" type="button" onClick={startCreate}>Training fï¿½r Gruppe planen</button>
           </div>
           <div className="calendar-list">
             {visibleGroups.length > 0 ? visibleGroups.map((group) => {
@@ -874,7 +874,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
       {workflowTab === "feedback" ? (
         <section className="section-block">
           <div className="section-heading">
-            <div><p className="eyebrow">Rueckmeldungen</p><h3>{isCoach ? "Statusuebersicht" : "Trainingstagebuch"}</h3></div>
+            <div><p className="eyebrow">Rï¿½ckmeldungen</p><h3>{isCoach ? "Statusï¿½bersicht" : "Trainingstagebuch"}</h3></div>
           </div>
           <div className="calendar-list">
             {isCoach && openFeedbackEntries.length > 0 ? openFeedbackEntries.map((entry) => (
@@ -883,12 +883,12 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
                   <div><span>{entry.date} - offen</span><h4>{entry.title || entry.trainingType}</h4></div>
                   <b className="status-pill planned">Offen</b>
                 </div>
-                <p>{entry.focus || "Rueckmeldung steht noch aus."}</p>
+                <p>{entry.focus || "Rï¿½ckmeldung steht noch aus."}</p>
               </article>
             )) : null}
             {entriesWithFeedback.length > 0 ? entriesWithFeedback.map(renderEntryCard) : null}
             {(!isCoach || openFeedbackEntries.length === 0) && entriesWithFeedback.length === 0 ? (
-              <p className="empty-state">{isCoach ? "Noch keine Rueckmeldungen vorhanden." : "Noch keine erledigten Trainings mit Rueckmeldung."}</p>
+              <p className="empty-state">{isCoach ? "Noch keine Rï¿½ckmeldungen vorhanden." : "Noch keine erledigten Trainings mit Rï¿½ckmeldung."}</p>
             ) : null}
           </div>
         </section>
@@ -917,7 +917,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
               <label>Max. Termine<input name="repeatMaxCount" type="number" min="1" max="90" defaultValue={draft.repeatMaxCount ?? ""} placeholder="optional" /></label>
             </div>
             {draft.repeat !== "none" && draft.repeatUntil ? <p className="card-note">Vorschau: Es werden {getRepeatPreview(draft.repeat, draft.repeatUntil, draft.repeatMaxCount)} Trainingseinheiten erstellt.</p> : null}
-            {isCoach ? <div className="choice-group"><span>Sportler fuer Einzeltraining</span><div className="tag-row">{visibleAthletes.map((athlete) => <label className="toggle-row" key={athlete.id}><span>{getAthleteName(athlete)}</span><input name="assignedAthleteIds" type="checkbox" value={athlete.id} defaultChecked={draft.assignedAthleteIds.includes(athlete.id)} /></label>)}</div></div> : null}
+            {isCoach ? <div className="choice-group"><span>Sportler fï¿½r Einzeltraining</span><div className="tag-row">{visibleAthletes.map((athlete) => <label className="toggle-row" key={athlete.id}><span>{getAthleteName(athlete)}</span><input name="assignedAthleteIds" type="checkbox" value={athlete.id} defaultChecked={draft.assignedAthleteIds.includes(athlete.id)} /></label>)}</div></div> : null}
             {isCoach ? <div className="choice-group"><span>Trainingsgruppen</span><div className="tag-row">{visibleGroups.map((group) => <label className="toggle-row" key={group.id}><span>{group.name}</span><input name="assignedGroupIds" type="checkbox" value={group.id} defaultChecked={draft.assignedGroupIds.includes(group.id)} /></label>)}</div></div> : null}
             <label>Ziel/Fokus<input name="focus" defaultValue={draft.focus || draft.goal} placeholder="z. B. Tor 6 sauber anfahren" /></label>
             <label>Beschreibung<textarea name="description" defaultValue={draft.description} rows={3} /></label>
@@ -932,7 +932,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
           <div className="section-heading"><div><p className="eyebrow">Kopieren</p><h3>{copyEntry.title || copyEntry.trainingType}</h3></div></div>
           <form className="entry-form" onSubmit={handleCopyEntrySubmit}>
             <div className="form-grid">
-              <label>Option<select name="copyMode" defaultValue="nextWeek"><option value="custom">anderes Datum</option><option value="tomorrow">naechster Tag</option><option value="nextWeek">naechste Woche</option></select></label>
+              <label>Option<select name="copyMode" defaultValue="nextWeek"><option value="custom">anderes Datum</option><option value="tomorrow">nï¿½chster Tag</option><option value="nextWeek">nï¿½chste Woche</option></select></label>
               <label>Datum<input name="date" type="date" defaultValue={addDays(copyEntry.date, 7)} /></label>
             </div>
             {renderTargetControls(copyEntry.assignedType, copyEntry.assignedAthleteIds, copyEntry.assignedGroupIds)}
@@ -992,7 +992,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
 
       {feedbackEntry ? (
         <section className="section-block feedback-modal">
-          <div className="section-heading"><div><p className="eyebrow">Rueckmeldung</p><h3>{feedbackEntry.title || feedbackEntry.trainingType}</h3></div></div>
+          <div className="section-heading"><div><p className="eyebrow">Rï¿½ckmeldung</p><h3>{feedbackEntry.title || feedbackEntry.trainingType}</h3></div></div>
           <form className="entry-form" onSubmit={handleFeedbackSubmit}>
             <div className="form-grid">
               <label>Status<select name="status" defaultValue={isSkippedStatus(feedbackEntry.status) ? "skipped" : "done"}><option value="done">erledigt</option><option value="skipped">ausgelassen</option></select></label>
@@ -1004,14 +1004,14 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
               <label>Grund<select name="reason" defaultValue=""><option value="">kein Grund</option><option value="krank">krank</option><option value="schule_arbeit">Schule/Arbeit</option><option value="wetter">Wetter</option><option value="keine_zeit">keine Zeit</option><option value="andere">andere</option></select></label>
             </div>
             <label>Kommentar<textarea name="comment" rows={3} /></label>
-            <div className="form-actions"><button className="save-button" type="submit">Rueckmeldung speichern</button><button className="ghost-button wide" type="button" onClick={() => setFeedbackEntry(null)}>Abbrechen</button></div>
+            <div className="form-actions"><button className="save-button" type="submit">Rï¿½ckmeldung speichern</button><button className="ghost-button wide" type="button" onClick={() => setFeedbackEntry(null)}>Abbrechen</button></div>
           </form>
         </section>
       ) : null}
 
       <section className="section-block">
         <div className="section-heading"><div><p className="eyebrow">Wochenfortschritt</p><h3>{weeklyMinutes} Minuten</h3></div></div>
-        <div className="smart-detail-grid"><span>{completedThisWeek.length} erledigt</span><span>{skippedThisWeek.length} ausgelassen</span><span>{openFeedbackCount} offene Rueckmeldungen</span></div>
+        <div className="smart-detail-grid"><span>{completedThisWeek.length} erledigt</span><span>{skippedThisWeek.length} ausgelassen</span><span>{openFeedbackCount} offene Rï¿½ckmeldungen</span></div>
       </section>
     </div>
   );

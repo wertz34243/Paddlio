@@ -117,9 +117,22 @@ const logCloudError = (scope: string, error: unknown) => {
   console.error(`[Paddlio Cloud] ${scope} fehlgeschlagen: ${describeCloudError(error)}`, error);
 };
 
+const withTimeout = async <T,>(scope: string, promise: Promise<T>, timeoutMs = 4500): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(`${scope} Timeout nach ${timeoutMs}ms`)), timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+};
+
 const loadOptionalCloudData = async <T,>(scope: string, loader: () => Promise<T>, fallback: T): Promise<T> => {
   try {
-    return await loader();
+    return await withTimeout(scope, loader(), 4500);
   } catch (error) {
     logCloudError(scope, error);
     return fallback;
@@ -349,7 +362,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const activeSession = (await supabase.auth.getSession()).data.session;
+    const activeSession = (await withTimeout("Supabase Session laden", supabase.auth.getSession(), 4500)).data.session;
     if (!activeSession?.user) {
       setSession(null);
       setCurrentUser(null);
@@ -363,7 +376,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCloudStatus(navigator.onLine ? "syncing" : "offline");
       setSession(activeSession);
       setCurrentUser(activeSession.user);
-      const nextProfile = (await ensureCloudProfile(activeSession.user)) ?? (await getCloudProfile(activeSession.user.id));
+      const cachedSnapshot = loadData(activeSession.user.id);
+      setDataState(cachedSnapshot);
+      setLoading(false);
+      const nextProfile = (await withTimeout("Profil sicherstellen", ensureCloudProfile(activeSession.user), 4500)) ?? (await withTimeout("Profil laden", getCloudProfile(activeSession.user.id), 4500));
       if (!nextProfile) throw new Error("Profil konnte nicht geladen werden.");
       const clubs = (await loadOptionalCloudData("clubs lesen", listCloudClubs, [])).map(toClub);
       const allProfiles = await loadOptionalCloudData("profiles listen", () => listCloudProfiles(nextProfile), [nextProfile]);
@@ -473,7 +489,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setPendingSyncCount(pendingCount);
       setLastSyncAt(new Date().toISOString());
       setSyncCount(allProfiles.length + clubs.length + requests.length + clubRequests.length + groups.length + groupMembers.length + cloudPlan.length + cloudFeedback.length + cloudTemplates.length + cloudGoals.length + cloudPersonalBests.length + cloudResultImports.length + cloudExternalConnections.length + cloudExternalTrainingSessions.length + cloudBetaReadinessChecks.length + cloudBetaFeedback.length + cloudBetaTesters.length + cloudCompetitions.length + cloudMaterials.length + cloudNotifications.length + cloudSmartCoach.length + cloudClubMaterial.length + cloudClubBoats.length + cloudClubEvents.length + cloudClubDocuments.length + cloudClubMessages.length + cloudClubSettings.length + cloudDirectMessages.length + cloudGroupMessages.length + cloudClubPosts.length + cloudTasks.length + cloudTaskAssignments.length + cloudTrainingAttendance.length + cloudFileAttachments.length + pendingCount);
-      setCloudMessage(pendingCount > 0 ? `${pendingCount} Aenderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensaetze wurden in die Cloud migriert.` : "");
+      setCloudMessage(pendingCount > 0 ? `${pendingCount} ï¿½nderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensï¿½tze wurden in die Cloud migriert.` : "");
       setCloudStatus(!navigator.onLine ? "offline" : pendingCount > 0 ? "pending" : "connected");
     } catch (error) {
       logCloudError("Login-Synchronisation", error);
@@ -503,7 +519,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCloudStatus("syncing");
       void flushSyncQueue().then((synced) => {
         setPendingSyncCount(getPendingSyncCount());
-        setCloudMessage(synced > 0 ? `${synced} wartende Aenderungen wurden synchronisiert.` : "Synchronisiert.");
+        setCloudMessage(synced > 0 ? `${synced} wartende ï¿½nderungen wurden synchronisiert.` : "Synchronisiert.");
         void refreshCloudData();
       });
     };
@@ -513,7 +529,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setPendingSyncCount(pending);
       if (pending > 0) {
         setCloudStatus(navigator.onLine ? "pending" : "offline");
-        setCloudMessage(`${pending} Aenderungen warten auf Synchronisation.`);
+        setCloudMessage(`${pending} ï¿½nderungen warten auf Synchronisation.`);
       }
     };
     window.addEventListener("online", handleOnline);
@@ -542,9 +558,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               if (count > 0) setCloudMessage("Synchronisiert.");
             })
             .catch((error) => {
-              logCloudError("Aenderungen speichern", error);
+              logCloudError("ï¿½nderungen speichern", error);
               setCloudStatus(navigator.onLine ? "error" : "offline");
-              setCloudMessage(`Aenderungen wurden lokal gespeichert und werden spaeter synchronisiert. ${describeCloudError(error)}`);
+              setCloudMessage(`ï¿½nderungen wurden lokal gespeichert und werden spaeter synchronisiert. ${describeCloudError(error)}`);
             });
         }
       }
@@ -556,7 +572,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase || !session?.user.id) return undefined;
     const handleRealtimeChange = () => {
       setCloudStatus("syncing");
-      void refreshCloudData().then(() => setCloudMessage("Daten wurden zwischen Geraeten synchronisiert."));
+      void refreshCloudData().then(() => setCloudMessage("Daten wurden zwischen Gerï¿½ten synchronisiert."));
     };
     const unsubscribers = [
       subscribeToUserTrainings(session.user.id, handleRealtimeChange),
@@ -585,7 +601,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const client = getSupabaseClient();
     if (!client) return { ok: false, message: getSupabaseConfigMessage() };
     if (!input.privacyAccepted) return { ok: false, message: "Bitte akzeptiere den Datenschutz." };
-    if (input.password !== input.passwordRepeat) return { ok: false, message: "Die Passwoerter stimmen nicht ueberein." };
+    if (input.password !== input.passwordRepeat) return { ok: false, message: "Die Passwï¿½rter stimmen nicht ueberein." };
     const { data: result, error } = await client.auth.signUp({
       email: input.email.trim().toLowerCase(),
       password: input.password,
@@ -613,7 +629,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         await ensureCloudProfile(result.user);
       } catch (error) {
-        console.info("Profil wird nach E-Mail-Bestaetigung automatisch erstellt.", error);
+        console.info("Profil wird nach E-Mail-Bestï¿½tigung automatisch erstellt.", error);
       }
     }
     await refreshCloudData();
@@ -621,7 +637,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ok: true,
       message: result.session
         ? "Konto erstellt. Du bist als Athlete angemeldet. Rollen koennen spaeter im Adminbereich vergeben werden."
-        : "Konto erstellt. Bitte bestaetige deine E-Mail, bevor du dich einloggst. Wenn Auto Confirm in Supabase aktiv ist, wirst du direkt angemeldet.",
+        : "Konto erstellt. Bitte bestï¿½tige deine E-Mail, bevor du dich einloggst. Wenn Auto Confirm in Supabase aktiv ist, wirst du direkt angemeldet.",
     };
   };
 

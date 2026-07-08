@@ -40,12 +40,30 @@ export const trainingTypeGroups: Record<TrainingArea, TrainingPlanType[]> = {
 
 export const trainingAreas = Object.keys(trainingTypeGroups) as TrainingArea[];
 
-export const getWeekdayFromDate = (date: string): Weekday => {
+const getDateParts = (date: string): [number, number, number] => {
   const [year, month, day] = date.split("-").map(Number);
-  const parsedDate = new Date(year, month - 1, day);
-  const index = parsedDate.getDay();
-  const mondayBasedIndex = index === 0 ? 6 : index - 1;
-  return weekdays[mondayBasedIndex];
+  return [year, month, day];
+};
+
+const formatBerlinDateKey = (date: Date): string => {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Berlin",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const getPart = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
+  return `${getPart("year")}-${getPart("month")}-${getPart("day")}`;
+};
+
+export const getWeekdayFromDate = (date: string): Weekday => {
+  const [year, month, day] = getDateParts(date);
+  const parsedDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+  const weekday = new Intl.DateTimeFormat("de-DE", {
+    timeZone: "Europe/Berlin",
+    weekday: "long",
+  }).format(parsedDate) as Weekday;
+  return weekdays.includes(weekday) ? weekday : weekdays[0];
 };
 
 export const sortPlanEntries = (entries: PlanEntry[]): PlanEntry[] =>
@@ -60,7 +78,7 @@ export const sortPlanEntries = (entries: PlanEntry[]): PlanEntry[] =>
 export const isPauseEntry = (entry: PlanEntry): boolean =>
   entry.area === "Regeneration" && entry.trainingType === "Pause";
 
-export const getTodayKey = (date = new Date()): string => date.toISOString().slice(0, 10);
+export const getTodayKey = (date = new Date()): string => formatBerlinDateKey(date);
 
 export const isPlannedStatus = (status: PlanStatus): boolean => status === "planned" || status === "geplant";
 

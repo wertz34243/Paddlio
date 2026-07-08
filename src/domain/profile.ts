@@ -57,7 +57,7 @@ export const getBoatClassSummary = (profile: UserProfile): string => {
 export const getSportProfileSummary = (profile: UserProfile): string => {
   const ageClass = profile.ageClass || "Keine Altersklasse";
   const boats = profile.boatClasses.length > 0 ? profile.boatClasses.join(" + ") : "Keine Bootsklasse";
-  return `${ageClass} • ${boats}`;
+  return `${ageClass} â€¢ ${boats}`;
 };
 
 const toLocalDateKey = (date: Date): string => date.toISOString().slice(0, 10);

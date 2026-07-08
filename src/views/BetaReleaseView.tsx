@@ -123,9 +123,9 @@ export function BetaReleaseView({ data, user, mode, onDataChange }: BetaReleaseV
       <section className="section-block segment-panel">
         <div className="section-heading"><div><p className="eyebrow">Beta-Test Anleitung</p><h3>Was getestet werden soll</h3></div></div>
         <div className="beta-guide-grid">
-          <article className="beta-card"><h4>Tester</h4><ol><li>Einloggen</li><li>Profil pruefen</li><li>Training ansehen</li><li>Anwesenheit setzen</li><li>Aufgabe erledigen</li><li>Nachricht testen</li><li>Ergebnis anschauen</li><li>Feedback senden</li></ol></article>
-          <article className="beta-card"><h4>Trainer</h4><ol><li>Gruppe pruefen</li><li>Training erstellen</li><li>Aufgabe vergeben</li><li>Anwesenheit pruefen</li><li>Nachricht an Gruppe senden</li><li>Ergebnis eintragen</li><li>Feedback ansehen</li></ol></article>
-          <article className="beta-card"><h4>Admin</h4><ol><li>Nutzer pruefen</li><li>Rollen pruefen</li><li>Verein pruefen</li><li>Beta-Check starten</li><li>Feedback auswerten</li></ol></article>
+          <article className="beta-card"><h4>Tester</h4><ol><li>Einloggen</li><li>Profil prï¿½fen</li><li>Training ansehen</li><li>Anwesenheit setzen</li><li>Aufgabe erledigen</li><li>Nachricht testen</li><li>Ergebnis anschauen</li><li>Feedback senden</li></ol></article>
+          <article className="beta-card"><h4>Trainer</h4><ol><li>Gruppe prï¿½fen</li><li>Training erstellen</li><li>Aufgabe vergeben</li><li>Anwesenheit prï¿½fen</li><li>Nachricht an Gruppe senden</li><li>Ergebnis eintragen</li><li>Feedback ansehen</li></ol></article>
+          <article className="beta-card"><h4>Admin</h4><ol><li>Nutzer prï¿½fen</li><li>Rollen prï¿½fen</li><li>Verein prï¿½fen</li><li>Beta-Check starten</li><li>Feedback auswerten</li></ol></article>
         </div>
       </section>
     );
@@ -145,7 +145,7 @@ export function BetaReleaseView({ data, user, mode, onDataChange }: BetaReleaseV
   }
 
   if (mode === "testers") {
-    if (!isAdmin(user)) return <p className="empty-state">Du hast fuer die Beta-Tester-Verwaltung keine Berechtigung.</p>;
+    if (!isAdmin(user)) return <p className="empty-state">Du hast fï¿½r die Beta-Tester-Verwaltung keine Berechtigung.</p>;
     return (
       <section className="section-block segment-panel">
         <div className="section-heading"><div><p className="eyebrow">Beta-Tester</p><h3>{testers.length} Nutzer im Testpool</h3></div></div>
@@ -155,7 +155,7 @@ export function BetaReleaseView({ data, user, mode, onDataChange }: BetaReleaseV
             const count = data.betaFeedback.filter((item) => item.userId === tester.userId).length;
             return (
               <article className="result-row beta-row" key={tester.userId}>
-                <div><strong>{appUser?.profile.firstName || "Nutzer"} {appUser?.profile.lastName || ""}</strong><span>{tester.testerRole} - {tester.status}</span><small>{count} Feedbacks · letzter Stand {tester.lastSeenAt ? new Date(tester.lastSeenAt).toLocaleString("de-DE") : "noch offen"}</small></div>
+                <div><strong>{appUser?.profile.firstName || "Nutzer"} {appUser?.profile.lastName || ""}</strong><span>{tester.testerRole} - {tester.status}</span><small>{count} Feedbacks Â· letzter Stand {tester.lastSeenAt ? new Date(tester.lastSeenAt).toLocaleString("de-DE") : "noch offen"}</small></div>
                 <div className="inline-actions">
                   <button type="button" onClick={() => markTester(tester.userId, "active")}>aktiv</button>
                   <button type="button" onClick={() => markTester(tester.userId, "paused")}>pausieren</button>
@@ -190,14 +190,14 @@ export function BetaReleaseView({ data, user, mode, onDataChange }: BetaReleaseV
         <div className="result-list">
           {visibleFeedback.length ? visibleFeedback.map((item) => (
             <article className="result-row beta-row" key={item.id}>
-              <div><strong>{item.title}</strong><span>{item.category} · {item.priority} · {item.status}</span><small>{item.description}</small></div>
+              <div><strong>{item.title}</strong><span>{item.category} Â· {item.priority} Â· {item.status}</span><small>{item.description}</small></div>
               {isAdmin(user) ? <select value={item.status} onChange={(event) => updateFeedbackStatus(item, event.target.value as BetaFeedbackStatus)}>{statuses.map((status) => <option key={status}>{status}</option>)}</select> : <b>{item.status}</b>}
             </article>
           )) : <p className="empty-state">Noch kein Feedback vorhanden.</p>}
         </div>
       </section>
 
-      {isPrivileged(user) ? <p className="muted">Hinweis fuer Trainer/Admins: Feedback wird mit Rolle, Version und Geraeteinfo gespeichert, damit Beta-Fehler besser reproduzierbar sind.</p> : null}
+      {isPrivileged(user) ? <p className="muted">Hinweis fï¿½r Trainer/Admins: Feedback wird mit Rolle, Version und Gerï¿½teinfo gespeichert, damit Beta-Fehler besser reproduzierbar sind.</p> : null}
     </div>
   );
 }

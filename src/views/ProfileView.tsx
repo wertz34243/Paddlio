@@ -113,7 +113,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
     }
 
     if (boatClasses.includes("C1") && paddleSide !== "links" && paddleSide !== "rechts") {
-      setFormError("Bitte waehle fuer C1 eine Paddelseite aus.");
+      setFormError("Bitte waehle fï¿½r C1 eine Paddelseite aus.");
       return;
     }
 
@@ -406,7 +406,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
         <div className="section-heading">
           <div>
             <p className="eyebrow">Ziele</p>
-            <h3>Persoenlicher Fokus</h3>
+            <h3>Persï¿½nlicher Fokus</h3>
           </div>
         </div>
         <label>
@@ -418,7 +418,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
           <textarea name="seasonGoal" defaultValue={user.profile.seasonGoal} rows={3} />
         </label>
         <label>
-          Persoenliche Notizen
+          Persï¿½nliche Notizen
           <textarea name="personalNotes" defaultValue={user.profile.personalNotes} rows={4} />
         </label>
       </section>

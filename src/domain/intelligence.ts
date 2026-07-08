@@ -111,7 +111,7 @@ export const getAthleteStatus = (
 
   if (daysSinceTraining === undefined || daysSinceTraining >= 4) {
     return {
-      title: "Zeit fuer eine Einheit",
+      title: "Zeit fï¿½r eine Einheit",
       detail: "Ein ruhiges Technik- oder GA1-Training wuerde jetzt gut passen.",
       tone: "primary",
     };
@@ -120,7 +120,7 @@ export const getAthleteStatus = (
   if (streak >= 3) {
     return {
       title: "Du bist auf einem starken Weg.",
-      detail: "Deine Serie zeigt Konstanz. Halte die Qualitaet hoch.",
+      detail: "Deine Serie zeigt Konstanz. Halte die Qualitï¿½t hoch.",
       tone: "success",
     };
   }
@@ -150,7 +150,7 @@ export const getSmartCoachAdvice = (
     return {
       title: "Paddlio Coach",
       recommendation: "Plane eine echte Pause oder eine lockere Mobilitaetseinheit.",
-      reason: "Deine Belastung und Rueckmeldung sprechen fuer Regeneration.",
+      reason: "Deine Belastung und Rï¿½ckmeldung sprechen fï¿½r Regeneration.",
     };
   }
 

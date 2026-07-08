@@ -172,7 +172,7 @@ export function ClubPortalView({ data, user, onDataChange }: ClubPortalViewProps
       <section className="section-block">
         <p className="eyebrow">Verein</p>
         <h3>{user.profile.club || "Mein Verein"}</h3>
-        <p className="card-note">Athleten sehen hier aktuell die eigene Vereinszuordnung. Das vollstaendige Vereinsportal ist fuer Coach, ClubAdmin und Admin freigeschaltet.</p>
+        <p className="card-note">Athleten sehen hier aktuell die eigene Vereinszuordnung. Das vollstaendige Vereinsportal ist fï¿½r Coach, ClubAdmin und Admin freigeschaltet.</p>
       </section>
     );
   }
@@ -399,7 +399,7 @@ export function ClubPortalView({ data, user, onDataChange }: ClubPortalViewProps
           <label>Inventarnummer<input name="inventoryNumber" /></label>
           <label>Kategorie<select name="category">{materialCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
           <label>Name<input name="name" required /></label>
-          <label>Zustand<input name="condition" placeholder="bereit, pruefen, defekt" /></label>
+          <label>Zustand<input name="condition" placeholder="bereit, prï¿½fen, defekt" /></label>
           <label>Besitzer<input name="ownerName" /></label>
           <label>Letzte Pruefung<input name="lastInspectionDate" type="date" /></label>
           <label>Foto URL<input name="photoUrl" /></label>
@@ -446,7 +446,7 @@ export function ClubPortalView({ data, user, onDataChange }: ClubPortalViewProps
   const documentsView = (
     <section className="section-block">
       <div className="section-heading"><div><p className="eyebrow">Verein</p><h3>Dokumente</h3></div></div>
-      <form className="entry-form" onSubmit={upsertDocument}><div className="form-grid"><label>Ordner<select name="folder">{documentFolders.map((folder) => <option key={folder} value={folder}>{folder}</option>)}</select></label><label>Titel<input name="title" required /></label><label>Dateiname<input name="fileName" /></label><label>Datei URL<input name="fileUrl" /></label><label>MIME Typ<input name="mimeType" placeholder="application/pdf" /></label></div><div className="choice-group"><span>Sichtbar fuer</span><div className="tag-row">{(["coach", "teamAdmin", "clubAdmin", "admin"] as UserRole[]).map((role) => <label className="toggle-row" key={role}>{roleLabel[role]}<input name="visibleForRoles" type="checkbox" value={role} defaultChecked /></label>)}</div></div><button className="save-button" type="submit">Dokument speichern</button></form>
+      <form className="entry-form" onSubmit={upsertDocument}><div className="form-grid"><label>Ordner<select name="folder">{documentFolders.map((folder) => <option key={folder} value={folder}>{folder}</option>)}</select></label><label>Titel<input name="title" required /></label><label>Dateiname<input name="fileName" /></label><label>Datei URL<input name="fileUrl" /></label><label>MIME Typ<input name="mimeType" placeholder="application/pdf" /></label></div><div className="choice-group"><span>Sichtbar fï¿½r</span><div className="tag-row">{(["coach", "teamAdmin", "clubAdmin", "admin"] as UserRole[]).map((role) => <label className="toggle-row" key={role}>{roleLabel[role]}<input name="visibleForRoles" type="checkbox" value={role} defaultChecked /></label>)}</div></div><button className="save-button" type="submit">Dokument speichern</button></form>
       <div className="club-card-list">{documents.length ? documents.map((document) => <article className="user-admin-card" key={document.id}><strong>{document.title}</strong><span>{document.folder} - {document.fileName || "Metadaten"}</span><small>{document.fileUrl || "Upload vorbereitet, Storage-Bucket folgt."}</small></article>) : <p className="empty-state">Noch keine Dokumente vorhanden.</p>}</div>
     </section>
   );
