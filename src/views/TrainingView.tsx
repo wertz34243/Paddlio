@@ -264,7 +264,7 @@ export function TrainingView({
                           <b>{session.durationMinutes} min</b>
                         </div>
                         <div>
-                          <span>Intensitaet</span>
+                          <span>Intensität</span>
                           <b>{intensity}</b>
                         </div>
                         <div>
@@ -278,7 +278,7 @@ export function TrainingView({
                       </div>
 
                       <form className="journal-form" onSubmit={(event) => handleJournalSubmit(event, session)}>
-                        <p className="eyebrow">Persï¿½nliches Journal</p>
+                        <p className="eyebrow">Persänliches Journal</p>
                         <div className="form-grid">
                           <label>
                             Wie war das Training?
@@ -325,7 +325,7 @@ export function TrainingView({
               );
             })
           ) : (
-            <p className="empty-state">Keine Einheiten fï¿½r diesen Filter.</p>
+            <p className="empty-state">Keine Einheiten fär diesen Filter.</p>
           )}
         </div>
       </section>

@@ -146,7 +146,7 @@ export function AnalyticsCenterView({ data, user, mode, onNavigate }: AnalyticsC
         <article className="metric-card tone-training"><span>Trainingsminuten</span><strong>{analytics.thisWeekMinutes}</strong><small>im Zeitraum</small></article>
         <article className="metric-card tone-training"><span>Monat</span><strong>{analytics.thisMonthMinutes}</strong><small>Trainingsminuten</small></article>
         <article className="metric-card tone-success"><span>Status</span><strong>{analytics.done.length}/{analytics.planned.length}/{analytics.skipped.length}</strong><small>erledigt / geplant / ausgelassen</small></article>
-        <article className="metric-card tone-penalty"><span>Offene Rï¿½ckmeldungen</span><strong>{analytics.openFeedback}</strong><small>{analytics.feedbackQuote}% Feedbackquote</small></article>
+        <article className="metric-card tone-penalty"><span>Offene Räckmeldungen</span><strong>{analytics.openFeedback}</strong><small>{analytics.feedbackQuote}% Feedbackquote</small></article>
         <article className="metric-card tone-k1"><span>Beste K1-Zeit</span><strong>{analytics.k1.bestTotalSeconds ? formatSeconds(analytics.k1.bestTotalSeconds) : "--"}</strong><small>{analytics.k1.count} Starts</small></article>
         <article className="metric-card tone-c1"><span>Beste C1-Zeit</span><strong>{analytics.c1.bestTotalSeconds ? formatSeconds(analytics.c1.bestTotalSeconds) : "--"}</strong><small>{analytics.c1.count} Starts</small></article>
         <article className="metric-card tone-penalty"><span>Strafschnitt</span><strong>{analytics.competitions.length ? formatSeconds(analytics.penaltyAverage) : "--"}</strong><small>alle Starts</small></article>
@@ -208,7 +208,7 @@ export function AnalyticsCenterView({ data, user, mode, onNavigate }: AnalyticsC
           const athleteCompetitions = data.competitions.filter((competition) => competition.athleteId === athlete.id);
           const athleteGoals = data.goals.filter((goal) => goal.athleteId === athlete.id);
           return <article className="calendar-training-card" key={athlete.id}><div className="plan-card-head"><div><span>{athlete.ageClass || "Alle"} - {athlete.boatClasses.join(" + ")}</span><h4>{athlete.name}</h4></div><b className="status-pill planned">{calcMinutes(athletePlan)} min</b></div><div className="smart-detail-grid"><span>{athletePlan.filter((entry) => isDoneStatus(entry.status)).length} erledigt</span><span>{athleteCompetitions.length} Wettkaempfe</span><span>{athleteGoals.length} Ziele</span></div></article>;
-        }) : <p className="empty-state">Noch keine Sportler fï¿½r die Coach Analyse.</p>}
+        }) : <p className="empty-state">Noch keine Sportler fär die Coach Analyse.</p>}
       </div>
     </section>
   );
@@ -220,7 +220,7 @@ export function AnalyticsCenterView({ data, user, mode, onNavigate }: AnalyticsC
       <article className="metric-card tone-k1"><span>Trainings</span><strong>{data.plan.length}</strong><small>Plan Items</small></article>
       <article className="metric-card tone-penalty"><span>Wettkaempfe</span><strong>{data.competitions.length}</strong><small>Ergebnisse</small></article>
       <article className="metric-card tone-success"><span>Gruppen</span><strong>{data.coachGroups.length}</strong><small>Training Groups</small></article>
-      <article className="metric-card tone-penalty"><span>Offene Rï¿½ckmeldungen</span><strong>{analytics.openFeedback}</strong><small>plattformweit geladen</small></article>
+      <article className="metric-card tone-penalty"><span>Offene Räckmeldungen</span><strong>{analytics.openFeedback}</strong><small>plattformweit geladen</small></article>
     </section>
   );
 

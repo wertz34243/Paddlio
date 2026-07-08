@@ -36,7 +36,7 @@ export function CompetitionCoachAdminView({ competitions, user }: CompetitionCoa
               </div>
             </article>
           );
-        }) : <p className="empty-state">Noch keine Wettkampfdaten fï¿½r diese Ansicht.</p>}
+        }) : <p className="empty-state">Noch keine Wettkampfdaten fär diese Ansicht.</p>}
       </div>
     </section>
   );

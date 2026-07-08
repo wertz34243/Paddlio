@@ -26,7 +26,7 @@ const categories: Array<{ value: SeasonGoalCategory; label: string }> = [
   { value: "training", label: "Training" },
   { value: "penalty", label: "Strafsekunden" },
   { value: "technical", label: "Technik" },
-  { value: "personal", label: "Persoenlich" },
+  { value: "personal", label: "Persönlich" },
 ];
 
 const metrics: Array<{ value: SeasonGoalMetric; label: string; unit: string; direction: SeasonGoalDirection }> = [

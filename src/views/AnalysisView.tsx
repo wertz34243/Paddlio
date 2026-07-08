@@ -182,9 +182,9 @@ export function AnalysisView({ competitions, training, plan, feedback }: Analysi
             <small>erledigt / geplant / ausgelassen</small>
           </article>
           <article className="metric-card tone-success">
-            <span>Rï¿½ckmeldungsquote</span>
+            <span>Räckmeldungsquote</span>
             <strong>{feedbackQuote}%</strong>
-            <small>{feedback.length} Rï¿½ckmeldungen</small>
+            <small>{feedback.length} Räckmeldungen</small>
           </article>
         </section>
       </ChartPanel>
@@ -232,7 +232,7 @@ export function AnalysisView({ competitions, training, plan, feedback }: Analysi
         </div>
       </ChartPanel>
 
-      <ChartPanel title="Intensitaet" subtitle="Belastung">
+      <ChartPanel title="Intensität" subtitle="Belastung">
         <div className="distribution-list">
           {intensityDistribution.length > 0 ? (
             intensityDistribution.map((item) => (
@@ -250,7 +250,7 @@ export function AnalysisView({ competitions, training, plan, feedback }: Analysi
               </article>
             ))
           ) : (
-            <p className="empty-state">Noch keine Intensitaetsdaten.</p>
+            <p className="empty-state">Noch keine Intensitätsdaten.</p>
           )}
         </div>
       </ChartPanel>

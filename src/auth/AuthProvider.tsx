@@ -531,7 +531,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setPendingSyncCount(pendingCount);
       setLastSyncAt(new Date().toISOString());
       setSyncCount(allProfiles.length + clubs.length + requests.length + clubRequests.length + groups.length + groupMembers.length + cloudPlan.length + cloudFeedback.length + cloudTemplates.length + cloudGoals.length + cloudPersonalBests.length + cloudResultImports.length + cloudExternalConnections.length + cloudExternalTrainingSessions.length + cloudBetaReadinessChecks.length + cloudBetaFeedback.length + cloudBetaTesters.length + cloudCompetitions.length + cloudMaterials.length + cloudNotifications.length + cloudSmartCoach.length + cloudClubMaterial.length + cloudClubBoats.length + cloudClubEvents.length + cloudClubDocuments.length + cloudClubMessages.length + cloudClubSettings.length + cloudDirectMessages.length + cloudGroupMessages.length + cloudClubPosts.length + cloudTasks.length + cloudTaskAssignments.length + cloudTrainingAttendance.length + cloudFileAttachments.length + pendingCount);
-      setCloudMessage(pendingCount > 0 ? `${pendingCount} ï¿½nderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensï¿½tze wurden in die Cloud migriert.` : "");
+      setCloudMessage(pendingCount > 0 ? `${pendingCount} änderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensätze wurden in die Cloud migriert.` : "");
       setCloudStatus(!navigator.onLine ? "offline" : pendingCount > 0 ? "pending" : "connected");
       if (profileIsFallback) {
         setCloudMessage("Cloud eingeschränkt: Profil konnte nicht bestätigt werden, lokaler Cache bleibt aktiv.");
@@ -570,7 +570,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCloudStatus("syncing");
       void flushSyncQueue().then((synced) => {
         setPendingSyncCount(getPendingSyncCount());
-        setCloudMessage(synced > 0 ? `${synced} wartende ï¿½nderungen wurden synchronisiert.` : "Synchronisiert.");
+        setCloudMessage(synced > 0 ? `${synced} wartende änderungen wurden synchronisiert.` : "Synchronisiert.");
         void refreshCloudData();
       });
     };
@@ -580,7 +580,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setPendingSyncCount(pending);
       if (pending > 0) {
         setCloudStatus(navigator.onLine ? "pending" : "offline");
-        setCloudMessage(`${pending} ï¿½nderungen warten auf Synchronisation.`);
+        setCloudMessage(`${pending} änderungen warten auf Synchronisation.`);
       }
     };
     window.addEventListener("online", handleOnline);
@@ -609,9 +609,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               if (count > 0) setCloudMessage("Synchronisiert.");
             })
             .catch((error) => {
-              logCloudError("ï¿½nderungen speichern", error);
+              logCloudError("änderungen speichern", error);
               setCloudStatus(navigator.onLine ? "error" : "offline");
-              setCloudMessage(`ï¿½nderungen wurden lokal gespeichert und werden spaeter synchronisiert. ${describeCloudError(error)}`);
+              setCloudMessage(`änderungen wurden lokal gespeichert und werden spaeter synchronisiert. ${describeCloudError(error)}`);
             });
         }
       }
@@ -623,7 +623,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase || !session?.user.id) return undefined;
     const handleRealtimeChange = () => {
       setCloudStatus("syncing");
-      void refreshCloudData().then(() => setCloudMessage("Daten wurden zwischen Gerï¿½ten synchronisiert."));
+      void refreshCloudData().then(() => setCloudMessage("Daten wurden zwischen Geräten synchronisiert."));
     };
     const unsubscribers = [
       subscribeToUserTrainings(session.user.id, handleRealtimeChange),
@@ -652,7 +652,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const client = getSupabaseClient();
     if (!client) return { ok: false, message: getSupabaseConfigMessage() };
     if (!input.privacyAccepted) return { ok: false, message: "Bitte akzeptiere den Datenschutz." };
-    if (input.password !== input.passwordRepeat) return { ok: false, message: "Die Passwï¿½rter stimmen nicht ueberein." };
+    if (input.password !== input.passwordRepeat) return { ok: false, message: "Die Passwärter stimmen nicht überein." };
     const { data: result, error } = await client.auth.signUp({
       email: input.email.trim().toLowerCase(),
       password: input.password,
@@ -680,7 +680,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         await ensureCloudProfile(result.user);
       } catch (error) {
-        console.info("Profil wird nach E-Mail-Bestï¿½tigung automatisch erstellt.", error);
+        console.info("Profil wird nach E-Mail-Bestätigung automatisch erstellt.", error);
       }
     }
     await refreshCloudData();
@@ -688,7 +688,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ok: true,
       message: result.session
         ? "Konto erstellt. Du bist als Athlete angemeldet. Rollen koennen spaeter im Adminbereich vergeben werden."
-        : "Konto erstellt. Bitte bestï¿½tige deine E-Mail, bevor du dich einloggst. Wenn Auto Confirm in Supabase aktiv ist, wirst du direkt angemeldet.",
+        : "Konto erstellt. Bitte bestätige deine E-Mail, bevor du dich einloggst. Wenn Auto Confirm in Supabase aktiv ist, wirst du direkt angemeldet.",
     };
   };
 

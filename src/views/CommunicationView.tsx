@@ -313,7 +313,7 @@ export function CommunicationView({ data, user, onDataChange }: CommunicationVie
         const current = attendance.find((item) => item.trainingId === training.id && item.athleteId === user.userId);
         const groupAttendance = attendance.filter((item) => item.trainingId === training.id);
         return <article className="attendance-card" key={training.id}><div className="plan-card-head"><div><span>{training.date} {training.time}</span><h4>{training.title || training.trainingType}</h4></div><b className="status-pill planned">{current ? statusLabel[current.status] : "offen"}</b></div><div className="smart-detail-grid"><span>Dabei {groupAttendance.filter((item) => item.status === "attending").length}</span><span>Nicht dabei {groupAttendance.filter((item) => item.status === "not_attending").length}</span><span>Unsicher {groupAttendance.filter((item) => item.status === "unsure").length}</span></div><div className="attendance-actions">{attendanceStatuses.map((status) => <button type="button" key={status} onClick={() => setAttendance(training.id, status, "", "")}>{statusLabel[status]}</button>)}</div></article>;
-      }) : <p className="empty-state">Noch kein Training fï¿½r Anwesenheit gefunden.</p>}</div>
+      }) : <p className="empty-state">Noch kein Training fär Anwesenheit gefunden.</p>}</div>
     </section>
   );
 

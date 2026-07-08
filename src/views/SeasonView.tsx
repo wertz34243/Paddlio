@@ -16,7 +16,7 @@ export function SeasonView({ competitions, training, plan }: SeasonViewProps) {
   return (
     <div className="stack">
       <section className="section-block intelligence-hero">
-        <p className="eyebrow">Saisonï¿½bersicht</p>
+        <p className="eyebrow">Saisonäbersicht</p>
         <h2>Dein Jahr in Bewegung.</h2>
         <p>Monate, Umfang, Belastung und Wettkampffortschritt auf einen Blick.</p>
       </section>

@@ -237,7 +237,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
     { label: isAdmin ? "Sportler" : "Sportler im Verein", value: isAdmin ? ownAthletes.length : clubAthletes.length },
     { label: isAdmin ? "Gruppen" : "Gruppen im Verein", value: ownGroups.length },
     { label: "Trainings diese Woche", value: weeklyTrainingCount },
-    { label: "Offene Rï¿½ckmeldungen", value: openFeedback },
+    { label: "Offene Räckmeldungen", value: openFeedback },
   ], [clubAthletes.length, isAdmin, openFeedback, ownAthletes.length, ownGroups.length, weeklyTrainingCount]);
 
   const runCloudAction = async (successMessage: string, action: () => Promise<void>) => {
@@ -259,7 +259,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
       <section className="section-block">
         <p className="eyebrow">Coach</p>
         <h3>Kein Zugriff</h3>
-        <p className="card-note">Dieser Bereich ist fï¿½r Coach, TeamAdmin und Admin Rollen vorbereitet.</p>
+        <p className="card-note">Dieser Bereich ist fär Coach, TeamAdmin und Admin Rollen vorbereitet.</p>
       </section>
     );
   }
@@ -723,7 +723,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
           </article>
           <article className="metric-card">
             <strong>{openFeedback}</strong>
-            <span>Offene Rï¿½ckmeldungen</span>
+            <span>Offene Räckmeldungen</span>
           </article>
           <article className="metric-card">
             <strong>{weeklyTrainingCount}</strong>
@@ -751,7 +751,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
             </article>
             <article className="metric-card">
               <strong>{openFeedback}</strong>
-              <span>Offene Rï¿½ckmeldungen</span>
+              <span>Offene Räckmeldungen</span>
             </article>
           </div>
           <p className="card-note">Coach-Zugriff ist auf diesen Verein begrenzt.</p>
@@ -988,7 +988,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
                 </div>
               ) : null}
             </article>
-          )) : <p className="empty-state">Keine Benutzer fï¿½r deinen Zugriff gefunden.</p>}
+          )) : <p className="empty-state">Keine Benutzer fär deinen Zugriff gefunden.</p>}
         </div>
       </section>
 
@@ -1114,7 +1114,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
               </div>
             </article>
             );
-          }) : <p className="empty-state">Keine Sportler fï¿½r diese Suche gefunden.</p>}
+          }) : <p className="empty-state">Keine Sportler fär diese Suche gefunden.</p>}
         </div>
         {profileAthlete ? (
           <article className="athlete-profile-card">
@@ -1136,8 +1136,8 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
               <div><strong>Ziele</strong><span>{profileAthlete.goals || "Noch keine Ziele hinterlegt."}</span></div>
               <div><strong>Trainings</strong><span>{coachPlan.filter((entry) => entry.assignedAthleteId === profileAthlete.id).length} geplante Einheiten</span></div>
               <div><strong>Wettkaempfe</strong><span>Wettkampfdaten werden mit dem Athletenprofil verknuepft vorbereitet.</span></div>
-              <div><strong>Material</strong><span>Materialï¿½bersicht wird fï¿½r Coach-Freigaben vorbereitet.</span></div>
-              <div><strong>Journal</strong><span>Rï¿½ckmeldungen und Befinden werden hier zusammengefuehrt.</span></div>
+              <div><strong>Material</strong><span>Materialäbersicht wird fär Coach-Freigaben vorbereitet.</span></div>
+              <div><strong>Journal</strong><span>Räckmeldungen und Befinden werden hier zusammengefuehrt.</span></div>
               <div><strong>Trainernotizen</strong><span>{profileAthlete.trainerNotes || "Keine Trainernotizen."}</span></div>
             </div>
             <div className="card-actions">
@@ -1253,7 +1253,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
             <label>Ziel<select name="target" defaultValue="self"><option value="self">sich selbst</option>{ownAthletes.map((athlete) => <option key={athlete.id} value={`athlete:${athlete.id}`}>{athlete.name}</option>)}{ownGroups.map((group) => <option key={group.id} value={`group:${group.id}`}>{group.name}</option>)}</select></label>
             <label>Bereich<select name="area" defaultValue="Wassertraining">{trainingAreas.map((area) => <option key={area} value={area}>{area}</option>)}</select></label>
             <label>Art<select name="trainingType" defaultValue="K1 Technik">{trainingTypes.map((type) => <option key={type} value={type}>{type}</option>)}</select></label>
-            <label>Intensitaet<select name="intensity" defaultValue="mittel">{intensities.map((intensity) => <option key={intensity} value={intensity}>{intensity}</option>)}</select></label>
+            <label>Intensität<select name="intensity" defaultValue="mittel">{intensities.map((intensity) => <option key={intensity} value={intensity}>{intensity}</option>)}</select></label>
           </div>
           <label>Trainingsziel<input name="goal" placeholder="z. B. Tor 6 sauber anfahren" /></label>
           <label>Notiz<textarea name="note" rows={3} /></label>
@@ -1280,7 +1280,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
               <div>
                 <p className="eyebrow">Heute</p>
                 <h3>{todaysPreviewTraining?.trainingType ?? "Kein Training"}</h3>
-                <span>{todaysPreviewTraining?.goal || "Noch keine Einheit fï¿½r heute geplant."}</span>
+                <span>{todaysPreviewTraining?.goal || "Noch keine Einheit fär heute geplant."}</span>
               </div>
             </article>
             <div className="result-list">
@@ -1291,7 +1291,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
               ))}
             </div>
             <p className="card-note">Ziele: {previewAthlete.goals || "Noch keine Ziele hinterlegt."}</p>
-            <label className="profile-form">Rï¿½ckmeldung<textarea rows={3} placeholder="Spaeter sendet der Sportler hier Feedback." /></label>
+            <label className="profile-form">Räckmeldung<textarea rows={3} placeholder="Spaeter sendet der Sportler hier Feedback." /></label>
           </div>
         ) : <p className="empty-state">Lege zuerst einen Sportler an.</p>}
       </section>

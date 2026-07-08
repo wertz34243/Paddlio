@@ -28,7 +28,7 @@ const friendlyTerms: Record<string, string> = {
   Trainingsquote: "Wie oft du trainiert hast",
   Rückmeldungen: "Antworten vom Trainer",
   Saisonübersicht: "Dein Jahr",
-  Intensitaet: "Wie anstrengend es ist",
+  Intensität: "Wie anstrengend es ist",
   Regeneration: "Pause und Erholung",
   GA1: "lockeres Ausdauertraining",
   RPE: "Anstrengung von 1 bis 10",

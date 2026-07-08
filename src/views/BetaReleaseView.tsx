@@ -123,9 +123,9 @@ export function BetaReleaseView({ data, user, mode, onDataChange }: BetaReleaseV
       <section className="section-block segment-panel">
         <div className="section-heading"><div><p className="eyebrow">Beta-Test Anleitung</p><h3>Was getestet werden soll</h3></div></div>
         <div className="beta-guide-grid">
-          <article className="beta-card"><h4>Tester</h4><ol><li>Einloggen</li><li>Profil prï¿½fen</li><li>Training ansehen</li><li>Anwesenheit setzen</li><li>Aufgabe erledigen</li><li>Nachricht testen</li><li>Ergebnis anschauen</li><li>Feedback senden</li></ol></article>
-          <article className="beta-card"><h4>Trainer</h4><ol><li>Gruppe prï¿½fen</li><li>Training erstellen</li><li>Aufgabe vergeben</li><li>Anwesenheit prï¿½fen</li><li>Nachricht an Gruppe senden</li><li>Ergebnis eintragen</li><li>Feedback ansehen</li></ol></article>
-          <article className="beta-card"><h4>Admin</h4><ol><li>Nutzer prï¿½fen</li><li>Rollen prï¿½fen</li><li>Verein prï¿½fen</li><li>Beta-Check starten</li><li>Feedback auswerten</li></ol></article>
+          <article className="beta-card"><h4>Tester</h4><ol><li>Einloggen</li><li>Profil präfen</li><li>Training ansehen</li><li>Anwesenheit setzen</li><li>Aufgabe erledigen</li><li>Nachricht testen</li><li>Ergebnis anschauen</li><li>Feedback senden</li></ol></article>
+          <article className="beta-card"><h4>Trainer</h4><ol><li>Gruppe präfen</li><li>Training erstellen</li><li>Aufgabe vergeben</li><li>Anwesenheit präfen</li><li>Nachricht an Gruppe senden</li><li>Ergebnis eintragen</li><li>Feedback ansehen</li></ol></article>
+          <article className="beta-card"><h4>Admin</h4><ol><li>Nutzer präfen</li><li>Rollen präfen</li><li>Verein präfen</li><li>Beta-Check starten</li><li>Feedback auswerten</li></ol></article>
         </div>
       </section>
     );
@@ -145,7 +145,7 @@ export function BetaReleaseView({ data, user, mode, onDataChange }: BetaReleaseV
   }
 
   if (mode === "testers") {
-    if (!isAdmin(user)) return <p className="empty-state">Du hast fï¿½r die Beta-Tester-Verwaltung keine Berechtigung.</p>;
+    if (!isAdmin(user)) return <p className="empty-state">Du hast fär die Beta-Tester-Verwaltung keine Berechtigung.</p>;
     return (
       <section className="section-block segment-panel">
         <div className="section-heading"><div><p className="eyebrow">Beta-Tester</p><h3>{testers.length} Nutzer im Testpool</h3></div></div>
@@ -197,7 +197,7 @@ export function BetaReleaseView({ data, user, mode, onDataChange }: BetaReleaseV
         </div>
       </section>
 
-      {isPrivileged(user) ? <p className="muted">Hinweis fï¿½r Trainer/Admins: Feedback wird mit Rolle, Version und Gerï¿½teinfo gespeichert, damit Beta-Fehler besser reproduzierbar sind.</p> : null}
+      {isPrivileged(user) ? <p className="muted">Hinweis fär Trainer/Admins: Feedback wird mit Rolle, Version und Geräteinfo gespeichert, damit Beta-Fehler besser reproduzierbar sind.</p> : null}
     </div>
   );
 }

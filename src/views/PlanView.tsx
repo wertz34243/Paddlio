@@ -66,7 +66,7 @@ const coachWorkflowTabs: WorkflowTabConfig[] = [
   { id: "month", label: "Monat", calendarView: "month" },
   { id: "templates", label: "Vorlagen" },
   { id: "groups", label: "Gruppen" },
-  { id: "feedback", label: "Rï¿½ckmeldungen" },
+  { id: "feedback", label: "Räckmeldungen" },
 ];
 
 const athleteWorkflowTabs: WorkflowTabConfig[] = [
@@ -74,7 +74,7 @@ const athleteWorkflowTabs: WorkflowTabConfig[] = [
   { id: "week", label: "Diese Woche", calendarView: "week" },
   { id: "upcoming", label: "Kommende" },
   { id: "done", label: "Erledigt" },
-  { id: "feedback", label: "Rï¿½ckmeldung" },
+  { id: "feedback", label: "Räckmeldung" },
 ];
 
 const today = new Date().toISOString().slice(0, 10);
@@ -382,7 +382,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
 
   const deleteTemplate = (template: TrainingTemplate) => {
     if (!canEditTrainingTemplate(user, template)) {
-      setFormMessage("Du hast keine Berechtigung fï¿½r diese Vorlage.");
+      setFormMessage("Du hast keine Berechtigung fär diese Vorlage.");
       return;
     }
 
@@ -443,7 +443,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
     }
     const { assignedType, assignedAthleteIds, assignedGroupIds } = getTargetSelection(formData);
     if (!validateTargetSelection(assignedType, assignedAthleteIds, assignedGroupIds)) {
-      setFormMessage("Du hast keine Berechtigung fï¿½r diese Gruppe oder diesen Sportler.");
+      setFormMessage("Du hast keine Berechtigung fär diese Gruppe oder diesen Sportler.");
       return;
     }
 
@@ -558,7 +558,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
     const hasInvalidGroup = assignedGroupIds.some((id) => !allowedGroups.has(id));
 
     if ((assignedType === "athlete" && hasInvalidAthlete) || (assignedType === "group" && hasInvalidGroup)) {
-      setFormMessage("Du hast keine Berechtigung fï¿½r mindestens eine ausgewaehlte Zuweisung.");
+      setFormMessage("Du hast keine Berechtigung fär mindestens eine ausgewaehlte Zuweisung.");
       return;
     }
 
@@ -649,7 +649,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
         {entryFeedback.length > 0 ? (
           <div className="feedback-list">
             {entryFeedback.map((feedback) => (
-              <span key={feedback.id}>Feedback: Gefuehl {feedback.feeling}/10, Motivation {feedback.motivation}/10</span>
+              <span key={feedback.id}>Feedback: Gefühl {feedback.feeling}/10, Motivation {feedback.motivation}/10</span>
             ))}
           </div>
         ) : null}
@@ -705,15 +705,15 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
 
       <section className="summary-strip">
         <div><span>Favorisierte Vorlagen</span><strong>{visibleTemplates.filter((template) => template.isFavorite).length}</strong></div>
-        <div><span>Nï¿½chste Woche</span><strong>{nextWeekCount}</strong></div>
-        <div><span>{isCoach ? "Ungeplante Sportler" : "Offene Rï¿½ckmeldung"}</span><strong>{isCoach ? unplannedAthletes.length : openFeedbackCount}</strong></div>
+        <div><span>Nächste Woche</span><strong>{nextWeekCount}</strong></div>
+        <div><span>{isCoach ? "Ungeplante Sportler" : "Offene Räckmeldung"}</span><strong>{isCoach ? unplannedAthletes.length : openFeedbackCount}</strong></div>
       </section>
 
       <section className="training-workflow-hero section-block">
         <div>
           <p className="eyebrow">{isCoach ? "Coach Workflow" : "Mein Trainingsplan"}</p>
-          <h3>{isCoach ? "Trainingsplanung 2.0" : "Deine nï¿½chsten Einheiten"}</h3>
-          <p>{isCoach ? "Plane Tage, Wochen und Saisonbloecke aus Vorlagen, kopiere Einheiten und pruefe Rï¿½ckmeldungen." : "Sieh deine Einheiten, hake Training ab und gib deinem Coach klares Feedback."}</p>
+          <h3>{isCoach ? "Trainingsplanung 2.0" : "Deine nächsten Einheiten"}</h3>
+          <p>{isCoach ? "Plane Tage, Wochen und Saisonbloecke aus Vorlagen, kopiere Einheiten und pruefe Räckmeldungen." : "Sieh deine Einheiten, hake Training ab und gib deinem Coach klares Feedback."}</p>
         </div>
         <div className="training-workflow-actions">
           <button className="primary-button" type="button" onClick={startCreate}>Training planen</button>
@@ -754,7 +754,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
           <label>Bereich<select value={areaFilter} onChange={(event) => setAreaFilter(event.target.value as typeof areaFilter)}><option value="all">Alle</option>{trainingAreas.map((area) => <option key={area} value={area}>{area}</option>)}</select></label>
           <label>Status<select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)}><option value="all">Alle</option>{planStatuses.map((status) => <option key={status} value={status}>{statusLabel[status]}</option>)}</select></label>
           <label>Boot<select value={boatFilter} onChange={(event) => setBoatFilter(event.target.value as typeof boatFilter)}><option value="all">Alle</option><option value="K1">K1</option><option value="C1">C1</option><option value="K1+C1">K1+C1</option><option value="none">ohne Boot</option></select></label>
-          <label>Intensitaet<select value={intensityFilter} onChange={(event) => setIntensityFilter(event.target.value as typeof intensityFilter)}><option value="all">Alle</option>{trainingIntensities.map((intensity) => <option key={intensity} value={intensity}>{intensityLabel[intensity]}</option>)}</select></label>
+          <label>Intensität<select value={intensityFilter} onChange={(event) => setIntensityFilter(event.target.value as typeof intensityFilter)}><option value="all">Alle</option>{trainingIntensities.map((intensity) => <option key={intensity} value={intensity}>{intensityLabel[intensity]}</option>)}</select></label>
           {isCoach ? <label>Sportler<select value={athleteFilter} onChange={(event) => setAthleteFilter(event.target.value)}><option value="all">Alle</option>{visibleAthletes.map((athlete) => <option key={athlete.id} value={athlete.id}>{getAthleteName(athlete)}</option>)}</select></label> : null}
           {isCoach ? <label>Gruppe<select value={groupFilter} onChange={(event) => setGroupFilter(event.target.value)}><option value="all">Alle</option>{visibleGroups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select></label> : null}
         </div>
@@ -792,7 +792,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
                 {canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => deleteTemplate(template)}>Loeschen</button> : null}
               </div>
             </article>
-          )) : <p className="empty-state">Noch keine Trainingsvorlagen. Erstelle deine erste Vorlage fï¿½r schnelle Trainingsplanung.</p>}
+          )) : <p className="empty-state">Noch keine Trainingsvorlagen. Erstelle deine erste Vorlage fär schnelle Trainingsplanung.</p>}
         </div>
       </section> : null}
 
@@ -807,7 +807,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
               <label>Trainingsart<select name="trainingType" defaultValue={templateDraft.trainingType}>{trainingTypeGroups[templateArea].map((trainingType) => <option key={trainingType} value={trainingType}>{trainingType}</option>)}</select></label>
               <label>Bootsklasse<select name="boatClass" defaultValue={templateDraft.boatClass ?? "none"}><option value="K1">K1</option><option value="C1">C1</option><option value="K1+C1">K1+C1</option><option value="none">ohne Boot</option></select></label>
               <label>Standarddauer<input name="defaultDurationMinutes" type="number" min="0" step="5" defaultValue={templateDraft.defaultDurationMinutes ?? 75} /></label>
-              <label>Intensitaet<select name="defaultIntensity" defaultValue={templateDraft.defaultIntensity}>{trainingIntensities.map((intensity) => <option key={intensity} value={intensity}>{intensityLabel[intensity]}</option>)}</select></label>
+              <label>Intensität<select name="defaultIntensity" defaultValue={templateDraft.defaultIntensity}>{trainingIntensities.map((intensity) => <option key={intensity} value={intensity}>{intensityLabel[intensity]}</option>)}</select></label>
               <label>Sichtbarkeit<select name="visibility" defaultValue={templateDraft.visibility}><option value="private">privat</option>{isCoach ? <option value="club">Verein</option> : null}</select></label>
             </div>
             <label>Ziel/Fokus<input name="focus" defaultValue={templateDraft.focus} placeholder="z. B. Strafsekunden reduzieren" /></label>
@@ -829,7 +829,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
             <label>Datum<input name="date" type="date" defaultValue={selectedDate} required /></label>
             <label>Uhrzeit<input name="startTime" type="time" defaultValue="17:30" /></label>
             <label>Dauer<input name="durationMinutes" type="number" min="0" step="5" placeholder="aus Vorlage" /></label>
-            <label>Intensitaet<select name="intensity" defaultValue="mittel">{trainingIntensities.map((intensity) => <option key={intensity} value={intensity}>{intensityLabel[intensity]}</option>)}</select></label>
+            <label>Intensität<select name="intensity" defaultValue="mittel">{trainingIntensities.map((intensity) => <option key={intensity} value={intensity}>{intensityLabel[intensity]}</option>)}</select></label>
           </div>
           {renderTargetControls()}
           <label>Fokus anpassen<input name="focus" placeholder="optional" /></label>
@@ -842,7 +842,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
         <section className="section-block">
           <div className="section-heading">
             <div><p className="eyebrow">Gruppenplanung</p><h3>{visibleGroups.length > 0 ? `${visibleGroups.length} Trainingsgruppen` : "Noch keine Trainingsgruppen"}</h3></div>
-            <button className="primary-button" type="button" onClick={startCreate}>Training fï¿½r Gruppe planen</button>
+            <button className="primary-button" type="button" onClick={startCreate}>Training fär Gruppe planen</button>
           </div>
           <div className="calendar-list">
             {visibleGroups.length > 0 ? visibleGroups.map((group) => {
@@ -874,7 +874,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
       {workflowTab === "feedback" ? (
         <section className="section-block">
           <div className="section-heading">
-            <div><p className="eyebrow">Rï¿½ckmeldungen</p><h3>{isCoach ? "Statusï¿½bersicht" : "Trainingstagebuch"}</h3></div>
+            <div><p className="eyebrow">Räckmeldungen</p><h3>{isCoach ? "Statusäbersicht" : "Trainingstagebuch"}</h3></div>
           </div>
           <div className="calendar-list">
             {isCoach && openFeedbackEntries.length > 0 ? openFeedbackEntries.map((entry) => (
@@ -883,12 +883,12 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
                   <div><span>{entry.date} - offen</span><h4>{entry.title || entry.trainingType}</h4></div>
                   <b className="status-pill planned">Offen</b>
                 </div>
-                <p>{entry.focus || "Rï¿½ckmeldung steht noch aus."}</p>
+                <p>{entry.focus || "Räckmeldung steht noch aus."}</p>
               </article>
             )) : null}
             {entriesWithFeedback.length > 0 ? entriesWithFeedback.map(renderEntryCard) : null}
             {(!isCoach || openFeedbackEntries.length === 0) && entriesWithFeedback.length === 0 ? (
-              <p className="empty-state">{isCoach ? "Noch keine Rï¿½ckmeldungen vorhanden." : "Noch keine erledigten Trainings mit Rï¿½ckmeldung."}</p>
+              <p className="empty-state">{isCoach ? "Noch keine Räckmeldungen vorhanden." : "Noch keine erledigten Trainings mit Räckmeldung."}</p>
             ) : null}
           </div>
         </section>
@@ -910,14 +910,14 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
               <label>Trainingsbereich<select name="area" defaultValue={draft.area} onChange={(event) => setSelectedArea(event.currentTarget.value as TrainingArea)}>{trainingAreas.map((area) => <option key={area} value={area}>{area}</option>)}</select></label>
               <label>Trainingsart<select name="trainingType" defaultValue={draft.trainingType}>{trainingTypeGroups[selectedArea].map((trainingType) => <option key={trainingType} value={trainingType}>{trainingType}</option>)}</select></label>
               <label>Bootsklasse<select name="boatClass" defaultValue={draft.boatClass}><option value="K1">K1</option><option value="C1">C1</option><option value="K1+C1">K1+C1</option><option value="none">ohne Boot</option></select></label>
-              <label>Intensitaet<select name="intensity" defaultValue={draft.intensity}>{trainingIntensities.map((intensity) => <option key={intensity} value={intensity}>{intensityLabel[intensity]}</option>)}</select></label>
+              <label>Intensität<select name="intensity" defaultValue={draft.intensity}>{trainingIntensities.map((intensity) => <option key={intensity} value={intensity}>{intensityLabel[intensity]}</option>)}</select></label>
               <label>Status<select name="status" defaultValue={draft.status}>{planStatuses.map((status) => <option key={status} value={status}>{statusLabel[status]}</option>)}</select></label>
               <label>Wiederholung<select name="repeat" defaultValue={draft.repeat}><option value="none">keine</option><option value="daily">taeglich</option><option value="weekly">woechentlich</option><option value="biweekly">alle 2 Wochen</option><option value="monthly">monatlich</option></select></label>
               <label>Wiederholen bis<input name="repeatUntil" type="date" defaultValue={draft.repeatUntil} /></label>
               <label>Max. Termine<input name="repeatMaxCount" type="number" min="1" max="90" defaultValue={draft.repeatMaxCount ?? ""} placeholder="optional" /></label>
             </div>
             {draft.repeat !== "none" && draft.repeatUntil ? <p className="card-note">Vorschau: Es werden {getRepeatPreview(draft.repeat, draft.repeatUntil, draft.repeatMaxCount)} Trainingseinheiten erstellt.</p> : null}
-            {isCoach ? <div className="choice-group"><span>Sportler fï¿½r Einzeltraining</span><div className="tag-row">{visibleAthletes.map((athlete) => <label className="toggle-row" key={athlete.id}><span>{getAthleteName(athlete)}</span><input name="assignedAthleteIds" type="checkbox" value={athlete.id} defaultChecked={draft.assignedAthleteIds.includes(athlete.id)} /></label>)}</div></div> : null}
+            {isCoach ? <div className="choice-group"><span>Sportler fär Einzeltraining</span><div className="tag-row">{visibleAthletes.map((athlete) => <label className="toggle-row" key={athlete.id}><span>{getAthleteName(athlete)}</span><input name="assignedAthleteIds" type="checkbox" value={athlete.id} defaultChecked={draft.assignedAthleteIds.includes(athlete.id)} /></label>)}</div></div> : null}
             {isCoach ? <div className="choice-group"><span>Trainingsgruppen</span><div className="tag-row">{visibleGroups.map((group) => <label className="toggle-row" key={group.id}><span>{group.name}</span><input name="assignedGroupIds" type="checkbox" value={group.id} defaultChecked={draft.assignedGroupIds.includes(group.id)} /></label>)}</div></div> : null}
             <label>Ziel/Fokus<input name="focus" defaultValue={draft.focus || draft.goal} placeholder="z. B. Tor 6 sauber anfahren" /></label>
             <label>Beschreibung<textarea name="description" defaultValue={draft.description} rows={3} /></label>
@@ -932,7 +932,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
           <div className="section-heading"><div><p className="eyebrow">Kopieren</p><h3>{copyEntry.title || copyEntry.trainingType}</h3></div></div>
           <form className="entry-form" onSubmit={handleCopyEntrySubmit}>
             <div className="form-grid">
-              <label>Option<select name="copyMode" defaultValue="nextWeek"><option value="custom">anderes Datum</option><option value="tomorrow">nï¿½chster Tag</option><option value="nextWeek">nï¿½chste Woche</option></select></label>
+              <label>Option<select name="copyMode" defaultValue="nextWeek"><option value="custom">anderes Datum</option><option value="tomorrow">nächster Tag</option><option value="nextWeek">nächste Woche</option></select></label>
               <label>Datum<input name="date" type="date" defaultValue={addDays(copyEntry.date, 7)} /></label>
             </div>
             {renderTargetControls(copyEntry.assignedType, copyEntry.assignedAthleteIds, copyEntry.assignedGroupIds)}
@@ -992,26 +992,26 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
 
       {feedbackEntry ? (
         <section className="section-block feedback-modal">
-          <div className="section-heading"><div><p className="eyebrow">Rï¿½ckmeldung</p><h3>{feedbackEntry.title || feedbackEntry.trainingType}</h3></div></div>
+          <div className="section-heading"><div><p className="eyebrow">Räckmeldung</p><h3>{feedbackEntry.title || feedbackEntry.trainingType}</h3></div></div>
           <form className="entry-form" onSubmit={handleFeedbackSubmit}>
             <div className="form-grid">
               <label>Status<select name="status" defaultValue={isSkippedStatus(feedbackEntry.status) ? "skipped" : "done"}><option value="done">erledigt</option><option value="skipped">ausgelassen</option></select></label>
-              <label>Gefuehl 1-10<input name="feeling" type="number" min="1" max="10" defaultValue={7} /></label>
+              <label>Gefühl 1-10<input name="feeling" type="number" min="1" max="10" defaultValue={7} /></label>
               <label>Schwierigkeit 1-10<input name="difficulty" type="number" min="1" max="10" defaultValue={5} /></label>
-              <label>Muedigkeit 1-10<input name="fatigue" type="number" min="1" max="10" defaultValue={5} /></label>
+              <label>Müdigkeit 1-10<input name="fatigue" type="number" min="1" max="10" defaultValue={5} /></label>
               <label>Motivation 1-10<input name="motivation" type="number" min="1" max="10" defaultValue={7} /></label>
               <label>Schlaf 1-10<input name="sleep" type="number" min="1" max="10" defaultValue={7} /></label>
               <label>Grund<select name="reason" defaultValue=""><option value="">kein Grund</option><option value="krank">krank</option><option value="schule_arbeit">Schule/Arbeit</option><option value="wetter">Wetter</option><option value="keine_zeit">keine Zeit</option><option value="andere">andere</option></select></label>
             </div>
             <label>Kommentar<textarea name="comment" rows={3} /></label>
-            <div className="form-actions"><button className="save-button" type="submit">Rï¿½ckmeldung speichern</button><button className="ghost-button wide" type="button" onClick={() => setFeedbackEntry(null)}>Abbrechen</button></div>
+            <div className="form-actions"><button className="save-button" type="submit">Räckmeldung speichern</button><button className="ghost-button wide" type="button" onClick={() => setFeedbackEntry(null)}>Abbrechen</button></div>
           </form>
         </section>
       ) : null}
 
       <section className="section-block">
         <div className="section-heading"><div><p className="eyebrow">Wochenfortschritt</p><h3>{weeklyMinutes} Minuten</h3></div></div>
-        <div className="smart-detail-grid"><span>{completedThisWeek.length} erledigt</span><span>{skippedThisWeek.length} ausgelassen</span><span>{openFeedbackCount} offene Rï¿½ckmeldungen</span></div>
+        <div className="smart-detail-grid"><span>{completedThisWeek.length} erledigt</span><span>{skippedThisWeek.length} ausgelassen</span><span>{openFeedbackCount} offene Räckmeldungen</span></div>
       </section>
     </div>
   );

@@ -196,7 +196,7 @@ export function CompetitionsView({ competitions, onSave, onDelete, openNewSignal
                 <input name="gapToWinnerSeconds" type="number" min="0" step="0.01" defaultValue={draft.gapToWinnerSeconds} />
               </label>
               <label>
-                Gefuehl 1-10
+                Gefühl 1-10
                 <input name="feeling" type="number" min="1" max="10" step="1" defaultValue={draft.feeling} />
               </label>
               <label>
@@ -266,7 +266,7 @@ export function CompetitionsView({ competitions, onSave, onDelete, openNewSignal
                           <b>{formatSeconds(competition.gapToWinnerSeconds)}</b>
                         </div>
                         <div>
-                          <span>Gefuehl</span>
+                          <span>Gefühl</span>
                           <b>{competition.feeling}/10</b>
                         </div>
                         <div>

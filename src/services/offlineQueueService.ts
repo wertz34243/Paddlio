@@ -83,7 +83,7 @@ export const flushOfflineQueue = async (): Promise<number> => {
       }
       synced += 1;
     } catch (error) {
-      console.error(`[Paddlio Sync] Offline-Queue fï¿½r ${item.table} konnte nicht synchronisiert werden.`, error);
+      console.error(`[Paddlio Sync] Offline-Queue fär ${item.table} konnte nicht synchronisiert werden.`, error);
       failed.push({ ...item, retryCount: item.retryCount + 1, status: "failed" });
     }
   }

@@ -91,7 +91,7 @@ const competitionSegments: SegmentItem<CompetitionSegment>[] = [
 ];
 
 const analysisSegments: SegmentItem<AnalysisSegment>[] = [
-  { id: "overview", label: "ï¿½bersicht" },
+  { id: "overview", label: "äbersicht" },
   { id: "smartCoach", label: "Smart Coach" },
   { id: "training", label: "Training" },
   { id: "competition", label: "Wettkampf" },
@@ -447,8 +447,8 @@ function AppContent() {
     if (feedback.coachUserId) {
       void createCloudNotification({
         userId: feedback.coachUserId,
-        title: "Neue Rï¿½ckmeldung eingegangen",
-        message: feedback.status === "skipped" ? `Training ausgelassen: ${feedback.reason || "kein Grund angegeben"}` : `Feedback: Gefuehl ${feedback.feeling}/10, Motivation ${feedback.motivation}/10`,
+        title: "Neue Räckmeldung eingegangen",
+        message: feedback.status === "skipped" ? `Training ausgelassen: ${feedback.reason || "kein Grund angegeben"}` : `Feedback: Gefühl ${feedback.feeling}/10, Motivation ${feedback.motivation}/10`,
         type: "feedback_received",
         relatedEntityType: "training_feedback",
         relatedEntityId: feedback.id,
@@ -696,7 +696,7 @@ function AppContent() {
         label="Analyse Kategorien"
         items={[
           ...analysisSegments,
-          ...(canUseCoachArea(activeUser.role) ? [{ id: activeUser.role === "admin" ? "admin" as const : "coach" as const, label: activeUser.role === "admin" ? "Admin ï¿½bersicht" : "Coach Analyse" }] : []),
+          ...(canUseCoachArea(activeUser.role) ? [{ id: activeUser.role === "admin" ? "admin" as const : "coach" as const, label: activeUser.role === "admin" ? "Admin äbersicht" : "Coach Analyse" }] : []),
         ]}
         activeId={segment}
         onChange={(nextSegment) => {
@@ -886,7 +886,7 @@ function CloudStatusBadge({ status, syncCount, pendingSyncCount, lastSyncAt, isA
   const label =
     status === "connected" ? "Synchronisiert" :
       status === "syncing" ? "Synchronisiert..." :
-        status === "pending" ? "Wartende ï¿½nderungen" :
+        status === "pending" ? "Wartende änderungen" :
           status === "offline" ? "Offline" :
             status === "error" ? "Cloud Fehler" :
               "Cloud deaktiviert";
@@ -895,8 +895,8 @@ function CloudStatusBadge({ status, syncCount, pendingSyncCount, lastSyncAt, isA
   return (
     <div className={`cloud-status ${dot}`}>
       <span>{label}</span>
-      {pendingSyncCount > 0 ? <small>{pendingSyncCount} ï¿½nderungen warten auf Synchronisation</small> : null}
-      {isAdmin ? <small>{syncCount} Datensï¿½tze{syncLabel ? ` - letzter Sync ${syncLabel}` : ""}</small> : null}
+      {pendingSyncCount > 0 ? <small>{pendingSyncCount} änderungen warten auf Synchronisation</small> : null}
+      {isAdmin ? <small>{syncCount} Datensätze{syncLabel ? ` - letzter Sync ${syncLabel}` : ""}</small> : null}
       {message ? <small>{message}</small> : null}
     </div>
   );

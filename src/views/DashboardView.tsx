@@ -88,7 +88,7 @@ export function DashboardView({ data, user, onNavigate, onOpenSmartCoach, onUpda
           <h1>Heute</h1>
           <p className="home-welcome-line">{getGreeting(displayName)} <span className="beta-badge">Paddlio Beta</span></p>
           <p className="hero-slogan">{APP_SLOGAN}</p>
-          <p className="muted">Version {APP_VERSION} - Testversion fÃ¼r Vereins- und Trainerfeedback.</p>
+          <p className="muted">Version {APP_VERSION} - Testversion für Vereins- und Trainerfeedback.</p>
         </div>
       </section>
 
@@ -104,10 +104,10 @@ export function DashboardView({ data, user, onNavigate, onOpenSmartCoach, onUpda
           <span>
             {intelligence.todayTraining
               ? `${intelligence.todayTraining.time || "ohne Uhrzeit"} - ${intelligence.todayTraining.goal || intelligence.todayTraining.area}`
-              : "Kein Training geplant. Nutze den Tag bewusst fÃ¼r Erholung oder eine lockere Einheit."}
+              : "Kein Training geplant. Nutze den Tag bewusst für Erholung oder eine lockere Einheit."}
           </span>
         </div>
-        <button className="save-button" type="button" onClick={() => onQuickAction("training")} aria-label="Training Ã¼ber die Heute-Karte eintragen">
+        <button className="save-button" type="button" onClick={() => onQuickAction("training")} aria-label="Training über die Heute-Karte eintragen">
           Training eintragen
         </button>
       </section>
@@ -122,13 +122,13 @@ export function DashboardView({ data, user, onNavigate, onOpenSmartCoach, onUpda
         >
           <div className="smart-detail-grid">
             <span>Ziel: {intelligence.todayTraining?.goal || "Geniesse heute deine Regeneration."}</span>
-            <span>Intensitaet: {intelligence.todayTraining?.intensity ?? "locker"}</span>
+            <span>Intensität: {intelligence.todayTraining?.intensity ?? "locker"}</span>
           </div>
         </AppCard>
 
         <AppCard icon="bolt" title="Trainingsserie" subtitle="Konstanz" value={`${intelligence.currentStreak} Tage`} tone="success">
           <div className="smart-detail-grid">
-            <span>Laengste Serie: {intelligence.longestStreak} Tage</span>
+            <span>Längste Serie: {intelligence.longestStreak} Tage</span>
             <span>Trainingsquote: {intelligence.trainingQuote}%</span>
           </div>
           <div className="progress-track large">
@@ -138,7 +138,7 @@ export function DashboardView({ data, user, onNavigate, onOpenSmartCoach, onUpda
 
         <AppCard
           icon="training"
-          title="NÃ¤chstes Training"
+          title="Nächstes Training"
           subtitle={nextTraining ? `${nextTraining.date} - ${nextTraining.startTime || nextTraining.time || "ohne Uhrzeit"}` : "Noch kein Training geplant"}
           value={nextTraining?.title || nextTraining?.trainingType || "Planen"}
           tone="primary"
@@ -146,14 +146,14 @@ export function DashboardView({ data, user, onNavigate, onOpenSmartCoach, onUpda
           <div className="smart-detail-grid">
             <span>{weeklyPlan.completedCount} erledigt diese Woche</span>
             <span>{weeklyPlan.minutes} Trainingsminuten</span>
-            {user.role === "coach" || user.role === "teamAdmin" || user.role === "admin" ? <span>{openFeedback} offene RÃ¼ckmeldungen</span> : null}
+            {user.role === "coach" || user.role === "teamAdmin" || user.role === "admin" ? <span>{openFeedback} offene Rückmeldungen</span> : null}
           </div>
         </AppCard>
 
         <AppCard
           icon="trophy"
           title="Countdown"
-          subtitle={nextCompetition ? `${nextCompetition.location} - ${nextCompetition.boatClass}` : "Nï¿½chster Wettkampf"}
+          subtitle={nextCompetition ? `${nextCompetition.location} - ${nextCompetition.boatClass}` : "Nächster Wettkampf"}
           value={daysUntilRace === undefined ? "Kein Termin" : `${daysUntilRace} Tage`}
           tone="warning"
         >
@@ -178,7 +178,7 @@ export function DashboardView({ data, user, onNavigate, onOpenSmartCoach, onUpda
             <span>Gruppen: {groupActivity}</span>
           </div>
           <button className="ghost-button wide" type="button" onClick={() => onNavigate("communication")}>
-            Ã–ffnen
+            Öffnen
           </button>
         </AppCard>
 
@@ -215,24 +215,24 @@ export function DashboardView({ data, user, onNavigate, onOpenSmartCoach, onUpda
                 <strong>Noch keine Saisonziele</strong>
                 <span>Erstelle dein erstes Ziel im Bereich Ziele.</span>
               </div>
-              <button type="button" onClick={() => onNavigate("goals")} aria-label="Saisonziele Ã¶ffnen">Ziele Ã¶ffnen</button>
+              <button type="button" onClick={() => onNavigate("goals")} aria-label="Saisonziele öffnen">Ziele öffnen</button>
             </article>
           )}
         </div>
       </section>
 
       <section className="quick-actions">
-        <button type="button" onClick={() => onQuickAction("training")} aria-label="Neuen Trainingseintrag Ã¼ber Schnellaktion erstellen">
+        <button type="button" onClick={() => onQuickAction("training")} aria-label="Neuen Trainingseintrag über Schnellaktion erstellen">
           Training eintragen
         </button>
-        <button type="button" onClick={() => onQuickAction("competition")} aria-label="Neuen Wettkampf Ã¼ber Schnellaktion eintragen">
+        <button type="button" onClick={() => onQuickAction("competition")} aria-label="Neuen Wettkampf über Schnellaktion eintragen">
           Wettkampf eintragen
         </button>
-        <button type="button" onClick={() => onQuickAction("journal")} aria-label="Trainingsjournal Ã¼ber Schnellaktion ausfÃ¼llen">
-          Journal ausfÃ¼llen
+        <button type="button" onClick={() => onQuickAction("journal")} aria-label="Trainingsjournal über Schnellaktion ausfüllen">
+          Journal ausfüllen
         </button>
-        <button type="button" onClick={() => onQuickAction("material")} aria-label="Material Ã¼ber Schnellaktion prÃ¼fen">
-          Material prÃ¼fen
+        <button type="button" onClick={() => onQuickAction("material")} aria-label="Material über Schnellaktion prüfen">
+          Material prüfen
         </button>
       </section>
 
@@ -255,13 +255,13 @@ export function DashboardView({ data, user, onNavigate, onOpenSmartCoach, onUpda
           </div>
           <p>{latestNews.content}</p>
           <button className="ghost-button wide" type="button" onClick={() => onNavigate("communication")}>
-            Kommunikation Ã¶ffnen
+            Kommunikation öffnen
           </button>
         </section>
       ) : null}
 
       <section className="dashboard-card-grid">
-        <AppCard icon="target" title="PersÃ¶nliche Rekorde" subtitle="Automatisch erkannt" value={records.k1Best} tone="k1">
+        <AppCard icon="target" title="Persönliche Rekorde" subtitle="Automatisch erkannt" value={records.k1Best} tone="k1">
           <button className="ghost-button wide" type="button" onClick={() => onNavigate("records")}>
             Alle Rekorde
           </button>
@@ -269,7 +269,7 @@ export function DashboardView({ data, user, onNavigate, onOpenSmartCoach, onUpda
 
         <AppCard
           icon="chart"
-          title="SaisonÃ¼bersicht"
+          title="Saisonübersicht"
           subtitle="Monate und Belastung"
           value={`${data.training.length} Trainings`}
           tone="secondary"
@@ -297,7 +297,7 @@ export function DashboardView({ data, user, onNavigate, onOpenSmartCoach, onUpda
           <p className="card-note">{lastTraining?.focus || "Dokumentiere deine erste Einheit."}</p>
         </AppCard>
 
-        <AppCard icon="boat" title="Wetter Vorbereitung" subtitle="DemnÃ¤chst" value="Bereit" tone="accent">
+        <AppCard icon="boat" title="Wetter Vorbereitung" subtitle="Demnächst" value="Bereit" tone="accent">
           <div className="weather-placeholder">
             <span>Temperatur</span>
             <span>Wind</span>
