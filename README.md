@@ -12,6 +12,20 @@ Paddlio nutzt Supabase Auth fuer Registrierung, Login, Logout und Session-Wieder
 
 Wenn Supabase Auth `email rate limit exceeded` meldet, hat das Projekt zu viele E-Mail-/Registrierungsanfragen in kurzer Zeit erzeugt. Ein Browser-Client darf dieses Limit ohne serverseitigen Admin-Schluessel nicht umgehen. Fuer produktive Tests sollten in Supabase Auth die unten dokumentierten E-Mail- und Rate-Limit-Einstellungen passend gesetzt werden.
 
+## Version 4.0.0-beta - Beta Test Release
+
+Paddlio ist jetzt fuer eine kontrollierte Beta-Testphase vorbereitet. Version 4.0 fuegt keine grossen neuen Produktbereiche hinzu, sondern stabilisiert Navigation, Feedback, Beta-Check, Tester-Dokumentation und mobile Bedienung.
+
+- Beta-Modus sichtbar mit `Paddlio Beta` und Version `4.0.0-beta`
+- Bottom Navigation mobil reduziert auf Heute, Training, Analyse, Kommunikation und Mehr
+- Feedback-System fuer alle eingeloggten Nutzer mit Kategorie, Prioritaet, Rolle, Version und Geraeteinfo
+- Admin kann Feedback auswerten und Beta-Tester verwalten
+- Beta-Check erweitert um System, Rollen, Funktionen, Mobile, Feedback und Datenschutz/RLS
+- Beta-Test Anleitung und bekannte Beta-Grenzen direkt in der App unter `Mehr`
+- Neue Supabase-Migration `0013_beta_test_release.sql` fuer `beta_feedback` und `beta_testers`
+
+Bekannte Grenzen der Beta: Polar Sync, Excel Import, Videoanalyse, Paddlio Academy, native Pushs und das grosse Design-Redesign sind vorbereitet oder geplant, aber nicht Teil von 4.0.
+
 ## Version 3.9 - Results, Polar Sync & Beta Readiness
 
 - Ergebnisverwaltung erweitert um Laufdetails, Abstaende, Quellen, Trainerkommentar und automatische Bestzeiten

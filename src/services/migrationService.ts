@@ -12,6 +12,7 @@ import {
   upsertCloudPersonalBest,
   upsertCloudResultImport,
 } from "./resultsReadinessService";
+import { upsertCloudBetaFeedback, upsertCloudBetaTester } from "./betaService";
 import { upsertCloudMaterial } from "./materialService";
 import { upsertCloudSmartCoachRecommendation } from "./smartCoachService";
 import {
@@ -102,6 +103,14 @@ export const syncDataSnapshotToCloud = async (data: PaddleMotionData, profile: C
   }
   for (const item of data.betaReadinessChecks) {
     await upsertCloudBetaReadinessCheck(item);
+    migrated += 1;
+  }
+  for (const item of data.betaFeedback) {
+    await upsertCloudBetaFeedback(item);
+    migrated += 1;
+  }
+  for (const item of data.betaTesters) {
+    await upsertCloudBetaTester(item);
     migrated += 1;
   }
   for (const material of data.material) {

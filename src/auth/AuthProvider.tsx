@@ -37,6 +37,7 @@ import {
   listCloudPersonalBests,
   listCloudResultImports,
 } from "../services/resultsReadinessService";
+import { listCloudBetaFeedback, listCloudBetaTesters } from "../services/betaService";
 import { listCloudMaterials } from "../services/materialService";
 import { flushSyncQueue, getPendingSyncCount } from "../services/syncService";
 import { listCloudNotifications } from "../services/notificationService";
@@ -302,6 +303,8 @@ const mergeCloudData = (
     externalConnections: cloudData?.externalConnections ?? cached.externalConnections ?? [],
     externalTrainingSessions: cloudData?.externalTrainingSessions ?? cached.externalTrainingSessions ?? [],
     betaReadinessChecks: cloudData?.betaReadinessChecks ?? cached.betaReadinessChecks ?? [],
+    betaFeedback: cloudData?.betaFeedback ?? cached.betaFeedback ?? [],
+    betaTesters: cloudData?.betaTesters ?? cached.betaTesters ?? [],
     competitions: cloudData?.competitions && cloudData.competitions.length > 0 ? cloudData.competitions : cached.competitions,
     material: cloudData?.material && cloudData.material.length > 0 ? cloudData.material : cached.material,
     notifications: cloudData?.notifications ?? cached.notifications ?? [],
@@ -384,6 +387,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         cloudExternalConnections,
         cloudExternalTrainingSessions,
         cloudBetaReadinessChecks,
+        cloudBetaFeedback,
+        cloudBetaTesters,
         cloudCompetitions,
         cloudMaterials,
         cloudNotifications,
@@ -411,6 +416,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loadOptionalCloudData("external_connections lesen", listCloudExternalConnections, []),
         loadOptionalCloudData("external_training_sessions lesen", listCloudExternalTrainingSessions, []),
         loadOptionalCloudData("beta_readiness_checks lesen", listCloudBetaReadinessChecks, []),
+        loadOptionalCloudData("beta_feedback lesen", listCloudBetaFeedback, []),
+        loadOptionalCloudData("beta_testers lesen", listCloudBetaTesters, []),
         loadOptionalCloudData("competitions lesen", listCloudCompetitions, []),
         loadOptionalCloudData("materials lesen", listCloudMaterials, []),
         loadOptionalCloudData("notifications lesen", () => listCloudNotifications(activeSession.user.id), []),
@@ -439,6 +446,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         externalConnections: cloudExternalConnections,
         externalTrainingSessions: cloudExternalTrainingSessions,
         betaReadinessChecks: cloudBetaReadinessChecks,
+        betaFeedback: cloudBetaFeedback,
+        betaTesters: cloudBetaTesters,
         competitions: cloudCompetitions,
         material: cloudMaterials,
         notifications: cloudNotifications,
@@ -463,7 +472,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setDataState(nextData);
       setPendingSyncCount(pendingCount);
       setLastSyncAt(new Date().toISOString());
-      setSyncCount(allProfiles.length + clubs.length + requests.length + clubRequests.length + groups.length + groupMembers.length + cloudPlan.length + cloudFeedback.length + cloudTemplates.length + cloudGoals.length + cloudPersonalBests.length + cloudResultImports.length + cloudExternalConnections.length + cloudExternalTrainingSessions.length + cloudBetaReadinessChecks.length + cloudCompetitions.length + cloudMaterials.length + cloudNotifications.length + cloudSmartCoach.length + cloudClubMaterial.length + cloudClubBoats.length + cloudClubEvents.length + cloudClubDocuments.length + cloudClubMessages.length + cloudClubSettings.length + cloudDirectMessages.length + cloudGroupMessages.length + cloudClubPosts.length + cloudTasks.length + cloudTaskAssignments.length + cloudTrainingAttendance.length + cloudFileAttachments.length + pendingCount);
+      setSyncCount(allProfiles.length + clubs.length + requests.length + clubRequests.length + groups.length + groupMembers.length + cloudPlan.length + cloudFeedback.length + cloudTemplates.length + cloudGoals.length + cloudPersonalBests.length + cloudResultImports.length + cloudExternalConnections.length + cloudExternalTrainingSessions.length + cloudBetaReadinessChecks.length + cloudBetaFeedback.length + cloudBetaTesters.length + cloudCompetitions.length + cloudMaterials.length + cloudNotifications.length + cloudSmartCoach.length + cloudClubMaterial.length + cloudClubBoats.length + cloudClubEvents.length + cloudClubDocuments.length + cloudClubMessages.length + cloudClubSettings.length + cloudDirectMessages.length + cloudGroupMessages.length + cloudClubPosts.length + cloudTasks.length + cloudTaskAssignments.length + cloudTrainingAttendance.length + cloudFileAttachments.length + pendingCount);
       setCloudMessage(pendingCount > 0 ? `${pendingCount} Aenderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensaetze wurden in die Cloud migriert.` : "");
       setCloudStatus(!navigator.onLine ? "offline" : pendingCount > 0 ? "pending" : "connected");
     } catch (error) {

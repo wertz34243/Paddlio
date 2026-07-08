@@ -2802,6 +2802,69 @@ p {
   font-weight: 800;
 }
 
+.beta-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  margin-left: 0.35rem;
+  padding: 0.18rem 0.55rem;
+  border: 1px solid rgba(144, 224, 239, 0.28);
+  border-radius: 999px;
+  background: rgba(0, 180, 216, 0.14);
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 800;
+  vertical-align: middle;
+}
+
+.beta-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.8rem;
+}
+
+.beta-card {
+  padding: 1rem;
+  border: 1px solid rgba(144, 224, 239, 0.14);
+  border-radius: var(--radius);
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.beta-card h4 {
+  margin: 0 0 0.65rem;
+}
+
+.beta-card ol {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--muted);
+}
+
+.beta-row {
+  align-items: flex-start;
+}
+
+.inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: flex-end;
+}
+
+.inline-actions button,
+.beta-row select {
+  min-height: 2.35rem;
+  border: 1px solid rgba(144, 224, 239, 0.18);
+  border-radius: 999px;
+  background: rgba(0, 180, 216, 0.1);
+  color: var(--text);
+  font: inherit;
+  font-weight: 800;
+  padding: 0.45rem 0.75rem;
+}
+
 @keyframes loading-bar {
   0% {
     transform: translateX(-110%);
@@ -2826,8 +2889,13 @@ p {
   .smart-coach-recommendation,
   .communication-layout,
   .chat-form,
-  .attendance-actions {
+  .attendance-actions,
+  .beta-guide-grid {
     grid-template-columns: 1fr;
+  }
+
+  .inline-actions {
+    justify-content: flex-start;
   }
 
   .smart-coach-icon {

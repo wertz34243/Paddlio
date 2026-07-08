@@ -1,5 +1,17 @@
 # Changelog
 
+## 4.0.0-beta
+
+- Set version to `4.0.0-beta` and added visible Paddlio Beta hints.
+- Reduced mobile bottom navigation to Heute, Training, Analyse, Kommunikation and Mehr.
+- Added Beta feedback system with user-facing submission, own feedback list and Admin status workflow.
+- Added Beta tester management for Admin users.
+- Expanded Beta-Check with system, role, feature, mobile, feedback, documentation and RLS checkpoints.
+- Added Beta test guide and known limitations in app and docs.
+- Added Supabase migration `0013_beta_test_release.sql` for `beta_feedback` and `beta_testers` with RLS.
+- Added cloud service, AuthProvider sync, migration sync and realtime hooks for Beta feedback/testers.
+- Kept 4.0 as feature-freeze stabilization without Polar OAuth, Excel import, video analysis or redesign.
+
 ## 3.9
 
 - Expanded competition results with richer run, source, ranking, gap and coach-note fields.

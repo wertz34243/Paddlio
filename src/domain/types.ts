@@ -347,6 +347,45 @@ export type BetaReadinessCheck = {
   createdAt: string;
 };
 
+export type BetaFeedbackCategory = "Fehler" | "Verbesserung" | "Design" | "Verstaendnisproblem" | "Wunsch" | "Sonstiges";
+export type BetaFeedbackPriority = "niedrig" | "normal" | "hoch" | "kritisch";
+export type BetaFeedbackStatus = "open" | "in_review" | "planned" | "fixed" | "rejected";
+
+export type BetaFeedback = {
+  id: string;
+  userId: string;
+  clubId: string;
+  userRole: UserRole;
+  appVersion: string;
+  category: BetaFeedbackCategory;
+  priority: BetaFeedbackPriority;
+  title: string;
+  description: string;
+  pagePath: string;
+  deviceInfo: string;
+  browserInfo: string;
+  status: BetaFeedbackStatus;
+  adminNote: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string;
+};
+
+export type BetaTesterStatus = "invited" | "active" | "paused" | "finished";
+
+export type BetaTester = {
+  id: string;
+  userId: string;
+  clubId: string;
+  testerRole: UserRole;
+  status: BetaTesterStatus;
+  invitedAt: string;
+  lastSeenAt: string;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type TrainingSession = {
   id: string;
   athleteId: string;
@@ -855,6 +894,8 @@ export type PaddleMotionData = {
   externalConnections: ExternalConnection[];
   externalTrainingSessions: ExternalTrainingSession[];
   betaReadinessChecks: BetaReadinessCheck[];
+  betaFeedback: BetaFeedback[];
+  betaTesters: BetaTester[];
   coachAthletes: CoachAthlete[];
   coachGroups: CoachGroup[];
   notifications: NotificationItem[];

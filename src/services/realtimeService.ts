@@ -42,6 +42,8 @@ export const subscribeToUserTrainings = (userId: string, onChange: RealtimeHandl
     .on("postgres_changes", { event: "*", schema: "public", table: "direct_messages", filter: `receiver_id=eq.${userId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "task_assignments", filter: `assigned_to=eq.${userId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "training_attendance", filter: `athlete_id=eq.${userId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "beta_feedback", filter: `user_id=eq.${userId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "beta_testers", filter: `user_id=eq.${userId}` }, onChange)
     .subscribe();
 
   return registerChannel(channel);
@@ -71,6 +73,8 @@ export const subscribeToCoachClub = (clubId: string, onChange: RealtimeHandler):
     .on("postgres_changes", { event: "*", schema: "public", table: "club_posts", filter: `club_id=eq.${clubId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "tasks", filter: `club_id=eq.${clubId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "training_attendance", filter: `club_id=eq.${clubId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "beta_feedback", filter: `club_id=eq.${clubId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "beta_testers", filter: `club_id=eq.${clubId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "profiles", filter: `club_id=eq.${clubId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "trainer_requests", filter: `club_id=eq.${clubId}` }, onChange)
     .subscribe();
@@ -120,6 +124,8 @@ export const subscribeToGeneralCloudChanges = (onChange: RealtimeHandler): (() =
     .on("postgres_changes", { event: "*", schema: "public", table: "external_connections" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "external_training_sessions" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "beta_readiness_checks" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "beta_feedback" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "beta_testers" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "season_goals" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "smart_coach_recommendations" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, onChange)

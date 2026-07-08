@@ -27,6 +27,7 @@ import type {
 import { AnalysisView } from "./views/AnalysisView";
 import { AnalyticsCenterView, type AnalyticsMode } from "./views/AnalyticsCenterView";
 import { AuthView } from "./views/AuthView";
+import { BetaReleaseView } from "./views/BetaReleaseView";
 import { BoatComparisonView } from "./views/BoatComparisonView";
 import { CompetitionResultsView } from "./views/CompetitionResultsView";
 import { CompetitionVideosView } from "./views/CompetitionVideosView";
@@ -54,14 +55,13 @@ import { TrainingView } from "./views/TrainingView";
 type TrainingSegment = "plan" | "sessions" | "journal";
 type CompetitionSegment = "races" | "results" | "bests" | "stats" | "advanced" | "imports" | "coach" | "admin" | "videos";
 type AnalysisSegment = "overview" | "smartCoach" | "training" | "competition" | "goals" | "load" | "boats" | "season" | "coach" | "admin";
-type MoreSegment = "profile" | "communication" | "equipment" | "goals" | "records" | "notifications" | "integrations" | "beta" | "coach" | "settings";
+type MoreSegment = "profile" | "club" | "competitions" | "equipment" | "goals" | "records" | "notifications" | "integrations" | "feedback" | "betaGuide" | "limitations" | "beta" | "betaTesters" | "coach" | "settings";
 
 const navItems: Array<{ id: PageId; label: string; icon: IconName }> = [
-  { id: "dashboard", label: "Home", icon: "home" },
+  { id: "dashboard", label: "Heute", icon: "home" },
   { id: "training", label: "Training", icon: "training" },
-  { id: "competitions", label: "Wettkampf", icon: "trophy" },
   { id: "analysis", label: "Analyse", icon: "chart" },
-  { id: "club", label: "Verein", icon: "club" },
+  { id: "communication", label: "Kommunikation", icon: "message" },
   { id: "more", label: "Mehr", icon: "more" },
 ];
 
@@ -102,17 +102,21 @@ const analysisSegments: SegmentItem<AnalysisSegment>[] = [
 
 const baseMoreSegments: SegmentItem<MoreSegment>[] = [
   { id: "profile", label: "Profil" },
-  { id: "communication", label: "Kommunikation" },
+  { id: "club", label: "Verein" },
+  { id: "competitions", label: "Wettkampf" },
   { id: "equipment", label: "Material" },
   { id: "goals", label: "Ziele" },
   { id: "records", label: "Rekorde" },
   { id: "notifications", label: "Updates" },
   { id: "integrations", label: "Integrationen" },
+  { id: "feedback", label: "Feedback" },
+  { id: "betaGuide", label: "Beta-Anleitung" },
+  { id: "limitations", label: "Beta-Grenzen" },
   { id: "settings", label: "Einstellungen" },
 ];
 
 const pageTitles: Record<PageId, string> = {
-  dashboard: "Dashboard",
+  dashboard: "Heute",
   training: "Training",
   competitions: "Wettkaempfe",
   analysis: "Analyse",
@@ -159,7 +163,7 @@ function AppContent() {
   const moreSegments = canUseCoachArea(activeUser.role)
     ? [
         ...baseMoreSegments.filter((segment) => segment.id !== "settings"),
-        ...(activeUser.role === "admin" ? [{ id: "beta" as const, label: "Beta-Check" }] : []),
+        ...(activeUser.role === "admin" ? [{ id: "beta" as const, label: "Beta-Check" }, { id: "betaTesters" as const, label: "Beta-Tester" }] : []),
         { id: "coach" as const, label: activeUser.role === "admin" ? "Admin" : "Coach" },
         baseMoreSegments.find((segment) => segment.id === "settings")!,
       ]
@@ -714,8 +718,10 @@ function AppContent() {
             onDelete={deleteMaterial}
           />
         );
-      case "communication":
-        return <CommunicationView data={data} user={activeUser} onDataChange={updateData} />;
+      case "club":
+        return <ClubPortalView data={data} user={activeUser} onDataChange={updateData} />;
+      case "competitions":
+        return renderCompetitionArea();
       case "goals":
         return (
           <GoalsView
@@ -733,8 +739,21 @@ function AppContent() {
         return <NotificationsView notifications={data.notifications} onMarkRead={markNotificationRead} onMarkAllRead={markAllNotificationsRead} />;
       case "integrations":
         return <ResultsReadinessView data={data} user={activeUser} mode="integrations" onDataChange={updateData} />;
+      case "feedback":
+        return <BetaReleaseView data={data} user={activeUser} mode="feedback" onDataChange={updateData} />;
+      case "betaGuide":
+        return <BetaReleaseView data={data} user={activeUser} mode="guide" onDataChange={updateData} />;
+      case "limitations":
+        return <BetaReleaseView data={data} user={activeUser} mode="limitations" onDataChange={updateData} />;
       case "beta":
-        return <ResultsReadinessView data={data} user={activeUser} mode="beta" onDataChange={updateData} />;
+        return (
+          <div className="stack">
+            <ResultsReadinessView data={data} user={activeUser} mode="beta" onDataChange={updateData} />
+            <BetaReleaseView data={data} user={activeUser} mode="feedback" onDataChange={updateData} />
+          </div>
+        );
+      case "betaTesters":
+        return <BetaReleaseView data={data} user={activeUser} mode="testers" onDataChange={updateData} />;
       case "coach":
         return <CoachView data={data} user={activeUser} onDataChange={updateData} />;
       case "settings":
@@ -833,7 +852,7 @@ function AppContent() {
             <p className="brand-slogan">{APP_SLOGAN}</p>
           </div>
           <div className="page-title-lockup">
-            <span>Version {APP_VERSION}</span>
+            <span>Version {APP_VERSION} · Paddlio Beta</span>
             <h1>{pageTitles[activePage]}</h1>
           </div>
         </header>

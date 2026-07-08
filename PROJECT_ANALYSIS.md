@@ -1,8 +1,10 @@
 # Paddlio Project Analysis
 
-## Stand Version 3.9
+## Stand Version 4.0.0-beta
 
 Paddlio ist eine React/Vite/TypeScript-PWA fuer Kanuslalom mit Supabase Auth und Supabase als Hauptspeicher fuer die Plattformbereiche. LocalStorage bleibt als Cache und Offline-Fallback erhalten.
+
+Version 4.0 ist ein Beta-Test-Release. Der Schwerpunkt liegt auf Stabilisierung, klarer Navigation, Feedback-Erfassung, Beta-Readiness und Testdokumentation. Grosse neue Funktionen sind eingefroren.
 
 ## Architektur
 
@@ -11,6 +13,18 @@ Paddlio ist eine React/Vite/TypeScript-PWA fuer Kanuslalom mit Supabase Auth und
 - Rollen werden aus `profiles.roles` geladen.
 - Neue Nutzer starten als `Athlete`.
 - Admin-, Coach- und TeamAdmin-Rechte werden administrativ vergeben.
+- Bottom Navigation ist fuer mobile Beta-Tests auf fuenf Hauptpunkte reduziert; weitere Bereiche liegen unter `Mehr`.
+- Beta-Feedback und Beta-Tester liegen in Supabase und werden lokal nur gecacht.
+
+## Version 4.0 Beta Schwerpunkt
+
+- Beta-Modus mit sichtbarer Version und Testhinweis.
+- Feedback-System fuer Athlete, Coach, ClubAdmin und Admin.
+- Admin kann Feedbackstatus pflegen und Beta-Tester markieren.
+- Beta-Check deckt System, Rollen, Funktionen, Mobile, Doku und RLS ab.
+- Tester erhalten eine einfache Anleitung und bekannte Grenzen direkt in der App.
+- Feature-Freeze: kein vollstaendiger Polar OAuth, Excel Import, Videoanalyse, KI-Coach, Academy oder Redesign.
+- Naechste Versionen: 4.1 Dark Water Performance Design, 4.2 Excel Import, 4.3 Paddlio Academy, 4.4 Technik-Check nach DKV Manual, 4.5 Trainingsvorlagen aus Ausbildungs- und Technikmanual.
 
 ## Version 3.1 Schwerpunkt
 

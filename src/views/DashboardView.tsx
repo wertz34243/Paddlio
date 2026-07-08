@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { APP_SLOGAN } from "../brand";
+import { APP_SLOGAN, APP_VERSION } from "../brand";
 import { AppCard } from "../components/AppCard";
 import {
   formatSeconds,
@@ -85,8 +85,9 @@ export function DashboardView({ data, user, onNavigate, onOpenSmartCoach, onUpda
         </div>
         <div>
           <p className="eyebrow">{todayText()}</p>
-          <h2>{getGreeting(displayName)}</h2>
+          <h2>{getGreeting(displayName)} <span className="beta-badge">Paddlio Beta</span></h2>
           <p className="hero-slogan">{APP_SLOGAN}</p>
+          <p className="muted">Version {APP_VERSION} - Testversion fuer Vereins- und Trainerfeedback.</p>
         </div>
       </section>
 

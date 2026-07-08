@@ -301,6 +301,8 @@ export const seedData: PaddleMotionData = {
   externalConnections: [],
   externalTrainingSessions: [],
   betaReadinessChecks: [],
+  betaFeedback: [],
+  betaTesters: [],
   coachAthletes: [],
   coachGroups: [],
   notifications: [],

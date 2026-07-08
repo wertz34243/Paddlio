@@ -5,7 +5,9 @@ import type {
   Athlete,
   AuthSession,
   AuthUser,
+  BetaFeedback,
   BetaReadinessCheck,
+  BetaTester,
   BoatClass,
   Club,
   ClubBoat,
@@ -578,6 +580,41 @@ const normalizeBetaReadinessChecks = (items: Array<Partial<BetaReadinessCheck> &
     createdAt: item.createdAt ?? now(),
   }));
 
+const normalizeBetaFeedback = (items: Array<Partial<BetaFeedback> & Pick<BetaFeedback, "id" | "title">>, userId: string): BetaFeedback[] =>
+  items.map((item) => ({
+    id: item.id,
+    userId: item.userId ?? userId,
+    clubId: item.clubId ?? "",
+    userRole: item.userRole ?? "athlete",
+    appVersion: item.appVersion ?? "4.0.0-beta",
+    category: item.category ?? "Sonstiges",
+    priority: item.priority ?? "normal",
+    title: item.title,
+    description: item.description ?? "",
+    pagePath: item.pagePath ?? "",
+    deviceInfo: item.deviceInfo ?? "",
+    browserInfo: item.browserInfo ?? "",
+    status: item.status ?? "open",
+    adminNote: item.adminNote ?? "",
+    createdAt: item.createdAt ?? now(),
+    updatedAt: item.updatedAt ?? now(),
+    deletedAt: item.deletedAt ?? "",
+  }));
+
+const normalizeBetaTesters = (items: Array<Partial<BetaTester> & Pick<BetaTester, "id" | "userId">>): BetaTester[] =>
+  items.map((item) => ({
+    id: item.id,
+    userId: item.userId,
+    clubId: item.clubId ?? "",
+    testerRole: item.testerRole ?? "athlete",
+    status: item.status ?? "active",
+    invitedAt: item.invitedAt ?? now(),
+    lastSeenAt: item.lastSeenAt ?? "",
+    notes: item.notes ?? "",
+    createdAt: item.createdAt ?? now(),
+    updatedAt: item.updatedAt ?? now(),
+  }));
+
 const normalizeClubMaterial = (items: Array<Partial<ClubMaterial> & Pick<ClubMaterial, "id" | "name">>): ClubMaterial[] =>
   items.map((item) => ({
     id: item.id,
@@ -789,6 +826,8 @@ const normalizeDataShape = (data: PaddleMotionData): PaddleMotionData => ({
   externalConnections: Array.isArray(data.externalConnections) ? normalizeExternalConnections(data.externalConnections, data.activeUserId) : [],
   externalTrainingSessions: Array.isArray(data.externalTrainingSessions) ? normalizeExternalTrainingSessions(data.externalTrainingSessions, data.activeUserId) : [],
   betaReadinessChecks: Array.isArray(data.betaReadinessChecks) ? normalizeBetaReadinessChecks(data.betaReadinessChecks, data.activeUserId) : [],
+  betaFeedback: Array.isArray(data.betaFeedback) ? normalizeBetaFeedback(data.betaFeedback, data.activeUserId) : [],
+  betaTesters: Array.isArray(data.betaTesters) ? normalizeBetaTesters(data.betaTesters) : [],
   coachAthletes: Array.isArray(data.coachAthletes) ? normalizeCoachAthletes(data.coachAthletes, data.athlete.club, "") : [],
   coachGroups: Array.isArray(data.coachGroups) ? normalizeCoachGroups(data.coachGroups, "") : [],
   trainingTemplates: Array.isArray(data.trainingTemplates) ? normalizeTrainingTemplates(data.trainingTemplates, data.activeUserId, data.athlete.club) : [],
@@ -1751,6 +1790,8 @@ const createEmptyDataForUser = (authUser: AuthUser): PaddleMotionData => {
     externalConnections: [],
     externalTrainingSessions: [],
     betaReadinessChecks: [],
+    betaFeedback: [],
+    betaTesters: [],
     coachAthletes: [],
     coachGroups: [],
     notifications: [],
@@ -1792,6 +1833,8 @@ const withUsers = (data: V03Data): PaddleMotionData => {
     externalConnections: data.externalConnections ?? [],
     externalTrainingSessions: data.externalTrainingSessions ?? [],
     betaReadinessChecks: data.betaReadinessChecks ?? [],
+    betaFeedback: data.betaFeedback ?? [],
+    betaTesters: data.betaTesters ?? [],
     coachAthletes: data.coachAthletes ?? [],
     coachGroups: data.coachGroups ?? [],
     notifications: data.notifications ?? [],
@@ -1967,6 +2010,8 @@ const migrateLegacyData = (legacy: LegacyData): PaddleMotionData => {
     externalConnections: [],
     externalTrainingSessions: [],
     betaReadinessChecks: [],
+    betaFeedback: [],
+    betaTesters: [],
     coachAthletes: [],
     coachGroups: [],
     notifications: [],
