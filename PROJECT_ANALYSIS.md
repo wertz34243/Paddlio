@@ -1,10 +1,10 @@
 # Paddlio Project Analysis
 
-## Stand Version 4.0.0-beta
+## Stand Version 4.1.0
 
 Paddlio ist eine React/Vite/TypeScript-PWA fuer Kanuslalom mit Supabase Auth und Supabase als Hauptspeicher fuer die Plattformbereiche. LocalStorage bleibt als Cache und Offline-Fallback erhalten.
 
-Version 4.0 ist ein Beta-Test-Release. Der Schwerpunkt liegt auf Stabilisierung, klarer Navigation, Feedback-Erfassung, Beta-Readiness und Testdokumentation. Grosse neue Funktionen sind eingefroren.
+Version 4.1 ist ein Design- und UX-Release. Der Schwerpunkt liegt auf Dark Water Performance Design, ruhigerer Heute-Ansicht, besserer mobiler Navigation, einheitlichen Karten, konsistenteren Statuszustaenden und einer App-Anmutung fuer echte Beta-Tester. Grosse neue Fachfunktionen bleiben eingefroren.
 
 ## Architektur
 
@@ -15,6 +15,17 @@ Version 4.0 ist ein Beta-Test-Release. Der Schwerpunkt liegt auf Stabilisierung,
 - Admin-, Coach- und TeamAdmin-Rechte werden administrativ vergeben.
 - Bottom Navigation ist fuer mobile Beta-Tests auf fuenf Hauptpunkte reduziert; weitere Bereiche liegen unter `Mehr`.
 - Beta-Feedback und Beta-Tester liegen in Supabase und werden lokal nur gecacht.
+- Das visuelle Grundsystem liegt zentral in `src/styles.css` mit 4.1-Overlay fuer Tokens, Karten, Navigation, Buttons, Empty/Error/Offline States und mobile Safe Areas.
+
+## Version 4.1 Schwerpunkt
+
+- Dark Water Performance Design mit sehr dunklem Blau, Wasser-Cyan, ruhigen Flaechen und reduzierten Schatten.
+- Heute bleibt zentrale Startseite und priorisiert Training, Kommunikation, Aufgaben, Anwesenheit, Ziele und Smart Coach.
+- Mobile Bottom Navigation bleibt bei Heute, Training, Analyse, Kommunikation und Mehr.
+- Kommunikation wirkt mehr wie Messenger/Team-App: Kontakte, Chat-Bubbles, sticky Eingabe und klare Empty States.
+- Training, Analyse, Ergebnisse, Profil, Einstellungen und Admin/Beta profitieren von gemeinsamen Karten-, Button- und Statusregeln.
+- PWA Theme Color ist auf den dunkleren App-Shell angepasst.
+- Naechste Versionen: 4.2 Excel Import, 4.3 Paddlio Academy, 4.4 Technik-Check nach DKV Manual, 4.5 Trainingsvorlagen aus Ausbildungs- und Technikmanual.
 
 ## Version 4.0 Beta Schwerpunkt
 

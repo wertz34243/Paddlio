@@ -2903,3 +2903,450 @@ p {
     height: 34px;
   }
 }
+
+/* Paddlio 4.1 - Dark Water Performance Design */
+:root {
+  --background: #07111f;
+  --background-deep: #030712;
+  --surface: rgba(12, 24, 42, 0.88);
+  --surface-strong: rgba(15, 31, 53, 0.96);
+  --surface-soft: rgba(20, 42, 68, 0.62);
+  --card: #102033;
+  --primary: #26d3ff;
+  --secondary: #0ea5c6;
+  --accent: #8ee8f7;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #fb7185;
+  --text: #f8fbff;
+  --muted: #9fb3c8;
+  --meta: #70839a;
+  --border: rgba(142, 232, 247, 0.13);
+  --border-strong: rgba(142, 232, 247, 0.26);
+  --radius: 18px;
+  --radius-sm: 12px;
+  --shadow: 0 22px 60px rgba(0, 0, 0, 0.34);
+  --shadow-soft: 0 12px 34px rgba(0, 0, 0, 0.22);
+  --space: 14px;
+}
+
+html {
+  background:
+    radial-gradient(circle at 22% -10%, rgba(38, 211, 255, 0.18), transparent 26rem),
+    radial-gradient(circle at 88% 10%, rgba(52, 211, 153, 0.08), transparent 22rem),
+    linear-gradient(180deg, #07111f 0%, #081827 48%, #030712 100%);
+}
+
+body {
+  background: transparent;
+}
+
+.app-shell {
+  max-width: 1040px;
+  padding: calc(10px + env(safe-area-inset-top)) 14px calc(78px + env(safe-area-inset-bottom));
+}
+
+.app-shell-home {
+  padding-top: calc(6px + env(safe-area-inset-top));
+}
+
+.page-content {
+  animation: page-rise 220ms ease both;
+}
+
+.app-header-compact {
+  position: sticky;
+  top: calc(4px + env(safe-area-inset-top));
+  margin: 0 -4px 8px;
+  padding: 9px 10px;
+  border: 1px solid rgba(142, 232, 247, 0.09);
+  border-radius: 18px;
+  background: rgba(7, 17, 31, 0.76);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(22px);
+}
+
+.app-brand {
+  font-size: 20px;
+}
+
+.brand-slogan,
+.eyebrow,
+.page-title-lockup span {
+  color: var(--muted);
+  letter-spacing: 0;
+}
+
+.app-header h1 {
+  color: var(--text);
+  font-size: 17px;
+}
+
+.home-profile-card,
+.profile-hero-card,
+.section-block,
+.metric-card,
+.summary-strip,
+.motivation-card,
+.app-card,
+.chart-panel,
+.competition-timeline-item,
+.wallet-card,
+.plan-day,
+.plan-card,
+.club-post-card,
+.task-card,
+.attendance-card,
+.notification-card,
+.calendar-training-card,
+.training-group-card,
+.athlete-row,
+.athlete-profile-card,
+.club-card,
+.beta-card {
+  border-color: var(--border);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.014)),
+    var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.premium-hero,
+.intelligence-hero {
+  min-height: auto;
+  padding: 15px;
+  border-color: rgba(38, 211, 255, 0.2);
+  background:
+    linear-gradient(135deg, rgba(38, 211, 255, 0.18), rgba(16, 32, 51, 0.88) 54%, rgba(52, 211, 153, 0.08)),
+    var(--surface-strong);
+}
+
+.home-avatar,
+.profile-avatar {
+  box-shadow: 0 0 0 4px rgba(38, 211, 255, 0.08);
+}
+
+.home-profile-card h2,
+.profile-hero-card h2,
+.intelligence-hero h2 {
+  font-size: clamp(1.45rem, 4.8vw, 2.15rem);
+  letter-spacing: 0;
+}
+
+.hero-slogan {
+  color: var(--accent);
+}
+
+.daily-motivation,
+.today-training-card {
+  border-color: rgba(38, 211, 255, 0.2);
+  background:
+    linear-gradient(135deg, rgba(38, 211, 255, 0.14), rgba(52, 211, 153, 0.06)),
+    var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.today-training-card {
+  padding: 15px;
+}
+
+.today-training-card h3 {
+  font-size: clamp(1.35rem, 5vw, 1.8rem);
+}
+
+.dashboard-card-grid,
+.metric-grid {
+  gap: 12px;
+}
+
+.app-card {
+  min-height: 148px;
+  padding: 15px;
+}
+
+.app-card-head h3,
+.section-heading h3 {
+  color: var(--text);
+  letter-spacing: 0;
+}
+
+.app-card-value,
+.metric-card strong {
+  font-size: clamp(1.35rem, 5vw, 1.9rem);
+}
+
+.app-card-icon,
+.nav-icon {
+  background: rgba(38, 211, 255, 0.12);
+  color: var(--accent);
+}
+
+.status-pill,
+.goal-status,
+.beta-badge,
+.smart-coach-meta span,
+.smart-coach-meta b,
+.smart-coach-meta em {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.progress-track {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.progress-track span {
+  background: linear-gradient(90deg, var(--secondary), var(--accent));
+}
+
+.bottom-nav {
+  right: 10px;
+  bottom: max(8px, env(safe-area-inset-bottom));
+  left: 10px;
+  width: auto;
+  max-width: 520px;
+  margin: 0 auto;
+  gap: 3px;
+  padding: 6px;
+  border: 1px solid rgba(142, 232, 247, 0.14);
+  border-radius: 24px;
+  background: rgba(4, 12, 24, 0.74);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(24px) saturate(1.2);
+}
+
+.nav-item {
+  min-height: 42px;
+  padding: 5px 2px 4px;
+  border-radius: 18px;
+  color: var(--muted);
+}
+
+.nav-item.active {
+  background: linear-gradient(135deg, rgba(38, 211, 255, 0.2), rgba(14, 165, 198, 0.12));
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px rgba(142, 232, 247, 0.18);
+}
+
+.nav-icon {
+  width: 25px;
+  height: 25px;
+  border-radius: 11px;
+}
+
+.nav-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.nav-item span:last-child {
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.category-shell {
+  gap: 12px;
+}
+
+.segment-nav,
+.workflow-tabs {
+  border-color: rgba(142, 232, 247, 0.12);
+  background: rgba(7, 17, 31, 0.72);
+  box-shadow: var(--shadow-soft);
+}
+
+.communication-layout {
+  align-items: start;
+}
+
+.communication-contact,
+.chat-thread,
+.journal-form,
+.placeholder-card {
+  border-color: var(--border);
+  background: rgba(7, 17, 31, 0.52);
+}
+
+.chat-panel {
+  min-height: min(520px, 70dvh);
+}
+
+.chat-bubble {
+  border-color: rgba(142, 232, 247, 0.12);
+  background: rgba(20, 42, 68, 0.92);
+}
+
+.chat-bubble.own {
+  background: linear-gradient(135deg, rgba(38, 211, 255, 0.95), rgba(14, 165, 198, 0.92));
+}
+
+.chat-form {
+  position: sticky;
+  bottom: calc(70px + env(safe-area-inset-bottom));
+  padding-top: 8px;
+  background: linear-gradient(180deg, transparent, rgba(7, 17, 31, 0.94) 28%);
+}
+
+.save-button,
+.primary-button,
+.edit-button,
+.delete-button,
+.ghost-button,
+.quick-actions button,
+.attendance-actions button,
+.inline-actions button {
+  min-height: 44px;
+  border-radius: 14px;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.save-button {
+  background: linear-gradient(135deg, var(--success), #9df5cb);
+  color: #042016;
+}
+
+.ghost-button {
+  border: 1px solid rgba(142, 232, 247, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.quick-actions button {
+  background: rgba(16, 32, 51, 0.72);
+}
+
+.empty-state,
+.placeholder-card,
+.permission-state,
+.error-state {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.empty-state {
+  padding: 14px;
+  border: 1px dashed rgba(142, 232, 247, 0.18);
+  border-radius: var(--radius);
+  background: rgba(7, 17, 31, 0.42);
+}
+
+.cloud-status {
+  bottom: calc(72px + env(safe-area-inset-bottom));
+  border-radius: 18px;
+  background: rgba(4, 12, 24, 0.78);
+}
+
+@keyframes page-rise {
+  from {
+    opacity: 0.85;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 720px) {
+  .app-shell {
+    padding-inline: 24px;
+  }
+
+  .dashboard-card-grid,
+  .metric-grid.two-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bottom-nav {
+    right: 50%;
+    left: auto;
+    width: min(520px, calc(100% - 48px));
+    transform: translateX(50%);
+  }
+}
+
+@media (min-width: 980px) {
+  .dashboard-card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .intelligence-dashboard .smart-coach-card,
+  .intelligence-dashboard .quick-actions,
+  .intelligence-dashboard .daily-motivation,
+  .intelligence-dashboard .today-training-card {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 560px) {
+  .app-shell {
+    padding-inline: 12px;
+  }
+
+  .app-header-compact {
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    margin-bottom: 6px;
+  }
+
+  .brand-slogan {
+    display: none;
+  }
+
+  .page-title-lockup span {
+    display: none;
+  }
+
+  .home-profile-card,
+  .profile-hero-card {
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .home-avatar {
+    width: 54px;
+    height: 54px;
+  }
+
+  .app-card {
+    min-height: auto;
+  }
+
+  .section-block,
+  .chart-panel {
+    padding: 15px;
+  }
+
+  .communication-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .chat-thread {
+    max-height: 48dvh;
+  }
+
+  .chat-form {
+    grid-template-columns: 1fr auto;
+  }
+
+  .bottom-nav {
+    right: 8px;
+    left: 8px;
+    padding: 5px;
+    border-radius: 22px;
+  }
+}
+
+@media (max-width: 390px) {
+  .nav-item span:last-child {
+    font-size: 9px;
+  }
+
+  .nav-icon {
+    width: 23px;
+    height: 23px;
+  }
+
+  .bottom-nav {
+    gap: 2px;
+  }
+}

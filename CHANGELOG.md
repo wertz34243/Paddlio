@@ -1,5 +1,16 @@
 # Changelog
 
+## 4.1.0
+
+- Introduced Dark Water Performance Design as the current visual direction.
+- Updated central design tokens for darker water surfaces, cyan accents, calmer borders and softer shadows.
+- Refined mobile bottom navigation for a flatter, more app-like iPhone/iPad feel.
+- Improved Heute dashboard hierarchy with quieter hero, cards, motivation, training and communication surfaces.
+- Unified card, button, badge, empty, error, offline and chat styling across existing views.
+- Improved communication, training, analysis, results, profile and admin/beta surfaces through shared CSS rules.
+- Updated PWA theme colors for the darker app shell.
+- Added `docs/design-system.md` and `docs/dark-water-performance-design.md`.
+
 ## 4.0.0-beta
 
 - Set version to `4.0.0-beta` and added visible Paddlio Beta hints.

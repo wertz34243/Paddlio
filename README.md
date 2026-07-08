@@ -4,13 +4,26 @@ Paddlio ist eine moderne Trainings- und Wettkampfplattform fuer Kanuslalom.
 
 **Train. Analyze. Improve.**
 
-Version 1.0 richtet sich an Athletinnen und Athleten. Paddlio kombiniert Training, Wettkaempfe, Analyse, Material, Profil, persoenliche Rekorde und regelbasierte Athlete Intelligence in einer mobilen Web-App.
+Version 4.1.0 ist das Dark-Water-Performance-Design-Release. Paddlio kombiniert Training, Wettkaempfe, Analyse, Material, Profil, Kommunikation, Verein, Aufgaben, Anwesenheit, Beta-Feedback und regelbasierte Athlete Intelligence in einer mobilen Web-App.
 
 ## Datenschutz und Auth
 
 Paddlio nutzt Supabase Auth fuer Registrierung, Login, Logout und Session-Wiederherstellung. App-Daten werden in Supabase gespeichert und lokal nur als Offline-/Performance-Cache gehalten. Rollen duerfen nicht aus Formularwerten entstehen: neue Konten starten immer als `Athlete`, Coach-, TeamAdmin- und Admin-Rechte werden ausschliesslich im Adminbereich beziehungsweise direkt in Supabase durch berechtigte Admins vergeben.
 
 Wenn Supabase Auth `email rate limit exceeded` meldet, hat das Projekt zu viele E-Mail-/Registrierungsanfragen in kurzer Zeit erzeugt. Ein Browser-Client darf dieses Limit ohne serverseitigen Admin-Schluessel nicht umgehen. Fuer produktive Tests sollten in Supabase Auth die unten dokumentierten E-Mail- und Rate-Limit-Einstellungen passend gesetzt werden.
+
+## Version 4.1.0 - Dark Water Performance Design
+
+Paddlio 4.1 ist ein Design- und UX-Release ohne grosses neues Fachfunktionspaket.
+
+- Dark Water Performance Design mit dunklem Wasserlook, Cyan-Akzenten und ruhigeren Karten
+- Bottom Navigation bleibt mobil bei Heute, Training, Analyse, Kommunikation und Mehr
+- Heute-Ansicht zeigt die wichtigsten Tagesinformationen schneller und mit weniger visueller Unruhe
+- Karten, Buttons, Badges, Empty States, Error/Offline States und Chat-Flächen sind einheitlicher gestaltet
+- Kommunikation, Training, Analyse, Ergebnisse, Profil/Einstellungen und Admin/Beta-Bereiche wurden optisch geglaettet
+- PWA Theme Color wurde an das dunklere App-Gefuehl angepasst
+
+Geplante naechste Schritte: 4.2 Excel Import, 4.3 Paddlio Academy, 4.4 Technik-Check nach DKV Manual, 4.5 Trainingsvorlagen aus Ausbildungs- und Technikmanual.
 
 ## Version 4.0.0-beta - Beta Test Release
 

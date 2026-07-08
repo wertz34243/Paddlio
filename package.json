@@ -1,6 +1,6 @@
 {
   "name": "paddlio",
-  "version": "4.0.0-beta",
+  "version": "4.1.0",
   "private": true,
   "type": "module",
   "scripts": {
