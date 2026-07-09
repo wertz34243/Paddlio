@@ -308,6 +308,10 @@ const mergeCloudData = (
 ): PaddleMotionData => {
   const club = clubs.find((item) => item.clubId === profile.club_id);
   const cloudTruthProfile: CloudProfile = { ...profile, roles: getCloudTruthRoles(profile), email: profile.email.trim().toLowerCase() };
+  const cloudDisplayName =
+    cloudTruthProfile.display_name ||
+    `${cloudTruthProfile.first_name ?? ""} ${cloudTruthProfile.last_name ?? ""}`.trim() ||
+    cloudTruthProfile.email;
   const authUsers = profiles.map((item) => toAuthUser(item, clubs.find((clubItem) => clubItem.clubId === item.club_id)?.name ?? ""));
   cacheCloudAuthUsers(authUsers.length > 0 ? authUsers : [toAuthUser(profile, club?.name ?? "")]);
   cacheCloudClubs(clubs);
@@ -322,6 +326,7 @@ const mergeCloudData = (
       ...cached.users[0].profile,
       firstName: cloudTruthProfile.first_name ?? cached.users[0].profile.firstName,
       lastName: cloudTruthProfile.last_name ?? cached.users[0].profile.lastName,
+      nickname: cloudDisplayName,
       club: club?.name ?? cached.users[0].profile.club,
       ageClass: (cloudTruthProfile.age_category ?? cached.users[0].profile.ageClass) as User["profile"]["ageClass"],
       boatClasses: cloudTruthProfile.boat_classes.filter((boat): boat is "K1" | "C1" => boat === "K1" || boat === "C1"),
@@ -338,7 +343,7 @@ const mergeCloudData = (
     athlete: {
       ...cached.athlete,
       id: userId,
-      name: localUser.profile.nickname || `${localUser.profile.firstName} ${localUser.profile.lastName}`.trim() || cloudTruthProfile.email,
+      name: cloudDisplayName,
       club: club?.name ?? localUser.profile.club,
     },
     coachAthletes: profiles.filter((item) => item.roles.includes("Athlete")).map((item) => toCoachAthlete(item, clubs.find((clubItem) => clubItem.clubId === item.club_id)?.name ?? "", members)),
