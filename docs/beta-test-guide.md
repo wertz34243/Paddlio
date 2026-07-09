@@ -2,7 +2,7 @@
 
 ## Ziel
 
-Diese Beta soll zeigen, ob Paddlio im echten Vereinsalltag verstaendlich, stabil und nuetzlich ist. Bitte teste echte Ablaeufe und melde Fehler direkt ueber `Mehr > Feedback`.
+Diese Beta soll zeigen, ob Paddlio im echten Vereinsalltag verstaendlich, stabil und nuetzlich ist. Bitte teste echte Ablaeufe und melde Fehler direkt über `Mehr > Feedback`.
 
 ## Tester
 

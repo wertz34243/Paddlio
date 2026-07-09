@@ -71,7 +71,7 @@ Bekannte Grenzen der Beta: Polar Sync, Excel Import, Videoanalyse, Paddlio Acade
 - Ergebnisverwaltung erweitert um Laufdetails, Abstaende, Quellen, Trainerkommentar und automatische Bestzeiten
 - Neues Wettkampfsegment `Ergebnisanalyse` mit Bestzeiten, Strafschnitt, Bootsklassenverteilung und Saisonvergleich-Grundlage
 - Importbereich für CSV, Excel, PDF und Web-Quellen vorbereitet, ohne fragile Scraper zu erzwingen
-- Integrationen-Bereich für Polar Flow vorbereitet; echte OAuth-Aktivierung muss später ueber Backend oder Supabase Edge Functions erfolgen
+- Integrationen-Bereich für Polar Flow vorbereitet; echte OAuth-Aktivierung muss später über Backend oder Supabase Edge Functions erfolgen
 - Externe Trainingseinheiten, Trainingsbelastung und Verknuepfung mit Paddlio-Trainings vorbereitet
 - Smart Coach erkennt jetzt externe unverknuepfte Trainings, Ergebnisverbesserungen, lange Ergebnispausen und Belastungsspruenge
 - Admin-Bereich `Beta-Check` mit Checkliste für Supabase, Rollen, Gruppen, Training, Kommunikation, Ergebnisse, Mobile und RLS
@@ -166,7 +166,7 @@ Polar-Hinweis: Paddlio speichert keine echten Polar-Secrets im Frontend. `VITE_*
 ## Version 2.3 - Individuelle Saisonziele & Leistungsentwicklung
 
 - Saisonziele sind nicht mehr fest im Code hinterlegt, sondern werden pro Nutzer in `paddlio_data_<userId>` gespeichert
-- Neue Zielverwaltung mit Erstellen, Bearbeiten, Loeschen, Status, Priorität, Zeitraum, Kategorie und Notizen
+- Neue Zielverwaltung mit Erstellen, Bearbeiten, Löschen, Status, Priorität, Zeitraum, Kategorie und Notizen
 - Automatische Fortschrittsberechnung für K1-Bestzeit, C1-Bestzeit, Strafschnitt, Trainingseinheiten und Trainingsminuten
 - Manuelle Ziele für Technik, persönliche Entwicklung und Coach-Feedback vorbereitet
 - Dashboard zeigt individuelle Ziele oder einen leeren Zustand, wenn noch keine Ziele angelegt wurden
@@ -177,7 +177,7 @@ Polar-Hinweis: Paddlio speichert keine echten Polar-Secrets im Frontend. `VITE_*
 - Admins verwalten offizielle Vereine mit Kurzname, Stadt, Kontaktdaten, Farben, Status und moderner Kartenansicht
 - Registrierung bietet eine Vereinsauswahl oder speichert neue Vereine als Vorschlag für die Admin-Prüfung
 - Vereinsvorschlaege können angenommen, abgelehnt oder bearbeitet und angenommen werden; angenommene Vereine werden in `paddlio_clubs` gespeichert
-- Bestehende Freitext-Vereine werden als Vereinsvorschlaege migriert, ohne Nutzerdaten zu loeschen
+- Bestehende Freitext-Vereine werden als Vereinsvorschlaege migriert, ohne Nutzerdaten zu löschen
 - Coach Dashboard zeigt den eigenen Verein, Sportler im Verein, Gruppen im Verein und offene Rückmeldungen
 - LocalStorage-Struktur erweitert um `paddlio_clubs` und `paddlio_club_requests`
 
@@ -198,7 +198,7 @@ Polar-Hinweis: Paddlio speichert keine echten Polar-Secrets im Frontend. `VITE_*
 - Wiederkehrende Trainings erzeugen beim Speichern mehrere einzelne Kalendereintraege bis zum Wiederholungsdatum
 - Sportler können Trainings erledigen, auslassen und Feedback mit Gefühl, Schwierigkeit, Müdigkeit, Motivation, Schlaf und Kommentar speichern
 - Kalenderfilter für Zeitraum, Bereich, Bootsklasse, Intensität, Status, Sportler und Gruppe
-- Dashboard und Analyse nutzen die neue Planstruktur weiterhin aus `paddlio_data_<userId>`, ohne bestehende Daten zu loeschen
+- Dashboard und Analyse nutzen die neue Planstruktur weiterhin aus `paddlio_data_<userId>`, ohne bestehende Daten zu löschen
 
 ## Version 2.6.1 - Trainingsvorlagen & Planungsassistent
 
@@ -206,7 +206,7 @@ Polar-Hinweis: Paddlio speichert keine echten Polar-Secrets im Frontend. `VITE_*
 - Vorlagen können erstellt, bearbeitet, gelöscht, favorisiert und direkt für Trainingsplanung genutzt werden
 - Trainings können einzeln, wochenweise oder als Zeitraum/Trainingsblock kopiert werden
 - Wiederkehrende Trainings unterstuetzen taeglich, woechentlich, alle 2 Wochen, monatlich und eine maximale Terminanzahl
-- Trainingsvorlagen werden im bestehenden `paddlio_data_<userId>` LocalStorage gespeichert, ohne vorhandene Trainingsdaten zu loeschen
+- Trainingsvorlagen werden im bestehenden `paddlio_data_<userId>` LocalStorage gespeichert, ohne vorhandene Trainingsdaten zu löschen
 
 ## Version 3.2 - Trainingsplanung 2.0 & Coach Workflow
 
@@ -235,7 +235,7 @@ Polar-Hinweis: Paddlio speichert keine echten Polar-Secrets im Frontend. `VITE_*
 - Ergebnisse speichern Bootsklasse, beide Laufzeiten, Strafsekunden, Platz, Starterfeld, Abstand, Gefühl und Notiz
 - Automatische Kennzahlen: Lauf-Gesamtzeiten, beste Gesamtzeit, Strafschnitt und Trend gegen vorheriges Ergebnis
 - Bestzeiten nach Bootsklasse und Strecke sowie Monats-/Saisonstatistik
-- Import vorbereitet ueber `source`, `external_id` und `source_url` für spätere canoeslalom.net-Anbindung
+- Import vorbereitet über `source`, `external_id` und `source_url` für spätere canoeslalom.net-Anbindung
 - Supabase-Migration `0008_competition_portal_results.sql` ergänzt Portal-Felder, Indizes und Realtime-Publication
 
 ## Version 3.5 - Analysezentrum & Leistungsentwicklung
@@ -282,7 +282,7 @@ Polar-Hinweis: Paddlio speichert keine echten Polar-Secrets im Frontend. `VITE_*
 
 ## Version 3.1 - Vereins- und Teamverwaltung
 
-- Adminbereich verwaltet Vereine, Vereinsvorschlaege, Mitglieder, Rollen, Status und Traineranfragen ueber Supabase
+- Adminbereich verwaltet Vereine, Vereinsvorschlaege, Mitglieder, Rollen, Status und Traineranfragen über Supabase
 - Coach-Bereich nutzt Supabase für eigene Vereinsmitglieder, Trainingsgruppen und Gruppenzuordnungen
 - Neue Nutzer bleiben immer `Athlete`; Coach-, TeamAdmin- und Admin-Rechte werden ausschließlich administrativ vergeben
 - RLS-Policies und Foreign Keys für `club_requests`, `trainer_requests`, `training_groups` und `group_members` ergänzt
@@ -292,15 +292,15 @@ Polar-Hinweis: Paddlio speichert keine echten Polar-Secrets im Frontend. `VITE_*
 
 1. Paddlio in Safari öffnen.
 2. Teilen-Button antippen.
-3. `Zum Home-Bildschirm` waehlen.
-4. Name `Paddlio` bestaetigen und `Hinzufuegen` antippen.
+3. `Zum Home-Bildschirm` wählen.
+4. Name `Paddlio` bestaetigen und `Hinzufügen` antippen.
 
 Paddlio startet danach als eigenständige App im Dark-Mode Look mit iOS-Statusleiste.
 
 ## Paddlio auf Android installieren
 
 1. Paddlio in Chrome öffnen.
-2. Im Browsermenue `App installieren` oder `Zum Startbildschirm hinzufuegen` waehlen.
+2. Im Browsermenue `App installieren` oder `Zum Startbildschirm hinzufügen` wählen.
 3. Installation bestaetigen.
 
 Chrome nutzt das Manifest, die 192x192-/512x512-Icons und den Standalone-Modus.
@@ -308,7 +308,7 @@ Chrome nutzt das Manifest, die 192x192-/512x512-Icons und den Standalone-Modus.
 ## Paddlio auf Windows installieren
 
 1. Paddlio in Microsoft Edge öffnen.
-2. In der Adressleiste oder im Menü `Apps` die Option `Diese Website als App installieren` waehlen.
+2. In der Adressleiste oder im Menü `Apps` die Option `Diese Website als App installieren` wählen.
 3. Installation bestaetigen.
 
 Edge verwendet Manifest, Theme Color und Windows Tile-Metadaten.
@@ -326,7 +326,7 @@ Edge verwendet Manifest, Theme Color und Windows Tile-Metadaten.
 - Saisonübersicht mit Monatswerten, Trainingsminuten, Belastung und Bestzeiten
 - Materialverwaltung für Boote, Paddel und Zubehör
 - Athletenprofil mit Sportdaten, Zielen, Profilbild und Einstellungen
-- Datenpersistenz im Browser ueber LocalStorage
+- Datenpersistenz im Browser über LocalStorage
 
 ## Technik
 

@@ -1337,6 +1337,45 @@ p {
   line-height: 1.4;
 }
 
+.more-mobile-grid {
+  display: none;
+}
+
+.more-mobile-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  min-height: 86px;
+  padding: 13px;
+  border: 1px solid rgba(144, 224, 239, 0.14);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.64);
+  color: var(--text);
+  text-align: left;
+}
+
+.more-mobile-card.active {
+  border-color: rgba(144, 224, 239, 0.42);
+  background: linear-gradient(135deg, rgba(0, 180, 216, 0.18), rgba(15, 23, 42, 0.72));
+}
+
+.more-mobile-card > span:last-child {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.more-mobile-card strong {
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.more-mobile-card small {
+  color: var(--muted);
+  line-height: 1.35;
+}
+
 .filter-tabs {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2614,6 +2653,16 @@ p {
 }
 
 @media (max-width: 640px) {
+  .more-category-shell > .segment-nav {
+    display: none;
+  }
+
+  .more-mobile-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
   .training-workflow-hero {
     grid-template-columns: 1fr;
     padding: 14px;

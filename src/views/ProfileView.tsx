@@ -113,7 +113,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
     }
 
     if (boatClasses.includes("C1") && paddleSide !== "links" && paddleSide !== "rechts") {
-      setFormError("Bitte waehle fär C1 eine Paddelseite aus.");
+      setFormError("Bitte waehle für C1 eine Paddelseite aus.");
       return;
     }
 
@@ -267,7 +267,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
           <label>
             Altersklasse
             <select name="ageClass" defaultValue={user.profile.ageClass}>
-              <option value="">Bitte waehlen</option>
+              <option value="">Bitte wählen</option>
               {ageClasses.map((ageClass) => (
                 <option key={ageClass} value={ageClass}>
                   {ageClass}
@@ -287,7 +287,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
                 }}
                 required
               >
-                <option value="">Bitte waehlen</option>
+                <option value="">Bitte wählen</option>
                 {paddleSides.map((side) => (
                   <option key={side.value} value={side.value}>
                     {side.label}
@@ -406,7 +406,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
         <div className="section-heading">
           <div>
             <p className="eyebrow">Ziele</p>
-            <h3>Persänlicher Fokus</h3>
+            <h3>Persönlicher Fokus</h3>
           </div>
         </div>
         <label>
@@ -418,7 +418,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
           <textarea name="seasonGoal" defaultValue={user.profile.seasonGoal} rows={3} />
         </label>
         <label>
-          Persänliche Notizen
+          Persönliche Notizen
           <textarea name="personalNotes" defaultValue={user.profile.personalNotes} rows={4} />
         </label>
       </section>

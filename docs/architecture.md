@@ -67,7 +67,7 @@ Erweiterungen:
 Technische Vorbereitung:
 
 - UI-Varianten dürfen nicht zu Datenmodell-Varianten führen
-- Komplexitaet wird ueber Rollen, Views und Feature Flags gesteuert
+- Komplexitaet wird über Rollen, Views und Feature Flags gesteuert
 - Kernobjekte wie Training, Wettkampf und Ziel bleiben dieselben
 
 ### Phase 4: Vereinsbereich

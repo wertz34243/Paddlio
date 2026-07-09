@@ -33,12 +33,12 @@ Wenn die Variablen fehlen, bleibt die Cloud-Schicht deaktiviert und Paddlio nutz
 ## Vercel einrichten
 
 1. Vercel Project Settings öffnen.
-2. `Environment Variables` waehlen.
+2. `Environment Variables` wählen.
 3. `VITE_SUPABASE_ANON_KEY` exakt mit diesem Namen eintragen.
 4. Die Variablen für `Production`, `Preview` und `Development` aktivieren.
 5. Deployment neu starten oder einen neuen Commit deployen.
 
-Wenn die App `Supabase ist noch nicht vollständig konfiguriert` anzeigt, fehlt im ausgelieferten Vite-Build der Publishable Key. Vite liest nur Variablen mit dem Prefix `VITE_` ueber `import.meta.env`.
+Wenn die App `Supabase ist noch nicht vollständig konfiguriert` anzeigt, fehlt im ausgelieferten Vite-Build der Publishable Key. Vite liest nur Variablen mit dem Prefix `VITE_` über `import.meta.env`.
 
 ## Auth für produktive Registrierung
 
@@ -53,7 +53,7 @@ Empfohlene Supabase-Einstellungen:
 5. Rate Limits pruefen: `Authentication` -> `Rate Limits`. Bei `email rate limit exceeded` muss im Supabase-Projekt gewartet oder das Limit/SMTP-Setup angepasst werden.
 6. Für hoehere produktive Limits sollte ein eigener SMTP-Anbieter konfiguriert werden. Ohne eigenen SMTP können Supabase-Standardlimits schnell greifen.
 
-Wichtig: Ein Frontend mit Publishable/Anon Key darf keine Benutzer am E-Mail-Rate-Limit vorbei erstellen. Ein Fallback ohne E-Mail-Bestätigung waere nur ueber einen serverseitigen Admin-Pfad möglich, zum Beispiel Supabase Edge Function mit Service-Role-Key. Dieser Key darf niemals in Vite, Vercel Public Environments oder im Browser landen.
+Wichtig: Ein Frontend mit Publishable/Anon Key darf keine Benutzer am E-Mail-Rate-Limit vorbei erstellen. Ein Fallback ohne E-Mail-Bestätigung waere nur über einen serverseitigen Admin-Pfad möglich, zum Beispiel Supabase Edge Function mit Service-Role-Key. Dieser Key darf niemals in Vite, Vercel Public Environments oder im Browser landen.
 
 Bei jeder neuen Registrierung erstellt der Datenbank-Trigger:
 
@@ -108,4 +108,4 @@ Die Migrationen legen diese Tabellen und Auth-Helfer an:
 
 Die Migration aktiviert Row Level Security für alle App-Tabellen und legt erste Policies für Athlete, Coach, TeamAdmin und Admin an. Diese Policies sind die Grundlage für Version 3.0, muessen aber vor produktiver Vereinsnutzung mit echten Testnutzern und Supabase Auth End-to-End geprueft werden. Adminrechte dürfen nur durch einen bereits berechtigten Admin oder eine kontrollierte serverseitige Bootstrap-Aktion vergeben werden.
 
-Ab Version 3.0.2 ruft React Supabase nicht direkt in Seitenkomponenten auf. Auth laeuft ueber `AuthProvider`, Datenzugriffe laufen ueber Services unter `src/services/`.
+Ab Version 3.0.2 ruft React Supabase nicht direkt in Seitenkomponenten auf. Auth laeuft über `AuthProvider`, Datenzugriffe laufen über Services unter `src/services/`.

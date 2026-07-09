@@ -38,7 +38,7 @@ export function TrainingJournalView({ journal, sessions }: TrainingJournalViewPr
             );
           })
         ) : (
-          <p className="empty-state">Noch keine Journal-Eintraege gespeichert.</p>
+          <p className="empty-state">Noch keine Journal-Einträge gespeichert.</p>
         )}
       </div>
     </section>

@@ -47,7 +47,7 @@ Kommunikation orientiert sich an Messenger- und Team-App-Mustern:
 
 ## Analyse und Ergebnisse
 
-Analyse soll motivieren, nicht ueberfordern.
+Analyse soll motivieren, nicht überfordern.
 
 - Oben Zeitraum und wichtigste Kennzahlen.
 - Darunter Trainingsumfang, Ergebnisse, Belastung, Ziele.

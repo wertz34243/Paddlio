@@ -48,7 +48,7 @@ export function AuthView({ onLogin, onRegister, onResetPassword, cloudMessage }:
   };
 
   const handleResetPassword = async () => {
-    const email = window.prompt("E-Mail fär Passwort-Reset");
+    const email = window.prompt("E-Mail für Passwort-Reset");
     if (!email) return;
     const result = await onResetPassword(email);
     setMessage(result.message ?? "Passwort-Reset wurde angefordert.");
@@ -114,7 +114,7 @@ export function AuthView({ onLogin, onRegister, onResetPassword, cloudMessage }:
               <span>Verein</span>
               <div className="auth-tabs">
                 <button className={!suggestClub ? "active" : ""} type="button" onClick={() => setSuggestClub(false)}>
-                  Verein auswaehlen
+                  Verein auswählen
                 </button>
                 <button className={suggestClub ? "active" : ""} type="button" onClick={() => setSuggestClub(true)}>
                   Verein vorschlagen
@@ -130,7 +130,7 @@ export function AuthView({ onLogin, onRegister, onResetPassword, cloudMessage }:
               <label>
                 Verein
                 <select name="clubId" required>
-                  <option value="">Bitte waehlen</option>
+                  <option value="">Bitte wählen</option>
                   {clubs.map((club) => (
                     <option key={club.clubId} value={club.clubId}>
                       {club.name}

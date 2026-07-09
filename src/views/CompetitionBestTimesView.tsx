@@ -47,7 +47,7 @@ export function CompetitionBestTimesView({ competitions }: CompetitionBestTimesV
       </section>
 
       <section className="section-block">
-        <div className="section-heading"><div><p className="eyebrow">Persänliche Rekorde</p><h3>Bestzeiten pro Strecke</h3></div></div>
+        <div className="section-heading"><div><p className="eyebrow">Persönliche Rekorde</p><h3>Bestzeiten pro Strecke</h3></div></div>
         <div className="result-list">
           {bestByCourse(competitions).length > 0 ? bestByCourse(competitions).map(({ key, competition }) => (
             <article className="result-row" key={`${key}-${competition.id}`}>

@@ -45,7 +45,7 @@ Statuswerte:
 Wichtig:
 
 - Keine Client-Secrets in `VITE_*` Variablen speichern.
-- Echte OAuth-Flows muessen ueber Supabase Edge Functions oder ein separates Backend laufen.
+- Echte OAuth-Flows muessen über Supabase Edge Functions oder ein separates Backend laufen.
 - Frontend zeigt nur Status, Metadaten und importierte Trainings.
 
 Unterstuetzte vorbereitete Provider:

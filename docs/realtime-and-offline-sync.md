@@ -56,7 +56,7 @@ Queue-Eintrag:
 - `retryCount`
 - `status`
 
-Beim Wiederverbinden versucht Paddlio die Queue automatisch zu synchronisieren. Erfolgreiche Eintraege werden entfernt, fehlgeschlagene bleiben mit erhoehtem Retry-Zähler erhalten.
+Beim Wiederverbinden versucht Paddlio die Queue automatisch zu synchronisieren. Erfolgreiche Einträge werden entfernt, fehlgeschlagene bleiben mit erhoehtem Retry-Zähler erhalten.
 
 ## Konfliktloesung
 
@@ -70,7 +70,7 @@ Supabase `updated_at` und der lokale Sync-Zeitpunkt bilden die Grundlage für sp
 
 ## Datenschutz
 
-Realtime ersetzt keine Rechtepruefung. Zugriff muss weiterhin ueber Supabase RLS abgesichert sein:
+Realtime ersetzt keine Rechtepruefung. Zugriff muss weiterhin über Supabase RLS abgesichert sein:
 
 - Athlete sieht nur eigene Trainings, Ziele, Gruppenmitgliedschaften und Notifications.
 - Coach sieht nur Daten des eigenen Vereins.

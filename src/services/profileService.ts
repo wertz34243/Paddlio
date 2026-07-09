@@ -4,21 +4,32 @@ import type { Database, UserRole } from "../lib/database.types";
 
 export type CloudProfile = Database["public"]["Tables"]["profiles"]["Row"];
 
+const createProfileAbort = (timeoutMs = 6500) => {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+  return {
+    signal: controller.signal,
+    clear: () => window.clearTimeout(timeoutId),
+  };
+};
+
 export const getCloudProfile = async (userId: string): Promise<CloudProfile | null> => {
   const client = getSupabaseClient();
   if (!client) return null;
 
-  const { data, error } = await client.from("profiles").select("*").eq("id", userId).maybeSingle();
-  if (error) throw error;
-  return data;
+  const abort = createProfileAbort();
+  try {
+    const { data, error } = await client.from("profiles").select("*").eq("id", userId).abortSignal(abort.signal).maybeSingle();
+    if (error) throw error;
+    return data;
+  } finally {
+    abort.clear();
+  }
 };
 
 export const ensureCloudProfile = async (user: SupabaseUser): Promise<CloudProfile | null> => {
   const client = getSupabaseClient();
   if (!client || !user.email) return null;
-
-  const existing = await getCloudProfile(user.id);
-  if (existing) return existing;
 
   const metadata = user.user_metadata ?? {};
   const firstName = String(metadata.firstName ?? "");
@@ -27,8 +38,12 @@ export const ensureCloudProfile = async (user: SupabaseUser): Promise<CloudProfi
   const isUuid = (value: unknown): value is string =>
     typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
+  const existing = await getCloudProfile(user.id);
+  if (existing) return existing;
+
+  const abort = createProfileAbort();
   const { data, error } = await (client.from("profiles") as any)
-    .upsert({
+    .insert({
       id: user.id,
       email,
       first_name: firstName,
@@ -38,11 +53,17 @@ export const ensureCloudProfile = async (user: SupabaseUser): Promise<CloudProfi
       roles: ["Athlete"],
       status: "active",
       boat_classes: ["K1"],
-    }, { onConflict: "id" })
+    })
     .select("*")
-    .maybeSingle();
+    .abortSignal(abort.signal)
+    .maybeSingle()
+    .finally(() => abort.clear());
 
-  if (error) throw error;
+  if (error) {
+    const code = typeof (error as { code?: unknown }).code === "string" ? (error as { code: string }).code : "";
+    if (code === "23505") return getCloudProfile(user.id);
+    throw error;
+  }
   return data;
 };
 

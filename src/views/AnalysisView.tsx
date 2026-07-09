@@ -169,7 +169,7 @@ export function AnalysisView({ competitions, training, plan, feedback }: Analysi
             <strong>
               {pauseRatio.training}:{pauseRatio.pause}
             </strong>
-            <small>erledigte Eintraege</small>
+            <small>erledigte Einträge</small>
           </article>
           <article className="metric-card tone-c1">
             <span>Trainingstagebuch</span>
@@ -182,9 +182,9 @@ export function AnalysisView({ competitions, training, plan, feedback }: Analysi
             <small>erledigt / geplant / ausgelassen</small>
           </article>
           <article className="metric-card tone-success">
-            <span>Räckmeldungsquote</span>
+            <span>Rückmeldungsquote</span>
             <strong>{feedbackQuote}%</strong>
-            <small>{feedback.length} Räckmeldungen</small>
+            <small>{feedback.length} Rückmeldungen</small>
           </article>
         </section>
       </ChartPanel>

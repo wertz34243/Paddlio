@@ -20,7 +20,7 @@ Wenn die Migration noch nicht abgeschlossen ist, werden vorhandene LocalStorage-
 - Wettkämpfe und Ergebnisse
 - Material
 
-Nach erfolgreichem Durchlauf wird `migrationCompleted = true` ueber den lokalen Key markiert. Dadurch wird keine doppelte Migration ausgeführt.
+Nach erfolgreichem Durchlauf wird `migrationCompleted = true` über den lokalen Key markiert. Dadurch wird keine doppelte Migration ausgeführt.
 
 ## Offline Queue
 
@@ -57,7 +57,7 @@ Die App zeigt einen Hinweis, wenn Daten zwischen Geräten synchronisiert wurden.
 
 ## Datenschutz
 
-Alle Cloud-Daten laufen ueber Supabase Row Level Security. Das Frontend versteckt Funktionen, aber die eigentliche Zugriffskontrolle muss in RLS bleiben:
+Alle Cloud-Daten laufen über Supabase Row Level Security. Das Frontend versteckt Funktionen, aber die eigentliche Zugriffskontrolle muss in RLS bleiben:
 
 - Athlete sieht eigene Daten.
 - Coach sieht Daten des eigenen Vereins.
@@ -69,7 +69,7 @@ Als nächstes sollten Schreibpfade in den einzelnen Feature-Views noch granulare
 
 ## Version 3.2 Trainingsplanung
 
-Die Trainingsplanung nutzt weiterhin den lokalen Snapshot als Offline-fähige Arbeitskopie und synchronisiert ueber den AuthProvider in die Cloud. Für Coach-Workflows sind folgende Tabellen performancekritisch:
+Die Trainingsplanung nutzt weiterhin den lokalen Snapshot als Offline-fähige Arbeitskopie und synchronisiert über den AuthProvider in die Cloud. Für Coach-Workflows sind folgende Tabellen performancekritisch:
 
 - `training_plan_items`: Tages-, Wochen-, Monats- und Blockplanung.
 - `training_feedback`: Rückmeldungen von Athleten an Coaches.

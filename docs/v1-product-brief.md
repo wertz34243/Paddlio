@@ -27,7 +27,7 @@ Noch nicht Teil von V1:
 
 1. Athleten können ihr Training schnell und konsistent dokumentieren.
 2. Wettkämpfe und Ergebnisse werden mit relevanten Kanuslalom-Daten abgebildet.
-3. Entwicklungen werden ueber Zeit sichtbar: Technik, Zeiten, Strafsekunden, Belastung und Material.
+3. Entwicklungen werden über Zeit sichtbar: Technik, Zeiten, Strafsekunden, Belastung und Material.
 4. Material wird nicht als Nebenliste behandelt, sondern mit Training und Wettkampf verknuepft.
 5. Die Plattform bleibt fokussiert genug, um als taegliches Arbeitswerkzeug genutzt zu werden.
 
@@ -53,7 +53,7 @@ Das Trainingsmodul bildet geplante und absolvierte Einheiten ab.
 Funktionen:
 
 - Trainingseinheiten anlegen
-- Disziplin oder Schwerpunkt waehlen, zum Beispiel Technik, Start, Ausdauer, Wettkampfsimulation
+- Disziplin oder Schwerpunkt wählen, zum Beispiel Technik, Start, Ausdauer, Wettkampfsimulation
 - Strecke, Wasserstand, Wetter und Bedingungen erfassen
 - Laufzeiten, Strafsekunden und Torfehler dokumentieren
 - subjektive Belastung, Fokus und Tagesform erfassen
@@ -62,7 +62,7 @@ Funktionen:
 Wichtige Kennzahlen:
 
 - Trainingsdauer
-- Anzahl Laeufe
+- Anzahl Läufe
 - beste Laufzeit
 - Durchschnittszeit
 - Strafsekunden
@@ -113,7 +113,7 @@ Erste V1-Analysen:
 - Durchschnittliche Strafsekunden pro Einheit
 - Fehlerquote nach Torabschnitt oder Technikfokus
 - Belastung pro Woche
-- Wettkampftrend ueber die Saison
+- Wettkampftrend über die Saison
 
 ### Material
 
@@ -243,10 +243,10 @@ Hauptnavigation:
 ## Wichtige User Stories
 
 1. Als Athlet moechte ich eine Trainingseinheit in unter zwei Minuten erfassen, damit mein Trainingstagebuch vollständig bleibt.
-2. Als Athlet moechte ich einzelne Laeufe mit Zeit und Strafsekunden speichern, damit ich meine technische Entwicklung sehe.
+2. Als Athlet moechte ich einzelne Läufe mit Zeit und Strafsekunden speichern, damit ich meine technische Entwicklung sehe.
 3. Als Athlet moechte ich Wettkampfergebnisse nach Runden dokumentieren, damit ich später nachvollziehen kann, wo ich Zeit verloren habe.
 4. Als Athlet moechte ich Material mit Trainings und Wettkämpfen verknuepfen, damit Setup-Änderungen nicht verloren gehen.
-5. Als Athlet moechte ich Trends ueber Wochen und Monate sehen, damit ich meine Saison besser steuern kann.
+5. Als Athlet moechte ich Trends über Wochen und Monate sehen, damit ich meine Saison besser steuern kann.
 
 ## Nichtziele für V1
 
@@ -289,7 +289,7 @@ Hauptnavigation:
 Ein erster MVP sollte diese Funktionen enthalten:
 
 1. Athletenprofil
-2. Trainingseinheiten mit Laeufen
+2. Trainingseinheiten mit Läufen
 3. Wettkämpfe mit Ergebnisrunden
 4. Materialliste
 5. Dashboard mit nächsten Terminen und letzten Ergebnissen

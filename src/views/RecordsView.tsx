@@ -23,7 +23,7 @@ export function RecordsView({ competitions, training }: RecordsViewProps) {
   return (
     <div className="stack">
       <section className="section-block intelligence-hero">
-        <p className="eyebrow">Persänliche Rekorde</p>
+        <p className="eyebrow">Persönliche Rekorde</p>
         <h2>Alles, was du bisher gesetzt hast.</h2>
         <p>Rekorde werden automatisch aus Training und Wettkämpfen berechnet.</p>
       </section>

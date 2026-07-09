@@ -237,7 +237,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
     { label: isAdmin ? "Sportler" : "Sportler im Verein", value: isAdmin ? ownAthletes.length : clubAthletes.length },
     { label: isAdmin ? "Gruppen" : "Gruppen im Verein", value: ownGroups.length },
     { label: "Trainings diese Woche", value: weeklyTrainingCount },
-    { label: "Offene Räckmeldungen", value: openFeedback },
+    { label: "Offene Rückmeldungen", value: openFeedback },
   ], [clubAthletes.length, isAdmin, openFeedback, ownAthletes.length, ownGroups.length, weeklyTrainingCount]);
 
   const runCloudAction = async (successMessage: string, action: () => Promise<void>) => {
@@ -259,7 +259,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
       <section className="section-block">
         <p className="eyebrow">Coach</p>
         <h3>Kein Zugriff</h3>
-        <p className="card-note">Dieser Bereich ist fär Coach, TeamAdmin und Admin Rollen vorbereitet.</p>
+        <p className="card-note">Dieser Bereich ist für Coach, TeamAdmin und Admin Rollen vorbereitet.</p>
       </section>
     );
   }
@@ -505,7 +505,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
 
   const removeUser = (targetUserId: string) => {
     if (targetUserId === user.userId) {
-      setMessage("Du kannst dein eigenes Konto hier nicht loeschen.");
+      setMessage("Du kannst dein eigenes Konto hier nicht löschen.");
       return;
     }
 
@@ -723,7 +723,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
           </article>
           <article className="metric-card">
             <strong>{openFeedback}</strong>
-            <span>Offene Räckmeldungen</span>
+            <span>Offene Rückmeldungen</span>
           </article>
           <article className="metric-card">
             <strong>{weeklyTrainingCount}</strong>
@@ -751,7 +751,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
             </article>
             <article className="metric-card">
               <strong>{openFeedback}</strong>
-              <span>Offene Räckmeldungen</span>
+              <span>Offene Rückmeldungen</span>
             </article>
           </div>
           <p className="card-note">Coach-Zugriff ist auf diesen Verein begrenzt.</p>
@@ -815,7 +815,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
                     <button type="button" onClick={() => setEditingClub(club)}>Bearbeiten</button>
                     <button type="button" onClick={() => setUserSearch(club.name)}>Sportler anzeigen</button>
                     <button type="button" onClick={() => setRoleFilter("coach")}>Trainer anzeigen</button>
-                    <button type="button" onClick={() => removeClub(club.clubId)}>Loeschen</button>
+                    <button type="button" onClick={() => removeClub(club.clubId)}>Löschen</button>
                   </div>
                 </article>
               );
@@ -984,11 +984,11 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
               </div>
               {isAdmin ? (
                 <div className="card-actions full-width">
-                  <button type="button" onClick={() => removeUser(authUser.userId)}>Benutzer loeschen</button>
+                  <button type="button" onClick={() => removeUser(authUser.userId)}>Benutzer löschen</button>
                 </div>
               ) : null}
             </article>
-          )) : <p className="empty-state">Keine Benutzer fär deinen Zugriff gefunden.</p>}
+          )) : <p className="empty-state">Keine Benutzer für deinen Zugriff gefunden.</p>}
         </div>
       </section>
 
@@ -1025,7 +1025,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
             <label>
               Altersklasse
               <select name="ageClass" defaultValue={athleteFormValue.ageClass}>
-                {ageClasses.map((ageClass) => <option key={ageClass || "empty"} value={ageClass}>{ageClass || "Bitte waehlen"}</option>)}
+                {ageClasses.map((ageClass) => <option key={ageClass || "empty"} value={ageClass}>{ageClass || "Bitte wählen"}</option>)}
               </select>
             </label>
             <label>Verein<input name="club" defaultValue={athleteFormValue.club || user.profile.club} readOnly={!isAdmin} /></label>
@@ -1114,7 +1114,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
               </div>
             </article>
             );
-          }) : <p className="empty-state">Keine Sportler fär diese Suche gefunden.</p>}
+          }) : <p className="empty-state">Keine Sportler für diese Suche gefunden.</p>}
         </div>
         {profileAthlete ? (
           <article className="athlete-profile-card">
@@ -1136,8 +1136,8 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
               <div><strong>Ziele</strong><span>{profileAthlete.goals || "Noch keine Ziele hinterlegt."}</span></div>
               <div><strong>Trainings</strong><span>{coachPlan.filter((entry) => entry.assignedAthleteId === profileAthlete.id).length} geplante Einheiten</span></div>
               <div><strong>Wettkämpfe</strong><span>Wettkampfdaten werden mit dem Athletenprofil verknuepft vorbereitet.</span></div>
-              <div><strong>Material</strong><span>Materialäbersicht wird fär Coach-Freigaben vorbereitet.</span></div>
-              <div><strong>Journal</strong><span>Räckmeldungen und Befinden werden hier zusammengeführt.</span></div>
+              <div><strong>Material</strong><span>MaterialÜbersicht wird für Coach-Freigaben vorbereitet.</span></div>
+              <div><strong>Journal</strong><span>Rückmeldungen und Befinden werden hier zusammengeführt.</span></div>
               <div><strong>Trainernotizen</strong><span>{profileAthlete.trainerNotes || "Keine Trainernotizen."}</span></div>
             </div>
             <div className="card-actions">
@@ -1231,7 +1231,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
               </div>
               <div className="card-actions">
                 <button type="button" onClick={() => startEditingGroup(group)}>Bearbeiten</button>
-                <button type="button" onClick={() => deleteGroup(group.id)}>Loeschen</button>
+                <button type="button" onClick={() => deleteGroup(group.id)}>Löschen</button>
               </div>
             </article>
           )) : <p className="empty-state">Noch keine Trainingsgruppen vorhanden.</p>}
@@ -1280,7 +1280,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
               <div>
                 <p className="eyebrow">Heute</p>
                 <h3>{todaysPreviewTraining?.trainingType ?? "Kein Training"}</h3>
-                <span>{todaysPreviewTraining?.goal || "Noch keine Einheit fär heute geplant."}</span>
+                <span>{todaysPreviewTraining?.goal || "Noch keine Einheit für heute geplant."}</span>
               </div>
             </article>
             <div className="result-list">
@@ -1291,7 +1291,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
               ))}
             </div>
             <p className="card-note">Ziele: {previewAthlete.goals || "Noch keine Ziele hinterlegt."}</p>
-            <label className="profile-form">Räckmeldung<textarea rows={3} placeholder="Später sendet der Sportler hier Feedback." /></label>
+            <label className="profile-form">Rückmeldung<textarea rows={3} placeholder="Später sendet der Sportler hier Feedback." /></label>
           </div>
         ) : <p className="empty-state">Lege zuerst einen Sportler an.</p>}
       </section>

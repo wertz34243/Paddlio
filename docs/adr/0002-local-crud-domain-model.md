@@ -10,7 +10,7 @@ Die App verwendet ein versioniertes LocalStorage-Modell unter `paddlemotion:v0.2
 
 ## Modell
 
-- `Competition`: Wettkampf mit zwei Laeufen, Platzierung, Abstand, Gefühl und Notiz
+- `Competition`: Wettkampf mit zwei Läufen, Platzierung, Abstand, Gefühl und Notiz
 - `TrainingSession`: Training mit Typ, Dauer, RPE, Fokus und Notiz
 - `MaterialItem`: Material mit Kategorie, Status, Bewertung und Notiz
 

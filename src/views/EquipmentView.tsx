@@ -77,7 +77,7 @@ export function EquipmentView({ material, onSave, onDelete }: EquipmentViewProps
             <p className="eyebrow">Apple Wallet Style</p>
             <h3>Material</h3>
           </div>
-          <button className="primary-button" type="button" onClick={() => setDraft(emptyDraft)} aria-label="Material hinzufuegen">
+          <button className="primary-button" type="button" onClick={() => setDraft(emptyDraft)} aria-label="Material hinzufügen">
             +
           </button>
         </div>
@@ -172,14 +172,14 @@ export function EquipmentView({ material, onSave, onDelete }: EquipmentViewProps
                       Bearbeiten
                     </button>
                     <button className="delete-button" type="button" onClick={() => onDelete(item.id)}>
-                      Loeschen
+                      Löschen
                     </button>
                   </div>
                 </div>
               </article>
             ))
           ) : (
-            <p className="empty-state">Noch kein Material gespeichert. Fuege Boote, Paddel oder Zubehör ueber den Plus-Button hinzu.</p>
+            <p className="empty-state">Noch kein Material gespeichert. Füge Boote, Paddel oder Zubehör über den Plus-Button hinzu.</p>
           )}
         </div>
       </section>

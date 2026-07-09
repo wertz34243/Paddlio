@@ -10,7 +10,7 @@ Smart Coach erzeugt regelbasierte Trainingshinweise aus vorhandenen Paddlio-Date
 
 - `training_plan_items`: geplante, erledigte und ausgelassene Trainings
 - `training_feedback`: Gefühl, Schwierigkeit, Müdigkeit, Motivation, Schlaf und Kommentar
-- `season_goals`: Zielstatus, Fortschritt und Faelligkeit
+- `season_goals`: Zielstatus, Fortschritt und Fälligkeit
 - `competitions` / `competition_results`: Wettkampfentwicklung und Strafsekunden
 - `materials`: Materialstatus und Testnotizen
 - `profiles`, `training_groups`, `group_members`: Rollen-, Vereins- und Coach-Zugriff
@@ -23,7 +23,7 @@ Smart Coach erzeugt regelbasierte Trainingshinweise aus vorhandenen Paddlio-Date
 - hoher Strafsekunden-Schnitt: Techniktraining mit Linien-/Tor-Fokus empfehlen
 - kein GA1/Grundlagentraining in 14 Tagen: Ausdauerreiz empfehlen
 - Wettkampf innerhalb von 7 Tagen: Wettkampfvorbereitung empfehlen
-- Ziel in 21 Tagen faellig und unter 60 Prozent Fortschritt: Ziel priorisieren
+- Ziel in 21 Tagen fällig und unter 60 Prozent Fortschritt: Ziel priorisieren
 - Material mit Status `pruefen`, neuem Namen oder Testnotiz: Materialtest dokumentieren
 - keine akute Regel aktiv: motivierender Fokus-Hinweis
 

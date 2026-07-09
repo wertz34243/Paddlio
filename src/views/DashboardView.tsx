@@ -121,7 +121,7 @@ export function DashboardView({ data, user, onNavigate, onOpenSmartCoach, onUpda
           tone={intelligence.todayTraining ? "primary" : "success"}
         >
           <div className="smart-detail-grid">
-            <span>Ziel: {intelligence.todayTraining?.goal || "Geniesse heute deine Regeneration."}</span>
+            <span>Ziel: {intelligence.todayTraining?.goal || "Genieße heute deine Regeneration."}</span>
             <span>Intensität: {intelligence.todayTraining?.intensity ?? "locker"}</span>
           </div>
         </AppCard>

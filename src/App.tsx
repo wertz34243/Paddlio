@@ -56,6 +56,7 @@ type TrainingSegment = "plan" | "sessions" | "journal";
 type CompetitionSegment = "races" | "results" | "bests" | "stats" | "advanced" | "imports" | "coach" | "admin" | "videos";
 type AnalysisSegment = "overview" | "smartCoach" | "training" | "competition" | "goals" | "load" | "boats" | "season" | "coach" | "admin";
 type MoreSegment = "profile" | "club" | "competitions" | "equipment" | "goals" | "records" | "notifications" | "integrations" | "feedback" | "betaGuide" | "limitations" | "beta" | "betaTesters" | "coach" | "settings";
+type MoreSegmentMeta = SegmentItem<MoreSegment> & { description: string; icon: IconName };
 
 const navItems: Array<{ id: PageId; label: string; icon: IconName }> = [
   { id: "dashboard", label: "Heute", icon: "home" },
@@ -91,7 +92,7 @@ const competitionSegments: SegmentItem<CompetitionSegment>[] = [
 ];
 
 const analysisSegments: SegmentItem<AnalysisSegment>[] = [
-  { id: "overview", label: "äbersicht" },
+  { id: "overview", label: "Übersicht" },
   { id: "smartCoach", label: "Smart Coach" },
   { id: "training", label: "Training" },
   { id: "competition", label: "Wettkampf" },
@@ -114,6 +115,24 @@ const baseMoreSegments: SegmentItem<MoreSegment>[] = [
   { id: "limitations", label: "Beta-Grenzen" },
   { id: "settings", label: "Einstellungen" },
 ];
+
+const moreSegmentMeta: Record<MoreSegment, { description: string; icon: IconName }> = {
+  profile: { description: "Persönliche Daten und Kanuslalom-Profil", icon: "user" },
+  club: { description: "Verein, Mitglieder und Organisation", icon: "club" },
+  competitions: { description: "Wettkämpfe, Ergebnisse und Bestzeiten", icon: "trophy" },
+  equipment: { description: "Boote, Paddel und Materialstatus", icon: "wallet" },
+  goals: { description: "Saisonziele und Entwicklung", icon: "target" },
+  records: { description: "Persönliche Rekorde", icon: "bolt" },
+  notifications: { description: "Nachrichten und Cloud-Updates", icon: "message" },
+  integrations: { description: "Externe Datenquellen und Importstatus", icon: "chart" },
+  feedback: { description: "Beta-Feedback an Paddlio senden", icon: "message" },
+  betaGuide: { description: "Anleitung für externe Beta-Tests", icon: "calendar" },
+  limitations: { description: "Bekannte Grenzen der Beta", icon: "timer" },
+  beta: { description: "Beta-Check und Systemstatus", icon: "chart" },
+  betaTesters: { description: "Testerstatus und Rückmeldungen", icon: "user" },
+  coach: { description: "Coach- und Adminbereich", icon: "club" },
+  settings: { description: "Konto, App und Logout", icon: "more" },
+};
 
 const pageTitles: Record<PageId, string> = {
   dashboard: "Heute",
@@ -447,7 +466,7 @@ function AppContent() {
     if (feedback.coachUserId) {
       void createCloudNotification({
         userId: feedback.coachUserId,
-        title: "Neue Räckmeldung eingegangen",
+        title: "Neue Rückmeldung eingegangen",
         message: feedback.status === "skipped" ? `Training ausgelassen: ${feedback.reason || "kein Grund angegeben"}` : `Feedback: Gefühl ${feedback.feeling}/10, Motivation ${feedback.motivation}/10`,
         type: "feedback_received",
         relatedEntityType: "training_feedback",
@@ -581,7 +600,7 @@ function AppContent() {
   };
 
   const renderTrainingArea = (segment: TrainingSegment = trainingSegment) => (
-    <div className="category-shell">
+    <div className="category-shell more-category-shell">
       <SegmentNav
         label="Training Kategorien"
         items={trainingSegments}
@@ -696,7 +715,7 @@ function AppContent() {
         label="Analyse Kategorien"
         items={[
           ...analysisSegments,
-          ...(canUseCoachArea(activeUser.role) ? [{ id: activeUser.role === "admin" ? "admin" as const : "coach" as const, label: activeUser.role === "admin" ? "Admin äbersicht" : "Coach Analyse" }] : []),
+          ...(canUseCoachArea(activeUser.role) ? [{ id: activeUser.role === "admin" ? "admin" as const : "coach" as const, label: activeUser.role === "admin" ? "Admin Übersicht" : "Coach Analyse" }] : []),
         ]}
         activeId={segment}
         onChange={(nextSegment) => {
@@ -764,17 +783,44 @@ function AppContent() {
     }
   };
 
+  const moreItems: MoreSegmentMeta[] = moreSegments.map((item) => ({
+    ...item,
+    label: item.id === "notifications" && unreadNotificationCount > 0 ? `Updates (${unreadNotificationCount})` : item.label,
+    ...moreSegmentMeta[item.id],
+  }));
+
   const renderMoreArea = (segment: MoreSegment = moreSegment) => (
     <div className="category-shell">
       <SegmentNav
         label="Mehr Kategorien"
-        items={moreSegments.map((segment) => segment.id === "notifications" && unreadNotificationCount > 0 ? { ...segment, label: `Updates (${unreadNotificationCount})` } : segment)}
+        items={moreItems}
         activeId={segment}
         onChange={(nextSegment) => {
           setMoreSegment(nextSegment);
           setActivePage("more");
         }}
       />
+      <div className="more-mobile-grid" aria-label="Mehr Bereiche">
+        {moreItems.map((item) => (
+          <button
+            className={segment === item.id ? "more-mobile-card active" : "more-mobile-card"}
+            key={item.id}
+            type="button"
+            aria-current={segment === item.id ? "page" : undefined}
+            aria-label={`${item.label} öffnen`}
+            onClick={() => {
+              setMoreSegment(item.id);
+              setActivePage("more");
+            }}
+          >
+            <span className="more-menu-icon" aria-hidden="true"><Icon name={item.icon} /></span>
+            <span>
+              <strong>{item.label}</strong>
+              <small>{item.description}</small>
+            </span>
+          </button>
+        ))}
+      </div>
       <div className="segment-content">{renderMoreContent(segment)}</div>
     </div>
   );
@@ -869,7 +915,13 @@ function AppContent() {
             type="button"
             onClick={() => setActivePage(item.id)}
             aria-current={activeNavPage === item.id ? "page" : undefined}
-            aria-label={`Hauptnavigation: ${item.label}`}
+            aria-label={
+              item.id === "dashboard" ? "Zur Heute-?bersicht wechseln" :
+                item.id === "training" ? "Training-Bereich ?ffnen" :
+                  item.id === "analysis" ? "Analyse-Bereich ?ffnen" :
+                    item.id === "communication" ? "Kommunikation ?ffnen" :
+                      "Mehr-Bereich ?ffnen"
+            }
           >
             <span className="nav-icon" aria-hidden="true">
               <Icon name={item.icon} />

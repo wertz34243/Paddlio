@@ -1,10 +1,10 @@
 # Paddlio Project Analysis
 
-## Stand Version 4.1.3
+## Stand Version 4.1.4
 
 Paddlio ist eine React/Vite/TypeScript-PWA für Kanuslalom mit Supabase Auth und Supabase als Hauptspeicher für die Plattformbereiche. LocalStorage bleibt als Cache und Offline-Fallback erhalten.
 
-Version 4.1.3 ist ein Schema-Sync- und Encoding-Hotfix. Der Schwerpunkt liegt auf einer zentralen idempotenten Supabase-Migration für optionale Beta-Tabellen, realistischeren CloudStatus-Zuständen und weiterem Stabilisieren des Cloud-Fallbacks. Große neue Fachfunktionen bleiben eingefroren.
+Version 4.1.4 ist ein External-Beta-Readiness-Fix. Der Schwerpunkt liegt auf stabilerem Profil-Sync, Datenbank-Kompatibilität für Wettkampfstrecken, besser erreichbaren Mehr-Bereichen auf Mobile, präziseren aria-Labels und letzten sichtbaren Textkorrekturen. Große neue Fachfunktionen bleiben eingefroren.
 
 ## Architektur
 
@@ -16,6 +16,15 @@ Version 4.1.3 ist ein Schema-Sync- und Encoding-Hotfix. Der Schwerpunkt liegt au
 - Bottom Navigation ist für mobile Beta-Tests auf fünf Hauptpunkte reduziert; weitere Bereiche liegen unter `Mehr`.
 - Beta-Feedback und Beta-Tester liegen in Supabase und werden lokal nur gecacht.
 - Das visuelle Grundsystem liegt zentral in `src/styles.css` mit 4.1-Overlay für Tokens, Karten, Navigation, Buttons, Empty/Error/Offline States und mobile Safe Areas.
+
+## Version 4.1.4 Schwerpunkt
+
+- Migration `0017_external_beta_readiness_414.sql` ergänzt `competitions.course` und erwartete Competition-Metadaten idempotent.
+- `profiles` erhält eigene Self-Select/Insert/Update-Policies für eingeloggte Nutzer.
+- `ensureCloudProfile` erstellt fehlende Profile per Insert, ohne bestehende Rollen bei Login-Sync zu überschreiben.
+- Der Mehr-Bereich zeigt auf kleinen Viewports eine Kachel-/Listenansicht, damit alle Bereiche erreichbar bleiben.
+- Wichtige wiederholte Buttons erhalten eindeutige aria-Labels.
+- Restliche sichtbare Encoding-/Umlautfehler wurden bereinigt.
 
 ## Version 4.1.3 Schwerpunkt
 
@@ -67,20 +76,20 @@ Version 4.1.3 ist ein Schema-Sync- und Encoding-Hotfix. Der Schwerpunkt liegt au
 
 - Admin verwaltet Vereine, Vereinsanfragen, Mitglieder, Rollen und Traineranfragen.
 - Coaches und TeamAdmins sehen nur den eigenen Verein.
-- Trainingsgruppen und Gruppenzuweisungen laufen ueber `training_groups` und `group_members`.
+- Trainingsgruppen und Gruppenzuweisungen laufen über `training_groups` und `group_members`.
 - Supabase RLS muss serverseitig sicherstellen, dass Athleten nur eigene Daten, Coaches nur Vereinsdaten und Admins alles sehen.
 
 ## Version 3.2 Schwerpunkt
 
 - Trainingsplanung wird zum Coach-Workflow mit Heute, Woche, Monat, Vorlagen, Gruppen und Rückmeldungen.
 - Athleten erhalten eine reduzierte Planansicht für Heute, Diese Woche, kommende und erledigte Einheiten.
-- Vorlagen, Einzeltraining, Wochenkopie, Trainingsblock-Kopie und Feedback laufen weiter ueber die bestehende Planstruktur.
-- Supabase ist für Trainingsplanung ueber `training_plan_items`, `training_feedback` und `training_templates` vorbereitet; Migration `0006_training_planning_2_0.sql` ergänzt Indizes und Realtime-Eintragung.
+- Vorlagen, Einzeltraining, Wochenkopie, Trainingsblock-Kopie und Feedback laufen weiter über die bestehende Planstruktur.
+- Supabase ist für Trainingsplanung über `training_plan_items`, `training_feedback` und `training_templates` vorbereitet; Migration `0006_training_planning_2_0.sql` ergänzt Indizes und Realtime-Eintragung.
 
 ## Version 3.3 Schwerpunkt
 
 - Realtime-Subscriptions liegen zentral in `src/services/realtimeService.ts`.
-- Offline-Änderungen laufen ueber `src/services/offlineQueueService.ts` und `paddlio_sync_queue`.
+- Offline-Änderungen laufen über `src/services/offlineQueueService.ts` und `paddlio_sync_queue`.
 - Benachrichtigungen werden in `notifications` gespeichert und im Mehr-Bereich unter `Updates` angezeigt.
 - CloudStatus unterscheidet synchronisiert, synchronisiert..., offline, wartende Änderungen und Cloud-Fehler.
 - Migration `0007_realtime_notifications_offline_sync.sql` ergänzt Notification-Felder, Indizes und Realtime-Publication.
@@ -127,8 +136,8 @@ Version 4.1.3 ist ein Schema-Sync- und Encoding-Hotfix. Der Schwerpunkt liegt au
 
 - Wettkampfergebnisse werden um Laufdetails, Abstaende, Quellen und Trainerkommentare erweitert.
 - Persönliche Bestzeiten werden aus `competition_results` beziehungsweise dem geladenen Snapshot berechnet und können in `personal_bests` gespeichert werden.
-- Ergebnisimporte sind ueber `result_imports` vorbereitet, bleiben aber bewusst ohne instabilen Scraper.
-- Polar Flow und weitere externe Datenquellen sind ueber `external_connections` und `external_training_sessions` vorbereitet; sichere OAuth-/Token-Verarbeitung gehört nicht ins Frontend.
+- Ergebnisimporte sind über `result_imports` vorbereitet, bleiben aber bewusst ohne instabilen Scraper.
+- Polar Flow und weitere externe Datenquellen sind über `external_connections` und `external_training_sessions` vorbereitet; sichere OAuth-/Token-Verarbeitung gehört nicht ins Frontend.
 - Analyse und Smart Coach berücksichtigen externe Trainings, Belastungsspruenge, unverknuepfte Einheiten und Ergebnisentwicklung.
 - Admins erhalten einen Beta-Check für Supabase, Rollen, Gruppen, Training, Kommunikation, Ergebnisse, Mobile und RLS.
 

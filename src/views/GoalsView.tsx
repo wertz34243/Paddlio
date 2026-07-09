@@ -241,7 +241,7 @@ export function GoalsView({ user, goals, competitions, training, onSave, onDelet
               {goal.athleteNote ? <p className="card-note">Notiz: {goal.athleteNote}</p> : null}
               <div className="card-actions">
                 <button type="button" onClick={() => startEditing(goal)}>Bearbeiten</button>
-                <button type="button" onClick={() => onDelete(goal.id)}>Loeschen</button>
+                <button type="button" onClick={() => onDelete(goal.id)}>Löschen</button>
               </div>
             </article>
           )) : <p className="empty-state">Noch keine individuellen Ziele. Erstelle dein erstes Saisonziel oben.</p>}

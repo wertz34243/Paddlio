@@ -6,7 +6,7 @@ Paddlio Version 0.1 soll schnell im Browser startbar sein, auf dem Handy gut aus
 
 ## Entscheidung
 
-Version 0.1 wird als React-App mit Vite, TypeScript und CSS umgesetzt. Daten werden ueber einen kleinen Storage-Layer in LocalStorage gehalten und initial mit Tobias' Beispieldaten befuellt.
+Version 0.1 wird als React-App mit Vite, TypeScript und CSS umgesetzt. Daten werden über einen kleinen Storage-Layer in LocalStorage gehalten und initial mit Tobias' Beispieldaten befuellt.
 
 ## Alternativen
 

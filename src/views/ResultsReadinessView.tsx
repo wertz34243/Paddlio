@@ -137,10 +137,10 @@ export function ResultsReadinessView({ data, user, mode, onDataChange }: Results
       { id: "beta-attendance", checkedBy: user.userId, checkKey: "Aufgaben und Anwesenheit", status: data.tasks.length + data.trainingAttendance.length > 0 ? "ok" : "manual", message: "Aufgaben und Anwesenheit im Testverein präfen.", createdAt: timestamp },
       { id: "beta-results", checkedBy: user.userId, checkKey: "Ergebnisse", status: data.competitions.length > 0 ? "ok" : "warning", message: `${data.competitions.length} Ergebnisse geladen.`, createdAt: timestamp },
       { id: "beta-analysis-smart-coach", checkedBy: user.userId, checkKey: "Analyse und Smart Coach", status: data.smartCoachRecommendations.length > 0 ? "ok" : "manual", message: "Analysezentrum und Empfehlungen präfen.", createdAt: timestamp },
-      { id: "beta-integrations", checkedBy: user.userId, checkKey: "Integrationen/Polar crasht nicht", status: "manual", message: "Integrationen äffnen und Polar-Vorbereitung präfen.", createdAt: timestamp },
+      { id: "beta-integrations", checkedBy: user.userId, checkKey: "Integrationen/Polar crasht nicht", status: "manual", message: "Integrationen öffnen und Polar-Vorbereitung präfen.", createdAt: timestamp },
       { id: "beta-feedback", checkedBy: user.userId, checkKey: "Feedback-System", status: data.betaFeedback.length > 0 ? "ok" : "manual", message: `${data.betaFeedback.length} Feedbacks gespeichert.`, createdAt: timestamp },
       { id: "beta-mobile", checkedBy: user.userId, checkKey: "Mobile Ansicht", status: "manual", message: "Bitte auf iPhone/iPad im echten Browser präfen.", createdAt: timestamp },
-      { id: "beta-bottom-nav", checkedBy: user.userId, checkKey: "Bottom Navigation nicht ueberladen", status: "ok", message: "Mobile Navigation ist auf fünf Hauptpunkte reduziert.", createdAt: timestamp },
+      { id: "beta-bottom-nav", checkedBy: user.userId, checkKey: "Bottom Navigation nicht überladen", status: "ok", message: "Mobile Navigation ist auf fünf Hauptpunkte reduziert.", createdAt: timestamp },
       { id: "beta-docs", checkedBy: user.userId, checkKey: "Testanleitung und Grenzen", status: "ok", message: "Beta-Anleitung und bekannte Grenzen sind unter Mehr sichtbar und dokumentiert.", createdAt: timestamp },
       { id: "beta-rls", checkedBy: user.userId, checkKey: "Datenschutz/RLS", status: "manual", message: "RLS im Supabase Dashboard präfen.", createdAt: timestamp },
     ];
@@ -176,7 +176,7 @@ export function ResultsReadinessView({ data, user, mode, onDataChange }: Results
           <button className="secondary-button" type="button" onClick={preparePolar}>Verbindung vorbereiten</button>
         </div>
         <div className="metric-grid two-columns">
-          <article className="metric-card tone-training"><span>Polar Flow</span><strong>{polarConnection?.status ?? "nicht verbunden"}</strong><small>Sichere Aktivierung folgt ueber Backend/OAuth.</small></article>
+          <article className="metric-card tone-training"><span>Polar Flow</span><strong>{polarConnection?.status ?? "nicht verbunden"}</strong><small>Sichere Aktivierung folgt über Backend/OAuth.</small></article>
           <article className="metric-card tone-success"><span>Externe Einheiten</span><strong>{data.externalTrainingSessions.length}</strong><small>{loadStats.unlinked} noch nicht verknuepft</small></article>
         </div>
         <p className="muted">Keine Client-Secrets im Frontend. Tokens werden erst mit Supabase Edge Functions oder sicherem Backend aktiv genutzt.</p>
@@ -208,7 +208,7 @@ export function ResultsReadinessView({ data, user, mode, onDataChange }: Results
     return (
       <section className="section-block segment-panel">
         <div className="section-heading">
-          <div><p className="eyebrow">Beta-Readiness</p><h3>Check fär Paddlio 4.0 Beta</h3></div>
+          <div><p className="eyebrow">Beta-Readiness</p><h3>Check für Paddlio 4.0 Beta</h3></div>
           {isAdmin(user) ? <button className="secondary-button" type="button" onClick={runBetaCheck}>Jetzt präfen</button> : null}
         </div>
         {isAdmin(user) && data.betaReadinessChecks.length > 0 ? (
@@ -216,7 +216,7 @@ export function ResultsReadinessView({ data, user, mode, onDataChange }: Results
             <span style={{ width: `${Math.round((data.betaReadinessChecks.filter((item) => item.status === "ok").length / data.betaReadinessChecks.length) * 100)}%` }} />
           </div>
         ) : null}
-        {!isAdmin(user) ? <p className="empty-state">Der Beta-Check ist nur fär Admins sichtbar.</p> : (
+        {!isAdmin(user) ? <p className="empty-state">Der Beta-Check ist nur für Admins sichtbar.</p> : (
           <div className="result-list">
             {data.betaReadinessChecks.length ? data.betaReadinessChecks.map((item) => (
               <article className="result-row" key={item.id}>
@@ -236,8 +236,8 @@ export function ResultsReadinessView({ data, user, mode, onDataChange }: Results
       <div className="metric-grid two-columns">
         <article className="metric-card tone-k1"><span>Ergebnisse</span><strong>{resultStats.count}</strong><small>{Object.entries(resultStats.byBoat).map(([boat, count]) => `${boat}: ${count}`).join(" · ") || "keine Starts"}</small></article>
         <article className="metric-card tone-c1"><span>Beste Zeit</span><strong>{resultStats.best ? formatSeconds(getBestTotalTime(resultStats.best)) : "--"}</strong><small>{resultStats.best ? `${resultStats.best.location} ${resultStats.best.boatClass}` : "noch offen"}</small></article>
-        <article className="metric-card tone-penalty"><span>Strafschnitt</span><strong>{formatSeconds(resultStats.averagePenalty)}</strong><small>ueber alle Laeufe</small></article>
-        <article className="metric-card tone-success"><span>Persänliche Bestzeiten</span><strong>{personalBests.length}</strong><small>automatisch berechnet</small></article>
+        <article className="metric-card tone-penalty"><span>Strafschnitt</span><strong>{formatSeconds(resultStats.averagePenalty)}</strong><small>über alle Läufe</small></article>
+        <article className="metric-card tone-success"><span>Persönliche Bestzeiten</span><strong>{personalBests.length}</strong><small>automatisch berechnet</small></article>
       </div>
       <div className="result-list">
         {personalBests.length ? personalBests.map((item) => (

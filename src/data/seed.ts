@@ -156,7 +156,7 @@ export const seedData: PaddleMotionData = {
       imageDataUrl: "",
       status: "bereit",
       rating: 9,
-      note: "Setup fär Unna und Schwerte dokumentiert.",
+      note: "Setup für Unna und Schwerte dokumentiert.",
       createdAt: now,
       updatedAt: now,
     },

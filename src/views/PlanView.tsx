@@ -66,7 +66,7 @@ const coachWorkflowTabs: WorkflowTabConfig[] = [
   { id: "month", label: "Monat", calendarView: "month" },
   { id: "templates", label: "Vorlagen" },
   { id: "groups", label: "Gruppen" },
-  { id: "feedback", label: "Räckmeldungen" },
+  { id: "feedback", label: "Rückmeldungen" },
 ];
 
 const athleteWorkflowTabs: WorkflowTabConfig[] = [
@@ -74,7 +74,7 @@ const athleteWorkflowTabs: WorkflowTabConfig[] = [
   { id: "week", label: "Diese Woche", calendarView: "week" },
   { id: "upcoming", label: "Kommende" },
   { id: "done", label: "Erledigt" },
-  { id: "feedback", label: "Räckmeldung" },
+  { id: "feedback", label: "Rückmeldung" },
 ];
 
 const today = new Date().toISOString().slice(0, 10);
@@ -382,7 +382,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
 
   const deleteTemplate = (template: TrainingTemplate) => {
     if (!canEditTrainingTemplate(user, template)) {
-      setFormMessage("Du hast keine Berechtigung fär diese Vorlage.");
+      setFormMessage("Du hast keine Berechtigung für diese Vorlage.");
       return;
     }
 
@@ -443,7 +443,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
     }
     const { assignedType, assignedAthleteIds, assignedGroupIds } = getTargetSelection(formData);
     if (!validateTargetSelection(assignedType, assignedAthleteIds, assignedGroupIds)) {
-      setFormMessage("Du hast keine Berechtigung fär diese Gruppe oder diesen Sportler.");
+      setFormMessage("Du hast keine Berechtigung für diese Gruppe oder diesen Sportler.");
       return;
     }
 
@@ -558,7 +558,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
     const hasInvalidGroup = assignedGroupIds.some((id) => !allowedGroups.has(id));
 
     if ((assignedType === "athlete" && hasInvalidAthlete) || (assignedType === "group" && hasInvalidGroup)) {
-      setFormMessage("Du hast keine Berechtigung fär mindestens eine ausgewaehlte Zuweisung.");
+      setFormMessage("Du hast keine Berechtigung für mindestens eine ausgewaehlte Zuweisung.");
       return;
     }
 
@@ -654,14 +654,14 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
           </div>
         ) : null}
         <div className="card-actions">
-          <button className="save-button" type="button" onClick={() => onToggleDone(entry.id)}>
+          <button className="save-button" type="button" onClick={() => onToggleDone(entry.id)} aria-label={`Training ${entry.title || entry.trainingType} am ${entry.date} ${isDoneStatus(entry.status) ? "wieder planen" : "als erledigt markieren"}`}>
             {isDoneStatus(entry.status) ? "Wieder planen" : "Erledigt"}
           </button>
-          <button className="delete-button" type="button" onClick={() => setFeedbackEntry({ ...entry, status: "skipped" })}>Ausgelassen</button>
-          <button className="edit-button" type="button" onClick={() => setFeedbackEntry({ ...entry, status: "done" })}>Feedback</button>
-          <button className="edit-button" type="button" onClick={() => setCopyEntry(entry)}>Kopieren</button>
-          {(entry.createdByUserId === user.userId || user.role === "admin") && canAccessPlanEntry(data, user, entry) ? <button className="edit-button" type="button" onClick={() => startEdit(entry)}>Bearbeiten</button> : null}
-          {(entry.createdByUserId === user.userId || user.role === "admin") ? <button className="delete-button" type="button" onClick={() => onDelete(entry.id)}>Loeschen</button> : null}
+          <button className="delete-button" type="button" onClick={() => setFeedbackEntry({ ...entry, status: "skipped" })} aria-label={`Training ${entry.title || entry.trainingType} am ${entry.date} als ausgelassen markieren`}>Ausgelassen</button>
+          <button className="edit-button" type="button" onClick={() => setFeedbackEntry({ ...entry, status: "done" })} aria-label={`Feedback f?r Training ${entry.title || entry.trainingType} am ${entry.date} geben`}>Feedback</button>
+          <button className="edit-button" type="button" onClick={() => setCopyEntry(entry)} aria-label={`Training ${entry.title || entry.trainingType} am ${entry.date} kopieren`}>Kopieren</button>
+          {(entry.createdByUserId === user.userId || user.role === "admin") && canAccessPlanEntry(data, user, entry) ? <button className="edit-button" type="button" onClick={() => startEdit(entry)} aria-label={`Training ${entry.title || entry.trainingType} am ${entry.date} bearbeiten`}>Bearbeiten</button> : null}
+          {(entry.createdByUserId === user.userId || user.role === "admin") ? <button className="delete-button" type="button" onClick={() => onDelete(entry.id)} aria-label={`Training ${entry.title || entry.trainingType} am ${entry.date} l?schen`}>L?schen</button> : null}
         </div>
       </article>
     );
@@ -706,17 +706,17 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
       <section className="summary-strip">
         <div><span>Favorisierte Vorlagen</span><strong>{visibleTemplates.filter((template) => template.isFavorite).length}</strong></div>
         <div><span>Nächste Woche</span><strong>{nextWeekCount}</strong></div>
-        <div><span>{isCoach ? "Ungeplante Sportler" : "Offene Räckmeldung"}</span><strong>{isCoach ? unplannedAthletes.length : openFeedbackCount}</strong></div>
+        <div><span>{isCoach ? "Ungeplante Sportler" : "Offene Rückmeldung"}</span><strong>{isCoach ? unplannedAthletes.length : openFeedbackCount}</strong></div>
       </section>
 
       <section className="training-workflow-hero section-block">
         <div>
           <p className="eyebrow">{isCoach ? "Coach Workflow" : "Mein Trainingsplan"}</p>
           <h3>{isCoach ? "Trainingsplanung 2.0" : "Deine nächsten Einheiten"}</h3>
-          <p>{isCoach ? "Plane Tage, Wochen und Saisonbloecke aus Vorlagen, kopiere Einheiten und pruefe Räckmeldungen." : "Sieh deine Einheiten, hake Training ab und gib deinem Coach klares Feedback."}</p>
+          <p>{isCoach ? "Plane Tage, Wochen und Saisonbloecke aus Vorlagen, kopiere Einheiten und pruefe Rückmeldungen." : "Sieh deine Einheiten, hake Training ab und gib deinem Coach klares Feedback."}</p>
         </div>
         <div className="training-workflow-actions">
-          <button className="primary-button" type="button" onClick={startCreate}>Training planen</button>
+          <button className="primary-button" type="button" onClick={startCreate} aria-label="Neue Trainingseinheit im Plan eintragen">Training planen</button>
           {isCoach ? <button type="button" onClick={startTemplateCreate}>Vorlage erstellen</button> : null}
         </div>
       </section>
@@ -736,7 +736,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
             <h3>Trainingsplanung</h3>
           </div>
           <div className="card-actions">
-            <button className="primary-button" type="button" onClick={startCreate}>Training planen</button>
+            <button className="primary-button" type="button" onClick={startCreate} aria-label="Training aus Kalenderansicht planen">Training planen</button>
             <button type="button" onClick={() => setShowWeekCopy(true)}>Woche kopieren</button>
             <button type="button" onClick={() => setShowBlockCopy(true)}>Trainingsblock kopieren</button>
           </div>
@@ -788,11 +788,11 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
               <p>{template.focus || "Noch kein Fokus eingetragen."}</p>
               {template.tags.length > 0 ? <small className="card-note">{template.tags.join(" - ")}</small> : null}
               <div className="card-actions">
-                {canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => { setTemplateDraft(template); setTemplateArea(template.trainingArea); }}>Bearbeiten</button> : null}
-                {canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => deleteTemplate(template)}>Loeschen</button> : null}
+                {canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => { setTemplateDraft(template); setTemplateArea(template.trainingArea); }} aria-label={`Vorlage ${template.title} bearbeiten`}>Bearbeiten</button> : null}
+                {canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => deleteTemplate(template)} aria-label={`Vorlage ${template.title} l?schen`}>L?schen</button> : null}
               </div>
             </article>
-          )) : <p className="empty-state">Noch keine Trainingsvorlagen. Erstelle deine erste Vorlage fär schnelle Trainingsplanung.</p>}
+          )) : <p className="empty-state">Noch keine Trainingsvorlagen. Erstelle deine erste Vorlage für schnelle Trainingsplanung.</p>}
         </div>
       </section> : null}
 
@@ -825,7 +825,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
         {formMessage ? <p className="auth-message">{formMessage}</p> : null}
         <form className="entry-form" onSubmit={planFromTemplate}>
           <div className="form-grid">
-            <label>Vorlage<select name="templateId" required><option value="">Bitte waehlen</option>{visibleTemplates.map((template) => <option key={template.id} value={template.id}>{template.title}</option>)}</select></label>
+            <label>Vorlage<select name="templateId" required><option value="">Bitte wählen</option>{visibleTemplates.map((template) => <option key={template.id} value={template.id}>{template.title}</option>)}</select></label>
             <label>Datum<input name="date" type="date" defaultValue={selectedDate} required /></label>
             <label>Uhrzeit<input name="startTime" type="time" defaultValue="17:30" /></label>
             <label>Dauer<input name="durationMinutes" type="number" min="0" step="5" placeholder="aus Vorlage" /></label>
@@ -842,7 +842,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
         <section className="section-block">
           <div className="section-heading">
             <div><p className="eyebrow">Gruppenplanung</p><h3>{visibleGroups.length > 0 ? `${visibleGroups.length} Trainingsgruppen` : "Noch keine Trainingsgruppen"}</h3></div>
-            <button className="primary-button" type="button" onClick={startCreate}>Training fär Gruppe planen</button>
+            <button className="primary-button" type="button" onClick={startCreate} aria-label="Training f?r ausgew?hlte Gruppe planen">Training f?r Gruppe planen</button>
           </div>
           <div className="calendar-list">
             {visibleGroups.length > 0 ? visibleGroups.map((group) => {
@@ -862,7 +862,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
                   <p>{group.description || "Noch keine Beschreibung hinterlegt."}</p>
                   <div className="card-actions">
                     <button type="button" onClick={() => { setGroupFilter(group.id); setWorkflowTab("week"); setCalendarView("week"); }}>Wochenplan anzeigen</button>
-                    <button type="button" onClick={startCreate}>Training planen</button>
+                    <button type="button" onClick={startCreate} aria-label={`Training f?r Gruppe ${group.name} planen`}>Training planen</button>
                   </div>
                 </article>
               );
@@ -874,7 +874,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
       {workflowTab === "feedback" ? (
         <section className="section-block">
           <div className="section-heading">
-            <div><p className="eyebrow">Räckmeldungen</p><h3>{isCoach ? "Statusäbersicht" : "Trainingstagebuch"}</h3></div>
+            <div><p className="eyebrow">Rückmeldungen</p><h3>{isCoach ? "StatusÜbersicht" : "Trainingstagebuch"}</h3></div>
           </div>
           <div className="calendar-list">
             {isCoach && openFeedbackEntries.length > 0 ? openFeedbackEntries.map((entry) => (
@@ -883,12 +883,12 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
                   <div><span>{entry.date} - offen</span><h4>{entry.title || entry.trainingType}</h4></div>
                   <b className="status-pill planned">Offen</b>
                 </div>
-                <p>{entry.focus || "Räckmeldung steht noch aus."}</p>
+                <p>{entry.focus || "Rückmeldung steht noch aus."}</p>
               </article>
             )) : null}
             {entriesWithFeedback.length > 0 ? entriesWithFeedback.map(renderEntryCard) : null}
             {(!isCoach || openFeedbackEntries.length === 0) && entriesWithFeedback.length === 0 ? (
-              <p className="empty-state">{isCoach ? "Noch keine Räckmeldungen vorhanden." : "Noch keine erledigten Trainings mit Räckmeldung."}</p>
+              <p className="empty-state">{isCoach ? "Noch keine Rückmeldungen vorhanden." : "Noch keine erledigten Trainings mit Rückmeldung."}</p>
             ) : null}
           </div>
         </section>
@@ -917,7 +917,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
               <label>Max. Termine<input name="repeatMaxCount" type="number" min="1" max="90" defaultValue={draft.repeatMaxCount ?? ""} placeholder="optional" /></label>
             </div>
             {draft.repeat !== "none" && draft.repeatUntil ? <p className="card-note">Vorschau: Es werden {getRepeatPreview(draft.repeat, draft.repeatUntil, draft.repeatMaxCount)} Trainingseinheiten erstellt.</p> : null}
-            {isCoach ? <div className="choice-group"><span>Sportler fär Einzeltraining</span><div className="tag-row">{visibleAthletes.map((athlete) => <label className="toggle-row" key={athlete.id}><span>{getAthleteName(athlete)}</span><input name="assignedAthleteIds" type="checkbox" value={athlete.id} defaultChecked={draft.assignedAthleteIds.includes(athlete.id)} /></label>)}</div></div> : null}
+            {isCoach ? <div className="choice-group"><span>Sportler für Einzeltraining</span><div className="tag-row">{visibleAthletes.map((athlete) => <label className="toggle-row" key={athlete.id}><span>{getAthleteName(athlete)}</span><input name="assignedAthleteIds" type="checkbox" value={athlete.id} defaultChecked={draft.assignedAthleteIds.includes(athlete.id)} /></label>)}</div></div> : null}
             {isCoach ? <div className="choice-group"><span>Trainingsgruppen</span><div className="tag-row">{visibleGroups.map((group) => <label className="toggle-row" key={group.id}><span>{group.name}</span><input name="assignedGroupIds" type="checkbox" value={group.id} defaultChecked={draft.assignedGroupIds.includes(group.id)} /></label>)}</div></div> : null}
             <label>Ziel/Fokus<input name="focus" defaultValue={draft.focus || draft.goal} placeholder="z. B. Tor 6 sauber anfahren" /></label>
             <label>Beschreibung<textarea name="description" defaultValue={draft.description} rows={3} /></label>
@@ -992,7 +992,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
 
       {feedbackEntry ? (
         <section className="section-block feedback-modal">
-          <div className="section-heading"><div><p className="eyebrow">Räckmeldung</p><h3>{feedbackEntry.title || feedbackEntry.trainingType}</h3></div></div>
+          <div className="section-heading"><div><p className="eyebrow">Rückmeldung</p><h3>{feedbackEntry.title || feedbackEntry.trainingType}</h3></div></div>
           <form className="entry-form" onSubmit={handleFeedbackSubmit}>
             <div className="form-grid">
               <label>Status<select name="status" defaultValue={isSkippedStatus(feedbackEntry.status) ? "skipped" : "done"}><option value="done">erledigt</option><option value="skipped">ausgelassen</option></select></label>
@@ -1004,14 +1004,14 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
               <label>Grund<select name="reason" defaultValue=""><option value="">kein Grund</option><option value="krank">krank</option><option value="schule_arbeit">Schule/Arbeit</option><option value="wetter">Wetter</option><option value="keine_zeit">keine Zeit</option><option value="andere">andere</option></select></label>
             </div>
             <label>Kommentar<textarea name="comment" rows={3} /></label>
-            <div className="form-actions"><button className="save-button" type="submit">Räckmeldung speichern</button><button className="ghost-button wide" type="button" onClick={() => setFeedbackEntry(null)}>Abbrechen</button></div>
+            <div className="form-actions"><button className="save-button" type="submit">Rückmeldung speichern</button><button className="ghost-button wide" type="button" onClick={() => setFeedbackEntry(null)}>Abbrechen</button></div>
           </form>
         </section>
       ) : null}
 
       <section className="section-block">
         <div className="section-heading"><div><p className="eyebrow">Wochenfortschritt</p><h3>{weeklyMinutes} Minuten</h3></div></div>
-        <div className="smart-detail-grid"><span>{completedThisWeek.length} erledigt</span><span>{skippedThisWeek.length} ausgelassen</span><span>{openFeedbackCount} offene Räckmeldungen</span></div>
+        <div className="smart-detail-grid"><span>{completedThisWeek.length} erledigt</span><span>{skippedThisWeek.length} ausgelassen</span><span>{openFeedbackCount} offene Rückmeldungen</span></div>
       </section>
     </div>
   );

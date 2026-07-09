@@ -145,7 +145,7 @@ export function BetaReleaseView({ data, user, mode, onDataChange }: BetaReleaseV
   }
 
   if (mode === "testers") {
-    if (!isAdmin(user)) return <p className="empty-state">Du hast fär die Beta-Tester-Verwaltung keine Berechtigung.</p>;
+    if (!isAdmin(user)) return <p className="empty-state">Du hast für die Beta-Tester-Verwaltung keine Berechtigung.</p>;
     return (
       <section className="section-block segment-panel">
         <div className="section-heading"><div><p className="eyebrow">Beta-Tester</p><h3>{testers.length} Nutzer im Testpool</h3></div></div>
@@ -197,7 +197,7 @@ export function BetaReleaseView({ data, user, mode, onDataChange }: BetaReleaseV
         </div>
       </section>
 
-      {isPrivileged(user) ? <p className="muted">Hinweis fär Trainer/Admins: Feedback wird mit Rolle, Version und Geräteinfo gespeichert, damit Beta-Fehler besser reproduzierbar sind.</p> : null}
+      {isPrivileged(user) ? <p className="muted">Hinweis für Trainer/Admins: Feedback wird mit Rolle, Version und Geräteinfo gespeichert, damit Beta-Fehler besser reproduzierbar sind.</p> : null}
     </div>
   );
 }

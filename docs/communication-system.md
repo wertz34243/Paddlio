@@ -11,7 +11,7 @@ Paddlio 3.8 integriert Kommunikation, Vereinsmeldungen, Aufgaben und Anwesenheit
 - Direktnachrichten: 1:1 Nachrichten zwischen Sportlern, Trainern, ClubAdmins und Admins.
 - Gruppenchat: Chat pro Trainingsgruppe.
 - Vereinsnews: Pinnwand für wichtige Meldungen mit Kategorie, Priorität und Zielgruppe.
-- Aufgaben: Aufgaben mit Typ, Priorität, Faelligkeit und Zuweisung an Nutzer.
+- Aufgaben: Aufgaben mit Typ, Priorität, Fälligkeit und Zuweisung an Nutzer.
 - Anwesenheit: Zusage, Absage oder Unsicherheit pro Training.
 - Dateien: Anhang-Metadaten für spätere Supabase Storage Uploads.
 

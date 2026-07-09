@@ -139,23 +139,23 @@ export function SmartCoachView({ data, user, compact = false, onOpenDetails, onU
                     Notiz speichern
                   </button>
                 ) : null}
-                <button type="button" className="save-button" onClick={() => onUpdateRecommendation(recommendation, { status: "done", note: noteById[recommendation.id] ?? recommendation.note ?? "" })}>
+                <button type="button" className="save-button" onClick={() => onUpdateRecommendation(recommendation, { status: "done", note: noteById[recommendation.id] ?? recommendation.note ?? "" })} aria-label={`Smart-Coach-Hinweis ${recommendation.title} als erledigt markieren`}>
                   Erledigt
                 </button>
-                <button type="button" className="danger-button" onClick={() => onUpdateRecommendation(recommendation, { status: "dismissed", note: noteById[recommendation.id] ?? recommendation.note ?? "" })}>
+                <button type="button" className="danger-button" onClick={() => onUpdateRecommendation(recommendation, { status: "dismissed", note: noteById[recommendation.id] ?? recommendation.note ?? "" })} aria-label={`Smart-Coach-Hinweis ${recommendation.title} ausblenden`}>
                   Ausblenden
                 </button>
               </div>
             </div>
           </article>
         )) : (
-          <p className="empty-state">Noch nicht genug Daten fär Smart-Coach-Hinweise. Plane Training, erfasse Feedback oder lege Ziele an.</p>
+          <p className="empty-state">Noch nicht genug Daten für Smart-Coach-Hinweise. Plane Training, erfasse Feedback oder lege Ziele an.</p>
         )}
       </div>
 
       {compact ? (
-        <button type="button" className="ghost-button wide" onClick={onOpenDetails}>
-          Details äffnen
+        <button type="button" className="ghost-button wide" onClick={onOpenDetails} aria-label="Smart-Coach-Details ?ffnen">
+          Details öffnen
         </button>
       ) : (
         <p className="muted">Paddlio Smart Coach ersetzt keinen Trainer, Arzt oder medizinische Beratung.</p>

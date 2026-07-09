@@ -162,7 +162,7 @@ export function TrainingView({
             <p className="eyebrow">Trainingstagebuch</p>
             <h3>Training</h3>
           </div>
-          <button className="primary-button" type="button" onClick={() => setDraft(emptyDraft)} aria-label="Training hinzufuegen">
+          <button className="primary-button" type="button" onClick={() => setDraft(emptyDraft)} aria-label="Training hinzufügen">
             +
           </button>
         </div>
@@ -278,7 +278,7 @@ export function TrainingView({
                       </div>
 
                       <form className="journal-form" onSubmit={(event) => handleJournalSubmit(event, session)}>
-                        <p className="eyebrow">Persänliches Journal</p>
+                        <p className="eyebrow">Persönliches Journal</p>
                         <div className="form-grid">
                           <label>
                             Wie war das Training?
@@ -316,7 +316,7 @@ export function TrainingView({
                           Bearbeiten
                         </button>
                         <button className="delete-button" type="button" onClick={() => onDelete(session.id)}>
-                          Loeschen
+                          Löschen
                         </button>
                       </div>
                     </div>
@@ -325,7 +325,7 @@ export function TrainingView({
               );
             })
           ) : (
-            <p className="empty-state">Keine Einheiten fär diesen Filter.</p>
+            <p className="empty-state">Keine Einheiten für diesen Filter.</p>
           )}
         </div>
       </section>

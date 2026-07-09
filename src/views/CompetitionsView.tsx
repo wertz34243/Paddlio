@@ -119,7 +119,7 @@ export function CompetitionsView({ competitions, onSave, onDelete, openNewSignal
             <p className="eyebrow">Timeline</p>
             <h3>Wettkämpfe</h3>
           </div>
-          <button className="primary-button" type="button" onClick={() => setDraft(emptyDraft)} aria-label="Wettkampf hinzufuegen">
+          <button className="primary-button" type="button" onClick={() => setDraft(emptyDraft)} aria-label="Wettkampf hinzufügen">
             +
           </button>
         </div>
@@ -284,7 +284,7 @@ export function CompetitionsView({ competitions, onSave, onDelete, openNewSignal
                           Bearbeiten
                         </button>
                         <button className="delete-button" type="button" onClick={() => onDelete(competition.id)}>
-                          Loeschen
+                          Löschen
                         </button>
                       </div>
                     </div>
@@ -293,7 +293,7 @@ export function CompetitionsView({ competitions, onSave, onDelete, openNewSignal
               );
             })
           ) : (
-            <p className="empty-state">Noch keine Wettkämpfe gespeichert. Lege deinen ersten Start ueber den Plus-Button an.</p>
+            <p className="empty-state">Noch keine Wettkämpfe gespeichert. Lege deinen ersten Start über den Plus-Button an.</p>
           )}
         </div>
       </section>

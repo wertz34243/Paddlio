@@ -36,7 +36,7 @@ const motivations = [
   "Konstanz schlaegt Zufall.",
   "Ein gutes Training beginnt mit dem ersten Paddelschlag.",
   "Der Wettkampf wird im Training vorbereitet.",
-  "Ruhige Entscheidungen machen schnelle Laeufe.",
+  "Ruhige Entscheidungen machen schnelle Läufe.",
   "Sauber bleiben, Druck aufbauen, weiterfahren.",
 ];
 
@@ -111,7 +111,7 @@ export const getAthleteStatus = (
 
   if (daysSinceTraining === undefined || daysSinceTraining >= 4) {
     return {
-      title: "Zeit fär eine Einheit",
+      title: "Zeit für eine Einheit",
       detail: "Ein ruhiges Technik- oder GA1-Training würde jetzt gut passen.",
       tone: "primary",
     };
@@ -150,7 +150,7 @@ export const getSmartCoachAdvice = (
     return {
       title: "Paddlio Coach",
       recommendation: "Plane eine echte Pause oder eine lockere Mobilitaetseinheit.",
-      reason: "Deine Belastung und Räckmeldung sprechen fär Regeneration.",
+      reason: "Deine Belastung und Rückmeldung sprechen für Regeneration.",
     };
   }
 

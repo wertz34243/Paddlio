@@ -6,7 +6,7 @@ Paddlio braucht ein vollständiges Athletenprofil. Dieses Profil ist später Gru
 
 ## Entscheidung
 
-Version 0.5 fuehrt ein `User`-Modell mit `UserProfile` ein. Aktuell gibt es einen aktiven Nutzer ueber `activeUserId`, aber die Datenstruktur speichert bereits `users[]`, damit später mehrere Profile angelegt werden können.
+Version 0.5 fuehrt ein `User`-Modell mit `UserProfile` ein. Aktuell gibt es einen aktiven Nutzer über `activeUserId`, aber die Datenstruktur speichert bereits `users[]`, damit später mehrere Profile angelegt werden können.
 
 ## Enthaltene Profildaten
 

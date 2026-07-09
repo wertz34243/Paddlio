@@ -1,5 +1,17 @@
 # Changelog
 
+## 4.1.4
+
+- Stabilized external beta readiness without adding new product features.
+- Added idempotent Supabase migration `0017_external_beta_readiness_414.sql`.
+- Added `competitions.course` and kept expected competition metadata columns compatible.
+- Hardened authenticated profile self-read, insert and update policies for Supabase RLS.
+- Made profile creation avoid overwriting existing role data during login sync.
+- Improved mobile access to all `Mehr` areas with a card list on small viewports.
+- Improved contextual aria labels for navigation, training, templates and Smart Coach actions.
+- Cleaned remaining visible German text encoding issues.
+- Set version to `4.1.4`.
+
 ## 4.1.3
 
 - Added idempotent Supabase schema sync migration `0016_schema_sync_413.sql`.

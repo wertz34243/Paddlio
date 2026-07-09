@@ -62,7 +62,7 @@ Supabase ist für Paddlio der naheliegende erste Schritt, weil Postgres, Row Lev
 ## Stand Version 3.0.2
 
 - Supabase Auth ist als primaerer Login-Pfad vorbereitet.
-- `profiles`, `clubs`, `trainer_requests` und `training_groups` werden ueber Services geladen und lokal gecacht.
+- `profiles`, `clubs`, `trainer_requests` und `training_groups` werden über Services geladen und lokal gecacht.
 - Trainings, Ziele, Wettkämpfe und Material werden in 3.0.3 in Supabase migriert; Analyse nutzt weiterhin die lokal gecachten Cloud-Daten.
 
 ## Stand Version 3.0.3
