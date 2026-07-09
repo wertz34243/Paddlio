@@ -142,7 +142,7 @@ const buildAthleteRecommendations = (data: PaddleMotionData, user: User): Recomm
       "Regeneration einplanen",
       "Drei oder mehr harte Einheiten in fünf Tagen sind ein klares Belastungssignal.",
       `${hardCount} harte oder maximale Einheiten liegen im kurzen Zeitraum.`,
-      "Plane eine Pause, Mobilitaet oder eine sehr lockere Einheit.",
+      "Plane eine Pause, Mobilität oder eine sehr lockere Einheit.",
     ));
   }
 
@@ -153,7 +153,7 @@ const buildAthleteRecommendations = (data: PaddleMotionData, user: User): Recomm
       "warnung",
       "high",
       "Heute lieber locker trainieren",
-      "Deine letzte Rückmeldung zeigt erhoehte Müdigkeit oder schwache Erholung.",
+      "Deine letzte Rückmeldung zeigt erhöhte Müdigkeit oder schwache Erholung.",
       `Müdigkeit ${weakFeedback.fatigue}/10, Schlaf ${weakFeedback.sleep ?? 7}/10, Gefühl ${weakFeedback.feeling}/10.`,
       "Reduziere Intensität und dokumentiere nach der Einheit erneut dein Gefühl.",
       "training_feedback",
@@ -168,7 +168,7 @@ const buildAthleteRecommendations = (data: PaddleMotionData, user: User): Recomm
       "technik",
       "medium",
       "Technikfokus: saubere Linien",
-      "Dein Strafsekunden-Schnitt zeigt Potenzial bei Praezision und Torarbeit.",
+      "Dein Strafsekunden-Schnitt zeigt Potenzial bei Präzision und Torarbeit.",
       `Aktueller Strafschnitt: ${averagePenalty.toLocaleString("de-DE", { maximumFractionDigits: 1 })} Sekunden.`,
       "Plane ein Techniktraining mit klarer Linienwahl und Torberuehrungs-Fokus.",
     ));
@@ -182,7 +182,7 @@ const buildAthleteRecommendations = (data: PaddleMotionData, user: User): Recomm
       "medium",
       "Grundlagenausdauer fehlt",
       "In den letzten 14 Tagen ist kein GA1- oder Grundlagenreiz sichtbar.",
-      "Eine stabile Grundlage hilft dir, technische Qualität laenger zu halten.",
+      "Eine stabile Grundlage hilft dir, technische Qualität länger zu halten.",
       "Plane 45 bis 90 Minuten locker im GA1-Bereich.",
     ));
   }
@@ -242,10 +242,10 @@ const buildAthleteRecommendations = (data: PaddleMotionData, user: User): Recomm
       "external-session-unlinked",
       "training",
       "medium",
-      "Externes Training verknuepfen",
+      "Externes Training verknüpfen",
       "Eine Polar- oder externe Trainingseinheit ist noch keinem Paddlio-Training zugeordnet.",
       `${unlinkedExternal.title} von ${new Date(unlinkedExternal.startedAt).toLocaleDateString("de-DE")}.`,
-      "Verknuepfe die Einheit mit dem geplanten Training, damit Belastung und Analyse stimmen.",
+      "Verknüpfe die Einheit mit dem geplanten Training, damit Belastung und Analyse stimmen.",
       "external_training_session",
       unlinkedExternal.id,
     ));
@@ -270,7 +270,7 @@ const buildAthleteRecommendations = (data: PaddleMotionData, user: User): Recomm
       "Trainingsbelastung steigt deutlich",
       "Die externe Trainingsdauer dieser Woche liegt deutlich über der Vorwoche.",
       `${currentWeekMinutes} min diese Woche gegenüber ${previousWeekMinutes} min in der Vorwoche.`,
-      "Plane bewusst Erholung und pr?fe die Rückmeldungen nach harten Einheiten.",
+      "Plane bewusst Erholung und prüfe die Rückmeldungen nach harten Einheiten.",
     ));
   }
 
@@ -314,8 +314,8 @@ const buildAthleteRecommendations = (data: PaddleMotionData, user: User): Recomm
       "low",
       "Du bist im Rhythmus",
       "Deine aktuellen Daten zeigen keine akute Baustelle.",
-      "Konstanz und saubere Dokumentation sind gerade dein groesster Hebel.",
-      "Waehle für die nächste Einheit einen messbaren Fokus.",
+      "Konstanz und saubere Dokumentation sind gerade dein größter Hebel.",
+      "Wähle für die nächste Einheit einen messbaren Fokus.",
     ));
   }
 
@@ -351,7 +351,7 @@ const buildCoachRecommendations = (data: PaddleMotionData, user: User): Recommen
         `${athlete.name}: kein Training geplant`,
         "Dieser Sportler hat in der aktuellen Woche noch keine geplante Einheit.",
         "Coach-Ansicht: Wochenplanung enthält keine Einheit für diesen Sportler.",
-        "Plane eine passende Einheit oder pr?fe die Gruppenzuweisung.",
+        "Plane eine passende Einheit oder prüfe die Gruppenzuweisung.",
         "coach_athlete",
         athlete.id,
         athlete.id,
@@ -396,7 +396,7 @@ const buildCoachRecommendations = (data: PaddleMotionData, user: User): Recommen
         "coach-athlete-risky-goal",
         "ziele",
         "high",
-        `${athlete.name}: Ziel gefaehrdet`,
+        `${athlete.name}: Ziel gefährdet`,
         `${riskyGoal.goal.title} braucht Aufmerksamkeit.`,
         `Fortschritt ${Math.round(riskyGoal.progress)}%, fällig am ${riskyGoal.goal.dueDate}.`,
         "Passe den Wochenplan auf dieses Ziel an.",

@@ -4,7 +4,7 @@
 
 Paddlio ist eine React/Vite/TypeScript-PWA für Kanuslalom mit Supabase Auth und Supabase als Hauptspeicher für die Plattformbereiche. LocalStorage bleibt als Cache und Offline-Fallback erhalten.
 
-Version 4.1.5 ist ein Privacy- und Beta-Polish-Fix. Der Schwerpunkt liegt auf geschützten E-Mail-Anzeigen, klarerem CloudStatus, besseren aria-Labels, weniger Overflow in Updates und finaler Textglättung vor externer Beta. Große neue Fachfunktionen bleiben eingefroren.
+Version 4.1.5 ist ein Privacy- und Beta-Polish-Fix. Der Schwerpunkt liegt auf geschützten E-Mail-Anzeigen, klarerem CloudStatus, besseren aria-Labels, weniger Overflow in Updates, finaler Textglättung und stabilerem Cloud-Speichern vor externer Beta. Große neue Fachfunktionen bleiben eingefroren.
 
 ## Architektur
 
@@ -26,6 +26,8 @@ Version 4.1.5 ist ein Privacy- und Beta-Polish-Fix. Der Schwerpunkt liegt auf ge
 - Wiederholte Hauptaktionen erhalten eindeutigere aria-Labels.
 - Updates, Beta-Zeilen, Chat-Bubbles und technische Strings erhalten zusätzliche Overflow-Guards.
 - Sichtbare deutsche UI-Texte wurden weiter geglättet.
+- Trainingstagebuch-Einträge werden über `training_journal_entries` in Supabase gespeichert, migriert, geladen und per Realtime aktualisiert.
+- Passwort-Reset nutzt ein Inline-Formular statt `prompt()`, weil Browser-/Testumgebungen Prompts blockieren können.
 
 ## Version 4.1.4 Schwerpunkt
 
@@ -48,12 +50,12 @@ Version 4.1.5 ist ein Privacy- und Beta-Polish-Fix. Der Schwerpunkt liegt auf ge
 - Profil-Sync wird nicht mehr als harter App-Blocker behandelt.
 - Bei Profil-Timeout nutzt Paddlio ein lokales Fallback-Profil und markiert CloudStatus als eingeschränkt.
 - Migration `0015_profile_sync_rls_hotfix.sql` stellt eigene `profiles` Select/Insert/Update-Policies bereit.
-- Bottom-Navigation erhaelt eindeutige `aria-labels`.
+- Bottom-Navigation erhält eindeutige `aria-labels`.
 - Build ist grün; verbleibende Bundle-Size-Warnung ist bekannt und nicht blockierend.
 
 ## Version 4.1.1 Schwerpunkt
 
-- Dashboard darf nicht mehr auf optionale Cloud-Module warten: lokaler Cache wird sofort angezeigt, Cloud Sync laeuft nachgelagert.
+- Dashboard darf nicht mehr auf optionale Cloud-Module warten: lokaler Cache wird sofort angezeigt, Cloud Sync läuft nachgelagert.
 - Supabase-Aufrufe für Session, Profil und optionale Tabellen sind mit Timeouts und Fallbacks abgesichert.
 - Migration `0014_beta_stabilization_hotfix.sql` repariert fehlende optionale Tabellen/Spalten idempotent.
 - Reine `YYYY-MM-DD` Datumswerte werden ohne UTC-Verschiebung und mit Europe/Berlin-Wochentag verarbeitet.
@@ -64,7 +66,7 @@ Version 4.1.5 ist ein Privacy- und Beta-Polish-Fix. Der Schwerpunkt liegt auf ge
 
 ## Version 4.1 Schwerpunkt
 
-- Dark Water Performance Design mit sehr dunklem Blau, Wasser-Cyan, ruhigen Flaechen und reduzierten Schatten.
+- Dark Water Performance Design mit sehr dunklem Blau, Wasser-Cyan, ruhigen Flächen und reduzierten Schatten.
 - Heute bleibt zentrale Startseite und priorisiert Training, Kommunikation, Aufgaben, Anwesenheit, Ziele und Smart Coach.
 - Mobile Bottom Navigation bleibt bei Heute, Training, Analyse, Kommunikation und Mehr.
 - Kommunikation wirkt mehr wie Messenger/Team-App: Kontakte, Chat-Bubbles, sticky Eingabe und klare Empty States.

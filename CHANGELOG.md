@@ -2,6 +2,10 @@
 
 ## 4.1.5
 
+- Added cloud persistence and Realtime coverage for training journal entries via `training_journal_entries`.
+- Replaced unsupported password-reset `prompt()` with an inline reset form on the login screen.
+- Translated communication task/news enum values for user-facing German labels.
+- Fixed additional visible UTF-8 text issues reported during the 4.1.5 beta test.
 - Fixed cross-device role synchronization so Supabase profile roles override stale local cache roles.
 - Added Supabase migration `0018_role_sync_profile_normalization.sql` for lower-case profile e-mails and canonical admin role normalization.
 - Protected e-mail display in Updates, Coach/Admin lists and Beta feedback surfaces.

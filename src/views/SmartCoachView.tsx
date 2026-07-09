@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { buildSmartCoachRecommendations, getSmartCoachCategoryLabel } from "../domain/smartCoach";
 import type { PaddleMotionData, SmartCoachCategory, SmartCoachPriority, SmartCoachRecommendation, User } from "../domain/types";
 

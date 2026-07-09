@@ -14,6 +14,7 @@ declare
     'group_memberships',
     'training_plan_items',
     'training_feedback',
+    'training_journal_entries',
     'training_templates',
     'season_goals',
     'competitions',

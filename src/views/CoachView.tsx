@@ -257,7 +257,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
       setMessage(successMessage);
     } catch (error) {
       console.error("[Paddlio Cloud] Coach/Admin-Aktion fehlgeschlagen", error);
-      setMessage("Aktion konnte nicht gespeichert werden. Bitte pr?fe deine Berechtigung oder versuche es erneut.");
+      setMessage("Aktion konnte nicht gespeichert werden. Bitte prüfe deine Berechtigung oder versuche es erneut.");
     } finally {
       setIsSavingCloud(false);
     }

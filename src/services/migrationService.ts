@@ -1,6 +1,7 @@
 import type { PaddleMotionData } from "../domain/types";
 import { updateCloudProfile, type CloudProfile } from "./profileService";
 import { upsertCloudTraining, upsertCloudFeedback } from "./trainingService";
+import { upsertCloudJournalEntry } from "./journalService";
 import { upsertCloudTrainingTemplate } from "./trainingTemplateService";
 import { upsertCloudGoal } from "./goalService";
 import { upsertCloudCompetition } from "./competitionService";
@@ -75,6 +76,10 @@ export const syncDataSnapshotToCloud = async (data: PaddleMotionData, profile: C
   }
   for (const feedback of data.trainingFeedback) {
     await upsertCloudFeedback(feedback);
+    migrated += 1;
+  }
+  for (const entry of data.journal) {
+    await upsertCloudJournalEntry(entry);
     migrated += 1;
   }
   for (const template of data.trainingTemplates) {

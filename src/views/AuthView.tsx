@@ -17,6 +17,8 @@ export function AuthView({ onLogin, onRegister, onResetPassword, cloudMessage }:
   const [clubs] = useState(() => loadClubs().filter((club) => club.status === "active"));
   const [suggestClub, setSuggestClub] = useState(false);
   const [message, setMessage] = useState("");
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -48,14 +50,23 @@ export function AuthView({ onLogin, onRegister, onResetPassword, cloudMessage }:
   };
 
   const handleResetPassword = async () => {
-    const email = window.prompt("E-Mail für Passwort-Reset");
-    if (!email) return;
+    const email = resetEmail.trim();
+    if (!email) {
+      setMessage("Bitte gib deine E-Mail-Adresse ein.");
+      return;
+    }
+
     const result = await onResetPassword(email);
     setMessage(result.message ?? "Passwort-Reset wurde angefordert.");
+    if (result.ok) {
+      setResetOpen(false);
+      setResetEmail("");
+    }
   };
 
   const switchMode = (nextMode: AuthMode) => {
     setMode(nextMode);
+    setResetOpen(false);
     setMessage("");
   };
 
@@ -90,9 +101,32 @@ export function AuthView({ onLogin, onRegister, onResetPassword, cloudMessage }:
             <button className="save-button" type="submit">
               Einloggen
             </button>
-            <button className="text-button" type="button" onClick={handleResetPassword}>
+            <button className="text-button" type="button" onClick={() => setResetOpen((current) => !current)} aria-expanded={resetOpen}>
               Passwort vergessen
             </button>
+            {resetOpen ? (
+              <div className="reset-panel">
+                <label>
+                  E-Mail für Passwort-Reset
+                  <input
+                    value={resetEmail}
+                    onChange={(event) => setResetEmail(event.target.value)}
+                    type="email"
+                    autoComplete="email"
+                    placeholder="deine@email.de"
+                    required
+                  />
+                </label>
+                <div className="inline-actions">
+                  <button className="save-button" type="button" onClick={() => void handleResetPassword()}>
+                    Reset-Link senden
+                  </button>
+                  <button className="ghost-button" type="button" onClick={() => setResetOpen(false)}>
+                    Abbrechen
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </form>
         ) : (
           <form className="auth-form" onSubmit={handleRegister}>
@@ -124,7 +158,7 @@ export function AuthView({ onLogin, onRegister, onResetPassword, cloudMessage }:
             {suggestClub ? (
               <label>
                 Vereinsname
-                <input name="club" autoComplete="organization" required placeholder="z. B. Muelheimer Kanu Club" />
+                <input name="club" autoComplete="organization" required placeholder="z. B. Mülheimer Kanu Club" />
               </label>
             ) : (
               <label>
@@ -150,7 +184,7 @@ export function AuthView({ onLogin, onRegister, onResetPassword, cloudMessage }:
                 <input name="passwordRepeat" type="password" autoComplete="new-password" minLength={8} required />
               </label>
             </div>
-            <p className="card-note">Empfohlen: Grossbuchstabe, Kleinbuchstabe und Zahl.</p>
+            <p className="card-note">Empfohlen: Großbuchstabe, Kleinbuchstabe und Zahl.</p>
             <label className="toggle-row">
               <span>Datenschutz akzeptieren</span>
               <input name="privacyAccepted" type="checkbox" required />

@@ -22,7 +22,7 @@ const ageClasses: AgeClass[] = ["U10", "U12", "U14", "U16", "U18", "U23", "Leist
 const genders: Array<{ value: Gender; label: string }> = [
   { value: "keine_angabe", label: "Keine Angabe" },
   { value: "weiblich", label: "Weiblich" },
-  { value: "maennlich", label: "Maennlich" },
+  { value: "maennlich", label: "Männlich" },
   { value: "divers", label: "Divers" },
 ];
 const paddleSides: Array<{ value: PaddleSide; label: string }> = [

@@ -946,7 +946,7 @@ function App() {
 function CloudStatusBadgeStable({ status, syncCount, pendingSyncCount, lastSyncAt, isAdmin, message }: { status: string; syncCount: number; pendingSyncCount: number; lastSyncAt: string; isAdmin: boolean; message: string }) {
   const label =
     status === "connected" ? "Cloud verbunden" :
-      status === "syncing" ? "Synchronisiert..." :
+      status === "syncing" ? "Synchronisiere..." :
         status === "pending" ? "Wartende Änderungen" :
           status === "limited" ? "Cloud eingeschränkt" :
             status === "offline" ? "Offline" :
@@ -965,7 +965,8 @@ function CloudStatusBadgeStable({ status, syncCount, pendingSyncCount, lastSyncA
       <span>{label}</span>
       {userMessage ? <small>{userMessage}</small> : null}
       {pendingSyncCount > 0 ? <small>{pendingSyncCount} Änderungen warten auf Synchronisation</small> : null}
-      {isAdmin ? <small>{syncCount} Datensätze{syncLabel ? " - letzter Sync " + syncLabel : ""}</small> : null}
+      {isAdmin && status === "syncing" ? <small>Synchronisiere Datensätze...</small> : null}
+      {isAdmin && status !== "syncing" ? <small>{syncCount} Datensätze{syncLabel ? " - letzter Sync " + syncLabel : ""}</small> : null}
       {message && (isAdmin || status === "error") ? <small>{message}</small> : null}
     </div>
   );

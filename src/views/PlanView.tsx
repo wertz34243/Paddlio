@@ -713,7 +713,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
         <div>
           <p className="eyebrow">{isCoach ? "Coach Workflow" : "Mein Trainingsplan"}</p>
           <h3>{isCoach ? "Trainingsplanung 2.0" : "Deine nächsten Einheiten"}</h3>
-          <p>{isCoach ? "Plane Tage, Wochen und Saisonbl?cke aus Vorlagen, kopiere Einheiten und pr?fe Rückmeldungen." : "Sieh deine Einheiten, hake Training ab und gib deinem Coach klares Feedback."}</p>
+          <p>{isCoach ? "Plane Tage, Wochen und Saisonblöcke aus Vorlagen, kopiere Einheiten und prüfe Rückmeldungen." : "Sieh deine Einheiten, hake Training ab und gib deinem Coach klares Feedback."}</p>
         </div>
         <div className="training-workflow-actions">
           <button className="primary-button" type="button" onClick={startCreate} aria-label="Neue Trainingseinheit im Plan eintragen">Training planen</button>

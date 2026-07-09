@@ -55,6 +55,39 @@ const targetTypes: ClubPostTargetType[] = ["club", "coaches", "group", "athlete"
 const attendanceStatuses: TrainingAttendanceStatus[] = ["attending", "not_attending", "unsure"];
 const attendanceReasons: TrainingAttendanceReason[] = ["", "Schule", "Arbeit", "Krankheit", "Familie", "Wettkampf", "anderes"];
 
+const taskTypeLabels: Record<TeamTaskType, string> = {
+  general: "Allgemein",
+  technique: "Technik",
+  material: "Material",
+  video: "Video",
+  competition: "Wettkampf",
+  training: "Training",
+  mental: "Mental",
+  recovery: "Regeneration",
+};
+
+const priorityLabels: Record<TeamTaskPriority | ClubPostPriority, string> = {
+  normal: "Normal",
+  important: "Wichtig",
+  urgent: "Dringend",
+};
+
+const postCategoryLabels: Record<ClubPostCategory, string> = {
+  info: "Info",
+  training: "Training",
+  competition: "Wettkampf",
+  material: "Material",
+  urgent: "Dringend",
+  organization: "Organisation",
+};
+
+const targetTypeLabels: Record<ClubPostTargetType, string> = {
+  club: "Verein",
+  coaches: "Trainer",
+  group: "Gruppe",
+  athlete: "Sportler",
+};
+
 const todayKey = (): string => new Date().toISOString().slice(0, 10);
 
 const formatShort = (value: string): string =>
@@ -290,18 +323,18 @@ export function CommunicationView({ data, user, onDataChange }: CommunicationVie
   const newsView = (
     <section className="section-block">
       <div className="section-heading"><div><p className="eyebrow">Pinnwand</p><h3>Vereinsnews</h3></div></div>
-      {isCoachLike || isAdmin ? <form className="entry-form" onSubmit={createPost}><div className="form-grid"><label>Titel<input name="title" required /></label><label>Kategorie<select name="category">{postCategories.map((item) => <option key={item} value={item}>{item}</option>)}</select></label><label>Priorität<select name="priority">{priorities.map((item) => <option key={item} value={item}>{item}</option>)}</select></label><label>Zielgruppe<select name="targetType">{targetTypes.map((item) => <option key={item} value={item}>{item}</option>)}</select></label><label>Ablaufdatum<input name="expiresAt" type="datetime-local" /></label><label className="toggle-row">Wichtig<input name="isPinned" type="checkbox" /></label></div><label>Inhalt<textarea name="content" rows={4} required /></label><button className="save-button" type="submit">Beitrag erstellen</button></form> : null}
-      <div className="club-card-list">{visiblePosts.length ? visiblePosts.map((post) => <article className={`club-post-card priority-${post.priority}`} key={post.id}><div className="plan-card-head"><div><span>{post.category} - {formatShort(post.createdAt)}</span><h4>{post.title}</h4></div>{post.isPinned ? <b className="status-pill planned">Wichtig</b> : null}</div><p>{post.content}</p><small>Zielgruppe: {post.targetType}</small></article>) : <p className="empty-state">Keine Vereinsmeldungen vorhanden.</p>}</div>
+      {isCoachLike || isAdmin ? <form className="entry-form" onSubmit={createPost}><div className="form-grid"><label>Titel<input name="title" required /></label><label>Kategorie<select name="category">{postCategories.map((item) => <option key={item} value={item}>{postCategoryLabels[item]}</option>)}</select></label><label>Priorität<select name="priority">{priorities.map((item) => <option key={item} value={item}>{priorityLabels[item]}</option>)}</select></label><label>Zielgruppe<select name="targetType">{targetTypes.map((item) => <option key={item} value={item}>{targetTypeLabels[item]}</option>)}</select></label><label>Ablaufdatum<input name="expiresAt" type="datetime-local" /></label><label className="toggle-row">Wichtig<input name="isPinned" type="checkbox" /></label></div><label>Inhalt<textarea name="content" rows={4} required /></label><button className="save-button" type="submit">Beitrag erstellen</button></form> : null}
+      <div className="club-card-list">{visiblePosts.length ? visiblePosts.map((post) => <article className={`club-post-card priority-${post.priority}`} key={post.id}><div className="plan-card-head"><div><span>{postCategoryLabels[post.category]} - {formatShort(post.createdAt)}</span><h4>{post.title}</h4></div>{post.isPinned ? <b className="status-pill planned">Wichtig</b> : null}</div><p>{post.content}</p><small>Zielgruppe: {targetTypeLabels[post.targetType]}</small></article>) : <p className="empty-state">Keine Vereinsmeldungen vorhanden.</p>}</div>
     </section>
   );
 
   const tasksView = (
     <section className="section-block">
       <div className="section-heading"><div><p className="eyebrow">Aufgaben</p><h3>{openTasks} offen</h3></div></div>
-      {isCoachLike || isAdmin ? <form className="entry-form" onSubmit={createTask}><div className="form-grid"><label>Titel<input name="title" required /></label><label>Typ<select name="taskType">{taskTypes.map((item) => <option key={item} value={item}>{item}</option>)}</select></label><label>Priorität<select name="priority">{priorities.map((item) => <option key={item} value={item}>{item}</option>)}</select></label><label>Fällig<input name="dueDate" type="date" /></label><label>Empfaenger<select name="assignedTo"><option value={user.userId}>Ich</option>{contacts.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label></div><label>Beschreibung<textarea name="description" rows={3} /></label><button className="save-button" type="submit">Aufgabe erstellen</button></form> : null}
+      {isCoachLike || isAdmin ? <form className="entry-form" onSubmit={createTask}><div className="form-grid"><label>Titel<input name="title" required /></label><label>Typ<select name="taskType">{taskTypes.map((item) => <option key={item} value={item}>{taskTypeLabels[item]}</option>)}</select></label><label>Priorität<select name="priority">{priorities.map((item) => <option key={item} value={item}>{priorityLabels[item]}</option>)}</select></label><label>Fällig<input name="dueDate" type="date" /></label><label>Empfänger<select name="assignedTo"><option value={user.userId}>Ich</option>{contacts.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label></div><label>Beschreibung<textarea name="description" rows={3} /></label><button className="save-button" type="submit">Aufgabe erstellen</button></form> : null}
       <div className="club-card-list">{visibleTasks.length ? visibleTasks.map((task) => {
         const assignment = myAssignments.find((item) => item.taskId === task.id);
-        return <article className="task-card" key={task.id}><div className="plan-card-head"><div><span>{task.taskType} - fällig {task.dueDate || "offen"}</span><h4>{task.title}</h4></div><b className="status-pill planned">{assignment?.status ?? "open"}</b></div><p>{task.description || "Keine Beschreibung."}</p>{assignment ? <div className="inline-actions"><button type="button" onClick={() => updateAssignment(assignment, "in_progress")} aria-label={`Aufgabe ${task.title} als in Arbeit markieren`}>In Arbeit</button><button className="save-button" type="button" onClick={() => updateAssignment(assignment, "done")} aria-label={`Aufgabe ${task.title} als erledigt markieren`}>Erledigt</button><button type="button" onClick={() => updateAssignment(assignment, "skipped")} aria-label={`Aufgabe ${task.title} auslassen`}>Auslassen</button></div> : null}</article>;
+        return <article className="task-card" key={task.id}><div className="plan-card-head"><div><span>{taskTypeLabels[task.taskType]} - fällig {task.dueDate || "offen"}</span><h4>{task.title}</h4></div><b className="status-pill planned">{assignment?.status ?? "open"}</b></div><p>{task.description || "Keine Beschreibung."}</p>{assignment ? <div className="inline-actions"><button type="button" onClick={() => updateAssignment(assignment, "in_progress")} aria-label={`Aufgabe ${task.title} als in Arbeit markieren`}>In Arbeit</button><button className="save-button" type="button" onClick={() => updateAssignment(assignment, "done")} aria-label={`Aufgabe ${task.title} als erledigt markieren`}>Erledigt</button><button type="button" onClick={() => updateAssignment(assignment, "skipped")} aria-label={`Aufgabe ${task.title} auslassen`}>Auslassen</button></div> : null}</article>;
       }) : <p className="empty-state">Keine offenen Aufgaben.</p>}</div>
     </section>
   );
@@ -349,7 +382,7 @@ export function CommunicationView({ data, user, onDataChange }: CommunicationVie
         </section>
         <section className="metric-grid two-columns">
           <article className="metric-card tone-training"><span>Direkt</span><strong>{unreadDirect}</strong><small>ungelesen</small></article>
-          <article className="metric-card tone-k1"><span>Gruppen</span><strong>{unreadGroups}</strong><small>Aktivitaet</small></article>
+          <article className="metric-card tone-k1"><span>Gruppen</span><strong>{unreadGroups}</strong><small>Aktivität</small></article>
           <article className="metric-card tone-penalty"><span>Aufgaben</span><strong>{openTasks}</strong><small>offen</small></article>
           <article className="metric-card tone-c1"><span>Anwesenheit</span><strong>{pendingAttendance}</strong><small>offene Antworten</small></article>
         </section>
