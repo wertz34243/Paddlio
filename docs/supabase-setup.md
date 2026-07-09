@@ -50,7 +50,7 @@ Empfohlene Supabase-Einstellungen:
 2. Für produktive Nutzung: `Confirm email` aktivieren, damit Nutzer ihre E-Mail bestaetigen.
 3. Für geschlossene Tests ohne E-Mail-Versand: `Confirm email` deaktivieren oder Nutzer im Dashboard mit `Auto Confirm User` anlegen.
 4. Wenn `Confirm email` deaktiviert ist, versendet Supabase bei normalem Sign-up keine Bestätigungs-E-Mail und Paddlio meldet den Nutzer direkt an.
-5. Rate Limits pruefen: `Authentication` -> `Rate Limits`. Bei `email rate limit exceeded` muss im Supabase-Projekt gewartet oder das Limit/SMTP-Setup angepasst werden.
+5. Rate Limits prüfen: `Authentication` -> `Rate Limits`. Bei `email rate limit exceeded` muss im Supabase-Projekt gewartet oder das Limit/SMTP-Setup angepasst werden.
 6. Für hoehere produktive Limits sollte ein eigener SMTP-Anbieter konfiguriert werden. Ohne eigenen SMTP können Supabase-Standardlimits schnell greifen.
 
 Wichtig: Ein Frontend mit Publishable/Anon Key darf keine Benutzer am E-Mail-Rate-Limit vorbei erstellen. Ein Fallback ohne E-Mail-Bestätigung waere nur über einen serverseitigen Admin-Pfad möglich, zum Beispiel Supabase Edge Function mit Service-Role-Key. Dieser Key darf niemals in Vite, Vercel Public Environments oder im Browser landen.

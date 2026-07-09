@@ -135,7 +135,7 @@ export function SmartCoachView({ data, user, compact = false, onOpenDetails, onU
               ) : null}
               <div className="inline-actions">
                 {!compact ? (
-                  <button type="button" className="ghost-button" onClick={() => onUpdateRecommendation(recommendation, { note: noteById[recommendation.id] ?? recommendation.note ?? "" })}>
+                  <button type="button" className="ghost-button" onClick={() => onUpdateRecommendation(recommendation, { note: noteById[recommendation.id] ?? recommendation.note ?? "" })} aria-label={`Notiz zum Smart-Coach-Hinweis ${recommendation.title} speichern`}>
                     Notiz speichern
                   </button>
                 ) : null}
@@ -154,7 +154,7 @@ export function SmartCoachView({ data, user, compact = false, onOpenDetails, onU
       </div>
 
       {compact ? (
-        <button type="button" className="ghost-button wide" onClick={onOpenDetails} aria-label="Smart-Coach-Details ?ffnen">
+        <button type="button" className="ghost-button wide" onClick={onOpenDetails} aria-label="Smart-Coach-Details öffnen">
           Details öffnen
         </button>
       ) : (

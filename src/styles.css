@@ -436,6 +436,20 @@ button {
 .notification-card p,
 .notification-card span,
 .notification-card h4 {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.notification-card,
+.notification-card *,
+.beta-row,
+.beta-row *,
+.chat-bubble,
+.chat-bubble *,
+.cloud-status,
+.cloud-status * {
+  max-width: 100%;
   overflow-wrap: anywhere;
 }
 

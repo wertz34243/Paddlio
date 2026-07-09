@@ -72,8 +72,8 @@ Bekannte Grenzen der Beta: Polar Sync, Excel Import, Videoanalyse, Paddlio Acade
 - Neues Wettkampfsegment `Ergebnisanalyse` mit Bestzeiten, Strafschnitt, Bootsklassenverteilung und Saisonvergleich-Grundlage
 - Importbereich für CSV, Excel, PDF und Web-Quellen vorbereitet, ohne fragile Scraper zu erzwingen
 - Integrationen-Bereich für Polar Flow vorbereitet; echte OAuth-Aktivierung muss später über Backend oder Supabase Edge Functions erfolgen
-- Externe Trainingseinheiten, Trainingsbelastung und Verknuepfung mit Paddlio-Trainings vorbereitet
-- Smart Coach erkennt jetzt externe unverknuepfte Trainings, Ergebnisverbesserungen, lange Ergebnispausen und Belastungsspruenge
+- Externe Trainingseinheiten, Trainingsbelastung und Verknüpfung mit Paddlio-Trainings vorbereitet
+- Smart Coach erkennt jetzt externe unverknüpfte Trainings, Ergebnisverbesserungen, lange Ergebnispausen und Belastungssprünge
 - Admin-Bereich `Beta-Check` mit Checkliste für Supabase, Rollen, Gruppen, Training, Kommunikation, Ergebnisse, Mobile und RLS
 - Supabase-Migration `0012_results_polar_beta_readiness.sql` ergänzt Ergebnisfelder, `personal_bests`, `result_imports`, `external_connections`, `external_training_sessions` und `beta_readiness_checks`
 
@@ -82,7 +82,7 @@ Polar-Hinweis: Paddlio speichert keine echten Polar-Secrets im Frontend. `VITE_*
 ## Version 3.8 - Communication & Team System
 
 - Neues Kommunikationsmodul unter `Mehr > Kommunikation`
-- Direktnachrichten, Gruppenchats, Vereinsnews, Aufgaben, Anwesenheit und Datei-Anhaenge vorbereitet
+- Direktnachrichten, Gruppenchats, Vereinsnews, Aufgaben, Anwesenheit und Datei-Anhänge vorbereitet
 - Dashboard zeigt neue Nachrichten, Gruppenaktivitaet, offene Aufgaben, offene Anwesenheit und aktuelle Vereinsnews
 - Supabase-Migration `0011_communication_team_system.sql` erstellt Kommunikationstabellen, RLS-Policies und bereitet den Storage-Bucket `paddlio-files` vor
 - Offline-Queue-Fallback für Nachrichten, Aufgaben, Anwesenheit und Anhang-Metadaten

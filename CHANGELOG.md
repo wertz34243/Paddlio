@@ -1,5 +1,16 @@
 # Changelog
 
+## 4.1.5
+
+- Protected e-mail display in Updates, Coach/Admin lists and Beta feedback surfaces.
+- Restricted non-coach profile sync to the current user's own profile snapshot.
+- Hardened Admin/Beta visibility so systemwide tester data remains Admin-only.
+- Improved CloudStatus wording for connected, limited, offline and error states.
+- Added contextual aria labels for notifications, Smart Coach notes, tasks and attendance actions.
+- Added overflow guards for Updates, beta rows, chat bubbles and technical strings.
+- Smoothed remaining visible German UI text issues for the external beta.
+- Set version to `4.1.5`.
+
 ## 4.1.4
 
 - Stabilized external beta readiness without adding new product features.

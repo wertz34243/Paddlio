@@ -1,10 +1,10 @@
 # Paddlio Project Analysis
 
-## Stand Version 4.1.4
+## Stand Version 4.1.5
 
 Paddlio ist eine React/Vite/TypeScript-PWA für Kanuslalom mit Supabase Auth und Supabase als Hauptspeicher für die Plattformbereiche. LocalStorage bleibt als Cache und Offline-Fallback erhalten.
 
-Version 4.1.4 ist ein External-Beta-Readiness-Fix. Der Schwerpunkt liegt auf stabilerem Profil-Sync, Datenbank-Kompatibilität für Wettkampfstrecken, besser erreichbaren Mehr-Bereichen auf Mobile, präziseren aria-Labels und letzten sichtbaren Textkorrekturen. Große neue Fachfunktionen bleiben eingefroren.
+Version 4.1.5 ist ein Privacy- und Beta-Polish-Fix. Der Schwerpunkt liegt auf geschützten E-Mail-Anzeigen, klarerem CloudStatus, besseren aria-Labels, weniger Overflow in Updates und finaler Textglättung vor externer Beta. Große neue Fachfunktionen bleiben eingefroren.
 
 ## Architektur
 
@@ -16,6 +16,16 @@ Version 4.1.4 ist ein External-Beta-Readiness-Fix. Der Schwerpunkt liegt auf sta
 - Bottom Navigation ist für mobile Beta-Tests auf fünf Hauptpunkte reduziert; weitere Bereiche liegen unter `Mehr`.
 - Beta-Feedback und Beta-Tester liegen in Supabase und werden lokal nur gecacht.
 - Das visuelle Grundsystem liegt zentral in `src/styles.css` mit 4.1-Overlay für Tokens, Karten, Navigation, Buttons, Empty/Error/Offline States und mobile Safe Areas.
+
+## Version 4.1.5 Schwerpunkt
+
+- Athleten laden beim Cloud-Profil-Sync nur noch das eigene Profil in den App-Snapshot.
+- E-Mail-Adressen werden in Updates, Coach-Listen und Feedbackflächen für Nicht-Admins maskiert oder entfernt.
+- Admin-/Beta-Tester-Daten bleiben echten Admins vorbehalten.
+- CloudStatus erklärt `verbunden`, `eingeschränkt`, `offline` und `Fehler` nutzerfreundlicher.
+- Wiederholte Hauptaktionen erhalten eindeutigere aria-Labels.
+- Updates, Beta-Zeilen, Chat-Bubbles und technische Strings erhalten zusätzliche Overflow-Guards.
+- Sichtbare deutsche UI-Texte wurden weiter geglättet.
 
 ## Version 4.1.4 Schwerpunkt
 
@@ -138,7 +148,7 @@ Version 4.1.4 ist ein External-Beta-Readiness-Fix. Der Schwerpunkt liegt auf sta
 - Persönliche Bestzeiten werden aus `competition_results` beziehungsweise dem geladenen Snapshot berechnet und können in `personal_bests` gespeichert werden.
 - Ergebnisimporte sind über `result_imports` vorbereitet, bleiben aber bewusst ohne instabilen Scraper.
 - Polar Flow und weitere externe Datenquellen sind über `external_connections` und `external_training_sessions` vorbereitet; sichere OAuth-/Token-Verarbeitung gehört nicht ins Frontend.
-- Analyse und Smart Coach berücksichtigen externe Trainings, Belastungsspruenge, unverknuepfte Einheiten und Ergebnisentwicklung.
+- Analyse und Smart Coach berücksichtigen externe Trainings, Belastungssprünge, unverknüpfte Einheiten und Ergebnisentwicklung.
 - Admins erhalten einen Beta-Check für Supabase, Rollen, Gruppen, Training, Kommunikation, Ergebnisse, Mobile und RLS.
 
 ## Datenmodelle in Nutzung
@@ -156,7 +166,7 @@ Version 4.1.4 ist ein External-Beta-Readiness-Fix. Der Schwerpunkt liegt auf sta
 - `competitions`: Wettkampf-Stammdaten inklusive Importquelle.
 - `competition_results`: Ergebnisdaten pro Sportler und Bootsklasse.
 - `smart_coach_recommendations`: gespeicherte Statuswerte und Notizen für regelbasierte Hinweise.
-- `club_material`: Vereinsinventar wie Boote, Paddel, Helme, Schwimmwesten und Anhaenger.
+- `club_material`: Vereinsinventar wie Boote, Paddel, Helme, Schwimmwesten und Anhänger.
 - `boats`: detaillierte Bootsdaten und Sportlerverknuepfung.
 - `club_events`: Vereinskalender für Training, Wettkampf, Sitzung, Feier und Arbeitseinsatz.
 - `club_documents`: Dokument-Metadaten und Ordnerstruktur.

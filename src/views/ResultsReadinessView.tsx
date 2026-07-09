@@ -128,21 +128,21 @@ export function ResultsReadinessView({ data, user, mode, onDataChange }: Results
     const checks: BetaReadinessCheck[] = [
       { id: "beta-supabase", checkedBy: user.userId, checkKey: "Supabase verbunden", status: "manual", message: "Bitte in Vercel/Supabase final bestätigen.", createdAt: timestamp },
       { id: "beta-vercel", checkedBy: user.userId, checkKey: "Vercel Deployment grün", status: "manual", message: "Nach Push im GitHub/Vercel-Status bestätigen.", createdAt: timestamp },
-      { id: "beta-login", checkedBy: user.userId, checkKey: "Login/Registrierung/Passwort-Reset", status: "manual", message: "Login, neues Konto und Reset im Browser präfen.", createdAt: timestamp },
+      { id: "beta-login", checkedBy: user.userId, checkKey: "Login/Registrierung/Passwort-Reset", status: "manual", message: "Login, neues Konto und Reset im Browser prüfen.", createdAt: timestamp },
       { id: "beta-cloud-sync", checkedBy: user.userId, checkKey: "Cloud-Sync und Offline-Fallback", status: "manual", message: "CloudStatus und Queue-Verhalten bei Offline testen.", createdAt: timestamp },
       { id: "beta-users", checkedBy: user.userId, checkKey: "Nutzer/Rollen vorhanden", status: data.users.length > 0 ? "ok" : "warning", message: `${data.users.length} geladene Nutzerprofile.`, createdAt: timestamp },
       { id: "beta-groups", checkedBy: user.userId, checkKey: "Trainingsgruppen", status: data.coachGroups.length > 0 ? "ok" : "warning", message: `${data.coachGroups.length} Gruppen geladen.`, createdAt: timestamp },
       { id: "beta-training", checkedBy: user.userId, checkKey: "Trainingsplanung", status: data.plan.length > 0 ? "ok" : "warning", message: `${data.plan.length} Trainings im Cache/Cloud-Snapshot.`, createdAt: timestamp },
       { id: "beta-communication", checkedBy: user.userId, checkKey: "Kommunikation", status: data.tasks.length + data.directMessages.length + data.clubPosts.length > 0 ? "ok" : "manual", message: "Kommunikationsmodul ist vorbereitet.", createdAt: timestamp },
-      { id: "beta-attendance", checkedBy: user.userId, checkKey: "Aufgaben und Anwesenheit", status: data.tasks.length + data.trainingAttendance.length > 0 ? "ok" : "manual", message: "Aufgaben und Anwesenheit im Testverein präfen.", createdAt: timestamp },
+      { id: "beta-attendance", checkedBy: user.userId, checkKey: "Aufgaben und Anwesenheit", status: data.tasks.length + data.trainingAttendance.length > 0 ? "ok" : "manual", message: "Aufgaben und Anwesenheit im Testverein prüfen.", createdAt: timestamp },
       { id: "beta-results", checkedBy: user.userId, checkKey: "Ergebnisse", status: data.competitions.length > 0 ? "ok" : "warning", message: `${data.competitions.length} Ergebnisse geladen.`, createdAt: timestamp },
-      { id: "beta-analysis-smart-coach", checkedBy: user.userId, checkKey: "Analyse und Smart Coach", status: data.smartCoachRecommendations.length > 0 ? "ok" : "manual", message: "Analysezentrum und Empfehlungen präfen.", createdAt: timestamp },
-      { id: "beta-integrations", checkedBy: user.userId, checkKey: "Integrationen/Polar crasht nicht", status: "manual", message: "Integrationen öffnen und Polar-Vorbereitung präfen.", createdAt: timestamp },
+      { id: "beta-analysis-smart-coach", checkedBy: user.userId, checkKey: "Analyse und Smart Coach", status: data.smartCoachRecommendations.length > 0 ? "ok" : "manual", message: "Analysezentrum und Empfehlungen prüfen.", createdAt: timestamp },
+      { id: "beta-integrations", checkedBy: user.userId, checkKey: "Integrationen/Polar crasht nicht", status: "manual", message: "Integrationen öffnen und Polar-Vorbereitung prüfen.", createdAt: timestamp },
       { id: "beta-feedback", checkedBy: user.userId, checkKey: "Feedback-System", status: data.betaFeedback.length > 0 ? "ok" : "manual", message: `${data.betaFeedback.length} Feedbacks gespeichert.`, createdAt: timestamp },
-      { id: "beta-mobile", checkedBy: user.userId, checkKey: "Mobile Ansicht", status: "manual", message: "Bitte auf iPhone/iPad im echten Browser präfen.", createdAt: timestamp },
+      { id: "beta-mobile", checkedBy: user.userId, checkKey: "Mobile Ansicht", status: "manual", message: "Bitte auf iPhone/iPad im echten Browser prüfen.", createdAt: timestamp },
       { id: "beta-bottom-nav", checkedBy: user.userId, checkKey: "Bottom Navigation nicht überladen", status: "ok", message: "Mobile Navigation ist auf fünf Hauptpunkte reduziert.", createdAt: timestamp },
       { id: "beta-docs", checkedBy: user.userId, checkKey: "Testanleitung und Grenzen", status: "ok", message: "Beta-Anleitung und bekannte Grenzen sind unter Mehr sichtbar und dokumentiert.", createdAt: timestamp },
-      { id: "beta-rls", checkedBy: user.userId, checkKey: "Datenschutz/RLS", status: "manual", message: "RLS im Supabase Dashboard präfen.", createdAt: timestamp },
+      { id: "beta-rls", checkedBy: user.userId, checkKey: "Datenschutz/RLS", status: "manual", message: "RLS im Supabase Dashboard prüfen.", createdAt: timestamp },
     ];
     updateData((current) => ({ ...current, betaReadinessChecks: checks }));
     void Promise.all(checks.map(upsertCloudBetaReadinessCheck)).catch((error) => console.error("[Paddlio 3.9] Beta-Check konnte nicht synchronisiert werden.", error));
@@ -177,7 +177,7 @@ export function ResultsReadinessView({ data, user, mode, onDataChange }: Results
         </div>
         <div className="metric-grid two-columns">
           <article className="metric-card tone-training"><span>Polar Flow</span><strong>{polarConnection?.status ?? "nicht verbunden"}</strong><small>Sichere Aktivierung folgt über Backend/OAuth.</small></article>
-          <article className="metric-card tone-success"><span>Externe Einheiten</span><strong>{data.externalTrainingSessions.length}</strong><small>{loadStats.unlinked} noch nicht verknuepft</small></article>
+          <article className="metric-card tone-success"><span>Externe Einheiten</span><strong>{data.externalTrainingSessions.length}</strong><small>{loadStats.unlinked} noch nicht verknüpft</small></article>
         </div>
         <p className="muted">Keine Client-Secrets im Frontend. Tokens werden erst mit Supabase Edge Functions oder sicherem Backend aktiv genutzt.</p>
       </section>
@@ -190,13 +190,13 @@ export function ResultsReadinessView({ data, user, mode, onDataChange }: Results
         <div className="section-heading"><div><p className="eyebrow">Belastung</p><h3>Externe Trainingsdaten</h3></div></div>
         <div className="metric-grid two-columns">
           <article className="metric-card tone-training"><span>Diese Woche</span><strong>{loadStats.current} min</strong><small>{loadStats.delta >= 0 ? "+" : ""}{loadStats.delta} min zur Vorwoche</small></article>
-          <article className="metric-card tone-penalty"><span>Nicht verknuepft</span><strong>{loadStats.unlinked}</strong><small>Polar/extern mit Paddlio-Training verbinden</small></article>
+          <article className="metric-card tone-penalty"><span>Nicht verknüpft</span><strong>{loadStats.unlinked}</strong><small>Polar/extern mit Paddlio-Training verbinden</small></article>
         </div>
         <div className="result-list">
           {data.externalTrainingSessions.length ? data.externalTrainingSessions.map((item: ExternalTrainingSession) => (
             <article className="result-row" key={item.id}>
               <div><strong>{item.title}</strong><span>{new Date(item.startedAt).toLocaleDateString("de-DE")} - {item.provider}</span><small>{Math.round(item.durationSeconds / 60)} min, HF {item.avgHeartRate || "--"}/{item.maxHeartRate || "--"}</small></div>
-              <b>{item.linkedTrainingId ? "verknuepft" : "offen"}</b>
+              <b>{item.linkedTrainingId ? "verknüpft" : "offen"}</b>
             </article>
           )) : <p className="empty-state">Noch keine externen Trainingsdaten vorhanden.</p>}
         </div>
@@ -209,7 +209,7 @@ export function ResultsReadinessView({ data, user, mode, onDataChange }: Results
       <section className="section-block segment-panel">
         <div className="section-heading">
           <div><p className="eyebrow">Beta-Readiness</p><h3>Check für Paddlio 4.0 Beta</h3></div>
-          {isAdmin(user) ? <button className="secondary-button" type="button" onClick={runBetaCheck}>Jetzt präfen</button> : null}
+          {isAdmin(user) ? <button className="secondary-button" type="button" onClick={runBetaCheck}>Jetzt prüfen</button> : null}
         </div>
         {isAdmin(user) && data.betaReadinessChecks.length > 0 ? (
           <div className="progress-track large">

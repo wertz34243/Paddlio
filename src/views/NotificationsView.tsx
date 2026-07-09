@@ -1,7 +1,9 @@
 import type { NotificationItem } from "../domain/types";
+import { sanitizePrivateText } from "../domain/privacy";
 
 type NotificationsViewProps = {
   notifications: NotificationItem[];
+  canRevealPrivateData?: boolean;
   onMarkRead: (id: string) => void;
   onMarkAllRead: () => void;
 };
@@ -23,7 +25,7 @@ const typeLabel = (type: string): string => {
   return "Info";
 };
 
-export function NotificationsView({ notifications, onMarkRead, onMarkAllRead }: NotificationsViewProps) {
+export function NotificationsView({ notifications, canRevealPrivateData = false, onMarkRead, onMarkAllRead }: NotificationsViewProps) {
   const sorted = [...notifications].sort((a, b) => Number(a.read) - Number(b.read) || b.createdAt.localeCompare(a.createdAt));
   const unreadCount = notifications.filter((notification) => !notification.read).length;
 
@@ -47,14 +49,14 @@ export function NotificationsView({ notifications, onMarkRead, onMarkAllRead }: 
             <div className="plan-card-head">
               <div>
                 <span>{typeLabel(notification.type)} - {formatDateTime(notification.createdAt)}</span>
-                <h4>{notification.title}</h4>
+                <h4>{sanitizePrivateText(notification.title, canRevealPrivateData)}</h4>
               </div>
               {!notification.read ? <b className="status-pill planned">Neu</b> : null}
             </div>
-            <p>{notification.message || "Keine weiteren Details."}</p>
+            <p>{sanitizePrivateText(notification.message || "Keine weiteren Details.", canRevealPrivateData)}</p>
             {!notification.read ? (
               <div className="card-actions">
-                <button type="button" onClick={() => onMarkRead(notification.id)}>Als gelesen markieren</button>
+                <button type="button" onClick={() => onMarkRead(notification.id)} aria-label={`Update ${sanitizePrivateText(notification.title, canRevealPrivateData)} als gelesen markieren`}>Als gelesen markieren</button>
               </div>
             ) : null}
           </article>

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { APP_VERSION } from "../brand";
 import { createId } from "../data/storage";
 import type { BetaFeedback, BetaFeedbackCategory, BetaFeedbackPriority, BetaFeedbackStatus, BetaTester, PaddleMotionData, User } from "../domain/types";
+import { displayNameOrFallback, sanitizePrivateText } from "../domain/privacy";
 import { upsertCloudBetaFeedback, upsertCloudBetaTester } from "../services/betaService";
 
 type BetaReleaseMode = "feedback" | "testers" | "guide" | "limitations";
@@ -16,6 +17,7 @@ type BetaReleaseViewProps = {
 const categories: BetaFeedbackCategory[] = ["Fehler", "Verbesserung", "Design", "Verstaendnisproblem", "Wunsch", "Sonstiges"];
 const priorities: BetaFeedbackPriority[] = ["niedrig", "normal", "hoch", "kritisch"];
 const statuses: BetaFeedbackStatus[] = ["open", "in_review", "planned", "fixed", "rejected"];
+const getCategoryLabel = (value: BetaFeedbackCategory): string => value === "Verstaendnisproblem" ? "Verständnisproblem" : value;
 
 const now = (): string => new Date().toISOString();
 const isAdmin = (user: User): boolean => user.role === "admin";
@@ -25,7 +27,7 @@ const createUuid = (): string =>
 
 const getDeviceInfo = (): string => {
   if (typeof window === "undefined") return "";
-  return `${window.innerWidth}x${window.innerHeight}${navigator.onLine ? " online" : " offline"}`;
+  return window.innerWidth + "x" + window.innerHeight + (navigator.onLine ? " online" : " offline");
 };
 
 export function BetaReleaseView({ data, user, mode, onDataChange }: BetaReleaseViewProps) {
@@ -36,21 +38,25 @@ export function BetaReleaseView({ data, user, mode, onDataChange }: BetaReleaseV
   const [pagePath, setPagePath] = useState("");
   const [message, setMessage] = useState("");
 
+  const canRevealPrivateData = isAdmin(user);
   const ownFeedback = data.betaFeedback.filter((item) => item.userId === user.userId && !item.deletedAt);
-  const visibleFeedback = isAdmin(user) ? data.betaFeedback.filter((item) => !item.deletedAt) : ownFeedback;
+  const visibleFeedback = canRevealPrivateData ? data.betaFeedback.filter((item) => !item.deletedAt) : ownFeedback;
   const testers = useMemo(() => {
     const stored = new Map(data.betaTesters.map((tester) => [tester.userId, tester]));
-    return data.users.map((appUser) => stored.get(appUser.userId) ?? {
-      id: `beta-tester-${appUser.userId}`,
-      userId: appUser.userId,
-      clubId: "",
-      testerRole: appUser.role,
-      status: "invited" as const,
-      invitedAt: "",
-      lastSeenAt: "",
-      notes: "",
-      createdAt: "",
-      updatedAt: "",
+    return data.users.map((appUser) => {
+      const existing = stored.get(appUser.userId);
+      return existing ?? {
+        id: "beta-tester-" + appUser.userId,
+        userId: appUser.userId,
+        clubId: "",
+        testerRole: appUser.role,
+        status: "invited" as const,
+        invitedAt: "",
+        lastSeenAt: "",
+        notes: "",
+        createdAt: "",
+        updatedAt: "",
+      };
     });
   }, [data.betaTesters, data.users]);
 
@@ -98,14 +104,14 @@ export function BetaReleaseView({ data, user, mode, onDataChange }: BetaReleaseV
     const appUser = data.users.find((item) => item.userId === targetUserId);
     const timestamp = now();
     const tester: BetaTester = {
-      id: existing?.id ?? createUuid(),
+      id: existing?.id || createUuid(),
       userId: targetUserId,
-      clubId: existing?.clubId ?? "",
-      testerRole: existing?.testerRole ?? appUser?.role ?? "athlete",
+      clubId: existing?.clubId || "",
+      testerRole: existing?.testerRole || appUser?.role || "athlete",
       status,
       invitedAt: existing?.invitedAt || timestamp,
       lastSeenAt: timestamp,
-      notes: existing?.notes ?? "",
+      notes: existing?.notes || "",
       createdAt: existing?.createdAt || timestamp,
       updatedAt: timestamp,
     };
@@ -123,9 +129,9 @@ export function BetaReleaseView({ data, user, mode, onDataChange }: BetaReleaseV
       <section className="section-block segment-panel">
         <div className="section-heading"><div><p className="eyebrow">Beta-Test Anleitung</p><h3>Was getestet werden soll</h3></div></div>
         <div className="beta-guide-grid">
-          <article className="beta-card"><h4>Tester</h4><ol><li>Einloggen</li><li>Profil präfen</li><li>Training ansehen</li><li>Anwesenheit setzen</li><li>Aufgabe erledigen</li><li>Nachricht testen</li><li>Ergebnis anschauen</li><li>Feedback senden</li></ol></article>
-          <article className="beta-card"><h4>Trainer</h4><ol><li>Gruppe präfen</li><li>Training erstellen</li><li>Aufgabe vergeben</li><li>Anwesenheit präfen</li><li>Nachricht an Gruppe senden</li><li>Ergebnis eintragen</li><li>Feedback ansehen</li></ol></article>
-          <article className="beta-card"><h4>Admin</h4><ol><li>Nutzer präfen</li><li>Rollen präfen</li><li>Verein präfen</li><li>Beta-Check starten</li><li>Feedback auswerten</li></ol></article>
+          <article className="beta-card"><h4>Tester</h4><ol><li>Einloggen</li><li>Profil prüfen</li><li>Training ansehen</li><li>Anwesenheit setzen</li><li>Aufgabe erledigen</li><li>Nachricht testen</li><li>Ergebnis anschauen</li><li>Feedback senden</li></ol></article>
+          <article className="beta-card"><h4>Trainer</h4><ol><li>Gruppe prüfen</li><li>Training erstellen</li><li>Aufgabe vergeben</li><li>Anwesenheit prüfen</li><li>Nachricht an Gruppe senden</li><li>Ergebnis eintragen</li><li>Feedback ansehen</li></ol></article>
+          <article className="beta-card"><h4>Admin</h4><ol><li>Nutzer prüfen</li><li>Rollen prüfen</li><li>Verein prüfen</li><li>Beta-Check starten</li><li>Feedback auswerten</li></ol></article>
         </div>
       </section>
     );
@@ -145,7 +151,7 @@ export function BetaReleaseView({ data, user, mode, onDataChange }: BetaReleaseV
   }
 
   if (mode === "testers") {
-    if (!isAdmin(user)) return <p className="empty-state">Du hast für die Beta-Tester-Verwaltung keine Berechtigung.</p>;
+    if (!canRevealPrivateData) return <p className="empty-state">Du hast für die Beta-Tester-Verwaltung keine Berechtigung.</p>;
     return (
       <section className="section-block segment-panel">
         <div className="section-heading"><div><p className="eyebrow">Beta-Tester</p><h3>{testers.length} Nutzer im Testpool</h3></div></div>
@@ -153,13 +159,14 @@ export function BetaReleaseView({ data, user, mode, onDataChange }: BetaReleaseV
           {testers.map((tester) => {
             const appUser = data.users.find((item) => item.userId === tester.userId);
             const count = data.betaFeedback.filter((item) => item.userId === tester.userId).length;
+            const displayName = displayNameOrFallback((appUser?.profile.firstName ?? "") + " " + (appUser?.profile.lastName ?? ""));
             return (
               <article className="result-row beta-row" key={tester.userId}>
-                <div><strong>{appUser?.profile.firstName || "Nutzer"} {appUser?.profile.lastName || ""}</strong><span>{tester.testerRole} - {tester.status}</span><small>{count} Feedbacks · letzter Stand {tester.lastSeenAt ? new Date(tester.lastSeenAt).toLocaleString("de-DE") : "noch offen"}</small></div>
+                <div><strong>{displayName}</strong><span>{tester.testerRole} - {tester.status}</span><small>{count} Feedbacks · letzter Stand {tester.lastSeenAt ? new Date(tester.lastSeenAt).toLocaleString("de-DE") : "noch offen"}</small></div>
                 <div className="inline-actions">
-                  <button type="button" onClick={() => markTester(tester.userId, "active")}>aktiv</button>
-                  <button type="button" onClick={() => markTester(tester.userId, "paused")}>pausieren</button>
-                  <button type="button" onClick={() => markTester(tester.userId, "finished")}>fertig</button>
+                  <button type="button" onClick={() => markTester(tester.userId, "active")} aria-label={"Beta-Tester " + displayName + " aktiv setzen"}>aktiv</button>
+                  <button type="button" onClick={() => markTester(tester.userId, "paused")} aria-label={"Beta-Tester " + displayName + " pausieren"}>pausieren</button>
+                  <button type="button" onClick={() => markTester(tester.userId, "finished")} aria-label={"Beta-Tester " + displayName + " als fertig markieren"}>fertig</button>
                 </div>
               </article>
             );
@@ -175,23 +182,23 @@ export function BetaReleaseView({ data, user, mode, onDataChange }: BetaReleaseV
         <div className="section-heading"><div><p className="eyebrow">Feedback geben</p><h3>Paddlio Beta verbessern</h3></div><span className="status-pill planned">{APP_VERSION}</span></div>
         <p className="card-note">Diese Version ist eine Testversion. Funktionen können sich noch ändern. Bitte Fehler und Feedback melden.</p>
         <div className="form-grid">
-          <label>Kategorie<select value={category} onChange={(event) => setCategory(event.target.value as BetaFeedbackCategory)}>{categories.map((item) => <option key={item}>{item}</option>)}</select></label>
+          <label>Kategorie<select value={category} onChange={(event) => setCategory(event.target.value as BetaFeedbackCategory)}>{categories.map((item) => <option key={item} value={item}>{getCategoryLabel(item)}</option>)}</select></label>
           <label>Dringlichkeit<select value={priority} onChange={(event) => setPriority(event.target.value as BetaFeedbackPriority)}>{priorities.map((item) => <option key={item}>{item}</option>)}</select></label>
           <label>Titel<input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Was ist dir aufgefallen?" /></label>
           <label>Betroffene Seite<input value={pagePath} onChange={(event) => setPagePath(event.target.value)} placeholder="z. B. Training, Chat, Profil" /></label>
           <label className="full-span">Beschreibung<textarea value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Beschreibe kurz, was passiert ist oder was besser werden soll." /></label>
         </div>
         {message ? <p className="form-message">{message}</p> : null}
-        <button className="save-button" type="button" onClick={submitFeedback}>Feedback senden</button>
+        <button className="save-button" type="button" onClick={submitFeedback} aria-label="Beta-Feedback senden">Feedback senden</button>
       </section>
 
       <section className="section-block segment-panel">
-        <div className="section-heading"><div><p className="eyebrow">{isAdmin(user) ? "Alle Feedbacks" : "Mein Feedback"}</p><h3>{visibleFeedback.length} Meldungen</h3></div></div>
+        <div className="section-heading"><div><p className="eyebrow">{canRevealPrivateData ? "Alle Feedbacks" : "Mein Feedback"}</p><h3>{visibleFeedback.length} Meldungen</h3></div></div>
         <div className="result-list">
           {visibleFeedback.length ? visibleFeedback.map((item) => (
             <article className="result-row beta-row" key={item.id}>
-              <div><strong>{item.title}</strong><span>{item.category} · {item.priority} · {item.status}</span><small>{item.description}</small></div>
-              {isAdmin(user) ? <select value={item.status} onChange={(event) => updateFeedbackStatus(item, event.target.value as BetaFeedbackStatus)}>{statuses.map((status) => <option key={status}>{status}</option>)}</select> : <b>{item.status}</b>}
+              <div><strong>{sanitizePrivateText(item.title, canRevealPrivateData)}</strong><span>{getCategoryLabel(item.category)} · {item.priority} · {item.status}</span><small>{sanitizePrivateText(item.description, canRevealPrivateData)}</small></div>
+              {canRevealPrivateData ? <select value={item.status} onChange={(event) => updateFeedbackStatus(item, event.target.value as BetaFeedbackStatus)} aria-label={"Feedback " + item.title + " Status ändern"}>{statuses.map((status) => <option key={status}>{status}</option>)}</select> : <b>{item.status}</b>}
             </article>
           )) : <p className="empty-state">Noch kein Feedback vorhanden.</p>}
         </div>

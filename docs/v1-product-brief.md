@@ -28,7 +28,7 @@ Noch nicht Teil von V1:
 1. Athleten können ihr Training schnell und konsistent dokumentieren.
 2. Wettkämpfe und Ergebnisse werden mit relevanten Kanuslalom-Daten abgebildet.
 3. Entwicklungen werden über Zeit sichtbar: Technik, Zeiten, Strafsekunden, Belastung und Material.
-4. Material wird nicht als Nebenliste behandelt, sondern mit Training und Wettkampf verknuepft.
+4. Material wird nicht als Nebenliste behandelt, sondern mit Training und Wettkampf verknüpft.
 5. Die Plattform bleibt fokussiert genug, um als taegliches Arbeitswerkzeug genutzt zu werden.
 
 ## Kernmodule

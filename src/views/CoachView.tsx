@@ -57,6 +57,7 @@ import type {
   User,
   UserRole,
 } from "../domain/types";
+import { canSeeSystemPrivateData, maskEmail } from "../domain/privacy";
 
 type CoachViewProps = {
   data: PaddleMotionData;
@@ -160,6 +161,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
   const [isSavingCloud, setIsSavingCloud] = useState(false);
 
   const isAdmin = canManageAdminArea(user.role);
+  const canRevealEmails = canSeeSystemPrivateData(user.role);
   const userClub = user.profile.club.trim().toLowerCase();
   const myClub = clubs.find((club) => normalizeClubName(club.name) === userClub);
   const userClubId = myClub?.clubId ?? "";
@@ -210,7 +212,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
         if (!query) {
           return true;
         }
-        return [authUser.displayName, authUser.email, authUser.club, authUser.trainingGroupId]
+        return [authUser.displayName, canRevealEmails ? authUser.email : "", authUser.club, authUser.trainingGroupId]
           .join(" ")
           .toLowerCase()
           .includes(query);
@@ -220,7 +222,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
         const valueB = sortBy === "name" ? b.displayName : sortBy === "email" ? b.email : sortBy === "role" ? b.role : b.club;
         return valueA.localeCompare(valueB);
       });
-  }, [authUsers, isAdmin, roleFilter, sortBy, userClub, userSearch]);
+  }, [authUsers, canRevealEmails, isAdmin, roleFilter, sortBy, userClub, userSearch]);
   const previewAthlete = ownAthletes.find((athlete) => athlete.id === selectedPreviewAthleteId) ?? ownAthletes[0];
   const profileAthlete = ownAthletes.find((athlete) => athlete.id === selectedProfileAthleteId) ?? null;
   const previewPlan = previewAthlete
@@ -248,7 +250,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
       setMessage(successMessage);
     } catch (error) {
       console.error("[Paddlio Cloud] Coach/Admin-Aktion fehlgeschlagen", error);
-      setMessage("Aktion konnte nicht gespeichert werden. Bitte pruefe deine Berechtigung oder versuche es erneut.");
+      setMessage("Aktion konnte nicht gespeichert werden. Bitte pr?fe deine Berechtigung oder versuche es erneut.");
     } finally {
       setIsSavingCloud(false);
     }
@@ -918,7 +920,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
         </div>
         <div className="entry-form compact-form">
           <div className="form-grid">
-            <label>Suche<input value={userSearch} onChange={(event) => setUserSearch(event.target.value)} placeholder="Name, E-Mail, Verein" /></label>
+            <label>Suche<input value={userSearch} onChange={(event) => setUserSearch(event.target.value)} placeholder={isAdmin ? "Name, E-Mail, Verein" : "Name, Verein"} /></label>
             <label>
               Rolle
               <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value as UserRole | "all")}>
@@ -947,7 +949,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
                   <span className="profile-avatar small">{`${authUser.firstName.slice(0, 1)}${authUser.lastName.slice(0, 1)}` || "P"}</span>
                   <strong>{authUser.displayName || `${authUser.firstName} ${authUser.lastName}`.trim() || authUser.email}</strong>
                 </div>
-                <span>{authUser.email}</span>
+                {isAdmin ? <span>{authUser.email}</span> : <span>{maskEmail(authUser.email)}</span>}
                 <small>{authUser.club || "ohne Verein"} - {authUser.roles.map((role) => roleLabels[role]).join(", ")} - {authUser.status === "active" ? "aktiv" : "deaktiviert"}</small>
               </div>
               <div className="form-grid">
@@ -1001,7 +1003,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
         </div>
         <div className="entry-form compact-form">
           <div className="form-grid">
-            <label>Suche<input value={athleteSearch} onChange={(event) => setAthleteSearch(event.target.value)} placeholder="Name, E-Mail, Gruppe, Bootsklasse" /></label>
+            <label>Suche<input value={athleteSearch} onChange={(event) => setAthleteSearch(event.target.value)} placeholder={isAdmin ? "Name, E-Mail, Gruppe, Bootsklasse" : "Name, Gruppe, Bootsklasse"} /></label>
             <label>
               Filter
               <select value={athleteFilter} onChange={(event) => setAthleteFilter(event.target.value as typeof athleteFilter)}>
@@ -1100,7 +1102,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
                 <span className="profile-avatar small">{`${athlete.firstName.slice(0, 1)}${athlete.lastName.slice(0, 1)}` || "P"}</span>
                 <div>
                   <strong>{getAthleteName(athlete)}</strong>
-                  <small>{athlete.email || "Keine E-Mail"}</small>
+                  <small>{isAdmin ? athlete.email || "Keine E-Mail" : maskEmail(athlete.email)}</small>
                 </div>
               </div>
               <span>{athlete.ageClass || "ohne AK"}</span>
@@ -1135,7 +1137,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
             <div className="profile-insight-grid">
               <div><strong>Ziele</strong><span>{profileAthlete.goals || "Noch keine Ziele hinterlegt."}</span></div>
               <div><strong>Trainings</strong><span>{coachPlan.filter((entry) => entry.assignedAthleteId === profileAthlete.id).length} geplante Einheiten</span></div>
-              <div><strong>Wettkämpfe</strong><span>Wettkampfdaten werden mit dem Athletenprofil verknuepft vorbereitet.</span></div>
+              <div><strong>Wettkämpfe</strong><span>Wettkampfdaten werden mit dem Athletenprofil verknüpft vorbereitet.</span></div>
               <div><strong>Material</strong><span>MaterialÜbersicht wird für Coach-Freigaben vorbereitet.</span></div>
               <div><strong>Journal</strong><span>Rückmeldungen und Befinden werden hier zusammengeführt.</span></div>
               <div><strong>Trainernotizen</strong><span>{profileAthlete.trainerNotes || "Keine Trainernotizen."}</span></div>

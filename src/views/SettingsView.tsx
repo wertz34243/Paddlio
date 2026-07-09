@@ -77,7 +77,7 @@ export function SettingsView({ user, onSave, onLogout }: SettingsViewProps) {
         </label>
         <div className="form-grid">
           <label>
-            Masseinheiten
+            Maßeinheiten
             <select name="measurementUnit" defaultValue={user.profile.measurementUnit}>
               {measurementUnits.map((unit) => (
                 <option key={unit.value} value={unit.value}>

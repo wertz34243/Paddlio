@@ -230,7 +230,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
             </select>
           </label>
           <label>
-            Groesse
+            Größe
             <input name="heightCm" type="number" min="0" step="1" defaultValue={user.profile.heightCm || ""} placeholder="cm" />
           </label>
           <label>
@@ -436,7 +436,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
         </label>
         <div className="form-grid">
           <label>
-            Masseinheiten
+            Maßeinheiten
             <select name="measurementUnit" defaultValue={user.profile.measurementUnit}>
               {measurementUnits.map((unit) => (
                 <option key={unit.value} value={unit.value}>

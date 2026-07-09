@@ -658,10 +658,10 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
             {isDoneStatus(entry.status) ? "Wieder planen" : "Erledigt"}
           </button>
           <button className="delete-button" type="button" onClick={() => setFeedbackEntry({ ...entry, status: "skipped" })} aria-label={`Training ${entry.title || entry.trainingType} am ${entry.date} als ausgelassen markieren`}>Ausgelassen</button>
-          <button className="edit-button" type="button" onClick={() => setFeedbackEntry({ ...entry, status: "done" })} aria-label={`Feedback f?r Training ${entry.title || entry.trainingType} am ${entry.date} geben`}>Feedback</button>
+          <button className="edit-button" type="button" onClick={() => setFeedbackEntry({ ...entry, status: "done" })} aria-label={`Feedback für Training ${entry.title || entry.trainingType} am ${entry.date} geben`}>Feedback</button>
           <button className="edit-button" type="button" onClick={() => setCopyEntry(entry)} aria-label={`Training ${entry.title || entry.trainingType} am ${entry.date} kopieren`}>Kopieren</button>
           {(entry.createdByUserId === user.userId || user.role === "admin") && canAccessPlanEntry(data, user, entry) ? <button className="edit-button" type="button" onClick={() => startEdit(entry)} aria-label={`Training ${entry.title || entry.trainingType} am ${entry.date} bearbeiten`}>Bearbeiten</button> : null}
-          {(entry.createdByUserId === user.userId || user.role === "admin") ? <button className="delete-button" type="button" onClick={() => onDelete(entry.id)} aria-label={`Training ${entry.title || entry.trainingType} am ${entry.date} l?schen`}>L?schen</button> : null}
+          {(entry.createdByUserId === user.userId || user.role === "admin") ? <button className="delete-button" type="button" onClick={() => onDelete(entry.id)} aria-label={`Training ${entry.title || entry.trainingType} am ${entry.date} löschen`}>Löschen</button> : null}
         </div>
       </article>
     );
@@ -713,7 +713,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
         <div>
           <p className="eyebrow">{isCoach ? "Coach Workflow" : "Mein Trainingsplan"}</p>
           <h3>{isCoach ? "Trainingsplanung 2.0" : "Deine nächsten Einheiten"}</h3>
-          <p>{isCoach ? "Plane Tage, Wochen und Saisonbloecke aus Vorlagen, kopiere Einheiten und pruefe Rückmeldungen." : "Sieh deine Einheiten, hake Training ab und gib deinem Coach klares Feedback."}</p>
+          <p>{isCoach ? "Plane Tage, Wochen und Saisonbl?cke aus Vorlagen, kopiere Einheiten und pr?fe Rückmeldungen." : "Sieh deine Einheiten, hake Training ab und gib deinem Coach klares Feedback."}</p>
         </div>
         <div className="training-workflow-actions">
           <button className="primary-button" type="button" onClick={startCreate} aria-label="Neue Trainingseinheit im Plan eintragen">Training planen</button>
@@ -789,7 +789,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
               {template.tags.length > 0 ? <small className="card-note">{template.tags.join(" - ")}</small> : null}
               <div className="card-actions">
                 {canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => { setTemplateDraft(template); setTemplateArea(template.trainingArea); }} aria-label={`Vorlage ${template.title} bearbeiten`}>Bearbeiten</button> : null}
-                {canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => deleteTemplate(template)} aria-label={`Vorlage ${template.title} l?schen`}>L?schen</button> : null}
+                {canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => deleteTemplate(template)} aria-label={`Vorlage ${template.title} löschen`}>Löschen</button> : null}
               </div>
             </article>
           )) : <p className="empty-state">Noch keine Trainingsvorlagen. Erstelle deine erste Vorlage für schnelle Trainingsplanung.</p>}
@@ -842,7 +842,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
         <section className="section-block">
           <div className="section-heading">
             <div><p className="eyebrow">Gruppenplanung</p><h3>{visibleGroups.length > 0 ? `${visibleGroups.length} Trainingsgruppen` : "Noch keine Trainingsgruppen"}</h3></div>
-            <button className="primary-button" type="button" onClick={startCreate} aria-label="Training f?r ausgew?hlte Gruppe planen">Training f?r Gruppe planen</button>
+            <button className="primary-button" type="button" onClick={startCreate} aria-label="Training für ausgewählte Gruppe planen">Training für Gruppe planen</button>
           </div>
           <div className="calendar-list">
             {visibleGroups.length > 0 ? visibleGroups.map((group) => {
@@ -862,7 +862,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
                   <p>{group.description || "Noch keine Beschreibung hinterlegt."}</p>
                   <div className="card-actions">
                     <button type="button" onClick={() => { setGroupFilter(group.id); setWorkflowTab("week"); setCalendarView("week"); }}>Wochenplan anzeigen</button>
-                    <button type="button" onClick={startCreate} aria-label={`Training f?r Gruppe ${group.name} planen`}>Training planen</button>
+                    <button type="button" onClick={startCreate} aria-label={`Training für Gruppe ${group.name} planen`}>Training planen</button>
                   </div>
                 </article>
               );
@@ -874,7 +874,7 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
       {workflowTab === "feedback" ? (
         <section className="section-block">
           <div className="section-heading">
-            <div><p className="eyebrow">Rückmeldungen</p><h3>{isCoach ? "StatusÜbersicht" : "Trainingstagebuch"}</h3></div>
+            <div><p className="eyebrow">Rückmeldungen</p><h3>{isCoach ? "Statusübersicht" : "Trainingstagebuch"}</h3></div>
           </div>
           <div className="calendar-list">
             {isCoach && openFeedbackEntries.length > 0 ? openFeedbackEntries.map((entry) => (

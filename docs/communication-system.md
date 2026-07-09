@@ -46,7 +46,7 @@ Die bestehenden Offline-Queue-Services werden für Schreiben genutzt. Wenn Supab
 
 Die bestehende `notifications`-Tabelle bleibt zentral. 3.8 bereitet Ereignisse für neue Direktnachrichten, Gruppennachrichten, Vereinsnews, Aufgaben und Anwesenheit vor. Native Push Notifications sind noch nicht enthalten.
 
-## Datei-Anhaenge
+## Datei-Anhänge
 
 Der Bucket `paddlio-files` wird vorbereitet. Die App speichert stabile Anhang-Metadaten, crasht aber nicht, falls Supabase Storage noch nicht voll konfiguriert ist.
 

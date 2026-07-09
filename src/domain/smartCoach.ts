@@ -270,7 +270,7 @@ const buildAthleteRecommendations = (data: PaddleMotionData, user: User): Recomm
       "Trainingsbelastung steigt deutlich",
       "Die externe Trainingsdauer dieser Woche liegt deutlich über der Vorwoche.",
       `${currentWeekMinutes} min diese Woche gegenüber ${previousWeekMinutes} min in der Vorwoche.`,
-      "Plane bewusst Erholung und pruefe die Rückmeldungen nach harten Einheiten.",
+      "Plane bewusst Erholung und pr?fe die Rückmeldungen nach harten Einheiten.",
     ));
   }
 
@@ -351,7 +351,7 @@ const buildCoachRecommendations = (data: PaddleMotionData, user: User): Recommen
         `${athlete.name}: kein Training geplant`,
         "Dieser Sportler hat in der aktuellen Woche noch keine geplante Einheit.",
         "Coach-Ansicht: Wochenplanung enthält keine Einheit für diesen Sportler.",
-        "Plane eine passende Einheit oder pruefe die Gruppenzuweisung.",
+        "Plane eine passende Einheit oder pr?fe die Gruppenzuweisung.",
         "coach_athlete",
         athlete.id,
         athlete.id,

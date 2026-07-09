@@ -61,7 +61,7 @@ Die 3.9-Belastungsansicht nutzt externe Trainingsdaten für:
 
 - Trainingsdauer pro Woche
 - Vergleich zur Vorwoche
-- unverknuepfte externe Einheiten
+- unverknüpfte externe Einheiten
 - einfache Hinweise bei starkem Umfangsanstieg
 
 Das ist Trainingssteuerung, keine medizinische Bewertung.
@@ -73,7 +73,7 @@ Neue Regeln:
 - Wettkampf in sieben Tagen: Umfang reduzieren, Technik sauber halten
 - Ergebnis verbessert: positive Rückmeldung
 - lange kein Ergebnis: Ergebnis nachtragen
-- externe Einheit unverknuepft: Training verknuepfen
+- externe Einheit unverknüpft: Training verknüpfen
 - externe Belastung stark gestiegen: Erholung bewusst planen
 
 ## Beta-Check

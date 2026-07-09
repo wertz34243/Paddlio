@@ -638,7 +638,7 @@ export type ClubPortalStatus = "active" | "inactive";
 export type ClubEventCategory = "training" | "competition" | "meeting" | "club_party" | "workday";
 export type ClubDocumentFolder = "Trainer" | "Sportler" | "Vorstand" | "Wettkämpfe" | "Formulare";
 export type ClubMessageAudience = "club" | "coaches" | "athletes" | "group" | "athlete";
-export type ClubMaterialCategory = "Boot" | "Paddel" | "Helm" | "Schwimmweste" | "Spritzdecke" | "Anhaenger" | "Vereinsmaterial";
+export type ClubMaterialCategory = "Boot" | "Paddel" | "Helm" | "Schwimmweste" | "Spritzdecke" | "Anhänger" | "Vereinsmaterial";
 
 export type ClubMaterial = {
   id: string;

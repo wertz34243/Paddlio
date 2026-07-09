@@ -7,7 +7,7 @@ Diese Beta soll zeigen, ob Paddlio im echten Vereinsalltag verstaendlich, stabil
 ## Tester
 
 1. Einloggen.
-2. Profil pruefen.
+2. Profil prüfen.
 3. Training ansehen.
 4. Anwesenheit setzen.
 5. Aufgabe erledigen.
@@ -17,19 +17,19 @@ Diese Beta soll zeigen, ob Paddlio im echten Vereinsalltag verstaendlich, stabil
 
 ## Trainer
 
-1. Gruppe pruefen.
+1. Gruppe prüfen.
 2. Training erstellen.
 3. Aufgabe vergeben.
-4. Anwesenheit pruefen.
+4. Anwesenheit prüfen.
 5. Nachricht an Gruppe senden.
 6. Ergebnis eintragen.
 7. Feedback der Sportler ansehen.
 
 ## Admin
 
-1. Nutzer pruefen.
-2. Rollen pruefen.
-3. Verein pruefen.
+1. Nutzer prüfen.
+2. Rollen prüfen.
+3. Verein prüfen.
 4. Beta-Check starten.
 5. Feedback auswerten.
 6. Beta-Tester-Status pflegen.

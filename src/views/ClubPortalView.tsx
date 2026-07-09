@@ -48,7 +48,7 @@ const segments: SegmentItem<ClubPortalSegment>[] = [
   { id: "settings", label: "Einstellungen" },
 ];
 
-const materialCategories: ClubMaterialCategory[] = ["Boot", "Paddel", "Helm", "Schwimmweste", "Spritzdecke", "Anhaenger", "Vereinsmaterial"];
+const materialCategories: ClubMaterialCategory[] = ["Boot", "Paddel", "Helm", "Schwimmweste", "Spritzdecke", "Anhänger", "Vereinsmaterial"];
 const eventCategories: ClubEventCategory[] = ["training", "competition", "meeting", "club_party", "workday"];
 const documentFolders: ClubDocumentFolder[] = ["Trainer", "Sportler", "Vorstand", "Wettkämpfe", "Formulare"];
 const audiences: ClubMessageAudience[] = ["club", "coaches", "athletes", "group", "athlete"];
@@ -142,8 +142,9 @@ export function ClubPortalView({ data, user, onDataChange }: ClubPortalViewProps
     const query = memberQuery.trim().toLowerCase();
     return all
       .filter((item) => isAdmin || item.club.toLowerCase() === userClubName || clubIds.includes(item.club))
+      .filter((item) => isAdmin || item.role !== "admin")
       .filter((item) => memberRole === "all" || item.role === memberRole)
-      .filter((item) => !query || [item.name, item.email, item.club, item.ageClass, item.boatClasses.join(" ")].join(" ").toLowerCase().includes(query));
+      .filter((item) => !query || [item.name, isAdmin ? item.email : "", item.club, item.ageClass, item.boatClasses.join(" ")].join(" ").toLowerCase().includes(query));
   }, [clubAthletes, clubIds, data.users, isAdmin, memberQuery, memberRole, userClubName]);
   const trainers = members.filter((member) => member.role === "coach" || member.role === "teamAdmin" || member.role === "clubAdmin" || member.role === "admin");
   const scopedPlan = data.plan.filter((entry) => isAdmin || clubIds.includes(entry.clubId) || entry.ownerUserId === user.userId);
@@ -349,7 +350,7 @@ export function ClubPortalView({ data, user, onDataChange }: ClubPortalViewProps
       <div className="section-heading"><div><p className="eyebrow">Vereinsportal</p><h3>Mitglieder</h3></div></div>
       <div className="smart-coach-filters">
         <label>Suche<input value={memberQuery} onChange={(event) => setMemberQuery(event.target.value)} placeholder="Name, Boot, Gruppe" /></label>
-        <label>Rolle<select value={memberRole} onChange={(event) => setMemberRole(event.target.value as UserRole | "all")}><option value="all">Alle</option><option value="athlete">Athlete</option><option value="coach">Coach</option><option value="teamAdmin">TeamAdmin</option><option value="clubAdmin">ClubAdmin</option><option value="admin">Admin</option></select></label>
+        <label>Rolle<select value={memberRole} onChange={(event) => setMemberRole(event.target.value as UserRole | "all")}><option value="all">Alle</option><option value="athlete">Athlete</option><option value="coach">Coach</option><option value="teamAdmin">TeamAdmin</option><option value="clubAdmin">ClubAdmin</option>{isAdmin ? <option value="admin">Admin</option> : null}</select></label>
       </div>
       <div className="club-card-list">
         {members.length ? members.map((member) => (
@@ -399,7 +400,7 @@ export function ClubPortalView({ data, user, onDataChange }: ClubPortalViewProps
           <label>Inventarnummer<input name="inventoryNumber" /></label>
           <label>Kategorie<select name="category">{materialCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
           <label>Name<input name="name" required /></label>
-          <label>Zustand<input name="condition" placeholder="bereit, präfen, defekt" /></label>
+          <label>Zustand<input name="condition" placeholder="bereit, prüfen, defekt" /></label>
           <label>Besitzer<input name="ownerName" /></label>
           <label>Letzte Prüfung<input name="lastInspectionDate" type="date" /></label>
           <label>Foto URL<input name="photoUrl" /></label>

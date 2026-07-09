@@ -11,6 +11,7 @@ import { updateCloudProfile } from "./services/profileService";
 import { createCloudNotification, markAllCloudNotificationsRead, markCloudNotificationRead } from "./services/notificationService";
 import { upsertCloudSmartCoachRecommendation } from "./services/smartCoachService";
 import { upsertSmartCoachStatus } from "./domain/smartCoach";
+import { canSeeSystemPrivateData } from "./domain/privacy";
 import type {
   Competition,
   MaterialItem,
@@ -755,7 +756,7 @@ function AppContent() {
       case "records":
         return <RecordsView competitions={data.competitions} training={data.training} />;
       case "notifications":
-        return <NotificationsView notifications={data.notifications} onMarkRead={markNotificationRead} onMarkAllRead={markAllNotificationsRead} />;
+        return <NotificationsView notifications={data.notifications} canRevealPrivateData={canSeeSystemPrivateData(activeUser.role)} onMarkRead={markNotificationRead} onMarkAllRead={markAllNotificationsRead} />;
       case "integrations":
         return <ResultsReadinessView data={data} user={activeUser} mode="integrations" onDataChange={updateData} />;
       case "feedback":
@@ -916,11 +917,11 @@ function AppContent() {
             onClick={() => setActivePage(item.id)}
             aria-current={activeNavPage === item.id ? "page" : undefined}
             aria-label={
-              item.id === "dashboard" ? "Zur Heute-?bersicht wechseln" :
-                item.id === "training" ? "Training-Bereich ?ffnen" :
-                  item.id === "analysis" ? "Analyse-Bereich ?ffnen" :
-                    item.id === "communication" ? "Kommunikation ?ffnen" :
-                      "Mehr-Bereich ?ffnen"
+              item.id === "dashboard" ? "Zur Heute-Übersicht wechseln" :
+                item.id === "training" ? "Training-Bereich öffnen" :
+                  item.id === "analysis" ? "Analyse-Bereich öffnen" :
+                    item.id === "communication" ? "Kommunikation öffnen" :
+                      "Mehr-Bereich öffnen"
             }
           >
             <span className="nav-icon" aria-hidden="true">
@@ -930,26 +931,6 @@ function AppContent() {
           </button>
         ))}
       </nav>
-    </div>
-  );
-}
-
-function CloudStatusBadge({ status, syncCount, pendingSyncCount, lastSyncAt, isAdmin, message }: { status: string; syncCount: number; pendingSyncCount: number; lastSyncAt: string; isAdmin: boolean; message: string }) {
-  const label =
-    status === "connected" ? "Synchronisiert" :
-      status === "syncing" ? "Synchronisiert..." :
-        status === "pending" ? "Wartende änderungen" :
-          status === "offline" ? "Offline" :
-            status === "error" ? "Cloud Fehler" :
-              "Cloud deaktiviert";
-  const dot = status === "connected" ? "green" : status === "syncing" || status === "pending" ? "yellow" : "red";
-  const syncLabel = lastSyncAt ? new Date(lastSyncAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) : "";
-  return (
-    <div className={`cloud-status ${dot}`}>
-      <span>{label}</span>
-      {pendingSyncCount > 0 ? <small>{pendingSyncCount} änderungen warten auf Synchronisation</small> : null}
-      {isAdmin ? <small>{syncCount} Datensätze{syncLabel ? ` - letzter Sync ${syncLabel}` : ""}</small> : null}
-      {message ? <small>{message}</small> : null}
     </div>
   );
 }
@@ -964,21 +945,28 @@ function App() {
 
 function CloudStatusBadgeStable({ status, syncCount, pendingSyncCount, lastSyncAt, isAdmin, message }: { status: string; syncCount: number; pendingSyncCount: number; lastSyncAt: string; isAdmin: boolean; message: string }) {
   const label =
-    status === "connected" ? "Synchronisiert" :
+    status === "connected" ? "Cloud verbunden" :
       status === "syncing" ? "Synchronisiert..." :
         status === "pending" ? "Wartende Änderungen" :
           status === "limited" ? "Cloud eingeschränkt" :
             status === "offline" ? "Offline" :
               status === "error" ? "Cloud Fehler" :
                 "Cloud deaktiviert";
+  const userMessage =
+    status === "connected" ? "Deine Daten werden synchronisiert." :
+      status === "limited" ? "Die App ist nutzbar, einige Zusatzbereiche konnten nicht synchronisiert werden." :
+        status === "error" ? "Profil, Training oder Kernspeicher konnten nicht sicher synchronisiert werden." :
+          status === "offline" ? "Du bist offline. Änderungen werden später synchronisiert." :
+            "";
   const dot = status === "connected" ? "green" : status === "syncing" || status === "pending" || status === "limited" ? "yellow" : "red";
   const syncLabel = lastSyncAt ? new Date(lastSyncAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) : "";
   return (
-    <div className={`cloud-status ${dot}`}>
+    <div className={"cloud-status " + dot}>
       <span>{label}</span>
+      {userMessage ? <small>{userMessage}</small> : null}
       {pendingSyncCount > 0 ? <small>{pendingSyncCount} Änderungen warten auf Synchronisation</small> : null}
-      {isAdmin ? <small>{syncCount} Datensätze{syncLabel ? ` - letzter Sync ${syncLabel}` : ""}</small> : null}
-      {message ? <small>{message}</small> : null}
+      {isAdmin ? <small>{syncCount} Datensätze{syncLabel ? " - letzter Sync " + syncLabel : ""}</small> : null}
+      {message && (isAdmin || status === "error") ? <small>{message}</small> : null}
     </div>
   );
 }

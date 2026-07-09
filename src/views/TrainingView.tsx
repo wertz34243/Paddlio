@@ -285,11 +285,11 @@ export function TrainingView({
                             <input name="trainingRating" type="number" min="1" max="10" defaultValue={journalEntry?.trainingRating ?? 7} />
                           </label>
                           <label>
-                            Wie fuehlst du dich?
+                            Wie fühlst du dich?
                             <input name="feeling" type="number" min="1" max="10" defaultValue={journalEntry?.feeling ?? 7} />
                           </label>
                           <label>
-                            Wie muede bist du?
+                            Wie müde bist du?
                             <input name="fatigue" type="number" min="1" max="10" defaultValue={journalEntry?.fatigue ?? 4} />
                           </label>
                           <label>

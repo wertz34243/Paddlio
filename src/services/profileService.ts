@@ -128,8 +128,12 @@ export const listCloudProfiles = async (viewer: CloudProfile): Promise<CloudProf
   const client = getSupabaseClient();
   if (!client) return [];
 
+  const isAdmin = viewer.roles.includes("Admin");
+  const isCoachLike = viewer.roles.some((role) => role === "Coach" || role === "TeamAdmin" || role === "ClubAdmin");
+  if (!isAdmin && !isCoachLike) return [viewer];
+
   let query = client.from("profiles").select("*").order("display_name", { ascending: true });
-  if (!viewer.roles.includes("Admin")) {
+  if (!isAdmin) {
     if (!viewer.club_id) return [viewer];
     query = query.eq("club_id", viewer.club_id);
   }

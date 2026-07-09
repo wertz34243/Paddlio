@@ -24,7 +24,7 @@ Smart Coach erzeugt regelbasierte Trainingshinweise aus vorhandenen Paddlio-Date
 - kein GA1/Grundlagentraining in 14 Tagen: Ausdauerreiz empfehlen
 - Wettkampf innerhalb von 7 Tagen: Wettkampfvorbereitung empfehlen
 - Ziel in 21 Tagen fällig und unter 60 Prozent Fortschritt: Ziel priorisieren
-- Material mit Status `pruefen`, neuem Namen oder Testnotiz: Materialtest dokumentieren
+- Material mit Status `prüfen`, neuem Namen oder Testnotiz: Materialtest dokumentieren
 - keine akute Regel aktiv: motivierender Fokus-Hinweis
 
 ## Empfehlungstypen

@@ -67,7 +67,7 @@ export function PrivacyValue({ canReveal, fallback, value }: { canReveal: boolea
 }
 
 export function AdminUserList({ currentUserRole, users }: { currentUserRole: SupportUserRole; users: SupportUser[] }) {
-  const canSeePrivateData = currentUserRole === "admin" || currentUserRole === "teamAdmin";
+  const canSeePrivateData = currentUserRole === "admin";
 
   return (
     <section className="admin-users" aria-labelledby="admin-users-title">
