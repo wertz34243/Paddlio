@@ -95,7 +95,7 @@ export const setCloudGroupMembers = async (groupId: string, athleteIds: string[]
   ];
 
   if (groupMemberships.length > 0) {
-    const { error } = await (client.from("group_memberships") as any).insert(groupMemberships);
+    const { error } = await (client.from("group_memberships") as any).upsert(groupMemberships, { onConflict: "group_id,user_id" });
     if (error) throw error;
   }
 
@@ -117,8 +117,9 @@ export const setCloudAthleteGroups = async (athleteId: string, groupIds: string[
   if (membershipDeleteError) throw membershipDeleteError;
 
   if (groupIds.length === 0) return;
-  const { error: membershipError } = await (client.from("group_memberships") as any).insert(
+  const { error: membershipError } = await (client.from("group_memberships") as any).upsert(
     groupIds.map((groupId) => ({ group_id: groupId, user_id: athleteId, role: "Athlete", status: "active" })),
+    { onConflict: "group_id,user_id" },
   );
   if (membershipError) throw membershipError;
 

@@ -122,7 +122,7 @@ const logCloudError = (scope: string, error: unknown) => {
 
 let optionalCloudErrorCount = 0;
 
-const withTimeout = async <T,>(scope: string, promise: Promise<T>, timeoutMs = 4500): Promise<T> => {
+const withTimeout = async <T,>(scope: string, promise: Promise<T>, timeoutMs = 15000): Promise<T> => {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
     timeoutId = setTimeout(() => reject(new Error(`${scope} Timeout nach ${timeoutMs}ms`)), timeoutMs);
@@ -137,7 +137,7 @@ const withTimeout = async <T,>(scope: string, promise: Promise<T>, timeoutMs = 4
 
 const loadOptionalCloudData = async <T,>(scope: string, loader: () => Promise<T>, fallback: T): Promise<T> => {
   try {
-    return await withTimeout(scope, loader(), 4500);
+    return await withTimeout(scope, loader(), 12000);
   } catch (error) {
     optionalCloudErrorCount += 1;
     logCloudError(scope, error);
@@ -398,7 +398,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const activeSession = (await withTimeout("Supabase Session laden", supabase.auth.getSession(), 4500)).data.session;
+    const activeSession = (await withTimeout("Supabase Session laden", supabase.auth.getSession(), 12000)).data.session;
     if (!activeSession?.user) {
       setSession(null);
       setCurrentUser(null);
@@ -422,7 +422,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       let nextProfile: CloudProfile | null = null;
 
       try {
-        nextProfile = (await ensureCloudProfile(activeSession.user)) ?? (await withTimeout("Profil laden", getCloudProfile(activeSession.user.id), 5000));
+        nextProfile = (await ensureCloudProfile(activeSession.user)) ?? (await withTimeout("Profil laden", getCloudProfile(activeSession.user.id), 15000));
       } catch (error) {
         profileIsFallback = true;
         logCloudError("Profil synchronisieren", error);

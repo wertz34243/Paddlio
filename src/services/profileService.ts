@@ -29,7 +29,7 @@ const profileNeedsNormalization = (profile: CloudProfile): boolean => {
   return normalized.email !== profile.email || normalized.roles.join("|") !== profile.roles.join("|");
 };
 
-const createProfileAbort = (timeoutMs = 4500) => {
+const createProfileAbort = (timeoutMs = 15000) => {
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
   return {
@@ -65,8 +65,20 @@ export const ensureCloudProfile = async (user: SupabaseUser): Promise<CloudProfi
     typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
   const metadataClubId = isUuid(metadata.clubId) ? metadata.clubId : null;
 
+  const existing = await getCloudProfile(user.id);
+  if (existing) {
+    if (!profileNeedsNormalization(existing)) return existing;
+    const { data, error } = await (client.from("profiles") as any)
+      .update({ email, roles, updated_at: new Date().toISOString() })
+      .eq("id", user.id)
+      .select("*")
+      .maybeSingle();
+    if (error) throw error;
+    return data ? normalizeCloudProfile(data) : existing;
+  }
+
   try {
-    const abort = createProfileAbort(5000);
+    const abort = createProfileAbort(15000);
     let data: unknown = null;
     let error: unknown = null;
     try {
@@ -96,18 +108,6 @@ export const ensureCloudProfile = async (user: SupabaseUser): Promise<CloudProfi
     }
   } catch (error) {
     console.warn("[Paddlio Cloud] Server-Profilfunktion Timeout/Fallback.", error);
-  }
-
-  const existing = await getCloudProfile(user.id);
-  if (existing) {
-    if (!profileNeedsNormalization(existing)) return existing;
-    const { data, error } = await (client.from("profiles") as any)
-      .update({ email, roles, updated_at: new Date().toISOString() })
-      .eq("id", user.id)
-      .select("*")
-      .maybeSingle();
-    if (error) throw error;
-    return data ? normalizeCloudProfile(data) : existing;
   }
 
   const abort = createProfileAbort();
