@@ -421,7 +421,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       let nextProfile: CloudProfile | null = null;
 
       try {
-        nextProfile = (await withTimeout("Profil sicherstellen", ensureCloudProfile(activeSession.user), 8000)) ?? (await withTimeout("Profil laden", getCloudProfile(activeSession.user.id), 5000));
+        nextProfile = (await ensureCloudProfile(activeSession.user)) ?? (await withTimeout("Profil laden", getCloudProfile(activeSession.user.id), 5000));
       } catch (error) {
         profileIsFallback = true;
         logCloudError("Profil synchronisieren", error);

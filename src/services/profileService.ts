@@ -29,7 +29,7 @@ const profileNeedsNormalization = (profile: CloudProfile): boolean => {
   return normalized.email !== profile.email || normalized.roles.join("|") !== profile.roles.join("|");
 };
 
-const createProfileAbort = (timeoutMs = 6500) => {
+const createProfileAbort = (timeoutMs = 4500) => {
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
   return {
@@ -63,6 +63,33 @@ export const ensureCloudProfile = async (user: SupabaseUser): Promise<CloudProfi
   const roles = normalizeCloudRolesForEmail(email, ["Athlete"]);
   const isUuid = (value: unknown): value is string =>
     typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+  const metadataClubId = isUuid(metadata.clubId) ? metadata.clubId : null;
+
+  try {
+    const abort = createProfileAbort(5000);
+    const { data, error } = await (client as any)
+      .rpc("paddlio_ensure_profile_415", {
+        p_user_id: user.id,
+        p_email: email,
+        p_first_name: firstName,
+        p_last_name: lastName,
+        p_display_name: `${firstName} ${lastName}`.trim() || email,
+        p_club_id: metadataClubId,
+      })
+      .abortSignal(abort.signal)
+      .finally(() => abort.clear());
+
+    if (!error && data) {
+      const profileRow = Array.isArray(data) ? data[0] : data;
+      if (profileRow) return normalizeCloudProfile(profileRow as CloudProfile);
+    }
+
+    if (error) {
+      console.warn("[Paddlio Cloud] Server-Profilfunktion nicht verfügbar, Client-Fallback wird genutzt.", error);
+    }
+  } catch (error) {
+    console.warn("[Paddlio Cloud] Server-Profilfunktion Timeout/Fallback.", error);
+  }
 
   const existing = await getCloudProfile(user.id);
   if (existing) {
@@ -84,7 +111,7 @@ export const ensureCloudProfile = async (user: SupabaseUser): Promise<CloudProfi
       first_name: firstName,
       last_name: lastName,
       display_name: `${firstName} ${lastName}`.trim() || email,
-      club_id: isUuid(metadata.clubId) ? metadata.clubId : null,
+      club_id: metadataClubId,
       roles,
       status: "active",
       boat_classes: ["K1"],
@@ -147,6 +174,41 @@ export const updateCloudProfileAdminFields = async (
 
   if (error) throw error;
   return data;
+};
+
+export const upsertCloudClubMembership = async (input: {
+  userId: string;
+  clubId: string;
+  role: "Athlete" | "Coach" | "ClubAdmin" | "Admin";
+  status: "active" | "pending" | "inactive";
+}): Promise<void> => {
+  const client = getSupabaseClient();
+  if (!client) return;
+
+  const { error } = await (client.from("club_memberships") as any)
+    .upsert({
+      club_id: input.clubId,
+      user_id: input.userId,
+      role: input.role,
+      status: input.status,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "club_id,user_id" });
+  if (error) throw error;
+};
+
+export const setCloudUserClubAssignment = async (input: {
+  userId: string;
+  clubId: string;
+  role: "Athlete" | "Coach" | "ClubAdmin" | "Admin";
+  status: "active" | "pending" | "inactive";
+}): Promise<void> => {
+  await updateCloudProfileAdminFields(input.userId, {
+    club_id: input.status === "inactive" ? null : input.clubId || null,
+    roles: normalizeCloudRolesForEmail("", input.role === "Athlete" ? ["Athlete"] : ["Athlete", input.role]),
+    status: input.status === "active" || input.status === "pending" ? "active" : "disabled",
+  });
+
+  if (input.clubId) await upsertCloudClubMembership(input);
 };
 
 export const addCloudProfileRole = async (profile: CloudProfile, role: "Athlete" | "Coach" | "TeamAdmin" | "ClubAdmin" | "Admin"): Promise<CloudProfile | null> => {

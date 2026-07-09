@@ -24,7 +24,7 @@ import {
 } from "../data/storage";
 import { getWeekdayFromDate } from "../domain/trainingPlan";
 import { useAuth } from "../auth/AuthProvider";
-import { updateCloudProfileAdminFields } from "../services/profileService";
+import { setCloudUserClubAssignment, updateCloudProfileAdminFields } from "../services/profileService";
 import { reviewCloudClubRequest, setCloudClubStatus, upsertCloudClub, type CloudClubRequest } from "../services/clubService";
 import {
   reviewCloudTrainerRequest,
@@ -83,6 +83,13 @@ const normalizeClubName = (value: string): string => value.trim().toLowerCase();
 
 const isUuid = (value: string): boolean =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
+const toCloudRole = (role: UserRole): "Athlete" | "Coach" | "ClubAdmin" | "Admin" => {
+  if (role === "admin") return "Admin";
+  if (role === "clubAdmin") return "ClubAdmin";
+  if (role === "coach" || role === "teamAdmin") return "Coach";
+  return "Athlete";
+};
 
 const toCloudRoles = (role: UserRole): Array<"Athlete" | "Coach" | "TeamAdmin" | "ClubAdmin" | "Admin"> => {
   if (role === "admin") return ["Athlete", "Coach", "Admin"];
@@ -486,15 +493,56 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
 
   const changeRole = (targetUserId: string, role: UserRole) => {
     void runCloudAction("Rolle gespeichert", async () => {
-      await updateCloudProfileAdminFields(targetUserId, { roles: toCloudRoles(role) });
+      const authUser = authUsers.find((item) => item.userId === targetUserId);
+      if (authUser?.clubId) {
+        await setCloudUserClubAssignment({
+          userId: targetUserId,
+          clubId: authUser.clubId,
+          role: toCloudRole(role),
+          status: authUser.status === "active" ? "active" : "inactive",
+        });
+      } else {
+        await updateCloudProfileAdminFields(targetUserId, { roles: toCloudRoles(role) });
+      }
       setAuthUsers(updateAuthUserRole(targetUserId, role));
     });
   };
 
   const changeStatus = (targetUserId: string, status: "active" | "inactive") => {
     void runCloudAction("Status gespeichert", async () => {
-      await updateCloudProfileAdminFields(targetUserId, { status: status === "active" ? "active" : "disabled" });
+      const authUser = authUsers.find((item) => item.userId === targetUserId);
+      if (authUser?.clubId) {
+        await setCloudUserClubAssignment({
+          userId: targetUserId,
+          clubId: authUser.clubId,
+          role: toCloudRole(authUser.role),
+          status: status === "active" ? "active" : "inactive",
+        });
+      } else {
+        await updateCloudProfileAdminFields(targetUserId, { status: status === "active" ? "active" : "disabled" });
+      }
       setAuthUsers(updateAuthUserStatus(targetUserId, status));
+    });
+  };
+
+  const changeClub = (targetUserId: string, clubId: string) => {
+    void runCloudAction("Vereinszuordnung gespeichert", async () => {
+      const authUser = authUsers.find((item) => item.userId === targetUserId);
+      if (!authUser) throw new Error("Nutzer nicht gefunden.");
+      if (!clubId) {
+        await updateCloudProfileAdminFields(targetUserId, { club_id: null });
+        setAuthUsers(updateAuthUserProfileFields(targetUserId, { clubId: "", club: "" }));
+        return;
+      }
+
+      const club = clubs.find((item) => item.clubId === clubId);
+      await setCloudUserClubAssignment({
+        userId: targetUserId,
+        clubId,
+        role: toCloudRole(authUser.role),
+        status: authUser.status === "active" ? "active" : "inactive",
+      });
+      setAuthUsers(updateAuthUserProfileFields(targetUserId, { clubId, club: club?.name ?? "" }));
     });
   };
 
@@ -959,7 +1007,18 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
                     <select value={authUser.role} onChange={(event) => changeRole(authUser.userId, event.target.value as UserRole)}>
                       <option value="athlete">Athlete</option>
                       <option value="coach">Coach</option>
+                      <option value="clubAdmin">ClubAdmin</option>
                       <option value="teamAdmin">TeamAdmin</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </label>
+                ) : null}
+                {isAdmin ? (
+                  <label>
+                    Verein
+                    <select value={authUser.clubId} onChange={(event) => changeClub(authUser.userId, event.target.value)}>
+                      <option value="">Kein Verein</option>
+                      {clubs.map((club) => <option key={club.clubId} value={club.clubId}>{club.name}</option>)}
                     </select>
                   </label>
                 ) : null}

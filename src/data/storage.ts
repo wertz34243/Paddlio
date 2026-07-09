@@ -1330,7 +1330,7 @@ export const updateAuthUserStatus = (userId: string, status: UserStatus): AuthUs
 
 export const updateAuthUserProfileFields = (
   userId: string,
-  fields: Partial<Pick<AuthUser, "firstName" | "lastName" | "club" | "trainingGroupId" | "coachId">>,
+  fields: Partial<Pick<AuthUser, "firstName" | "lastName" | "clubId" | "club" | "trainingGroupId" | "coachId">>,
 ): AuthUser[] => {
   const users = loadUsers().map((user) =>
     user.userId === userId
