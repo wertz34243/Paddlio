@@ -2,6 +2,8 @@
 
 ## 4.1.5
 
+- Fixed cross-device role synchronization so Supabase profile roles override stale local cache roles.
+- Added Supabase migration `0018_role_sync_profile_normalization.sql` for lower-case profile e-mails and canonical admin role normalization.
 - Protected e-mail display in Updates, Coach/Admin lists and Beta feedback surfaces.
 - Restricted non-coach profile sync to the current user's own profile snapshot.
 - Hardened Admin/Beta visibility so systemwide tester data remains Admin-only.

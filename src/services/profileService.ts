@@ -4,6 +4,31 @@ import type { Database, UserRole } from "../lib/database.types";
 
 export type CloudProfile = Database["public"]["Tables"]["profiles"]["Row"];
 
+const ADMIN_EMAIL = "t.kanu@outlook.com";
+
+const normalizeEmail = (email: string): string => email.trim().toLowerCase();
+
+export const normalizeCloudRolesForEmail = (email: string, roles: UserRole[] = ["Athlete"]): UserRole[] => {
+  const normalized = normalizeEmail(email);
+  const safeRoles = roles.length > 0 ? roles : ["Athlete"];
+  const nextRoles = normalized === ADMIN_EMAIL
+    ? ([...safeRoles, "Athlete", "Coach", "Admin"] as UserRole[])
+    : ([...safeRoles, "Athlete"] as UserRole[]);
+
+  return Array.from(new Set(nextRoles));
+};
+
+const normalizeCloudProfile = (profile: CloudProfile): CloudProfile => ({
+  ...profile,
+  email: normalizeEmail(profile.email),
+  roles: normalizeCloudRolesForEmail(profile.email, profile.roles.length > 0 ? profile.roles : ["Athlete"]),
+});
+
+const profileNeedsNormalization = (profile: CloudProfile): boolean => {
+  const normalized = normalizeCloudProfile(profile);
+  return normalized.email !== profile.email || normalized.roles.join("|") !== profile.roles.join("|");
+};
+
 const createProfileAbort = (timeoutMs = 6500) => {
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
@@ -21,7 +46,7 @@ export const getCloudProfile = async (userId: string): Promise<CloudProfile | nu
   try {
     const { data, error } = await client.from("profiles").select("*").eq("id", userId).abortSignal(abort.signal).maybeSingle();
     if (error) throw error;
-    return data;
+    return data ? normalizeCloudProfile(data) : null;
   } finally {
     abort.clear();
   }
@@ -34,12 +59,22 @@ export const ensureCloudProfile = async (user: SupabaseUser): Promise<CloudProfi
   const metadata = user.user_metadata ?? {};
   const firstName = String(metadata.firstName ?? "");
   const lastName = String(metadata.lastName ?? "");
-  const email = user.email;
+  const email = normalizeEmail(user.email);
+  const roles = normalizeCloudRolesForEmail(email, ["Athlete"]);
   const isUuid = (value: unknown): value is string =>
     typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
   const existing = await getCloudProfile(user.id);
-  if (existing) return existing;
+  if (existing) {
+    if (!profileNeedsNormalization(existing)) return existing;
+    const { data, error } = await (client.from("profiles") as any)
+      .update({ email, roles, updated_at: new Date().toISOString() })
+      .eq("id", user.id)
+      .select("*")
+      .maybeSingle();
+    if (error) throw error;
+    return data ? normalizeCloudProfile(data) : existing;
+  }
 
   const abort = createProfileAbort();
   const { data, error } = await (client.from("profiles") as any)
@@ -50,7 +85,7 @@ export const ensureCloudProfile = async (user: SupabaseUser): Promise<CloudProfi
       last_name: lastName,
       display_name: `${firstName} ${lastName}`.trim() || email,
       club_id: isUuid(metadata.clubId) ? metadata.clubId : null,
-      roles: ["Athlete"],
+      roles,
       status: "active",
       boat_classes: ["K1"],
     })
@@ -64,7 +99,7 @@ export const ensureCloudProfile = async (user: SupabaseUser): Promise<CloudProfi
     if (code === "23505") return getCloudProfile(user.id);
     throw error;
   }
-  return data;
+  return data ? normalizeCloudProfile(data) : null;
 };
 
 export const updateCloudProfile = async (profile: Partial<CloudProfile> & { id: string }): Promise<CloudProfile | null> => {

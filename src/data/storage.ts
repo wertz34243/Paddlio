@@ -946,8 +946,9 @@ const isAuthUser = (value: unknown): value is AuthUser => {
   );
 };
 
-const normalizeAuthUser = (user: AuthUser): AuthUser => {
-  const roles = getRolesForEmail(user.email, Array.isArray(user.roles) && user.roles.length > 0 ? user.roles : [user.role ?? "athlete"]);
+const normalizeAuthUser = (user: AuthUser, inferRolesFromEmail = true): AuthUser => {
+  const fallbackRoles = uniqueRoles(Array.isArray(user.roles) && user.roles.length > 0 ? user.roles : [user.role ?? "athlete"]);
+  const roles = inferRolesFromEmail ? getRolesForEmail(user.email, fallbackRoles) : fallbackRoles;
 
   return {
     ...user,
@@ -959,7 +960,7 @@ const normalizeAuthUser = (user: AuthUser): AuthUser => {
     trainingGroupId: user.trainingGroupId ?? "",
     coachId: user.coachId ?? "",
     status: user.status ?? "active",
-    role: getRoleForEmail(user.email, getPrimaryRole(roles)),
+    role: inferRolesFromEmail ? getRoleForEmail(user.email, getPrimaryRole(roles)) : getPrimaryRole(roles),
     roles,
     updatedAt: user.updatedAt ?? now(),
   };
@@ -967,7 +968,7 @@ const normalizeAuthUser = (user: AuthUser): AuthUser => {
 
 export const loadUsers = (): AuthUser[] => {
   const value = parseStoredData(readStorage(USERS_KEY));
-  const users = Array.isArray(value) ? value.filter(isAuthUser).map(normalizeAuthUser) : [];
+  const users = Array.isArray(value) ? value.filter(isAuthUser).map((user) => normalizeAuthUser(user)) : [];
   if (users.length > 0) {
     saveUsers(users);
   }
@@ -979,7 +980,11 @@ const saveUsers = (users: AuthUser[]): void => {
 };
 
 export const cacheCloudAuthUsers = (users: AuthUser[]): void => {
-  saveUsers(users.map(normalizeAuthUser));
+  saveUsers(users.map((user) => normalizeAuthUser(user, false)));
+};
+
+export const clearCachedAuthUser = (userId: string): void => {
+  saveUsers(loadUsers().filter((user) => user.userId !== userId));
 };
 
 const isClub = (value: unknown): value is Club => {

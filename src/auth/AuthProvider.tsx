@@ -7,6 +7,8 @@ import {
   cacheCloudClubRequests,
   cacheCloudClubs,
   cacheCloudTrainerRequests,
+  clearCachedAuthUser,
+  clearSession,
   loadData,
   saveData,
   type LoginInput,
@@ -23,7 +25,7 @@ import type {
   User,
   UserRole,
 } from "../domain/types";
-import { ensureCloudProfile, getCloudProfile, listCloudProfiles, type CloudProfile } from "../services/profileService";
+import { ensureCloudProfile, getCloudProfile, listCloudProfiles, normalizeCloudRolesForEmail, type CloudProfile } from "../services/profileService";
 import { listCloudClubRequests, listCloudClubs, type CloudClub, type CloudClubRequest } from "../services/clubService";
 import { listCloudGroupMembers, listCloudTrainerRequests, listCloudTrainingGroups, type CloudGroupMember, type CloudTrainerRequest, type CloudTrainingGroup } from "../services/coachService";
 import { listCloudFeedback, listCloudTraining } from "../services/trainingService";
@@ -150,6 +152,9 @@ const getPrimaryRole = (roles: string[]): UserRole => {
   return "athlete";
 };
 
+const getCloudTruthRoles = (profile: Pick<CloudProfile, "email" | "roles">): CloudProfile["roles"] =>
+  normalizeCloudRolesForEmail(profile.email, profile.roles.length > 0 ? profile.roles : ["Athlete"]);
+
 const createFallbackProfile = (user: SupabaseUser): CloudProfile => {
   const metadata = user.user_metadata ?? {};
   const firstName = String(metadata.firstName ?? "");
@@ -164,7 +169,7 @@ const createFallbackProfile = (user: SupabaseUser): CloudProfile => {
     last_name: lastName,
     display_name: `${firstName} ${lastName}`.trim() || email,
     club_id: null,
-    roles: ["Athlete"],
+    roles: normalizeCloudRolesForEmail(email, ["Athlete"]),
     status: "active",
     avatar_url: null,
     age_category: null,
@@ -176,14 +181,15 @@ const createFallbackProfile = (user: SupabaseUser): CloudProfile => {
 };
 
 const toAuthUser = (profile: CloudProfile, clubName = ""): AuthUser => {
-  const roles = profile.roles.map(toLocalRole);
+  const cloudRoles = getCloudTruthRoles(profile);
+  const roles = cloudRoles.map(toLocalRole);
   const displayName = profile.display_name || `${profile.first_name ?? ""} ${profile.last_name ?? ""}`.trim() || profile.email;
   return {
     userId: profile.id,
     email: profile.email,
     displayName,
     passwordHash: "",
-    role: getPrimaryRole(profile.roles),
+    role: getPrimaryRole(cloudRoles),
     roles,
     firstName: profile.first_name ?? "",
     lastName: profile.last_name ?? "",
@@ -300,6 +306,7 @@ const mergeCloudData = (
   cloudData?: Partial<PaddleMotionData>,
 ): PaddleMotionData => {
   const club = clubs.find((item) => item.clubId === profile.club_id);
+  const cloudTruthProfile: CloudProfile = { ...profile, roles: getCloudTruthRoles(profile), email: profile.email.trim().toLowerCase() };
   const authUsers = profiles.map((item) => toAuthUser(item, clubs.find((clubItem) => clubItem.clubId === item.club_id)?.name ?? ""));
   cacheCloudAuthUsers(authUsers.length > 0 ? authUsers : [toAuthUser(profile, club?.name ?? "")]);
   cacheCloudClubs(clubs);
@@ -309,18 +316,18 @@ const mergeCloudData = (
     ...cached.users[0],
     id: userId,
     userId,
-    role: getPrimaryRole(profile.roles),
+    role: getPrimaryRole(cloudTruthProfile.roles),
     profile: {
       ...cached.users[0].profile,
-      firstName: profile.first_name ?? cached.users[0].profile.firstName,
-      lastName: profile.last_name ?? cached.users[0].profile.lastName,
+      firstName: cloudTruthProfile.first_name ?? cached.users[0].profile.firstName,
+      lastName: cloudTruthProfile.last_name ?? cached.users[0].profile.lastName,
       club: club?.name ?? cached.users[0].profile.club,
-      ageClass: (profile.age_category ?? cached.users[0].profile.ageClass) as User["profile"]["ageClass"],
-      boatClasses: profile.boat_classes.filter((boat): boat is "K1" | "C1" => boat === "K1" || boat === "C1"),
-      paddleSide: profile.paddle_side === "Links" ? "links" : "rechts",
-      profileImageDataUrl: profile.avatar_url ?? cached.users[0].profile.profileImageDataUrl,
+      ageClass: (cloudTruthProfile.age_category ?? cached.users[0].profile.ageClass) as User["profile"]["ageClass"],
+      boatClasses: cloudTruthProfile.boat_classes.filter((boat): boat is "K1" | "C1" => boat === "K1" || boat === "C1"),
+      paddleSide: cloudTruthProfile.paddle_side === "Links" ? "links" : "rechts",
+      profileImageDataUrl: cloudTruthProfile.avatar_url ?? cached.users[0].profile.profileImageDataUrl,
     },
-    updatedAt: profile.updated_at,
+    updatedAt: cloudTruthProfile.updated_at,
   };
 
   const nextData: PaddleMotionData = {
@@ -330,7 +337,7 @@ const mergeCloudData = (
     athlete: {
       ...cached.athlete,
       id: userId,
-      name: localUser.profile.nickname || `${localUser.profile.firstName} ${localUser.profile.lastName}`.trim() || profile.email,
+      name: localUser.profile.nickname || `${localUser.profile.firstName} ${localUser.profile.lastName}`.trim() || cloudTruthProfile.email,
       club: club?.name ?? localUser.profile.club,
     },
     coachAthletes: profiles.filter((item) => item.roles.includes("Athlete")).map((item) => toCoachAthlete(item, clubs.find((clubItem) => clubItem.clubId === item.club_id)?.name ?? "", members)),
@@ -405,7 +412,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCloudStatus(navigator.onLine ? "syncing" : "offline");
       setSession(activeSession);
       setCurrentUser(activeSession.user);
-      const cachedSnapshot = loadData(activeSession.user.id);
+      const provisionalProfile = createFallbackProfile(activeSession.user);
+      const cachedSnapshot = mergeCloudData(activeSession.user.id, provisionalProfile, [], [provisionalProfile], [], []);
+      setProfile(provisionalProfile);
       setDataState(cachedSnapshot);
       setLoading(false);
       let profileIsFallback = false;
@@ -417,11 +426,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profileIsFallback = true;
         logCloudError("Profil synchronisieren", error);
         nextProfile = createFallbackProfile(activeSession.user);
+        setCloudMessage("Cloud eingeschränkt: Rolle wird lokal abgeleitet und beim nächsten erfolgreichen Profil-Sync überschrieben.");
       }
 
       if (!nextProfile) {
         profileIsFallback = true;
         nextProfile = createFallbackProfile(activeSession.user);
+        setCloudMessage("Cloud eingeschränkt: Rolle wird lokal abgeleitet und beim nächsten erfolgreichen Profil-Sync überschrieben.");
       }
       const clubs = (await loadOptionalCloudData("clubs lesen", listCloudClubs, [])).map(toClub);
       const allProfiles = await loadOptionalCloudData("profiles listen", () => listCloudProfiles(nextProfile), [nextProfile]);
@@ -534,7 +545,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCloudMessage(pendingCount > 0 ? `${pendingCount} änderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensätze wurden in die Cloud migriert.` : "");
       setCloudStatus(!navigator.onLine ? "offline" : pendingCount > 0 ? "pending" : "connected");
       if (profileIsFallback) {
-        setCloudMessage("Cloud eingeschränkt: Profil konnte nicht bestätigt werden, lokaler Cache bleibt aktiv.");
+        setCloudMessage("Cloud eingeschränkt: Profil konnte nicht bestätigt werden. Die Rolle ist lokal abgeleitet und wird beim nächsten erfolgreichen Profil-Sync überschrieben.");
         setCloudStatus(navigator.onLine ? "limited" : "offline");
       } else if (optionalCloudErrorCount > 0) {
         setCloudMessage(`Cloud eingeschränkt: ${optionalCloudErrorCount} optionale Module konnten nicht synchronisiert werden.`);
@@ -694,7 +705,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     unsubscribeAll();
+    const signedOutUserId = currentUser?.id;
     if (supabase) await supabase.auth.signOut();
+    clearSession();
+    if (signedOutUserId) clearCachedAuthUser(signedOutUserId);
     setSession(null);
     setCurrentUser(null);
     setProfile(null);
@@ -713,7 +727,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     session,
     currentUser,
     profile,
-    roles: profile?.roles.map(toLocalRole) ?? [],
+    roles: profile ? getCloudTruthRoles(profile).map(toLocalRole) : [],
     club,
     data,
     setData,
