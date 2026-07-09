@@ -1,6 +1,7 @@
 import { getSupabaseClient } from "../lib/supabase";
 import type { PlanEntry, TrainingFeedback, Weekday } from "../domain/types";
 import { enqueueSyncChange } from "./syncService";
+import { toCloudUuid, toCloudUuidOrNull } from "./cloudIds";
 
 const toWeekday = (date: string): Weekday => {
   const labels: Weekday[] = ["Sonntag" as Weekday, "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
@@ -8,12 +9,12 @@ const toWeekday = (date: string): Weekday => {
 };
 
 export const toCloudTraining = (entry: PlanEntry) => ({
-  id: entry.id,
-  owner_id: entry.ownerUserId,
-  club_id: entry.clubId || null,
-  coach_id: entry.createdByUserId || null,
-  assigned_athlete_id: entry.assignedAthleteId || entry.assignedAthleteIds[0] || null,
-  assigned_group_id: entry.assignedGroupId || entry.assignedGroupIds[0] || null,
+  id: toCloudUuid(entry.id),
+  owner_id: toCloudUuidOrNull(entry.ownerUserId),
+  club_id: toCloudUuidOrNull(entry.clubId),
+  coach_id: toCloudUuidOrNull(entry.createdByUserId),
+  assigned_athlete_id: toCloudUuidOrNull(entry.assignedAthleteId || entry.assignedAthleteIds[0]),
+  assigned_group_id: toCloudUuidOrNull(entry.assignedGroupId || entry.assignedGroupIds[0]),
   title: entry.title || entry.trainingType,
   date: entry.date,
   start_time: entry.startTime || entry.time || null,
@@ -84,10 +85,10 @@ export const upsertCloudTraining = async (entry: PlanEntry): Promise<void> => {
 };
 
 export const toCloudFeedback = (feedback: TrainingFeedback) => ({
-  id: feedback.id,
-  training_plan_item_id: feedback.trainingId,
-  athlete_id: feedback.athleteUserId,
-  coach_id: feedback.coachUserId || null,
+  id: toCloudUuid(feedback.id),
+  training_plan_item_id: toCloudUuid(feedback.trainingId),
+  athlete_id: toCloudUuidOrNull(feedback.athleteUserId),
+  coach_id: toCloudUuidOrNull(feedback.coachUserId),
   status: feedback.status,
   feeling: feedback.feeling,
   difficulty: feedback.difficulty,

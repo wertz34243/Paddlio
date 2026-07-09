@@ -51,16 +51,21 @@ export const migrateLocalDataToCloud = async (userId: string, data: PaddleMotion
 
 export const syncDataSnapshotToCloud = async (data: PaddleMotionData, profile: CloudProfile, clubId?: string): Promise<number> => {
   let migrated = 0;
+  const localProfile = data.users[0]?.profile;
+  const localDisplayName = localProfile?.nickname || data.athlete.name;
+  const safeFirstName = profile.first_name || localProfile?.firstName || null;
+  const safeLastName = profile.last_name || localProfile?.lastName || null;
+  const safeDisplayName = profile.display_name || localDisplayName || [safeFirstName, safeLastName].filter(Boolean).join(" ") || profile.email;
 
   await updateCloudProfile({
     id: profile.id,
-    first_name: data.users[0]?.profile.firstName,
-    last_name: data.users[0]?.profile.lastName,
-    display_name: data.users[0]?.profile.nickname || data.athlete.name,
-    avatar_url: data.users[0]?.profile.profileImageDataUrl || null,
-    age_category: data.users[0]?.profile.ageClass || null,
-    boat_classes: data.users[0]?.profile.boatClasses ?? ["K1"],
-    paddle_side: data.users[0]?.profile.paddleSide === "links" ? "Links" : "Rechts",
+    first_name: safeFirstName,
+    last_name: safeLastName,
+    display_name: safeDisplayName,
+    avatar_url: profile.avatar_url || localProfile?.profileImageDataUrl || null,
+    age_category: profile.age_category || localProfile?.ageClass || null,
+    boat_classes: profile.boat_classes.length > 0 ? profile.boat_classes : localProfile?.boatClasses ?? ["K1"],
+    paddle_side: profile.paddle_side || (localProfile?.paddleSide === "links" ? "Links" : localProfile?.paddleSide === "rechts" ? "Rechts" : null),
   });
   migrated += 1;
 
