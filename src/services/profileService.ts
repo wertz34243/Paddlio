@@ -111,22 +111,29 @@ export const ensureCloudProfile = async (user: SupabaseUser): Promise<CloudProfi
   }
 
   const abort = createProfileAbort();
-  const { data, error } = await (client.from("profiles") as any)
-    .insert({
-      id: user.id,
-      email,
-      first_name: firstName,
-      last_name: lastName,
-      display_name: `${firstName} ${lastName}`.trim() || email,
-      club_id: metadataClubId,
-      roles,
-      status: "active",
-      boat_classes: ["K1"],
-    })
-    .select("*")
-    .abortSignal(abort.signal)
-    .maybeSingle()
-    .finally(() => abort.clear());
+  let data: CloudProfile | null = null;
+  let error: unknown = null;
+  try {
+    const result = await (client.from("profiles") as any)
+      .insert({
+        id: user.id,
+        email,
+        first_name: firstName,
+        last_name: lastName,
+        display_name: `${firstName} ${lastName}`.trim() || email,
+        club_id: metadataClubId,
+        roles,
+        status: "active",
+        boat_classes: ["K1"],
+      })
+      .select("*")
+      .abortSignal(abort.signal)
+      .maybeSingle();
+    data = result.data;
+    error = result.error;
+  } finally {
+    abort.clear();
+  }
 
   if (error) {
     const code = typeof (error as { code?: unknown }).code === "string" ? (error as { code: string }).code : "";
