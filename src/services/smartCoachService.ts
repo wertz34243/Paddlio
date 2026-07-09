@@ -1,6 +1,7 @@
 import type { SmartCoachRecommendation } from "../domain/types";
 import { getSupabaseClient } from "../lib/supabase";
 import { enqueueSyncChange } from "./syncService";
+import { sanitizeCloudPayload } from "./cloudIds";
 
 const toCloudRecommendation = (recommendation: SmartCoachRecommendation) => ({
   id: recommendation.id,
@@ -53,7 +54,7 @@ export const listCloudSmartCoachRecommendations = async (): Promise<SmartCoachRe
 };
 
 export const upsertCloudSmartCoachRecommendation = async (recommendation: SmartCoachRecommendation): Promise<void> => {
-  const payload = toCloudRecommendation(recommendation);
+  const payload = sanitizeCloudPayload(toCloudRecommendation(recommendation));
   const client = getSupabaseClient();
   if (!client || !navigator.onLine) {
     enqueueSyncChange({ tableName: "smart_coach_recommendations", action: "upsert", payload });

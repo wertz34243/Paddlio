@@ -15,7 +15,7 @@ export const getPendingSyncCount = (): number => getOfflineQueueCount();
 export const enqueueSyncChange = (item: Omit<SyncQueueItem, "id" | "createdAt" | "attempts">): void => {
   enqueueOfflineChange({
     table: item.tableName,
-    operation: item.action === "delete" ? "delete" : item.payload.id ? "update" : "insert",
+    operation: item.action === "delete" ? "delete" : "upsert",
     payload: item.payload,
   });
 };

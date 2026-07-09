@@ -1,6 +1,7 @@
 import { getSupabaseClient } from "../lib/supabase";
+import { sanitizeCloudPayload } from "./cloudIds";
 
-export type OfflineQueueOperation = "insert" | "update" | "delete";
+export type OfflineQueueOperation = "insert" | "update" | "upsert" | "delete";
 export type OfflineQueueStatus = "pending" | "failed";
 
 export type OfflineQueueItem = {
@@ -18,8 +19,8 @@ const SYNC_QUEUE_KEY = "paddlio_sync_queue";
 const normalizeQueueItem = (item: any): OfflineQueueItem => ({
   id: item.id ?? `sync-${crypto.randomUUID()}`,
   table: item.table ?? item.tableName,
-  operation: item.operation ?? (item.action === "delete" ? "delete" : item.payload?.id ? "update" : "insert"),
-  payload: item.payload ?? {},
+  operation: item.operation ?? (item.action === "delete" ? "delete" : "upsert"),
+  payload: sanitizeCloudPayload(item.payload ?? {}),
   createdAt: item.createdAt ?? new Date().toISOString(),
   retryCount: item.retryCount ?? item.attempts ?? 0,
   status: item.status === "failed" ? "failed" : "pending",
@@ -71,6 +72,9 @@ export const flushOfflineQueue = async (): Promise<number> => {
     try {
       if (item.operation === "delete") {
         const { error } = await (client.from(item.table) as any).delete().eq("id", item.payload.id);
+        if (error) throw error;
+      } else if (item.operation === "upsert") {
+        const { error } = await (client.from(item.table) as any).upsert(item.payload, { onConflict: item.table === "club_settings" ? "club_id" : "id" });
         if (error) throw error;
       } else if (item.operation === "update") {
         const { id, ...payload } = item.payload;

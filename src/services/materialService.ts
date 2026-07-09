@@ -1,9 +1,10 @@
 import { getSupabaseClient } from "../lib/supabase";
 import type { MaterialItem } from "../domain/types";
 import { enqueueSyncChange } from "./syncService";
+import { sanitizeCloudPayload } from "./cloudIds";
 
 export const upsertCloudMaterial = async (item: MaterialItem): Promise<void> => {
-  const payload = {
+  const payload = sanitizeCloudPayload({
     id: item.id,
     athlete_id: item.athleteId,
     category: item.category,
@@ -14,7 +15,7 @@ export const upsertCloudMaterial = async (item: MaterialItem): Promise<void> => 
     rating: item.rating,
     image_url: item.imageDataUrl || null,
     notes: item.note,
-  };
+  });
   const client = getSupabaseClient();
   if (!client || !navigator.onLine) {
     enqueueSyncChange({ tableName: "materials", action: "upsert", payload });

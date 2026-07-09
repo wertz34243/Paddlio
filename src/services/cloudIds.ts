@@ -30,3 +30,67 @@ export const toCloudUuid = (value: string | null | undefined): string | null => 
 
 export const toCloudUuidOrNull = (value: string | null | undefined): string | null =>
   value && isUuid(value) ? value : null;
+
+const uuidColumns = new Set([
+  "id",
+  "user_id",
+  "athlete_id",
+  "owner_id",
+  "club_id",
+  "coach_id",
+  "sender_id",
+  "receiver_id",
+  "group_id",
+  "author_id",
+  "created_by",
+  "assigned_to",
+  "task_id",
+  "training_id",
+  "competition_id",
+  "result_id",
+  "owner_user_id",
+  "created_for_user_id",
+  "assigned_athlete_id",
+  "assigned_group_id",
+  "target_group_id",
+  "target_user_id",
+  "related_training_id",
+  "related_competition_id",
+  "related_entity_id",
+  "training_plan_item_id",
+  "uploaded_by",
+  "checked_by",
+  "linked_training_id",
+  "reviewed_by",
+  "requested_by",
+  "trainer_user_id",
+  "athlete_user_id",
+  "recipient_user_id",
+  "sender_user_id",
+  "uploaded_by_user_id",
+]);
+
+const textIdColumns = new Set([
+  "external_id",
+  "provider_user_id",
+  "provider_activity_id",
+  "source_id",
+]);
+
+export const sanitizeCloudPayload = <T extends Record<string, unknown>>(payload: T): T => {
+  const sanitized: Record<string, unknown> = { ...payload };
+
+  for (const [key, value] of Object.entries(sanitized)) {
+    if (textIdColumns.has(key)) continue;
+
+    if (uuidColumns.has(key)) {
+      sanitized[key] = typeof value === "string" && value ? toCloudUuid(value) : null;
+    }
+
+    if (key.endsWith("_ids") && Array.isArray(value)) {
+      sanitized[key] = value.map((item) => (typeof item === "string" ? toCloudUuid(item) : item)).filter(Boolean);
+    }
+  }
+
+  return sanitized as T;
+};

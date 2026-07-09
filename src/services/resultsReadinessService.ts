@@ -9,16 +9,18 @@ import type {
 } from "../domain/types";
 import { getSupabaseClient } from "../lib/supabase";
 import { enqueueSyncChange } from "./syncService";
+import { sanitizeCloudPayload } from "./cloudIds";
 
 const today = (): string => new Date().toISOString().slice(0, 10);
 
 const tableUpsert = async (tableName: string, payload: Record<string, unknown>): Promise<void> => {
+  const cloudPayload = sanitizeCloudPayload(payload);
   const client = getSupabaseClient();
   if (!client || !navigator.onLine) {
-    enqueueSyncChange({ tableName, action: "upsert", payload });
+    enqueueSyncChange({ tableName, action: "upsert", payload: cloudPayload });
     return;
   }
-  const { error } = await (client.from(tableName) as any).upsert(payload, { onConflict: "id" });
+  const { error } = await (client.from(tableName) as any).upsert(cloudPayload, { onConflict: "id" });
   if (error) throw error;
 };
 

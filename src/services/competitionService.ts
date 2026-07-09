@@ -2,13 +2,15 @@ import { getSupabaseClient } from "../lib/supabase";
 import type { Competition } from "../domain/types";
 import { enqueueSyncChange } from "./syncService";
 import { calculatePersonalBests, upsertCloudPersonalBest } from "./resultsReadinessService";
+import { sanitizeCloudPayload, toCloudUuid } from "./cloudIds";
 
-const competitionIdFor = (competition: Competition): string => competition.id;
+const competitionIdFor = (competition: Competition): string => toCloudUuid(competition.id) ?? crypto.randomUUID();
 
 export const upsertCloudCompetition = async (competition: Competition, clubId?: string): Promise<void> => {
   const client = getSupabaseClient();
-  const competitionPayload = {
-    id: competitionIdFor(competition),
+  const cloudCompetitionId = competitionIdFor(competition);
+  const competitionPayload = sanitizeCloudPayload({
+    id: cloudCompetitionId,
     club_id: clubId || null,
     name: competition.name || competition.location || "Wettkampf",
     location: competition.location,
@@ -21,11 +23,11 @@ export const upsertCloudCompetition = async (competition: Competition, clubId?: 
     external_id: competition.externalId ?? null,
     source_url: competition.sourceUrl ?? null,
     notes: competition.note,
-  };
-  const resultPayload = {
+  });
+  const resultPayload = sanitizeCloudPayload({
     id: `result-${competition.id}`,
     club_id: competition.clubId || clubId || null,
-    competition_id: competition.id,
+    competition_id: cloudCompetitionId,
     athlete_id: competition.athleteId,
     competition_name: competition.name || competition.location || "Wettkampf",
     competition_date: competition.date,
@@ -59,7 +61,7 @@ export const upsertCloudCompetition = async (competition: Competition, clubId?: 
     source_url: competition.sourceUrl ?? null,
     source_type: competition.sourceType ?? competition.source ?? "manual",
     created_by: competition.createdBy ?? null,
-  };
+  });
 
   if (!client || !navigator.onLine) {
     enqueueSyncChange({ tableName: "competitions", action: "upsert", payload: competitionPayload });

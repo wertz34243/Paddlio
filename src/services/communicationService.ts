@@ -9,6 +9,7 @@ import type {
 } from "../domain/types";
 import { getSupabaseClient } from "../lib/supabase";
 import { enqueueSyncChange } from "./syncService";
+import { sanitizeCloudPayload } from "./cloudIds";
 
 const mapDirect = (row: any): DirectMessage => ({
   id: row.id,
@@ -200,12 +201,13 @@ const listTable = async <T,>(table: string, mapper: (row: any) => T): Promise<T[
 };
 
 const upsertTable = async (table: string, payload: Record<string, unknown>): Promise<void> => {
+  const cloudPayload = sanitizeCloudPayload(payload);
   const client = getSupabaseClient();
   if (!client || !navigator.onLine) {
-    enqueueSyncChange({ tableName: table, action: "upsert", payload });
+    enqueueSyncChange({ tableName: table, action: "upsert", payload: cloudPayload });
     return;
   }
-  const { error } = await (client.from(table) as any).upsert(payload, { onConflict: "id" });
+  const { error } = await (client.from(table) as any).upsert(cloudPayload, { onConflict: "id" });
   if (error) throw error;
 };
 

@@ -1,7 +1,7 @@
 import { getSupabaseClient } from "../lib/supabase";
 import type { PlanEntry, TrainingFeedback, Weekday } from "../domain/types";
 import { enqueueSyncChange } from "./syncService";
-import { toCloudUuid, toCloudUuidOrNull } from "./cloudIds";
+import { sanitizeCloudPayload, toCloudUuid, toCloudUuidOrNull } from "./cloudIds";
 
 const toWeekday = (date: string): Weekday => {
   const labels: Weekday[] = ["Sonntag" as Weekday, "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
@@ -74,7 +74,7 @@ export const listCloudTraining = async (athleteId: string): Promise<PlanEntry[]>
 };
 
 export const upsertCloudTraining = async (entry: PlanEntry): Promise<void> => {
-  const payload = toCloudTraining(entry);
+  const payload = sanitizeCloudPayload(toCloudTraining(entry));
   const client = getSupabaseClient();
   if (!client || !navigator.onLine) {
     enqueueSyncChange({ tableName: "training_plan_items", action: "upsert", payload });
@@ -100,7 +100,7 @@ export const toCloudFeedback = (feedback: TrainingFeedback) => ({
 });
 
 export const upsertCloudFeedback = async (feedback: TrainingFeedback): Promise<void> => {
-  const payload = toCloudFeedback(feedback);
+  const payload = sanitizeCloudPayload(toCloudFeedback(feedback));
   const client = getSupabaseClient();
   if (!client || !navigator.onLine) {
     enqueueSyncChange({ tableName: "training_feedback", action: "upsert", payload });

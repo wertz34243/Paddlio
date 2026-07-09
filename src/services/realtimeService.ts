@@ -31,14 +31,21 @@ export const subscribeToUserTrainings = (userId: string, onChange: RealtimeHandl
 
   const channel = client
     .channel(`paddlio-user-trainings-${userId}`)
-    .on("postgres_changes", { event: "*", schema: "public", table: "training_plan_items", filter: `athlete_id=eq.${userId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "profiles", filter: `id=eq.${userId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "training_plan_items", filter: `owner_id=eq.${userId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "training_plan_items", filter: `assigned_athlete_id=eq.${userId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "training_templates", filter: `owner_id=eq.${userId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "training_feedback", filter: `athlete_id=eq.${userId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "competition_results", filter: `athlete_id=eq.${userId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "personal_bests", filter: `athlete_id=eq.${userId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "materials", filter: `athlete_id=eq.${userId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "external_connections", filter: `user_id=eq.${userId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "external_training_sessions", filter: `user_id=eq.${userId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "season_goals", filter: `athlete_id=eq.${userId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "smart_coach_recommendations", filter: `created_for_user_id=eq.${userId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "group_members", filter: `athlete_id=eq.${userId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "group_memberships", filter: `user_id=eq.${userId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "direct_messages", filter: `sender_id=eq.${userId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "direct_messages", filter: `receiver_id=eq.${userId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "task_assignments", filter: `assigned_to=eq.${userId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "training_attendance", filter: `athlete_id=eq.${userId}` }, onChange)
@@ -88,7 +95,7 @@ export const subscribeToTrainingFeedback = (scope: { userId?: string; clubId?: s
 
   const channel = client.channel(`paddlio-training-feedback-${scope.userId ?? scope.clubId ?? "all"}`);
   if (scope.userId) {
-    channel.on("postgres_changes", { event: "*", schema: "public", table: "training_feedback", filter: `athlete_user_id=eq.${scope.userId}` }, onChange);
+    channel.on("postgres_changes", { event: "*", schema: "public", table: "training_feedback", filter: `athlete_id=eq.${scope.userId}` }, onChange);
   } else if (scope.clubId) {
     channel.on("postgres_changes", { event: "*", schema: "public", table: "training_feedback" }, onChange);
   }

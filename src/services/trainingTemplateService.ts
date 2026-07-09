@@ -1,6 +1,7 @@
 import { getSupabaseClient } from "../lib/supabase";
 import type { TrainingTemplate } from "../domain/types";
 import { enqueueSyncChange } from "./syncService";
+import { sanitizeCloudPayload } from "./cloudIds";
 
 const toCloudTemplate = (template: TrainingTemplate) => ({
   id: template.id,
@@ -53,7 +54,7 @@ export const listCloudTrainingTemplates = async (): Promise<TrainingTemplate[]> 
 };
 
 export const upsertCloudTrainingTemplate = async (template: TrainingTemplate): Promise<void> => {
-  const payload = toCloudTemplate(template);
+  const payload = sanitizeCloudPayload(toCloudTemplate(template));
   const client = getSupabaseClient();
   if (!client || !navigator.onLine) {
     enqueueSyncChange({ tableName: "training_templates", action: "upsert", payload });
