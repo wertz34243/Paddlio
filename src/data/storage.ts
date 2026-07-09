@@ -987,6 +987,10 @@ export const clearCachedAuthUser = (userId: string): void => {
   saveUsers(loadUsers().filter((user) => user.userId !== userId));
 };
 
+export const clearCachedUserData = (userId: string): void => {
+  removeStorage(dataKey(userId));
+};
+
 const isClub = (value: unknown): value is Club => {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<Club>;

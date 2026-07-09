@@ -8,6 +8,7 @@ import {
   cacheCloudClubs,
   cacheCloudTrainerRequests,
   clearCachedAuthUser,
+  clearCachedUserData,
   clearSession,
   loadData,
   saveData,
@@ -708,7 +709,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const signedOutUserId = currentUser?.id;
     if (supabase) await supabase.auth.signOut();
     clearSession();
-    if (signedOutUserId) clearCachedAuthUser(signedOutUserId);
+    if (signedOutUserId) {
+      clearCachedAuthUser(signedOutUserId);
+      clearCachedUserData(signedOutUserId);
+    }
     setSession(null);
     setCurrentUser(null);
     setProfile(null);
