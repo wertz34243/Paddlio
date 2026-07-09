@@ -67,17 +67,24 @@ export const ensureCloudProfile = async (user: SupabaseUser): Promise<CloudProfi
 
   try {
     const abort = createProfileAbort(5000);
-    const { data, error } = await (client as any)
-      .rpc("paddlio_ensure_profile_415", {
-        p_user_id: user.id,
-        p_email: email,
-        p_first_name: firstName,
-        p_last_name: lastName,
-        p_display_name: `${firstName} ${lastName}`.trim() || email,
-        p_club_id: metadataClubId,
-      })
-      .abortSignal(abort.signal)
-      .finally(() => abort.clear());
+    let data: unknown = null;
+    let error: unknown = null;
+    try {
+      const result = await (client as any)
+        .rpc("paddlio_ensure_profile_415", {
+          p_user_id: user.id,
+          p_email: email,
+          p_first_name: firstName,
+          p_last_name: lastName,
+          p_display_name: `${firstName} ${lastName}`.trim() || email,
+          p_club_id: metadataClubId,
+        })
+        .abortSignal(abort.signal);
+      data = result.data;
+      error = result.error;
+    } finally {
+      abort.clear();
+    }
 
     if (!error && data) {
       const profileRow = Array.isArray(data) ? data[0] : data;
