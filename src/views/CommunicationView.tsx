@@ -370,14 +370,14 @@ export function CommunicationView({ data, user, onDataChange }: CommunicationVie
 
   return (
     <div className="category-shell communication-shell">
-      <SegmentNav label="Kommunikation" items={segments} activeId={segment} onChange={setSegment} />
+      <SegmentNav label="Team" items={segments} activeId={segment} onChange={setSegment} />
       <div className="segment-content stack">
         <section className="home-profile-card premium-hero">
           <div className="home-avatar">K</div>
           <div>
             <p className="eyebrow">Paddlio 3.8</p>
-            <h2>Kommunikation</h2>
-            <p className="hero-slogan">Nachrichten. Aufgaben. Anwesenheit. Vereinsnews.</p>
+            <h2>Team</h2>
+            <p className="hero-slogan">Nachrichten. Aufgaben. Anwesenheit. Gruppen.</p>
           </div>
         </section>
         <section className="metric-grid two-columns">

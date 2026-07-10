@@ -63,7 +63,7 @@ const navItems: Array<{ id: PageId; label: string; icon: IconName }> = [
   { id: "dashboard", label: "Heute", icon: "home" },
   { id: "training", label: "Training", icon: "training" },
   { id: "analysis", label: "Analyse", icon: "chart" },
-  { id: "communication", label: "Kommunikation", icon: "message" },
+  { id: "communication", label: "Team", icon: "message" },
   { id: "more", label: "Mehr", icon: "more" },
 ];
 
@@ -141,7 +141,7 @@ const pageTitles: Record<PageId, string> = {
   competitions: "Wettkämpfe",
   analysis: "Analyse",
   club: "Verein",
-  communication: "Kommunikation",
+  communication: "Team",
   more: "Mehr",
   goals: "Ziele",
   records: "Rekorde",
@@ -790,8 +790,15 @@ function AppContent() {
     ...moreSegmentMeta[item.id],
   }));
 
+  const moreGroups: Array<{ title: string; items: MoreSegment[]; includeTeam?: boolean }> = [
+    { title: "Mein Konto", items: ["profile", "settings"] },
+    { title: "Sport", items: ["equipment", "goals", "records", "competitions"] },
+    { title: "Verein", items: ["club", "coach"], includeTeam: true },
+    { title: "Beta", items: ["notifications", "feedback", "betaGuide", "limitations", "integrations", "beta", "betaTesters"] },
+  ];
+
   const renderMoreArea = (segment: MoreSegment = moreSegment) => (
-    <div className="category-shell">
+    <div className="category-shell more-category-shell">
       <SegmentNav
         label="Mehr Kategorien"
         items={moreItems}
@@ -802,25 +809,56 @@ function AppContent() {
         }}
       />
       <div className="more-mobile-grid" aria-label="Mehr Bereiche">
-        {moreItems.map((item) => (
-          <button
-            className={segment === item.id ? "more-mobile-card active" : "more-mobile-card"}
-            key={item.id}
-            type="button"
-            aria-current={segment === item.id ? "page" : undefined}
-            aria-label={`${item.label} öffnen`}
-            onClick={() => {
-              setMoreSegment(item.id);
-              setActivePage("more");
-            }}
-          >
-            <span className="more-menu-icon" aria-hidden="true"><Icon name={item.icon} /></span>
-            <span>
-              <strong>{item.label}</strong>
-              <small>{item.description}</small>
-            </span>
-          </button>
-        ))}
+        {moreGroups.map((group) => {
+          const groupItems = group.items
+            .map((id) => moreItems.find((item) => item.id === id))
+            .filter((item): item is MoreSegmentMeta => Boolean(item));
+
+          if (!group.includeTeam && groupItems.length === 0) {
+            return null;
+          }
+
+          return (
+            <section className="more-mobile-section" key={group.title}>
+              <h2>{group.title}</h2>
+              <div className="more-mobile-section-grid">
+                {group.includeTeam ? (
+                  <button
+                    className={activeNavPage === "communication" ? "more-mobile-card active" : "more-mobile-card"}
+                    type="button"
+                    aria-label="Team-Bereich öffnen"
+                    onClick={() => setActivePage("communication")}
+                  >
+                    <span className="more-menu-icon" aria-hidden="true"><Icon name="message" /></span>
+                    <span>
+                      <strong>Team</strong>
+                      <small>Nachrichten, Aufgaben, Anwesenheit und Gruppen</small>
+                    </span>
+                  </button>
+                ) : null}
+                {groupItems.map((item) => (
+                  <button
+                    className={segment === item.id ? "more-mobile-card active" : "more-mobile-card"}
+                    key={item.id}
+                    type="button"
+                    aria-current={segment === item.id ? "page" : undefined}
+                    aria-label={`${item.label} öffnen`}
+                    onClick={() => {
+                      setMoreSegment(item.id);
+                      setActivePage("more");
+                    }}
+                  >
+                    <span className="more-menu-icon" aria-hidden="true"><Icon name={item.icon} /></span>
+                    <span>
+                      <strong>{item.label}</strong>
+                      <small>{item.description}</small>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          );
+        })}
       </div>
       <div className="segment-content">{renderMoreContent(segment)}</div>
     </div>
@@ -920,7 +958,7 @@ function AppContent() {
               item.id === "dashboard" ? "Zur Heute-Übersicht wechseln" :
                 item.id === "training" ? "Training-Bereich öffnen" :
                   item.id === "analysis" ? "Analyse-Bereich öffnen" :
-                    item.id === "communication" ? "Kommunikation öffnen" :
+                    item.id === "communication" ? "Team-Bereich öffnen" :
                       "Mehr-Bereich öffnen"
             }
           >
@@ -944,32 +982,33 @@ function App() {
 }
 
 function CloudStatusBadgeStable({ status, syncCount, pendingSyncCount, lastSyncAt, isAdmin, message }: { status: string; syncCount: number; pendingSyncCount: number; lastSyncAt: string; isAdmin: boolean; message: string }) {
+  const syncLabel = lastSyncAt ? new Date(lastSyncAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) : "";
   const label =
-    status === "connected" ? "Cloud verbunden" :
-      status === "syncing" ? "Synchronisiere..." :
-        status === "pending" ? "Wartende Änderungen" :
+    status === "connected" ? "Synchronisiert" :
+      status === "syncing" ? "Sync läuft..." :
+        status === "pending" ? "Sync ausstehend" :
           status === "limited" ? "Cloud eingeschränkt" :
             status === "offline" ? "Offline" :
-              status === "error" ? "Cloud Fehler" :
-                "Cloud deaktiviert";
+              status === "error" ? "Nicht synchronisiert" :
+                "Lokal";
   const userMessage =
-    status === "connected" ? "Deine Daten werden synchronisiert." :
-      status === "limited" ? "Die App ist nutzbar, einige Zusatzbereiche konnten nicht synchronisiert werden." :
-        status === "error" ? "Profil, Training oder Kernspeicher konnten nicht sicher synchronisiert werden." :
-          status === "offline" ? "Du bist offline. Änderungen werden später synchronisiert." :
-            "";
+    status === "connected" ? (syncLabel ? `Synchronisiert um ${syncLabel}.` : "Deine Daten sind synchronisiert.") :
+      status === "syncing" ? "Änderungen werden gerade abgeglichen." :
+        status === "pending" ? "Änderungen warten auf Synchronisation." :
+          status === "limited" ? "Die App ist nutzbar, einige Zusatzbereiche konnten nicht synchronisiert werden." :
+            status === "error" ? "Profil, Training oder Kernspeicher konnten nicht sicher synchronisiert werden." :
+              status === "offline" ? "Du bist offline. Änderungen werden später synchronisiert." :
+                "Lokaler Modus aktiv.";
   const dot = status === "connected" ? "green" : status === "syncing" || status === "pending" || status === "limited" ? "yellow" : "red";
-  const syncLabel = lastSyncAt ? new Date(lastSyncAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) : "";
   return (
     <div className={"cloud-status " + dot}>
       <span>{label}</span>
       {userMessage ? <small>{userMessage}</small> : null}
       {pendingSyncCount > 0 ? <small>{pendingSyncCount} Änderungen warten auf Synchronisation</small> : null}
       {isAdmin && status === "syncing" ? <small>Synchronisiere Datensätze...</small> : null}
-      {isAdmin && status !== "syncing" ? <small>{syncCount} Datensätze{syncLabel ? " - letzter Sync " + syncLabel : ""}</small> : null}
+      {isAdmin && status === "connected" ? <small>{syncCount} Datensätze bestätigt</small> : null}
       {message && (isAdmin || status === "error") ? <small>{message}</small> : null}
     </div>
   );
 }
-
 export default App;

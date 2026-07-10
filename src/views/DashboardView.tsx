@@ -50,6 +50,8 @@ const getDaysUntil = (date?: string): number | undefined => {
 
 export function DashboardView({ data, user, onNavigate, onOpenSmartCoach, onUpdateRecommendation, onQuickAction }: DashboardViewProps) {
   const displayName = getDisplayName(user.profile);
+  const isAdmin = user.role === "admin";
+  const isCoachLike = user.role === "coach" || user.role === "teamAdmin" || user.role === "clubAdmin" || user.role === "admin";
   const scopedPlan = getTrainingsForCurrentUser(data, user);
   const scopedGoals = getGoalsForCurrentUser(data, user);
   const intelligence = getTrainingIntelligence(data.competitions, data.training, scopedPlan, data.journal);
@@ -72,6 +74,26 @@ export function DashboardView({ data, user, onNavigate, onOpenSmartCoach, onUpda
   const openTasks = data.taskAssignments.filter((item) => item.assignedTo === user.userId && item.status !== "done").length;
   const pendingAttendance = scopedPlan.filter((entry) => !data.trainingAttendance.some((item) => item.trainingId === entry.id && item.athleteId === user.userId)).length;
   const latestNews = data.clubPosts.filter((post) => !post.deletedAt).sort((a, b) => Number(b.isPinned) - Number(a.isPinned) || b.createdAt.localeCompare(a.createdAt))[0];
+  const primaryActions = isAdmin
+    ? [
+        { label: "Beta-Check", ariaLabel: "Beta-Check öffnen", onClick: () => onNavigate("more") },
+        { label: "Feedback prüfen", ariaLabel: "Beta-Feedback prüfen", onClick: () => onNavigate("more") },
+        { label: "Sync prüfen", ariaLabel: "Cloud-Synchronisation prüfen", onClick: () => onNavigate("more") },
+        { label: "Nutzer verwalten", ariaLabel: "Admin-Nutzerverwaltung öffnen", onClick: () => onNavigate("more") },
+      ]
+    : isCoachLike
+      ? [
+          { label: "Training planen", ariaLabel: "Neues Training planen", onClick: () => onQuickAction("training") },
+          { label: "Rückmeldungen prüfen", ariaLabel: "Offene Trainingsrückmeldungen prüfen", onClick: () => onNavigate("training") },
+          { label: "Anwesenheit", ariaLabel: "Anwesenheit im Team-Bereich prüfen", onClick: () => onNavigate("communication") },
+          { label: "Nachricht schreiben", ariaLabel: "Nachricht an Team oder Sportler schreiben", onClick: () => onNavigate("communication") },
+        ]
+      : [
+          { label: "Training eintragen", ariaLabel: "Training für heute eintragen", onClick: () => onQuickAction("training") },
+          { label: "Journal ausfüllen", ariaLabel: "Trainingstagebuch für heute ausfüllen", onClick: () => onQuickAction("journal") },
+          { label: "Anwesenheit", ariaLabel: "Anwesenheit im Team-Bereich beantworten", onClick: () => onNavigate("communication") },
+          { label: "Nachricht schreiben", ariaLabel: "Nachricht an Trainer oder Team schreiben", onClick: () => onNavigate("communication") },
+        ];
 
   return (
     <div className="stack intelligence-dashboard">
@@ -97,6 +119,14 @@ export function DashboardView({ data, user, onNavigate, onOpenSmartCoach, onUpda
         <p>{intelligence.motivation}</p>
       </section>
 
+      <section className="quick-actions priority-actions" aria-label="Wichtige Aktionen">
+        {primaryActions.map((action) => (
+          <button type="button" key={action.ariaLabel} onClick={action.onClick} aria-label={action.ariaLabel}>
+            {action.label}
+          </button>
+        ))}
+      </section>
+
       <section className="today-training-card">
         <div>
           <p className="eyebrow">Heute trainieren</p>
@@ -107,8 +137,8 @@ export function DashboardView({ data, user, onNavigate, onOpenSmartCoach, onUpda
               : "Kein Training geplant. Nutze den Tag bewusst für Erholung oder eine lockere Einheit."}
           </span>
         </div>
-        <button className="save-button" type="button" onClick={() => onQuickAction("training")} aria-label="Training über die Heute-Karte eintragen">
-          Training eintragen
+        <button className="save-button" type="button" onClick={() => onQuickAction("training")} aria-label={isCoachLike ? "Neue Trainingseinheit über die Heute-Karte planen" : "Training für heute über die Heute-Karte eintragen"}>
+          {isCoachLike ? "Training planen" : "Training eintragen"}
         </button>
       </section>
 
@@ -172,13 +202,13 @@ export function DashboardView({ data, user, onNavigate, onOpenSmartCoach, onUpda
           <p className="card-note">{intelligence.athleteStatus.detail}</p>
         </AppCard>
 
-        <AppCard icon="message" title="Kommunikation" subtitle="Nachrichten & Gruppen" value={`${unreadDirect + groupActivity} neu`} tone="accent">
+        <AppCard icon="message" title="Team" subtitle="Nachrichten & Gruppen" value={`${unreadDirect + groupActivity} neu`} tone="accent">
           <div className="smart-detail-grid">
             <span>Direkt: {unreadDirect}</span>
             <span>Gruppen: {groupActivity}</span>
           </div>
           <button className="ghost-button wide" type="button" onClick={() => onNavigate("communication")}>
-            Öffnen
+            Team öffnen
           </button>
         </AppCard>
 
@@ -221,21 +251,6 @@ export function DashboardView({ data, user, onNavigate, onOpenSmartCoach, onUpda
         </div>
       </section>
 
-      <section className="quick-actions">
-        <button type="button" onClick={() => onQuickAction("training")} aria-label="Neuen Trainingseintrag über Schnellaktion erstellen">
-          Training eintragen
-        </button>
-        <button type="button" onClick={() => onQuickAction("competition")} aria-label="Neuen Wettkampf über Schnellaktion eintragen">
-          Wettkampf eintragen
-        </button>
-        <button type="button" onClick={() => onQuickAction("journal")} aria-label="Trainingsjournal über Schnellaktion ausfüllen">
-          Journal ausfüllen
-        </button>
-        <button type="button" onClick={() => onQuickAction("material")} aria-label="Material über Schnellaktion prüfen">
-          Material prüfen
-        </button>
-      </section>
-
       <SmartCoachView
         data={data}
         user={user}
@@ -255,7 +270,7 @@ export function DashboardView({ data, user, onNavigate, onOpenSmartCoach, onUpda
           </div>
           <p>{latestNews.content}</p>
           <button className="ghost-button wide" type="button" onClick={() => onNavigate("communication")}>
-            Kommunikation öffnen
+            Team öffnen
           </button>
         </section>
       ) : null}

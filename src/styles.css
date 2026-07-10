@@ -1355,6 +1355,25 @@ p {
   display: none;
 }
 
+.more-mobile-section {
+  display: grid;
+  gap: 9px;
+}
+
+.more-mobile-section h2 {
+  margin: 4px 2px 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.more-mobile-section-grid {
+  display: grid;
+  gap: 10px;
+}
+
 .more-mobile-card {
   display: flex;
   align-items: flex-start;
@@ -2016,6 +2035,15 @@ p {
 .quick-actions button:hover {
   border-color: rgba(144, 224, 239, 0.32);
   background: rgba(0, 180, 216, 0.12);
+}
+
+.priority-actions {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.priority-actions button {
+  min-height: 58px;
+  background: linear-gradient(135deg, rgba(0, 180, 216, 0.18), rgba(34, 197, 94, 0.1));
 }
 
 .smart-detail-grid,

@@ -6,6 +6,8 @@ Paddlio ist eine React/Vite/TypeScript-PWA für Kanuslalom mit Supabase Auth und
 
 Version 4.1.5 ist ein Privacy- und Beta-Polish-Fix. Der Schwerpunkt liegt auf geschützten E-Mail-Anzeigen, klarerem CloudStatus, besseren aria-Labels, weniger Overflow in Updates, finaler Textglättung und stabilerem Cloud-Speichern vor externer Beta. Große neue Fachfunktionen bleiben eingefroren.
 
+Der sichtbare Kommunikationsbereich heißt jetzt `Team`, damit die Navigation stärker nach Alltagssituationen statt nach technischer Funktion klingt. Die interne Route bleibt stabil. Die Heute-Seite priorisiert rollenabhängig maximal vier Hauptaktionen, und `Mehr` ist auf Mobile in Konto, Sport, Verein/Team und Beta gruppiert.
+
 ## Architektur
 
 - `AuthProvider` ist die zentrale Auth- und Cloud-Sync-Schicht.
@@ -28,6 +30,9 @@ Version 4.1.5 ist ein Privacy- und Beta-Polish-Fix. Der Schwerpunkt liegt auf ge
 - Sichtbare deutsche UI-Texte wurden weiter geglättet.
 - Trainingstagebuch-Einträge werden über `training_journal_entries` in Supabase gespeichert, migriert, geladen und per Realtime aktualisiert.
 - Passwort-Reset nutzt ein Inline-Formular statt `prompt()`, weil Browser-/Testumgebungen Prompts blockieren können.
+- Sichtbare Navigation nutzt `Team` statt `Kommunikation`; Nachrichten, Aufgaben, Anwesenheit und Gruppen bleiben darunter gebündelt.
+- Die Heute-Seite zeigt je nach Rolle eine kurze Aktionsleiste statt mehrere verstreute Schnellaktionen.
+- Der mobile Mehr-Bereich nutzt gruppierte Kacheln, damit Beta-, Admin- und Sportbereiche auf kleinen Viewports erreichbar bleiben.
 
 ## Version 4.1.4 Schwerpunkt
 
