@@ -32,8 +32,8 @@ export type TrainingIntelligence = {
 };
 
 const motivations = [
-  "Heute zaehlt jede saubere Linie.",
-  "Konstanz schlaegt Zufall.",
+  "Heute zählt jede saubere Linie.",
+  "Konstanz schlägt Zufall.",
   "Ein gutes Training beginnt mit dem ersten Paddelschlag.",
   "Der Wettkampf wird im Training vorbereitet.",
   "Ruhige Entscheidungen machen schnelle Läufe.",

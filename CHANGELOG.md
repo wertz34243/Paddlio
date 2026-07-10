@@ -4,8 +4,11 @@
 
 - Renamed the visible bottom navigation item `Kommunikation` to `Team` while keeping existing internal routes stable.
 - Added role-based primary actions at the top of the Heute screen for athletes, coaches and admins.
+- Routed admin Heute actions directly to Beta-Check, Feedback and Admin user management instead of the last opened Mehr tab.
 - Reworked the mobile `Mehr` area into grouped cards for account, sport, club/team and beta areas.
 - Refined CloudStatus wording to show synchronized, syncing, pending and unsynchronized states without implying data loss.
+- Updated Team, PWA manifest, offline page and service worker cache labels to the current 4.1.5 state.
+- Added contextual aria labels for additional Coach/Admin and Goals action buttons.
 - Added cloud persistence and Realtime coverage for training journal entries via `training_journal_entries`.
 - Replaced unsupported password-reset `prompt()` with an inline reset form on the login screen.
 - Translated communication task/news enum values for user-facing German labels.

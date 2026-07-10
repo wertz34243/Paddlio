@@ -375,7 +375,7 @@ export function CommunicationView({ data, user, onDataChange }: CommunicationVie
         <section className="home-profile-card premium-hero">
           <div className="home-avatar">K</div>
           <div>
-            <p className="eyebrow">Paddlio 3.8</p>
+            <p className="eyebrow">Paddlio 4.1.5</p>
             <h2>Team</h2>
             <p className="hero-slogan">Nachrichten. Aufgaben. Anwesenheit. Gruppen.</p>
           </div>

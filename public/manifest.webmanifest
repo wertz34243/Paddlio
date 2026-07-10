@@ -1,7 +1,7 @@
 {
   "name": "Paddlio",
   "short_name": "Paddlio",
-  "description": "Paddlio ist eine moderne Trainings- und Wettkampfplattform fuer Kanuslalom.",
+  "description": "Paddlio ist eine moderne Trainings- und Wettkampfplattform für Kanuslalom.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -36,7 +36,7 @@
     {
       "name": "Training",
       "short_name": "Training",
-      "description": "Training und Journal oeffnen",
+      "description": "Training und Journal öffnen",
       "url": "/?shortcut=training",
       "icons": [
         {
@@ -48,7 +48,7 @@
     {
       "name": "Analyse",
       "short_name": "Analyse",
-      "description": "Analyse und Fortschritt oeffnen",
+      "description": "Analyse und Fortschritt öffnen",
       "url": "/?shortcut=analysis",
       "icons": [
         {

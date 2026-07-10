@@ -32,7 +32,9 @@ Der sichtbare Kommunikationsbereich heißt jetzt `Team`, damit die Navigation st
 - Passwort-Reset nutzt ein Inline-Formular statt `prompt()`, weil Browser-/Testumgebungen Prompts blockieren können.
 - Sichtbare Navigation nutzt `Team` statt `Kommunikation`; Nachrichten, Aufgaben, Anwesenheit und Gruppen bleiben darunter gebündelt.
 - Die Heute-Seite zeigt je nach Rolle eine kurze Aktionsleiste statt mehrere verstreute Schnellaktionen.
+- Admin-Aktionen auf Heute springen direkt in die passenden Mehr-Segmente für Beta-Check, Feedback und Nutzerverwaltung.
 - Der mobile Mehr-Bereich nutzt gruppierte Kacheln, damit Beta-, Admin- und Sportbereiche auf kleinen Viewports erreichbar bleiben.
+- PWA-Manifest, Offline-Seite und Service-Worker-Cache tragen wieder konsistente 4.1.5-/UTF-8-Texte.
 
 ## Version 4.1.4 Schwerpunkt
 

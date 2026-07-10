@@ -862,10 +862,10 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
                     <span>{club.contactEmail || "Keine Kontakt-E-Mail"}</span>
                   </div>
                   <div className="card-actions">
-                    <button type="button" onClick={() => setEditingClub(club)}>Bearbeiten</button>
+                    <button type="button" onClick={() => setEditingClub(club)} aria-label={`Verein ${club.name} bearbeiten`}>Bearbeiten</button>
                     <button type="button" onClick={() => setUserSearch(club.name)}>Sportler anzeigen</button>
                     <button type="button" onClick={() => setRoleFilter("coach")}>Trainer anzeigen</button>
-                    <button type="button" onClick={() => removeClub(club.clubId)}>Löschen</button>
+                    <button type="button" onClick={() => removeClub(club.clubId)} aria-label={`Verein ${club.name} löschen`}>Löschen</button>
                   </div>
                 </article>
               );
@@ -1045,7 +1045,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
               </div>
               {isAdmin ? (
                 <div className="card-actions full-width">
-                  <button type="button" onClick={() => removeUser(authUser.userId)}>Benutzer löschen</button>
+                  <button type="button" onClick={() => removeUser(authUser.userId)} aria-label={`Benutzer ${authUser.displayName || authUser.email} löschen`}>Benutzer löschen</button>
                 </div>
               ) : null}
             </article>
@@ -1169,9 +1169,9 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
               <span>{groups.length > 0 ? groups.map((group) => group.name).join(" + ") : "Keine Gruppe"}</span>
               <span>{athlete.invitationStatus === "einladung_offen" ? "Einladung offen" : athlete.status}</span>
               <div className="card-actions">
-                <button type="button" onClick={() => setSelectedProfileAthleteId(athlete.id)}>Profil</button>
-                <button type="button" onClick={() => startEditingAthlete(athlete)}>Bearbeiten</button>
-                <button type="button" onClick={() => startEditingAthlete(athlete)}>Gruppe ändern</button>
+                <button type="button" onClick={() => setSelectedProfileAthleteId(athlete.id)} aria-label={`Profil von ${athlete.name} öffnen`}>Profil</button>
+                <button type="button" onClick={() => startEditingAthlete(athlete)} aria-label={`Sportler ${athlete.name} bearbeiten`}>Bearbeiten</button>
+                <button type="button" onClick={() => startEditingAthlete(athlete)} aria-label={`Trainingsgruppe von ${athlete.name} ändern`}>Gruppe ändern</button>
               </div>
             </article>
             );
@@ -1291,8 +1291,8 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
                 <span>{group.status === "active" ? "aktiv" : "inaktiv"}</span>
               </div>
               <div className="card-actions">
-                <button type="button" onClick={() => startEditingGroup(group)}>Bearbeiten</button>
-                <button type="button" onClick={() => deleteGroup(group.id)}>Löschen</button>
+                <button type="button" onClick={() => startEditingGroup(group)} aria-label={`Trainingsgruppe ${group.name} bearbeiten`}>Bearbeiten</button>
+                <button type="button" onClick={() => deleteGroup(group.id)} aria-label={`Trainingsgruppe ${group.name} löschen`}>Löschen</button>
               </div>
             </article>
           )) : <p className="empty-state">Noch keine Trainingsgruppen vorhanden.</p>}

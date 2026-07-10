@@ -21,12 +21,14 @@ type DashboardViewProps = {
   data: PaddleMotionData;
   user: User;
   onNavigate: (page: PageId) => void;
+  onOpenMoreSegment: (segment: DashboardMoreTarget) => void;
   onOpenSmartCoach: () => void;
   onUpdateRecommendation: (recommendation: SmartCoachRecommendation, updates: Partial<Pick<SmartCoachRecommendation, "status" | "note">>) => void;
   onQuickAction: (action: DashboardQuickAction) => void;
 };
 
 export type DashboardQuickAction = "training" | "competition" | "journal" | "material";
+export type DashboardMoreTarget = "beta" | "feedback" | "coach" | "notifications";
 
 const todayText = (): string =>
   `Heute ist ${new Date().toLocaleDateString("de-DE", { weekday: "long" })}.`;
@@ -48,7 +50,7 @@ const getDaysUntil = (date?: string): number | undefined => {
   return Math.max(0, Math.round((target.getTime() - today.getTime()) / 86400000));
 };
 
-export function DashboardView({ data, user, onNavigate, onOpenSmartCoach, onUpdateRecommendation, onQuickAction }: DashboardViewProps) {
+export function DashboardView({ data, user, onNavigate, onOpenMoreSegment, onOpenSmartCoach, onUpdateRecommendation, onQuickAction }: DashboardViewProps) {
   const displayName = getDisplayName(user.profile);
   const isAdmin = user.role === "admin";
   const isCoachLike = user.role === "coach" || user.role === "teamAdmin" || user.role === "clubAdmin" || user.role === "admin";
@@ -76,10 +78,10 @@ export function DashboardView({ data, user, onNavigate, onOpenSmartCoach, onUpda
   const latestNews = data.clubPosts.filter((post) => !post.deletedAt).sort((a, b) => Number(b.isPinned) - Number(a.isPinned) || b.createdAt.localeCompare(a.createdAt))[0];
   const primaryActions = isAdmin
     ? [
-        { label: "Beta-Check", ariaLabel: "Beta-Check öffnen", onClick: () => onNavigate("more") },
-        { label: "Feedback prüfen", ariaLabel: "Beta-Feedback prüfen", onClick: () => onNavigate("more") },
-        { label: "Sync prüfen", ariaLabel: "Cloud-Synchronisation prüfen", onClick: () => onNavigate("more") },
-        { label: "Nutzer verwalten", ariaLabel: "Admin-Nutzerverwaltung öffnen", onClick: () => onNavigate("more") },
+        { label: "Beta-Check", ariaLabel: "Beta-Check öffnen", onClick: () => onOpenMoreSegment("beta") },
+        { label: "Feedback prüfen", ariaLabel: "Beta-Feedback prüfen", onClick: () => onOpenMoreSegment("feedback") },
+        { label: "Sync prüfen", ariaLabel: "Cloud-Synchronisation im Beta-Check prüfen", onClick: () => onOpenMoreSegment("beta") },
+        { label: "Nutzer verwalten", ariaLabel: "Admin-Nutzerverwaltung öffnen", onClick: () => onOpenMoreSegment("coach") },
       ]
     : isCoachLike
       ? [

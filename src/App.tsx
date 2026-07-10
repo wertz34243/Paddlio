@@ -39,7 +39,7 @@ import { CompetitionSeasonStatsView } from "./views/CompetitionSeasonStatsView";
 import { ClubPortalView } from "./views/ClubPortalView";
 import { CommunicationView } from "./views/CommunicationView";
 import { CoachView } from "./views/CoachView";
-import { DashboardView, type DashboardQuickAction } from "./views/DashboardView";
+import { DashboardView, type DashboardMoreTarget, type DashboardQuickAction } from "./views/DashboardView";
 import { EquipmentView } from "./views/EquipmentView";
 import { GoalsView } from "./views/GoalsView";
 import { PlanView } from "./views/PlanView";
@@ -245,6 +245,11 @@ function AppContent() {
     }
 
     setMoreSegment("equipment");
+    setActivePage("more");
+  };
+
+  const openMoreSegment = (segment: DashboardMoreTarget) => {
+    setMoreSegment(segment);
     setActivePage("more");
   };
 
@@ -891,6 +896,7 @@ function AppContent() {
             data={data}
             user={activeUser}
             onNavigate={setActivePage}
+            onOpenMoreSegment={openMoreSegment}
             onOpenSmartCoach={() => {
               setAnalysisSegment("smartCoach");
               setActivePage("analysis");
