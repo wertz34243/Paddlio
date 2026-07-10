@@ -9,6 +9,9 @@
 - Refined CloudStatus wording to show synchronized, syncing, pending and unsynchronized states without implying data loss.
 - Updated Team, PWA manifest, offline page and service worker cache labels to the current 4.1.5 state.
 - Added contextual aria labels for additional Coach/Admin and Goals action buttons.
+- Hardened Cloud profile merging so Supabase identity, role and club overwrite stale local profile cache after login.
+- Added `CHECK_BETA_PROFILE_ROLE_STATE.sql` and `RESET_BETA_TEST_USERS_415.sql` for safe Supabase profile/role audits and targeted beta-account repair.
+- Improved the profile hero meta line so club and sport profile values no longer run together.
 - Added cloud persistence and Realtime coverage for training journal entries via `training_journal_entries`.
 - Replaced unsupported password-reset `prompt()` with an inline reset form on the login screen.
 - Translated communication task/news enum values for user-facing German labels.

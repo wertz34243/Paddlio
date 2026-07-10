@@ -186,8 +186,10 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
         <div>
           <p className="eyebrow">Athletenprofil</p>
           <h2>{getDisplayName(user.profile)}</h2>
-          <span>{user.profile.club || "Kein Verein"}</span>
-          <span>{getSportProfileSummary(previewProfile)}</span>
+          <div className="profile-summary-line">
+            <span>{user.profile.club || "Kein Verein"}</span>
+            <span>{getSportProfileSummary(previewProfile)}</span>
+          </div>
         </div>
       </section>
 

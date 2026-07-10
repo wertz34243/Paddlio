@@ -318,6 +318,8 @@ const mergeCloudData = (
   cacheCloudClubs(clubs);
 
   const cached = loadData(userId);
+  const cloudBoatClasses = cloudTruthProfile.boat_classes.filter((boat): boat is "K1" | "C1" => boat === "K1" || boat === "C1");
+  const cloudPaddleSide = cloudTruthProfile.paddle_side === "Links" ? "links" : "rechts";
   const localUser: User = {
     ...cached.users[0],
     id: userId,
@@ -325,13 +327,13 @@ const mergeCloudData = (
     role: getPrimaryRole(cloudTruthProfile.roles),
     profile: {
       ...cached.users[0].profile,
-      firstName: cloudTruthProfile.first_name ?? cached.users[0].profile.firstName,
-      lastName: cloudTruthProfile.last_name ?? cached.users[0].profile.lastName,
-      nickname: cloudDisplayName,
-      club: club?.name ?? cached.users[0].profile.club,
-      ageClass: (cloudTruthProfile.age_category ?? cached.users[0].profile.ageClass) as User["profile"]["ageClass"],
-      boatClasses: cloudTruthProfile.boat_classes.filter((boat): boat is "K1" | "C1" => boat === "K1" || boat === "C1"),
-      paddleSide: cloudTruthProfile.paddle_side === "Links" ? "links" : "rechts",
+      firstName: cloudTruthProfile.first_name ?? "",
+      lastName: cloudTruthProfile.last_name ?? "",
+      nickname: cloudTruthProfile.display_name ?? "",
+      club: club?.name ?? "",
+      ageClass: (cloudTruthProfile.age_category ?? "") as User["profile"]["ageClass"],
+      boatClasses: cloudBoatClasses,
+      paddleSide: cloudPaddleSide,
       profileImageDataUrl: cloudTruthProfile.avatar_url ?? cached.users[0].profile.profileImageDataUrl,
     },
     updatedAt: cloudTruthProfile.updated_at,

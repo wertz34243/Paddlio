@@ -35,6 +35,8 @@ Der sichtbare Kommunikationsbereich heißt jetzt `Team`, damit die Navigation st
 - Admin-Aktionen auf Heute springen direkt in die passenden Mehr-Segmente für Beta-Check, Feedback und Nutzerverwaltung.
 - Der mobile Mehr-Bereich nutzt gruppierte Kacheln, damit Beta-, Admin- und Sportbereiche auf kleinen Viewports erreichbar bleiben.
 - PWA-Manifest, Offline-Seite und Service-Worker-Cache tragen wieder konsistente 4.1.5-/UTF-8-Texte.
+- Profilidentität, Rolle und Vereinszuordnung werden beim Cloud-Merge nicht mehr aus altem lokalem Cache aufgefüllt. Supabase bleibt nach erfolgreichem Profil-Sync die einzige Wahrheit.
+- Für Beta-Abnahmen liegen sichere SQL-Hilfen bereit: `supabase/CHECK_BETA_PROFILE_ROLE_STATE.sql` prüft Profile/Rollen, `supabase/RESET_BETA_TEST_USERS_415.sql` repariert gezielt den Admin-Testaccount und vorbereitete Sportler-Testkonten.
 
 ## Version 4.1.4 Schwerpunkt
 

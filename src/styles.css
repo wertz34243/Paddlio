@@ -814,6 +814,21 @@ p {
   font-size: 30px;
 }
 
+.profile-summary-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+.profile-summary-line span + span::before {
+  content: "•";
+  margin-right: 10px;
+  color: var(--accent);
+}
+
 .home-profile-card h2,
 .profile-hero-card h2 {
   font-size: 26px;
