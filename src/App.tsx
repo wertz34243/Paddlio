@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type TouchEvent } from "react";
 import { APP_NAME, APP_SLOGAN, APP_VERSION } from "./brand";
 import { LoadingState } from "./components/AppSupport";
 import { Icon, type IconName } from "./components/Icon";
@@ -161,6 +161,7 @@ function AppContent() {
   const { session, data, setData, profile: cloudProfile, loading, cloudStatus, cloudMessage, syncCount, pendingSyncCount, lastSyncAt, signIn, signUp, signOut, resetPassword } = useAuth();
   const [activePage, setActivePage] = useState<PageId>("dashboard");
   const [trainingSegment, setTrainingSegment] = useState<TrainingSegment>("overview");
+  const [trainingSwipeStart, setTrainingSwipeStart] = useState<{ x: number; y: number } | null>(null);
   const [competitionSegment, setCompetitionSegment] = useState<CompetitionSegment>("races");
   const [analysisSegment, setAnalysisSegment] = useState<AnalysisSegment>("overview");
   const [moreSegment, setMoreSegment] = useState<MoreSegment>("profile");
@@ -608,6 +609,12 @@ function AppContent() {
             onToggleDone={togglePlanEntryDone}
             onFeedbackSave={saveTrainingFeedback}
             onDataChange={updateData}
+            onOpenOverview={() => setTrainingSegment("overview")}
+            onOpenSessions={() => {
+              setTrainingSegment("sessions");
+              setNewTrainingSignal((value) => value + 1);
+            }}
+            onOpenJournal={() => setTrainingSegment("journal")}
           />
         );
       case "journal":
@@ -659,8 +666,35 @@ function AppContent() {
     }
   };
 
+  const moveTrainingSegment = (direction: 1 | -1) => {
+    const order: TrainingSegment[] = ["overview", "plan", "sessions", "journal"];
+    const currentIndex = order.indexOf(trainingSegment);
+    const nextIndex = Math.min(order.length - 1, Math.max(0, currentIndex + direction));
+    if (nextIndex !== currentIndex) {
+      setTrainingSegment(order[nextIndex]);
+      setActivePage("training");
+    }
+  };
+
+  const handleTrainingTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement;
+    if (target.closest("button, input, textarea, select, a")) return;
+    const touch = event.touches[0];
+    setTrainingSwipeStart({ x: touch.clientX, y: touch.clientY });
+  };
+
+  const handleTrainingTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
+    if (!trainingSwipeStart) return;
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - trainingSwipeStart.x;
+    const dy = touch.clientY - trainingSwipeStart.y;
+    setTrainingSwipeStart(null);
+    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+    moveTrainingSegment(dx < 0 ? 1 : -1);
+  };
+
   const renderTrainingArea = (segment: TrainingSegment = trainingSegment) => (
-    <div className="category-shell more-category-shell">
+    <div className="category-shell more-category-shell" onTouchStart={handleTrainingTouchStart} onTouchEnd={handleTrainingTouchEnd}>
       <SegmentNav
         label="Training Kategorien"
         items={trainingSegments}

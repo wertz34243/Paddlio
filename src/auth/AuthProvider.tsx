@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Session, User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase, getSupabaseClient } from "../lib/supabase";
 import { getSupabaseConfigMessage, isSupabaseConfigured } from "../lib/supabaseConfig";
@@ -398,6 +398,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
   const [lastSyncAt, setLastSyncAt] = useState("");
   const [cloudMessage, setCloudMessage] = useState("");
+  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const syncRunningRef = useRef(false);
+  const latestSyncDataRef = useRef<PaddleMotionData | null>(null);
 
   const refreshCloudData = async () => {
     if (!isSupabaseConfigured || !supabase) {
@@ -617,26 +620,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const scheduleCloudSnapshotSync = (next: PaddleMotionData, activeProfile: CloudProfile) => {
+    latestSyncDataRef.current = next;
+    if (syncTimeoutRef.current) window.clearTimeout(syncTimeoutRef.current);
+
+    const pending = getPendingSyncCount();
+    setPendingSyncCount(pending);
+    setCloudStatus(pending > 0 ? "pending" : "syncing");
+    setCloudMessage("Änderungen lokal gespeichert. Cloud-Sync wird vorbereitet.");
+
+    syncTimeoutRef.current = window.setTimeout(() => {
+      if (syncRunningRef.current || !latestSyncDataRef.current) return;
+      const snapshot = latestSyncDataRef.current;
+      latestSyncDataRef.current = null;
+      syncRunningRef.current = true;
+
+      void syncDataSnapshotToCloud(snapshot, activeProfile, activeProfile.club_id ?? undefined)
+        .then((count) => {
+          const nextPending = getPendingSyncCount();
+          setPendingSyncCount(nextPending);
+          setLastSyncAt(new Date().toISOString());
+          setSyncCount(count + nextPending);
+          setCloudStatus(nextPending > 0 ? "pending" : "connected");
+          setCloudMessage(nextPending > 0 ? `${nextPending} Änderungen warten auf Synchronisation.` : "Gespeichert und synchronisiert.");
+        })
+        .catch((error) => {
+          logCloudError("Änderungen speichern", error);
+          setCloudStatus(navigator.onLine ? "error" : "offline");
+          setCloudMessage(`Änderungen wurden lokal gespeichert und werden später synchronisiert. ${describeCloudError(error)}`);
+        })
+        .finally(() => {
+          syncRunningRef.current = false;
+          if (latestSyncDataRef.current && profile) scheduleCloudSnapshotSync(latestSyncDataRef.current, profile);
+        });
+    }, 900);
+  };
+
+  useEffect(() => () => {
+    if (syncTimeoutRef.current) window.clearTimeout(syncTimeoutRef.current);
+  }, []);
+
   const setData: AuthContextValue["setData"] = (updater) => {
     setDataState((current) => {
       const next = typeof updater === "function" ? updater(current) : updater;
       if (next && currentUser) {
         saveData(currentUser.id, next);
         if (profile && navigator.onLine) {
-          void syncDataSnapshotToCloud(next, profile, profile.club_id ?? undefined)
-            .then((count) => {
-              const pending = getPendingSyncCount();
-              setPendingSyncCount(pending);
-              setLastSyncAt(new Date().toISOString());
-              setSyncCount(count + pending);
-              setCloudStatus(pending > 0 ? "pending" : "connected");
-              if (count > 0) setCloudMessage("Synchronisiert.");
-            })
-            .catch((error) => {
-              logCloudError("Änderungen speichern", error);
-              setCloudStatus(navigator.onLine ? "error" : "offline");
-              setCloudMessage(`Änderungen wurden lokal gespeichert und werden später synchronisiert. ${describeCloudError(error)}`);
-            });
+          scheduleCloudSnapshotSync(next, profile);
         }
       }
       return next;

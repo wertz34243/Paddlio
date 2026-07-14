@@ -50,6 +50,9 @@ type PlanViewProps = {
   onToggleDone: (id: string) => void;
   onFeedbackSave: (feedback: Omit<TrainingFeedback, "id" | "completedAt"> & { id?: string }) => void;
   onDataChange: (updater: (current: PaddleMotionData) => PaddleMotionData) => void;
+  onOpenOverview: () => void;
+  onOpenSessions: () => void;
+  onOpenJournal: () => void;
 };
 
 type CalendarView = "day" | "week" | "month" | "list";
@@ -195,7 +198,19 @@ const getDateOffset = (from: string, to: string): number =>
 const parseTags = (value: string): string[] =>
   value.split(",").map((tag) => tag.trim()).filter(Boolean);
 
-export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, onFeedbackSave, onDataChange }: PlanViewProps) {
+export function PlanView({
+  data,
+  entries,
+  user,
+  onSave,
+  onDelete,
+  onToggleDone,
+  onFeedbackSave,
+  onDataChange,
+  onOpenOverview,
+  onOpenSessions,
+  onOpenJournal,
+}: PlanViewProps) {
   const [draft, setDraft] = useState<PlanDraft | null>(null);
   const [templateDraft, setTemplateDraft] = useState<TrainingTemplate | null>(null);
   const [calendarView, setCalendarView] = useState<CalendarView>("week");
@@ -723,6 +738,18 @@ export function PlanView({ data, entries, user, onSave, onDelete, onToggleDone, 
           {isCoach ? <button type="button" onClick={startTemplateCreate}>Vorlage erstellen</button> : null}
         </div>
       </section>
+
+      <div className="training-journal-actions" aria-label="Trainingsplan Navigation">
+        <button type="button" className="secondary-button" onClick={onOpenOverview} aria-label="Zur Training-Übersicht zurückkehren">
+          Zur Übersicht
+        </button>
+        <button type="button" className="secondary-button" onClick={onOpenSessions} aria-label="Freies Training aus dem Trainingsplan eintragen">
+          Freies Training
+        </button>
+        <button type="button" className="secondary-button" onClick={onOpenJournal} aria-label="Vom Trainingsplan zum Trainingstagebuch wechseln">
+          Trainingstagebuch
+        </button>
+      </div>
 
       <nav className="calendar-view-tabs workflow-tabs" aria-label="Trainingsplanung Bereiche">
         {workflowTabs.map((tab) => (
