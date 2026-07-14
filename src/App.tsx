@@ -1274,7 +1274,6 @@ function AppContent() {
       ) : null}
 
       <main className="page-content" id="main">{renderPage()}</main>
-      <CloudStatusBadgeStable status={cloudStatus} syncCount={syncCount} pendingSyncCount={pendingSyncCount} lastSyncAt={lastSyncAt} isAdmin={activeUser.role === "admin"} message={cloudMessage} />
 
       <nav className={bottomNavVisible ? "bottom-nav is-visible" : "bottom-nav is-hidden"} aria-label="Hauptnavigation">
         {navItems.map((item) => (
@@ -1311,34 +1310,4 @@ function App() {
   );
 }
 
-function CloudStatusBadgeStable({ status, syncCount, pendingSyncCount, lastSyncAt, isAdmin, message }: { status: string; syncCount: number; pendingSyncCount: number; lastSyncAt: string; isAdmin: boolean; message: string }) {
-  const syncLabel = lastSyncAt ? new Date(lastSyncAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) : "";
-  const label =
-    status === "connected" ? "Synchronisiert" :
-      status === "syncing" ? "Sync läuft..." :
-        status === "pending" ? "Sync ausstehend" :
-          status === "limited" ? "Cloud eingeschränkt" :
-            status === "offline" ? "Offline" :
-              status === "error" ? "Nicht synchronisiert" :
-                "Lokal";
-  const userMessage =
-    status === "connected" ? (syncLabel ? `Synchronisiert um ${syncLabel}.` : "Deine Daten sind synchronisiert.") :
-      status === "syncing" ? "Änderungen werden gerade abgeglichen." :
-        status === "pending" ? "Änderungen warten auf Synchronisation." :
-          status === "limited" ? "Die App ist nutzbar, einige Zusatzbereiche konnten nicht synchronisiert werden." :
-            status === "error" ? "Profil, Training oder Kernspeicher konnten nicht sicher synchronisiert werden." :
-              status === "offline" ? "Du bist offline. Änderungen werden später synchronisiert." :
-                "Lokaler Modus aktiv.";
-  const dot = status === "connected" ? "green" : status === "syncing" || status === "pending" || status === "limited" ? "yellow" : "red";
-  return (
-    <div className={"cloud-status " + dot}>
-      <span>{label}</span>
-      {userMessage ? <small>{userMessage}</small> : null}
-      {pendingSyncCount > 0 ? <small>{pendingSyncCount} Änderungen warten auf Synchronisation</small> : null}
-      {isAdmin && status === "syncing" ? <small>Synchronisiere Datensätze...</small> : null}
-      {isAdmin && status === "connected" ? <small>{syncCount} Datensätze bestätigt</small> : null}
-      {message && (isAdmin || status === "error") ? <small>{message}</small> : null}
-    </div>
-  );
-}
 export default App;
