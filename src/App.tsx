@@ -59,6 +59,8 @@ type CompetitionSegment = "races" | "results" | "bests" | "stats" | "advanced" |
 type AnalysisSegment = "overview" | "smartCoach" | "training" | "competition" | "goals" | "load" | "boats" | "season" | "coach" | "admin";
 type MoreSegment = "profile" | "club" | "competitions" | "equipment" | "goals" | "records" | "notifications" | "integrations" | "feedback" | "betaGuide" | "limitations" | "beta" | "betaTesters" | "coach" | "settings";
 type MoreSegmentMeta = SegmentItem<MoreSegment> & { description: string; icon: IconName };
+type MoreGroupKind = "account" | "sport" | "team" | "beta" | "admin" | "system";
+type SmartMoreItem = MoreSegmentMeta & { kind: MoreGroupKind; priority?: boolean; badge?: string };
 
 const navItems: Array<{ id: PageId; label: string; icon: IconName }> = [
   { id: "dashboard", label: "Heute", icon: "home" },
@@ -893,12 +895,73 @@ function AppContent() {
     ...moreSegmentMeta[item.id],
   }));
 
-  const moreGroups: Array<{ title: string; items: MoreSegment[]; includeTeam?: boolean }> = [
-    { title: "Mein Konto", items: ["profile", "settings"] },
-    { title: "Sport", items: ["equipment", "goals", "records", "competitions"] },
-    { title: "Verein", items: ["club", "coach"], includeTeam: true },
-    { title: "Beta", items: ["notifications", "feedback", "betaGuide", "limitations", "integrations", "beta", "betaTesters"] },
-  ];
+  const moreGroupBySegment: Record<MoreSegment, MoreGroupKind> = {
+    profile: "account",
+    settings: "account",
+    equipment: "sport",
+    goals: "sport",
+    records: "sport",
+    competitions: "sport",
+    club: "team",
+    coach: activeUser.role === "admin" ? "admin" : "team",
+    notifications: "beta",
+    feedback: "beta",
+    betaGuide: "beta",
+    limitations: "beta",
+    integrations: "system",
+    beta: "admin",
+    betaTesters: "admin",
+  };
+  const morePrioritySegments = new Set<MoreSegment>(activeUser.role === "admin"
+    ? ["profile", "settings", "feedback", "beta", "coach"]
+    : canUseCoachArea(activeUser.role)
+      ? ["profile", "settings", "coach", "feedback"]
+      : ["profile", "settings", "goals", "feedback"]);
+  const moreGroupLabels: Record<MoreGroupKind, string> = {
+    account: "Mein Konto",
+    sport: "Sport",
+    team: "Team & Verein",
+    beta: "Beta & Hilfe",
+    admin: "Admin",
+    system: "System",
+  };
+  const moreGroupSubtitles: Record<MoreGroupKind, string> = {
+    account: "Profil und App",
+    sport: "Training, Ziele und Wettkampf",
+    team: canUseCoachArea(activeUser.role) ? "Organisation" : "Kontakt zum Team",
+    beta: "Hilfe und Rückmeldung",
+    admin: "Kontrolle und Freigabe",
+    system: "Verbindungen und Import",
+  };
+  const smartMoreItems: SmartMoreItem[] = moreItems.map((item) => ({
+    ...item,
+    kind: moreGroupBySegment[item.id],
+    priority: morePrioritySegments.has(item.id),
+    badge: item.id === "notifications" && unreadNotificationCount > 0 ? String(unreadNotificationCount) : undefined,
+  }));
+  const smartMoreGroups = smartMoreItems.reduce<Record<MoreGroupKind, SmartMoreItem[]>>(
+    (groups, item) => {
+      groups[item.kind].push(item);
+      return groups;
+    },
+    { account: [], sport: [], team: [], beta: [], admin: [], system: [] },
+  );
+  const smartPriorityItems = smartMoreItems.filter((item) => item.priority).slice(0, 4);
+  const moreRoleTitle = activeUser.role === "admin" ? "Admin Hub" : canUseCoachArea(activeUser.role) ? "Coach Hub" : "Mehr";
+  const moreRoleSubtitle = activeUser.role === "admin"
+    ? "Nutzer, Rollen, Beta-Status und App-Bereiche sauber getrennt."
+    : canUseCoachArea(activeUser.role)
+      ? "Team, Planung, Rückmeldungen und eigene Einstellungen an einem Ort."
+      : "Alles Wichtige für dein Training ohne Coach- oder Admin-Ballast.";
+  const moreHelper = activeUser.role === "admin"
+    ? "Admins sehen alles, aber zuerst die wichtigsten Kontrollpunkte."
+    : canUseCoachArea(activeUser.role)
+      ? "Trainer bekommen Teamfunktionen, aber keine Admin-Verwaltung."
+      : "Sportler sehen hier nur Bereiche, die sie wirklich brauchen.";
+  const openMoreItem = (item: SmartMoreItem) => {
+    setMoreSegment(item.id);
+    setActivePage("more");
+  };
 
   const renderMoreArea = (segment: MoreSegment = moreSegment) => (
     <div className="category-shell more-category-shell">
@@ -911,58 +974,105 @@ function AppContent() {
           setActivePage("more");
         }}
       />
-      <div className="more-mobile-grid" aria-label="Mehr Bereiche">
-        {moreGroups.map((group) => {
-          const groupItems = group.items
-            .map((id) => moreItems.find((item) => item.id === id))
-            .filter((item): item is MoreSegmentMeta => Boolean(item));
-
-          if (!group.includeTeam && groupItems.length === 0) {
-            return null;
-          }
-
-          return (
-            <section className="more-mobile-section" key={group.title}>
-              <h2>{group.title}</h2>
-              <div className="more-mobile-section-grid">
-                {group.includeTeam ? (
-                  <button
-                    className={activeNavPage === "communication" ? "more-mobile-card active" : "more-mobile-card"}
-                    type="button"
-                    aria-label="Team-Bereich öffnen"
-                    onClick={() => setActivePage("communication")}
-                  >
-                    <span className="more-menu-icon" aria-hidden="true"><Icon name="message" /></span>
-                    <span>
-                      <strong>Team</strong>
-                      <small>Nachrichten, Aufgaben, Anwesenheit und Gruppen</small>
-                    </span>
-                  </button>
-                ) : null}
-                {groupItems.map((item) => (
-                  <button
-                    className={segment === item.id ? "more-mobile-card active" : "more-mobile-card"}
-                    key={item.id}
-                    type="button"
-                    aria-current={segment === item.id ? "page" : undefined}
-                    aria-label={`${item.label} öffnen`}
-                    onClick={() => {
-                      setMoreSegment(item.id);
-                      setActivePage("more");
-                    }}
-                  >
-                    <span className="more-menu-icon" aria-hidden="true"><Icon name={item.icon} /></span>
-                    <span>
-                      <strong>{item.label}</strong>
-                      <small>{item.description}</small>
-                    </span>
-                  </button>
-                ))}
+      <section className="smart-more-panel" aria-label="Mehr Hub">
+        <header className="smart-more-hero">
+          <div>
+            <p className="eyebrow">Paddlio · Version {APP_VERSION}</p>
+            <h2>{moreRoleTitle}</h2>
+            <p>{moreRoleSubtitle}</p>
+          </div>
+          <div className="smart-profile-pill">
+            <span>{getInitials(activeUser.profile)}</span>
+            <div>
+              <strong>{roleLabelMap[activeUser.role.toLowerCase()] ?? "Sportler"}</strong>
+              <small>{getDisplayName(activeUser.profile)}</small>
+            </div>
+          </div>
+        </header>
+        <p className="smart-more-helper">{moreHelper}</p>
+        {smartPriorityItems.length > 0 ? (
+          <section className="smart-quick-grid" aria-labelledby="smart-quick-title">
+            <div className="section-heading simple">
+              <div>
+                <p className="eyebrow">Schnellzugriff</p>
+                <h2 id="smart-quick-title">Was du wahrscheinlich brauchst</h2>
               </div>
-            </section>
-          );
-        })}
-      </div>
+            </div>
+            <div className="smart-grid">
+              {smartPriorityItems.map((item) => (
+                <button
+                  className={`smart-tile is-featured kind-${item.kind}${segment === item.id ? " active" : ""}`}
+                  type="button"
+                  key={item.id}
+                  aria-current={segment === item.id ? "page" : undefined}
+                  aria-label={`${item.label} öffnen`}
+                  onClick={() => openMoreItem(item)}
+                >
+                  <span className="more-menu-icon smart-icon" aria-hidden="true"><Icon name={item.icon} /></span>
+                  <span className="smart-tile-copy">
+                    <strong>{item.label}{item.badge ? <em>{item.badge}</em> : null}</strong>
+                    <small>{item.description}</small>
+                  </span>
+                  <span className="smart-arrow" aria-hidden="true">›</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : null}
+        <section className="smart-groups" aria-label="Alle Mehr Bereiche">
+          {(Object.keys(smartMoreGroups) as MoreGroupKind[]).map((kind) => {
+            const items = smartMoreGroups[kind];
+            if (items.length === 0) {
+              return null;
+            }
+
+            return (
+              <section className="smart-group" key={kind}>
+                <div className="section-heading simple">
+                  <div>
+                    <p className="eyebrow">{moreGroupLabels[kind]}</p>
+                    <h2>{moreGroupSubtitles[kind]}</h2>
+                  </div>
+                </div>
+                <div className="smart-list">
+                  {kind === "team" ? (
+                    <button
+                      className={activeNavPage === "communication" ? "smart-tile active kind-team" : "smart-tile kind-team"}
+                      type="button"
+                      aria-label="Team-Bereich öffnen"
+                      onClick={() => setActivePage("communication")}
+                    >
+                      <span className="more-menu-icon smart-icon" aria-hidden="true"><Icon name="message" /></span>
+                      <span className="smart-tile-copy">
+                        <strong>Team</strong>
+                        <small>Nachrichten, Aufgaben, Anwesenheit und Gruppen</small>
+                      </span>
+                      <span className="smart-arrow" aria-hidden="true">›</span>
+                    </button>
+                  ) : null}
+                  {items.map((item) => (
+                    <button
+                      className={`smart-tile kind-${item.kind}${segment === item.id ? " active" : ""}`}
+                      key={item.id}
+                      type="button"
+                      aria-current={segment === item.id ? "page" : undefined}
+                      aria-label={`${item.label} öffnen`}
+                      onClick={() => openMoreItem(item)}
+                    >
+                      <span className="more-menu-icon smart-icon" aria-hidden="true"><Icon name={item.icon} /></span>
+                      <span className="smart-tile-copy">
+                        <strong>{item.label}{item.badge ? <em>{item.badge}</em> : null}</strong>
+                        <small>{item.description}</small>
+                      </span>
+                      <span className="smart-arrow" aria-hidden="true">›</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+        </section>
+      </section>
       <div className="segment-content">{renderMoreContent(segment)}</div>
     </div>
   );

@@ -4649,6 +4649,202 @@ body {
   background: rgba(59, 130, 246, 0.18);
 }
 
+.smart-more-panel {
+  display: grid;
+  gap: 24px;
+}
+
+.smart-more-hero,
+.smart-more-helper,
+.smart-group {
+  border: 0;
+  border-radius: var(--radius-card);
+  background: var(--card);
+  box-shadow: var(--shadow-card);
+}
+
+.smart-more-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 20px;
+  align-items: center;
+  padding: 24px;
+}
+
+.smart-more-hero h2 {
+  margin: 0;
+  font-size: clamp(2.25rem, 8vw, 3.6rem);
+  line-height: 0.95;
+  letter-spacing: 0;
+}
+
+.smart-more-hero p {
+  max-width: 42rem;
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.smart-profile-pill {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: min(100%, 18rem);
+  padding: 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.smart-profile-pill > span {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--secondary), var(--accent));
+  color: #03101f;
+  font-weight: 900;
+}
+
+.smart-profile-pill strong,
+.smart-profile-pill small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.smart-profile-pill small {
+  color: var(--muted);
+}
+
+.smart-more-helper {
+  margin: 0;
+  padding: 18px 20px;
+  color: var(--muted);
+}
+
+.smart-quick-grid,
+.smart-groups {
+  display: grid;
+  gap: 20px;
+}
+
+.smart-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.smart-group {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+}
+
+.smart-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.smart-tile {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  min-height: 72px;
+  width: 100%;
+  padding: 14px;
+  border: 0;
+  border-radius: 0;
+  background: rgba(18, 27, 43, 0.88);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.smart-grid .smart-tile {
+  min-height: 122px;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.smart-tile.active,
+.smart-tile:hover,
+.smart-tile:focus-visible {
+  background: rgba(59, 130, 246, 0.18);
+  outline: none;
+}
+
+.smart-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  background: rgba(56, 189, 248, 0.13);
+  color: var(--secondary);
+}
+
+.kind-sport .smart-icon {
+  background: rgba(48, 209, 88, 0.12);
+  color: var(--accent);
+}
+
+.kind-beta .smart-icon {
+  background: rgba(168, 85, 247, 0.14);
+  color: #c084fc;
+}
+
+.kind-admin .smart-icon {
+  background: rgba(255, 159, 10, 0.14);
+  color: var(--warning);
+}
+
+.smart-tile-copy {
+  min-width: 0;
+}
+
+.smart-tile-copy strong,
+.smart-tile-copy small {
+  display: block;
+}
+
+.smart-tile-copy strong {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  line-height: 1.2;
+}
+
+.smart-tile-copy small {
+  margin-top: 4px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.smart-tile-copy em {
+  min-width: 1.35rem;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #03101f;
+  font-style: normal;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.smart-arrow {
+  color: var(--secondary);
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
 @media (min-width: 1080px) {
   .app-shell {
     grid-template-columns: 18rem minmax(0, 1fr);
@@ -4687,6 +4883,12 @@ body {
   }
 
   .home-v5-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .smart-more-hero,
+  .smart-grid,
+  .smart-list {
     grid-template-columns: 1fr;
   }
 
