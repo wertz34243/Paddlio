@@ -4654,6 +4654,16 @@ body {
   gap: 24px;
 }
 
+.more-detail-shell {
+  gap: 20px;
+}
+
+.more-back-button {
+  justify-self: start;
+  min-width: 0;
+  padding-inline: 18px;
+}
+
 .smart-more-hero,
 .smart-more-helper,
 .smart-group {

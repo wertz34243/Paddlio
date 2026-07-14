@@ -174,6 +174,7 @@ function AppContent() {
   const [competitionSegment, setCompetitionSegment] = useState<CompetitionSegment>("races");
   const [analysisSegment, setAnalysisSegment] = useState<AnalysisSegment>("overview");
   const [moreSegment, setMoreSegment] = useState<MoreSegment>("profile");
+  const [moreHubOpen, setMoreHubOpen] = useState(true);
   const [newTrainingSignal, setNewTrainingSignal] = useState(0);
   const [newCompetitionSignal, setNewCompetitionSignal] = useState(0);
   const [journalSignal, setJournalSignal] = useState(0);
@@ -257,11 +258,13 @@ function AppContent() {
     }
 
     setMoreSegment("equipment");
+    setMoreHubOpen(false);
     setActivePage("more");
   };
 
   const openMoreSegment = (segment: DashboardMoreTarget) => {
     setMoreSegment(segment);
+    setMoreHubOpen(false);
     setActivePage("more");
   };
 
@@ -805,6 +808,7 @@ function AppContent() {
                   setActivePage("competitions");
                 } else {
                   setMoreSegment("goals");
+                  setMoreHubOpen(false);
                   setActivePage("more");
                 }
               }}
@@ -960,21 +964,46 @@ function AppContent() {
       : "Sportler sehen hier nur Bereiche, die sie wirklich brauchen.";
   const openMoreItem = (item: SmartMoreItem) => {
     setMoreSegment(item.id);
+    setMoreHubOpen(false);
     setActivePage("more");
   };
 
-  const renderMoreArea = (segment: MoreSegment = moreSegment) => (
+  const openMainNavPage = (page: PageId) => {
+    if (page === "more") {
+      setMoreHubOpen(true);
+    }
+    setActivePage(page);
+  };
+
+  const renderMoreArea = (segment: MoreSegment = moreSegment, forceDetail = false) => {
+    const showHub = moreHubOpen && !forceDetail;
+
+    return (
     <div className="category-shell more-category-shell">
-      <SegmentNav
-        label="Mehr Kategorien"
-        items={moreItems}
-        activeId={segment}
-        onChange={(nextSegment) => {
-          setMoreSegment(nextSegment);
-          setActivePage("more");
-        }}
-      />
-      <section className="smart-more-panel" aria-label="Mehr Hub">
+      {!showHub ? (
+        <>
+          <button
+            className="secondary-button more-back-button"
+            type="button"
+            onClick={() => setMoreHubOpen(true)}
+            aria-label="Zurück zur Mehr-Übersicht"
+          >
+            Zurück zu Mehr
+          </button>
+          <SegmentNav
+            label="Mehr Kategorien"
+            items={moreItems}
+            activeId={segment}
+            onChange={(nextSegment) => {
+              setMoreSegment(nextSegment);
+              setMoreHubOpen(false);
+              setActivePage("more");
+            }}
+          />
+        </>
+      ) : null}
+      {showHub ? (
+        <section className="smart-more-panel" aria-label="Mehr Hub">
         <header className="smart-more-hero">
           <div>
             <p className="eyebrow">Paddlio · Version {APP_VERSION}</p>
@@ -1072,10 +1101,12 @@ function AppContent() {
             );
           })}
         </section>
-      </section>
-      <div className="segment-content">{renderMoreContent(segment)}</div>
+        </section>
+      ) : null}
+      {!showHub ? <div className="segment-content">{renderMoreContent(segment)}</div> : null}
     </div>
-  );
+    );
+  };
 
   const openDirectPage = (page: PageId) => {
     switch (page) {
@@ -1084,13 +1115,13 @@ function AppContent() {
       case "season":
         return renderAnalysisArea("season");
       case "equipment":
-        return renderMoreArea("equipment");
+        return renderMoreArea("equipment", true);
       case "goals":
-        return renderMoreArea("goals");
+        return renderMoreArea("goals", true);
       case "records":
-        return renderMoreArea("records");
+        return renderMoreArea("records", true);
       case "profile":
-        return renderMoreArea("profile");
+        return renderMoreArea("profile", true);
       default:
         return null;
     }
@@ -1103,7 +1134,7 @@ function AppContent() {
           <DashboardView
             data={data}
             user={activeUser}
-            onNavigate={setActivePage}
+            onNavigate={openMainNavPage}
             onOpenMoreSegment={openMoreSegment}
             onOpenSmartCoach={() => {
               setAnalysisSegment("smartCoach");
@@ -1165,7 +1196,7 @@ function AppContent() {
               className={activeNavPage === item.id ? "desktop-nav-item active" : "desktop-nav-item"}
               key={item.id}
               type="button"
-              onClick={() => setActivePage(item.id)}
+              onClick={() => openMainNavPage(item.id)}
               aria-current={activeNavPage === item.id ? "page" : undefined}
             >
               <span className="desktop-nav-icon" aria-hidden="true">
@@ -1198,7 +1229,7 @@ function AppContent() {
             className={activeNavPage === item.id ? "nav-item active" : "nav-item"}
             key={item.id}
             type="button"
-            onClick={() => setActivePage(item.id)}
+            onClick={() => openMainNavPage(item.id)}
             aria-current={activeNavPage === item.id ? "page" : undefined}
             aria-label={
               item.id === "dashboard" ? "Zur Heute-Übersicht wechseln" :
