@@ -9,6 +9,11 @@ import {
   getTrainingsForCurrentUser,
 } from "../domain/accessControl";
 import {
+  addCalendarDays,
+  getCalendarDayOffset,
+  getDateParts,
+  getLocalDateKey,
+  getTodayKey,
   getWeekdayFromDate,
   isDoneStatus,
   isPlannedStatus,
@@ -80,7 +85,7 @@ const athleteWorkflowTabs: WorkflowTabConfig[] = [
   { id: "feedback", label: "Rückmeldung" },
 ];
 
-const today = new Date().toISOString().slice(0, 10);
+const today = getTodayKey();
 
 const statusLabel: Record<PlanStatus, string> = {
   planned: "Geplant",
@@ -151,30 +156,28 @@ const emptyDraft = (user: User, athleteId: string): PlanDraft => ({
 });
 
 const getMonday = (date: string): Date => {
-  const [year, month, day] = date.split("-").map(Number);
+  const [year, month, day] = getDateParts(date);
   const current = new Date(year, month - 1, day);
   const weekday = current.getDay() || 7;
   current.setDate(current.getDate() - weekday + 1);
   return current;
 };
 
-const formatDateKey = (date: Date): string => date.toISOString().slice(0, 10);
-
 const getWeekDates = (date: string): string[] => {
   const monday = getMonday(date);
   return weekdays.map((_, index) => {
     const day = new Date(monday);
     day.setDate(monday.getDate() + index);
-    return formatDateKey(day);
+    return getLocalDateKey(day);
   });
 };
 
 const getMonthDates = (date: string): string[] => {
-  const [year, month] = date.split("-").map(Number);
+  const [year, month] = getDateParts(date);
   const cursor = new Date(year, month - 1, 1);
   const dates: string[] = [];
   while (cursor.getMonth() === month - 1) {
-    dates.push(formatDateKey(cursor));
+    dates.push(getLocalDateKey(cursor));
     cursor.setDate(cursor.getDate() + 1);
   }
   return dates;
@@ -186,14 +189,9 @@ const getEntryStatusClass = (status: PlanStatus): string =>
 const includesBoat = (entry: PlanEntry, boat: string): boolean =>
   boat === "all" || entry.boatClass === boat || (boat === "K1" && entry.boatClass === "K1+C1") || (boat === "C1" && entry.boatClass === "K1+C1");
 
-const addDays = (date: string, days: number): string => {
-  const next = new Date(`${date}T00:00:00`);
-  next.setDate(next.getDate() + days);
-  return formatDateKey(next);
-};
+const addDays = addCalendarDays;
 
-const getDateOffset = (from: string, to: string): number =>
-  Math.round((new Date(`${to}T00:00:00`).getTime() - new Date(`${from}T00:00:00`).getTime()) / 86400000);
+const getDateOffset = getCalendarDayOffset;
 
 const parseTags = (value: string): string[] =>
   value.split(",").map((tag) => tag.trim()).filter(Boolean);

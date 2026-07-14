@@ -2,10 +2,12 @@ import { getSupabaseClient } from "../lib/supabase";
 import type { PlanEntry, TrainingFeedback, Weekday } from "../domain/types";
 import { enqueueSyncChange } from "./syncService";
 import { sanitizeCloudPayload, toCloudUuid, toCloudUuidOrNull } from "./cloudIds";
+import { getDateParts } from "../domain/trainingPlan";
 
 const toWeekday = (date: string): Weekday => {
   const labels: Weekday[] = ["Sonntag" as Weekday, "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
-  return labels[new Date(`${date}T00:00:00`).getDay()] ?? "Montag";
+  const [year, month, day] = getDateParts(date);
+  return labels[new Date(year, month - 1, day).getDay()] ?? "Montag";
 };
 
 export const toCloudTraining = (entry: PlanEntry) => ({

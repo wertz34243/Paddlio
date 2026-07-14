@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { getTrainingLoad, isDateInCurrentWeek } from "../domain/metrics";
+import { getTodayKey } from "../domain/trainingPlan";
 import type { TrainingJournalEntry, TrainingSession, TrainingType } from "../domain/types";
 
 type TrainingDraft = Omit<TrainingSession, "athleteId" | "createdAt" | "updatedAt">;
@@ -24,7 +25,7 @@ const trainingTypes: TrainingType[] = ["K1", "C1", "Ausdauer", "Kraft", "Technik
 
 const emptyDraft: TrainingDraft = {
   id: "",
-  date: new Date().toISOString().slice(0, 10),
+  date: getTodayKey(),
   type: "Technik",
   durationMinutes: 60,
   rpe: 6,
@@ -33,7 +34,7 @@ const emptyDraft: TrainingDraft = {
 };
 
 const toNumber = (value: FormDataEntryValue | null): number => Number(value ?? 0);
-const todayKey = (): string => new Date().toISOString().slice(0, 10);
+const todayKey = getTodayKey;
 
 const intensityFromRpe = (rpe: number): string => {
   if (rpe >= 9) return "maximal";

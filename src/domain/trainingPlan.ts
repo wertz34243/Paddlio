@@ -53,12 +53,12 @@ export const trainingTypeGroups: Record<TrainingArea, TrainingPlanType[]> = {
 
 export const trainingAreas = Object.keys(trainingTypeGroups) as TrainingArea[];
 
-const getDateParts = (date: string): [number, number, number] => {
+export const getDateParts = (date: string): [number, number, number] => {
   const [year, month, day] = date.split("-").map(Number);
   return [year, month, day];
 };
 
-const formatBerlinDateKey = (date: Date): string => {
+export const formatBerlinDateKey = (date: Date): string => {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Europe/Berlin",
     year: "numeric",
@@ -92,6 +92,28 @@ export const isPauseEntry = (entry: PlanEntry): boolean =>
   entry.area === "Regeneration" && entry.trainingType === "Pause";
 
 export const getTodayKey = (date = new Date()): string => formatBerlinDateKey(date);
+
+export const getLocalDateKey = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+export const addCalendarDays = (date: string, days: number): string => {
+  const [year, month, day] = getDateParts(date);
+  const next = new Date(year, month - 1, day);
+  next.setDate(next.getDate() + days);
+  return getLocalDateKey(next);
+};
+
+export const getCalendarDayOffset = (from: string, to: string): number => {
+  const [fromYear, fromMonth, fromDay] = getDateParts(from);
+  const [toYear, toMonth, toDay] = getDateParts(to);
+  const fromTime = new Date(fromYear, fromMonth - 1, fromDay).getTime();
+  const toTime = new Date(toYear, toMonth - 1, toDay).getTime();
+  return Math.round((toTime - fromTime) / 86400000);
+};
 
 export const isPlannedStatus = (status: PlanStatus): boolean => status === "planned" || status === "geplant" || status === "in_progress";
 
