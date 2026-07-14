@@ -66,7 +66,6 @@ export function SettingsView({ user, syncStatus, onSave, onLogout }: SettingsVie
           {profileImageDataUrl ? <img src={profileImageDataUrl} alt="" /> : getInitials(user.profile)}
         </div>
         <div>
-          <p className="eyebrow">Einstellungen</p>
           <h2>App und Profilbild</h2>
           <span>{user.profile.club || "Kein Verein"}</span>
         </div>
