@@ -4309,3 +4309,406 @@ html {
     height: 92px;
   }
 }
+
+/* Paddlio 5.0 - Apple Fitness / Polar Flow inspired redesign */
+:root {
+  --background: #050814;
+  --background-deep: #02040a;
+  --card: rgba(18, 27, 43, 0.78);
+  --card-strong: rgba(22, 34, 54, 0.9);
+  --surface: rgba(255, 255, 255, 0.055);
+  --primary: #3b82f6;
+  --secondary: #38bdf8;
+  --accent: #30d158;
+  --success: #30d158;
+  --warning: #ff9f0a;
+  --danger: #ff453a;
+  --text: #f8fafc;
+  --muted: #b9c3d2;
+  --faint: #7f8da3;
+  --border: rgba(255, 255, 255, 0.08);
+  --radius-card: 22px;
+  --space-page: 24px;
+  --space-card: 20px;
+  --space-section: 32px;
+  --shadow-card: 0 22px 60px rgba(0, 0, 0, 0.36);
+}
+
+html,
+body,
+#root {
+  background:
+    radial-gradient(circle at 20% 0%, rgba(59, 130, 246, 0.18), transparent 34rem),
+    radial-gradient(circle at 92% 10%, rgba(48, 209, 88, 0.1), transparent 28rem),
+    linear-gradient(180deg, var(--background), var(--background-deep));
+}
+
+body {
+  font-size: 16px;
+  color: var(--text);
+}
+
+.app-shell {
+  gap: var(--space-section);
+  padding: calc(18px + env(safe-area-inset-top)) var(--space-page) calc(98px + env(safe-area-inset-bottom));
+}
+
+.page-content,
+.stack,
+.segment-content {
+  gap: var(--space-section);
+}
+
+.home-v5 {
+  max-width: 980px;
+  margin-inline: auto;
+}
+
+.home-v5-hero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  padding: 2px 0 0;
+}
+
+.home-v5-hero h1,
+.home-profile-card h1,
+.premium-hero h1 {
+  margin: 0;
+  font-size: clamp(2.25rem, 8vw, 3.6rem);
+  line-height: 0.95;
+  letter-spacing: 0;
+}
+
+.home-v5-hero .home-avatar {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  box-shadow: 0 20px 44px rgba(59, 130, 246, 0.3);
+}
+
+.home-welcome-line,
+.hero-slogan,
+.home-v5-training p,
+.home-v5-training span,
+.muted,
+.card-note {
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.home-welcome-line {
+  margin-top: 8px;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.eyebrow {
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0;
+}
+
+.home-v5-training,
+.home-v5-section,
+.home-profile-card,
+.profile-hero-card,
+.section-block,
+.motivation-card,
+.app-card,
+.chart-panel,
+.competition-timeline-item,
+.result-card,
+.club-card,
+.feedback-card,
+.smart-recommendation,
+.analysis-panel,
+.admin-card,
+.beta-card,
+.journal-form,
+.communication-contact,
+.chat-panel,
+.entry-form,
+.training-plan-card {
+  border: 0;
+  border-radius: var(--radius-card);
+  background: var(--card);
+  box-shadow: var(--shadow-card);
+}
+
+.home-v5-training {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 20px;
+  align-items: end;
+  padding: 28px;
+}
+
+.home-v5-training h2,
+.section-heading h2,
+.section-heading h3 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.home-v5-training h2 {
+  font-size: clamp(2rem, 8vw, 3rem);
+}
+
+.home-v5-training span {
+  display: block;
+  max-width: 42rem;
+  color: var(--muted);
+}
+
+.home-v5-section {
+  padding: 24px;
+}
+
+.section-heading.simple {
+  align-items: end;
+  margin-bottom: 18px;
+}
+
+.section-heading.simple > strong {
+  font-size: clamp(2rem, 8vw, 3.2rem);
+  line-height: 1;
+}
+
+.home-v5-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dashboard-card-grid,
+.metric-grid {
+  gap: 20px;
+}
+
+.app-card {
+  min-height: 190px;
+  padding: var(--space-card);
+  overflow: hidden;
+}
+
+.app-card-accent {
+  width: 4px;
+  opacity: 0.9;
+}
+
+.app-card-head h3 {
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.app-card-value,
+.metric-card strong {
+  font-size: clamp(1.9rem, 7vw, 3rem);
+  line-height: 1;
+}
+
+.save-button,
+.primary-button,
+.secondary-button,
+.ghost-button,
+.quick-actions button,
+.entry-form button {
+  min-height: 52px;
+  border-radius: 999px;
+  font-size: 16px;
+}
+
+.save-button,
+.primary-button {
+  background: linear-gradient(135deg, var(--secondary), rgba(48, 209, 88, 0.95));
+  color: #03101f;
+  box-shadow: 0 16px 36px rgba(48, 209, 88, 0.2);
+}
+
+.ghost-button,
+.secondary-button {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text);
+}
+
+.bottom-nav {
+  right: 14px;
+  left: 14px;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  width: auto;
+  min-height: 78px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 28px;
+  background: rgba(5, 8, 20, 0.88);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(18px);
+}
+
+.bottom-nav button {
+  gap: 5px;
+  min-height: 58px;
+  border-radius: 22px;
+}
+
+.bottom-nav button.active {
+  background: rgba(59, 130, 246, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.28);
+}
+
+.nav-icon {
+  width: 34px;
+  height: 34px;
+}
+
+.nav-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.cloud-status {
+  right: 18px;
+  left: auto;
+  bottom: calc(92px + env(safe-area-inset-bottom));
+  max-width: min(360px, calc(100% - 36px));
+  border: 0;
+  border-radius: 22px;
+  background: rgba(5, 8, 20, 0.86);
+  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.4);
+  animation: paddlio-toast-out 3.2s ease forwards;
+}
+
+@keyframes paddlio-toast-out {
+  0%,
+  78% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+  }
+}
+
+.segment-nav,
+.tab-bar {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.045);
+  padding: 5px;
+}
+
+.segment-nav button,
+.tab-bar button {
+  border-radius: 999px;
+  min-height: 46px;
+}
+
+.communication-layout {
+  gap: 20px;
+}
+
+.communication-contact {
+  min-height: 68px;
+  border-radius: 0;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: transparent;
+  box-shadow: none;
+}
+
+.communication-contact.active {
+  background: rgba(59, 130, 246, 0.16);
+}
+
+.more-mobile-section {
+  gap: 10px;
+}
+
+.more-mobile-section h2 {
+  margin: 10px 4px 2px;
+  font-size: 0.78rem;
+  color: var(--faint);
+}
+
+.more-mobile-section-grid {
+  gap: 1px;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.more-mobile-card {
+  position: relative;
+  min-height: 62px;
+  border: 0;
+  border-radius: 0;
+  background: rgba(18, 27, 43, 0.9);
+  box-shadow: none;
+}
+
+.more-mobile-card::after {
+  content: "›";
+  margin-left: auto;
+  color: var(--faint);
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.more-mobile-card.active {
+  background: rgba(59, 130, 246, 0.18);
+}
+
+@media (min-width: 1080px) {
+  .app-shell {
+    grid-template-columns: 18rem minmax(0, 1fr);
+    max-width: 1440px;
+    padding: 24px;
+  }
+
+  .desktop-side-nav,
+  .desktop-user-card {
+    border-radius: var(--radius-card);
+  }
+
+  .cloud-status {
+    bottom: 24px;
+  }
+}
+
+@media (max-width: 720px) {
+  :root {
+    --space-page: 18px;
+    --space-section: 24px;
+  }
+
+  .app-shell {
+    padding-inline: var(--space-page);
+  }
+
+  .home-v5-hero {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .home-v5-training {
+    grid-template-columns: 1fr;
+    padding: 24px;
+  }
+
+  .home-v5-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .app-card {
+    min-height: 148px;
+  }
+
+  .bottom-nav {
+    right: 10px;
+    left: 10px;
+  }
+}

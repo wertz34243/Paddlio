@@ -5,11 +5,19 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui", "browser"],
+  "display_override": [
+    "standalone",
+    "minimal-ui",
+    "browser"
+  ],
   "orientation": "portrait-primary",
   "theme_color": "#07111F",
   "background_color": "#07111F",
-  "categories": ["sports", "health", "productivity"],
+  "categories": [
+    "sports",
+    "health",
+    "productivity"
+  ],
   "lang": "de",
   "dir": "ltr",
   "icons": [

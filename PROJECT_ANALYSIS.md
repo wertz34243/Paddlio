@@ -1,5 +1,19 @@
 # Paddlio Project Analysis
 
+## Stand Version 5.0.0
+
+Paddlio 5.0 ist ein UI-/UX-Redesign auf Basis der bestehenden React/Vite/TypeScript-PWA. Die Fachlogik, Supabase-Synchronisierung, Rollen, Training, Team, Analyse und Mehr-Bereiche bleiben erhalten; der Schwerpunkt liegt auf einem ruhigeren Premium-Sport-App-Design im Stil von Apple Fitness, Apple Health, Polar Flow und Garmin Connect.
+
+Die neue Startseite zeigt bewusst weniger Informationen: Begrüßung, Datum, heutiges Training, Wochenziel, letzte Einheit, Trainer-Nachrichten und Feedback. Weitere Informationen bleiben eine Ebene tiefer in Training, Analyse, Team und Mehr.
+
+Designstand:
+
+- Zentrale 5.0 Design-Tokens in `src/styles.css` für dunklen Verlauf, blaue Primärfarbe, grüne Akzente, Warn-/Fehlerfarben, 22px Radius, größere Abstände und weichere Schatten.
+- Heute-Seite in `src/views/DashboardView.tsx` neu priorisiert und deutlich reduziert.
+- Mobile Bottom Navigation bleibt bei Heute, Training, Analyse, Team und Mehr, wirkt aber größer und klarer.
+- `Mehr` wirkt auf Mobile stärker wie eine Einstellungs-/Listenansicht statt wie ein Dashboard.
+- CloudStatus wird als kurzer Toast am unteren Bildschirmrand dargestellt.
+
 ## Stand Version 4.1.5
 
 Paddlio ist eine React/Vite/TypeScript-PWA für Kanuslalom mit Supabase Auth und Supabase als Hauptspeicher für die Plattformbereiche. LocalStorage bleibt als Cache und Offline-Fallback erhalten.

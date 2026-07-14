@@ -4,7 +4,17 @@ Paddlio ist eine moderne Trainings- und Wettkampfplattform für Kanuslalom.
 
 **Train. Analyze. Improve.**
 
-Version 4.1.3 ist der Schema-Sync- und Encoding-Hotfix auf Basis des Dark-Water-Performance-Designs. Paddlio kombiniert Training, Wettkämpfe, Analyse, Material, Profil, Kommunikation, Verein, Aufgaben, Anwesenheit, Beta-Feedback und regelbasierte Athlete Intelligence in einer mobilen Web-App.
+Version 5.0.0 führt ein Premium-Sport-App-Redesign im Stil von Apple Fitness, Apple Health, Polar Flow und Garmin Connect ein. Paddlio kombiniert Training, Wettkämpfe, Analyse, Material, Profil, Team, Verein, Aufgaben, Anwesenheit, Beta-Feedback und regelbasierte Athlete Intelligence in einer mobilen Web-App.
+
+## Version 5.0.0 - Premium Sport App Redesign
+
+- Neue 5.0 Design-Tokens für Farben, Abstände, Typografie, Radius, Schatten, Buttons, Tabs und Navigation.
+- Heute-Seite stark reduziert: Training heute, Wochenziel, letzte Einheit, Trainer-Nachrichten und Feedback.
+- Weniger Karten, mehr Weißraum und ruhigere Flächen.
+- Mobile Bottom Navigation bleibt, wirkt aber größer und klarer.
+- Mehr nutzt auf Mobile eine gruppierte Einstellungs-/Listenansicht.
+- CloudStatus wird als kurzer Toast unten angezeigt.
+- Keine SQL-Migration nötig.
 
 ## Datenschutz und Auth
 

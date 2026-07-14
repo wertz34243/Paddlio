@@ -1,5 +1,15 @@
 # Changelog
 
+## 5.0.0
+
+- Introduced a new Apple Fitness / Polar Flow inspired design direction.
+- Reduced the Heute dashboard to the essential daily information: greeting, date, today's training, weekly goal, last session, trainer messages and feedback.
+- Added central 5.0 design tokens for spacing, typography, colors, 22px cards, shadows, buttons, tab bars, bottom navigation and CloudStatus toast behavior.
+- Made the mobile bottom navigation larger and clearer while keeping the existing five main areas.
+- Restyled the mobile `Mehr` area into an Apple Settings style grouped list.
+- Updated visible app version, package version and service-worker cache to `5.0.0`.
+- No SQL migration required.
+
 ## 4.1.5
 
 - Renamed the visible bottom navigation item `Kommunikation` to `Team` while keeping existing internal routes stable.

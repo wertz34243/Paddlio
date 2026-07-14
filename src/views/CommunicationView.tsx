@@ -1,4 +1,5 @@
 import { useMemo, useState, type FormEvent } from "react";
+import { APP_VERSION } from "../brand";
 import { SegmentNav, type SegmentItem } from "../components/SegmentNav";
 import { createId } from "../data/storage";
 import { canManageAdminArea, canUseCoachArea, getAthletesForCurrentUser, getGroupsForCurrentUser, getTrainingsForCurrentUser } from "../domain/accessControl";
@@ -375,7 +376,7 @@ export function CommunicationView({ data, user, onDataChange }: CommunicationVie
         <section className="home-profile-card premium-hero">
           <div className="home-avatar">K</div>
           <div>
-            <p className="eyebrow">Paddlio 4.1.5</p>
+            <p className="eyebrow">Paddlio {APP_VERSION}</p>
             <h2>Team</h2>
             <p className="hero-slogan">Nachrichten. Aufgaben. Anwesenheit. Gruppen.</p>
           </div>
