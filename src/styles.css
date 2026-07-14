@@ -3884,3 +3884,327 @@ table {
     width: min(310px, calc(100% - 36px));
   }
 }
+
+/* Full design prototype alignment: visible mobile and desktop surfaces. */
+:root {
+  --background: #05070d;
+  --card: #101827;
+  --surface: rgba(16, 24, 39, 0.92);
+  --surface-strong: rgba(18, 31, 49, 0.96);
+  --primary: #4bd8ff;
+  --secondary: #15b8d8;
+  --accent: #8df45a;
+  --success: #8df45a;
+  --warning: #ffb84d;
+  --danger: #ff7a59;
+  --text: #f7fbff;
+  --muted: #aebaca;
+  --border: rgba(255, 255, 255, 0.1);
+  --radius: 8px;
+  --shadow: 0 18px 54px rgba(0, 0, 0, 0.28);
+  --shadow-soft: 0 18px 54px rgba(0, 0, 0, 0.22);
+}
+
+html {
+  background:
+    radial-gradient(circle at 16% 0%, rgba(75, 216, 255, 0.16), transparent 24rem),
+    radial-gradient(circle at 80% 4%, rgba(141, 244, 90, 0.08), transparent 20rem),
+    linear-gradient(180deg, #08111d 0%, #05070d 46rem);
+}
+
+.auth-shell,
+.app-shell {
+  background:
+    radial-gradient(circle at 16% 0%, rgba(75, 216, 255, 0.14), transparent 22rem),
+    linear-gradient(180deg, rgba(8, 17, 29, 0.96), rgba(5, 7, 13, 0.98));
+}
+
+.auth-card {
+  border-radius: 8px;
+  background: rgba(16, 24, 39, 0.94);
+  box-shadow: var(--shadow);
+}
+
+.auth-brand .app-brand {
+  font-size: 1.65rem;
+}
+
+.auth-tabs {
+  border-radius: 999px;
+  background: rgba(5, 7, 13, 0.76);
+}
+
+.auth-tabs button {
+  border-radius: 999px;
+}
+
+.auth-tabs button.active {
+  background: linear-gradient(135deg, #4bd8ff, #9cf2ff);
+  color: #06111d;
+}
+
+.auth-form input,
+.auth-form select,
+.entry-form input,
+.entry-form select,
+.entry-form textarea,
+.profile-form input,
+.profile-form select,
+.profile-form textarea,
+.journal-form input,
+.journal-form textarea {
+  border-color: rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(5, 7, 13, 0.72);
+}
+
+.home-profile-card,
+.profile-hero-card,
+.section-block,
+.metric-card,
+.summary-strip,
+.motivation-card,
+.app-card,
+.chart-panel,
+.competition-timeline-item,
+.wallet-card,
+.plan-day,
+.plan-card,
+.club-post-card,
+.task-card,
+.attendance-card,
+.notification-card,
+.calendar-training-card,
+.training-group-card,
+.athlete-row,
+.athlete-profile-card,
+.club-card,
+.beta-card,
+.more-mobile-card,
+.journal-form,
+.communication-contact,
+.chat-thread,
+.placeholder-card,
+.fitness-card,
+.season-goal-card,
+.training-dashboard-card,
+.weekly-progress,
+.distribution-row,
+.result-row,
+.goal-mini-card,
+.season-month-card,
+.training-overview-grid .action-card {
+  border-radius: 8px;
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(16, 24, 39, 0.92);
+  box-shadow: var(--shadow-soft);
+}
+
+.premium-hero,
+.intelligence-welcome {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  border-color: rgba(75, 216, 255, 0.22);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(75, 216, 255, 0.2), transparent 16rem),
+    linear-gradient(135deg, rgba(16, 24, 39, 0.96), rgba(21, 35, 53, 0.9));
+}
+
+.home-avatar,
+.profile-avatar,
+.desktop-brand > span,
+.desktop-user-card > span {
+  border-radius: 8px;
+  background: linear-gradient(135deg, #4bd8ff, #8df45a);
+}
+
+.home-profile-card h1,
+.home-profile-card h2,
+.profile-hero-card h2 {
+  font-size: clamp(2rem, 8vw, 3.2rem);
+  line-height: 0.98;
+}
+
+.hero-slogan {
+  color: #4bd8ff;
+  font-size: clamp(1.05rem, 4vw, 1.35rem);
+}
+
+.daily-motivation,
+.today-training-card {
+  border-radius: 8px;
+  background: rgba(16, 24, 39, 0.92);
+}
+
+.today-training-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(12rem, 0.52fr);
+  align-items: center;
+}
+
+.today-training-card h3 {
+  font-size: clamp(1.8rem, 7vw, 2.7rem);
+}
+
+.quick-actions {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.quick-actions button,
+.training-overview-grid .action-card {
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(75, 216, 255, 0.12), transparent 62%),
+    rgba(16, 24, 39, 0.92);
+}
+
+.quick-actions button:hover,
+.training-overview-grid .action-card:hover {
+  border-color: rgba(75, 216, 255, 0.36);
+}
+
+.app-card {
+  min-height: 160px;
+}
+
+.app-card-icon,
+.more-menu-icon,
+.nav-icon,
+.desktop-nav-icon {
+  border-radius: 8px;
+  background: rgba(75, 216, 255, 0.12);
+  color: #4bd8ff;
+}
+
+.app-card-value,
+.metric-card strong {
+  font-size: clamp(2rem, 8vw, 3.1rem);
+}
+
+.save-button,
+.primary-button {
+  border-radius: 8px;
+  background: linear-gradient(135deg, #8df45a, #b9ff8a);
+  color: #06110a;
+}
+
+.edit-button,
+.ghost-button,
+.delete-button,
+.inline-actions button,
+.card-actions button {
+  border-radius: 8px;
+}
+
+.segment-nav,
+.workflow-tabs,
+.training-segment-switcher {
+  border-radius: 8px;
+  background: rgba(7, 12, 21, 0.88);
+}
+
+.segment-button {
+  border-radius: 8px;
+}
+
+.segment-button.active {
+  background: rgba(75, 216, 255, 0.16);
+  color: #4bd8ff;
+  box-shadow: inset 0 0 0 1px rgba(75, 216, 255, 0.24);
+}
+
+.training-overview-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.training-overview-grid .action-card {
+  min-height: 116px;
+}
+
+.training-overview-grid .action-card span {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 850;
+}
+
+.training-overview-grid .action-card strong {
+  color: var(--text);
+  font-size: clamp(1.35rem, 5vw, 2.3rem);
+  line-height: 1;
+}
+
+.bottom-nav {
+  border-radius: 8px;
+  background: rgba(10, 16, 27, 0.94);
+}
+
+.nav-item {
+  border-radius: 8px;
+}
+
+.nav-item.active {
+  background: rgba(75, 216, 255, 0.14);
+}
+
+.cloud-status {
+  border-radius: 8px;
+  background: rgba(10, 16, 27, 0.94);
+}
+
+.more-mobile-card,
+.desktop-nav-item,
+.desktop-side-nav,
+.desktop-user-card {
+  border-radius: 8px;
+}
+
+@media (min-width: 1080px) {
+  .app-shell {
+    grid-template-columns: 17rem minmax(0, 1fr);
+    max-width: 1400px;
+  }
+
+  .desktop-side-nav {
+    border-radius: 8px;
+    background: rgba(7, 12, 21, 0.92);
+  }
+}
+
+@media (max-width: 720px) {
+  .app-shell {
+    padding-inline: 14px;
+  }
+
+  .premium-hero,
+  .intelligence-welcome {
+    min-height: 12rem;
+    align-items: end;
+  }
+
+  .home-avatar {
+    width: 3.6rem;
+    height: 3.6rem;
+  }
+
+  .today-training-card {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-actions,
+  .priority-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .training-overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .training-overview-grid .action-card {
+    min-height: 92px;
+  }
+
+  .dashboard-card-grid,
+  .metric-grid {
+    grid-template-columns: 1fr;
+  }
+}
