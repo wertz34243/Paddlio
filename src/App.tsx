@@ -1,4 +1,4 @@
-import { useState, type TouchEvent } from "react";
+import { useEffect, useState, type TouchEvent } from "react";
 import { APP_NAME, APP_SLOGAN, APP_VERSION } from "./brand";
 import { LoadingState } from "./components/AppSupport";
 import { Icon, type IconName } from "./components/Icon";
@@ -175,6 +175,7 @@ function AppContent() {
   const [analysisSegment, setAnalysisSegment] = useState<AnalysisSegment>("overview");
   const [moreSegment, setMoreSegment] = useState<MoreSegment>("profile");
   const [moreHubOpen, setMoreHubOpen] = useState(true);
+  const [bottomNavVisible, setBottomNavVisible] = useState(true);
   const [newTrainingSignal, setNewTrainingSignal] = useState(0);
   const [newCompetitionSignal, setNewCompetitionSignal] = useState(0);
   const [journalSignal, setJournalSignal] = useState(0);
@@ -182,6 +183,44 @@ function AppContent() {
     await signOut();
     setActivePage("dashboard");
   };
+
+  useEffect(() => {
+    let hideTimer: ReturnType<typeof window.setTimeout> | undefined;
+    const isCompactTouch = () => window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+    const showBottomNav = () => {
+      setBottomNavVisible(true);
+
+      if (!isCompactTouch()) {
+        return;
+      }
+
+      if (hideTimer) {
+        window.clearTimeout(hideTimer);
+      }
+
+      hideTimer = window.setTimeout(() => setBottomNavVisible(false), 3200);
+    };
+
+    showBottomNav();
+
+    const passiveOptions: AddEventListenerOptions = { passive: true };
+    window.addEventListener("pointerdown", showBottomNav, passiveOptions);
+    window.addEventListener("touchstart", showBottomNav, passiveOptions);
+    window.addEventListener("scroll", showBottomNav, passiveOptions);
+    window.addEventListener("resize", showBottomNav, passiveOptions);
+    window.addEventListener("keydown", showBottomNav);
+
+    return () => {
+      if (hideTimer) {
+        window.clearTimeout(hideTimer);
+      }
+      window.removeEventListener("pointerdown", showBottomNav);
+      window.removeEventListener("touchstart", showBottomNav);
+      window.removeEventListener("scroll", showBottomNav);
+      window.removeEventListener("resize", showBottomNav);
+      window.removeEventListener("keydown", showBottomNav);
+    };
+  }, [activePage]);
 
   if (loading) {
     return <LoadingState />;
@@ -886,7 +925,21 @@ function AppContent() {
       case "coach":
         return <CoachView data={data} user={activeUser} onDataChange={updateData} />;
       case "settings":
-        return <SettingsView user={activeUser} onSave={updateProfileSettings} onLogout={handleLogout} />;
+        return (
+          <SettingsView
+            user={activeUser}
+            syncStatus={{
+              status: cloudStatus,
+              syncCount,
+              pendingSyncCount,
+              lastSyncAt,
+              message: cloudMessage,
+              isAdmin: activeUser.role === "admin",
+            }}
+            onSave={updateProfileSettings}
+            onLogout={handleLogout}
+          />
+        );
       case "profile":
       default:
         return <ProfileView user={activeUser} onSave={updateProfile} />;
@@ -1223,7 +1276,7 @@ function AppContent() {
       <main className="page-content" id="main">{renderPage()}</main>
       <CloudStatusBadgeStable status={cloudStatus} syncCount={syncCount} pendingSyncCount={pendingSyncCount} lastSyncAt={lastSyncAt} isAdmin={activeUser.role === "admin"} message={cloudMessage} />
 
-      <nav className="bottom-nav" aria-label="Hauptnavigation">
+      <nav className={bottomNavVisible ? "bottom-nav is-visible" : "bottom-nav is-hidden"} aria-label="Hauptnavigation">
         {navItems.map((item) => (
           <button
             className={activeNavPage === item.id ? "nav-item active" : "nav-item"}

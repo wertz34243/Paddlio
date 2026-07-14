@@ -4,6 +4,14 @@ import type { AppLanguage, MeasurementUnit, User, UserProfile } from "../domain/
 
 type SettingsViewProps = {
   user: User;
+  syncStatus?: {
+    status: string;
+    syncCount: number;
+    pendingSyncCount: number;
+    lastSyncAt: string;
+    message: string;
+    isAdmin: boolean;
+  };
   onSave: (settings: Pick<UserProfile, "profileImageDataUrl" | "darkMode" | "measurementUnit" | "language">) => void;
   onLogout: () => void;
 };
@@ -18,7 +26,7 @@ const languages: Array<{ value: AppLanguage; label: string }> = [
   { value: "en", label: "English" },
 ];
 
-export function SettingsView({ user, onSave, onLogout }: SettingsViewProps) {
+export function SettingsView({ user, syncStatus, onSave, onLogout }: SettingsViewProps) {
   const [profileImageDataUrl, setProfileImageDataUrl] = useState(user.profile.profileImageDataUrl);
   const [savedMessage, setSavedMessage] = useState("");
 
@@ -63,6 +71,8 @@ export function SettingsView({ user, onSave, onLogout }: SettingsViewProps) {
           <span>{user.profile.club || "Kein Verein"}</span>
         </div>
       </section>
+
+      {syncStatus ? <SettingsSyncPanel syncStatus={syncStatus} /> : null}
 
       <section className="section-block">
         <div className="section-heading">
@@ -123,5 +133,49 @@ export function SettingsView({ user, onSave, onLogout }: SettingsViewProps) {
         </button>
       </section>
     </form>
+  );
+}
+
+function SettingsSyncPanel({ syncStatus }: { syncStatus: NonNullable<SettingsViewProps["syncStatus"]> }) {
+  const syncLabel = syncStatus.lastSyncAt
+    ? new Date(syncStatus.lastSyncAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
+    : "";
+  const label =
+    syncStatus.status === "connected" ? "Synchronisiert" :
+      syncStatus.status === "syncing" ? "Sync läuft..." :
+        syncStatus.status === "pending" ? "Sync ausstehend" :
+          syncStatus.status === "limited" ? "Cloud eingeschränkt" :
+            syncStatus.status === "offline" ? "Offline" :
+              syncStatus.status === "error" ? "Nicht synchronisiert" :
+                "Lokal";
+  const message =
+    syncStatus.status === "connected" ? (syncLabel ? `Letzter Sync um ${syncLabel}.` : "Deine Daten sind synchronisiert.") :
+      syncStatus.status === "syncing" ? "Änderungen werden gerade abgeglichen." :
+        syncStatus.status === "pending" ? "Änderungen warten auf Synchronisation." :
+          syncStatus.status === "limited" ? "Die App ist nutzbar, einige Zusatzbereiche konnten nicht synchronisiert werden." :
+            syncStatus.status === "error" ? "Profil, Training oder Kernspeicher konnten nicht sicher synchronisiert werden." :
+              syncStatus.status === "offline" ? "Du bist offline. Änderungen werden später synchronisiert." :
+                "Lokaler Modus aktiv.";
+  const tone = syncStatus.status === "connected" ? "green" : syncStatus.status === "error" || syncStatus.status === "offline" ? "red" : "yellow";
+
+  return (
+    <section className={`section-block settings-sync-panel ${tone}`}>
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">Synchronisierung</p>
+          <h3>Cloud Status</h3>
+        </div>
+        <span className="settings-sync-pill">{label}</span>
+      </div>
+      <p className="card-note">{message}</p>
+      <div className="settings-sync-facts">
+        <span>{syncStatus.syncCount} Datensätze bestätigt</span>
+        <span>{syncStatus.pendingSyncCount} ausstehend</span>
+        {syncLabel ? <span>Letzter Sync {syncLabel}</span> : null}
+      </div>
+      {syncStatus.message && (syncStatus.isAdmin || syncStatus.status === "error") ? (
+        <p className="settings-sync-detail">{syncStatus.message}</p>
+      ) : null}
+    </section>
   );
 }
