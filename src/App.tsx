@@ -5,7 +5,7 @@ import { Icon, type IconName } from "./components/Icon";
 import { SegmentNav, type SegmentItem } from "./components/SegmentNav";
 import { createId } from "./data/storage";
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
-import { getActiveUser } from "./domain/profile";
+import { getActiveUser, getDisplayName, getInitials } from "./domain/profile";
 import { getWeekdayFromDate, isDoneStatus } from "./domain/trainingPlan";
 import { updateCloudProfile } from "./services/profileService";
 import { createCloudNotification, markAllCloudNotificationsRead, markCloudNotificationRead } from "./services/notificationService";
@@ -67,6 +67,13 @@ const navItems: Array<{ id: PageId; label: string; icon: IconName }> = [
   { id: "communication", label: "Team", icon: "message" },
   { id: "more", label: "Mehr", icon: "more" },
 ];
+
+const roleLabelMap: Record<string, string> = {
+  athlete: "Sportler",
+  coach: "Trainer",
+  clubadmin: "ClubAdmin",
+  admin: "Admin",
+};
 
 const navPageByPage: Partial<Record<PageId, PageId>> = {
   plan: "training",
@@ -1027,6 +1034,38 @@ function AppContent() {
       <a className="skip-link" href="#main">
         Zum Inhalt springen
       </a>
+      <aside className="desktop-side-nav" aria-label="Desktop-Navigation">
+        <div className="desktop-brand">
+          <span aria-hidden="true">{APP_NAME.slice(0, 1)}</span>
+          <div>
+            <strong>{APP_NAME}</strong>
+            <small>{APP_SLOGAN}</small>
+          </div>
+        </div>
+        <div className="desktop-user-card">
+          <span aria-hidden="true">{getInitials(activeUser.profile)}</span>
+          <div>
+            <strong>{getDisplayName(activeUser.profile)}</strong>
+            <small>{roleLabelMap[activeUser.role] ?? activeUser.role} · Version {APP_VERSION}</small>
+          </div>
+        </div>
+        <nav className="desktop-nav-list" aria-label="Hauptnavigation Desktop">
+          {navItems.map((item) => (
+            <button
+              className={activeNavPage === item.id ? "desktop-nav-item active" : "desktop-nav-item"}
+              key={item.id}
+              type="button"
+              onClick={() => setActivePage(item.id)}
+              aria-current={activeNavPage === item.id ? "page" : undefined}
+            >
+              <span className="desktop-nav-icon" aria-hidden="true">
+                <Icon name={item.icon} />
+              </span>
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </nav>
+      </aside>
       {!isHome ? (
         <header className="app-header app-header-compact">
           <div className="brand-lockup">

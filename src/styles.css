@@ -3608,3 +3608,279 @@ table {
     gap: 2px;
   }
 }
+
+/* Paddlio full-app design pass: real app shell, no demo data. */
+.desktop-side-nav {
+  display: none;
+}
+
+.desktop-brand,
+.desktop-user-card,
+.desktop-nav-list {
+  min-width: 0;
+}
+
+.desktop-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.desktop-brand > span,
+.desktop-user-card > span,
+.desktop-nav-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+}
+
+.desktop-brand > span,
+.desktop-user-card > span {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--accent), var(--success));
+  color: #03111a;
+  font-weight: 950;
+}
+
+.desktop-brand strong,
+.desktop-user-card strong {
+  display: block;
+  overflow: hidden;
+  color: var(--text);
+  font-weight: 950;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.desktop-brand small,
+.desktop-user-card small {
+  display: block;
+  margin-top: 3px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.desktop-user-card {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px;
+  border: 1px solid rgba(142, 232, 247, 0.14);
+  border-radius: 16px;
+  background: rgba(16, 32, 51, 0.72);
+}
+
+.desktop-nav-list {
+  display: grid;
+  gap: 8px;
+}
+
+.desktop-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 850;
+  text-align: left;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.desktop-nav-item:hover,
+.desktop-nav-item.active {
+  border-color: rgba(142, 232, 247, 0.18);
+  background: rgba(38, 211, 255, 0.1);
+  color: var(--text);
+}
+
+.desktop-nav-item:active {
+  transform: scale(0.985);
+}
+
+.desktop-nav-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 11px;
+  background: rgba(38, 211, 255, 0.12);
+  color: var(--accent);
+}
+
+.desktop-nav-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.home-profile-card,
+.profile-hero-card,
+.section-block,
+.metric-card,
+.summary-strip,
+.motivation-card,
+.app-card,
+.chart-panel,
+.competition-timeline-item,
+.wallet-card,
+.plan-day,
+.plan-card,
+.club-post-card,
+.task-card,
+.attendance-card,
+.notification-card,
+.calendar-training-card,
+.training-group-card,
+.athlete-row,
+.athlete-profile-card,
+.club-card,
+.beta-card,
+.more-mobile-card,
+.journal-form,
+.communication-contact,
+.chat-thread,
+.placeholder-card {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.052), rgba(255, 255, 255, 0.014)),
+    rgba(12, 24, 42, 0.9);
+}
+
+.segment-nav,
+.workflow-tabs,
+.training-segment-switcher {
+  max-width: 100%;
+}
+
+.training-segment-switcher {
+  padding: 4px;
+  border: 1px solid rgba(142, 232, 247, 0.1);
+  border-radius: 22px;
+  background: rgba(5, 12, 24, 0.48);
+}
+
+.training-segment-switcher .segment-nav {
+  margin: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.training-overview-grid .action-card,
+.more-mobile-card,
+.quick-actions button {
+  overflow: hidden;
+  position: relative;
+}
+
+.training-overview-grid .action-card::before,
+.more-mobile-card::before,
+.quick-actions button::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  background: radial-gradient(circle at 12% 0%, rgba(75, 216, 255, 0.13), transparent 16rem);
+}
+
+.today-training-card .save-button,
+.primary-button,
+.save-button {
+  box-shadow: 0 14px 30px rgba(34, 197, 94, 0.16);
+}
+
+.cloud-status {
+  max-width: min(330px, calc(100% - 24px));
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 1080px) {
+  .app-shell {
+    display: grid;
+    grid-template-columns: 236px minmax(0, 1fr);
+    align-items: start;
+    gap: 18px;
+    max-width: 1280px;
+    padding: calc(16px + env(safe-area-inset-top)) 22px 26px;
+  }
+
+  .desktop-side-nav {
+    position: sticky;
+    top: calc(16px + env(safe-area-inset-top));
+    display: grid;
+    grid-row: 1 / span 3;
+    gap: 18px;
+    min-height: calc(100dvh - 42px);
+    padding: 16px;
+    border: 1px solid rgba(142, 232, 247, 0.11);
+    border-radius: 20px;
+    background:
+      linear-gradient(180deg, rgba(38, 211, 255, 0.08), transparent 44%),
+      rgba(5, 12, 24, 0.78);
+    box-shadow: var(--shadow-soft);
+    backdrop-filter: blur(22px);
+  }
+
+  .app-header,
+  .page-content {
+    grid-column: 2;
+  }
+
+  .app-header-compact {
+    top: calc(16px + env(safe-area-inset-top));
+  }
+
+  .page-content {
+    max-width: 100%;
+  }
+
+  .bottom-nav {
+    display: none;
+  }
+
+  .cloud-status {
+    right: 26px;
+    bottom: 24px;
+    left: auto;
+  }
+
+  .dashboard-card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .metric-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .more-mobile-grid {
+    display: grid;
+  }
+
+  .more-category-shell > .segment-nav {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .training-segment-switcher {
+    border-radius: 20px;
+  }
+
+  .swipe-hint {
+    padding: 0 8px 5px;
+  }
+
+  .cloud-status {
+    right: 18px;
+    left: auto;
+    width: min(310px, calc(100% - 36px));
+  }
+}
