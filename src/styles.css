@@ -2171,6 +2171,34 @@ p {
   margin-top: 0;
 }
 
+.training-overview-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.training-overview-grid .action-card {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  min-height: 86px;
+  padding: 14px 16px;
+  text-align: left;
+  white-space: normal;
+}
+
+.training-overview-grid .action-card span,
+.training-overview-grid .action-card strong,
+.training-overview-grid .action-card small {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+}
+
+.training-overview-grid .action-card small {
+  color: var(--muted);
+}
+
 .season-month-list {
   display: grid;
   gap: 12px;

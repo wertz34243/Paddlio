@@ -13,6 +13,9 @@ type TrainingViewProps = {
   onSaveJournal: (
     entry: Omit<TrainingJournalEntry, "id" | "athleteId" | "createdAt" | "updatedAt"> & { id?: string },
   ) => void;
+  onOpenOverview: () => void;
+  onOpenPlan: () => void;
+  onOpenJournal: () => void;
   openNewSignal?: number;
   openJournalSignal?: number;
 };
@@ -45,6 +48,9 @@ export function TrainingView({
   onSave,
   onDelete,
   onSaveJournal,
+  onOpenOverview,
+  onOpenPlan,
+  onOpenJournal,
   openNewSignal = 0,
   openJournalSignal = 0,
 }: TrainingViewProps) {
@@ -168,6 +174,18 @@ export function TrainingView({
           </div>
           <button className="primary-button" type="button" onClick={() => setDraft(emptyDraft)} aria-label="Training hinzufügen">
             +
+          </button>
+        </div>
+
+        <div className="training-journal-actions" aria-label="Training Navigation">
+          <button type="button" className="secondary-button" onClick={onOpenOverview} aria-label="Zur Training-Übersicht zurückkehren">
+            Zur Übersicht
+          </button>
+          <button type="button" className="primary-action compact-action" onClick={onOpenPlan} aria-label="Von freiem Training zum Trainingsplan wechseln">
+            Trainingsplan öffnen
+          </button>
+          <button type="button" className="secondary-button" onClick={onOpenJournal} aria-label="Trainingstagebuch-Einträge anzeigen">
+            Tagebuch anzeigen
           </button>
         </div>
 

@@ -649,6 +649,9 @@ function AppContent() {
             onSave={upsertTraining}
             onDelete={deleteTraining}
             onSaveJournal={upsertJournalEntry}
+            onOpenOverview={() => setTrainingSegment("overview")}
+            onOpenPlan={() => setTrainingSegment("plan")}
+            onOpenJournal={() => setTrainingSegment("journal")}
             openNewSignal={newTrainingSignal}
             openJournalSignal={journalSignal}
           />
