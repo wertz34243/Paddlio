@@ -1471,6 +1471,25 @@ p {
   display: none;
 }
 
+.training-segment-switcher {
+  display: grid;
+  gap: 6px;
+  touch-action: pan-y;
+}
+
+.swipe-hint {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  padding-left: 8px;
+}
+
+@media (min-width: 768px) {
+  .swipe-hint {
+    display: none;
+  }
+}
+
 .segment-button {
   flex: 0 0 auto;
   min-width: max-content;

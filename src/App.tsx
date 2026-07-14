@@ -694,16 +694,19 @@ function AppContent() {
   };
 
   const renderTrainingArea = (segment: TrainingSegment = trainingSegment) => (
-    <div className="category-shell more-category-shell" onTouchStart={handleTrainingTouchStart} onTouchEnd={handleTrainingTouchEnd}>
-      <SegmentNav
-        label="Training Kategorien"
-        items={trainingSegments}
-        activeId={segment}
-        onChange={(nextSegment) => {
-          setTrainingSegment(nextSegment);
-          setActivePage("training");
-        }}
-      />
+    <div className="category-shell more-category-shell">
+      <div className="training-segment-switcher" onTouchStart={handleTrainingTouchStart} onTouchEnd={handleTrainingTouchEnd}>
+        <SegmentNav
+          label="Training Kategorien"
+          items={trainingSegments}
+          activeId={segment}
+          onChange={(nextSegment) => {
+            setTrainingSegment(nextSegment);
+            setActivePage("training");
+          }}
+        />
+        <small className="swipe-hint">Hier wischen oder antippen, um den Trainingsbereich zu wechseln.</small>
+      </div>
       <div className="segment-content">{renderTrainingContent(segment)}</div>
     </div>
   );
