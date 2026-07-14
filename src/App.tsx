@@ -51,9 +51,10 @@ import { SeasonView } from "./views/SeasonView";
 import { SettingsView } from "./views/SettingsView";
 import { SmartCoachView } from "./views/SmartCoachView";
 import { TrainingJournalView } from "./views/TrainingJournalView";
+import { TrainingOverviewView } from "./views/TrainingOverviewView";
 import { TrainingView } from "./views/TrainingView";
 
-type TrainingSegment = "plan" | "sessions" | "journal";
+type TrainingSegment = "overview" | "plan" | "sessions" | "journal";
 type CompetitionSegment = "races" | "results" | "bests" | "stats" | "advanced" | "imports" | "coach" | "admin" | "videos";
 type AnalysisSegment = "overview" | "smartCoach" | "training" | "competition" | "goals" | "load" | "boats" | "season" | "coach" | "admin";
 type MoreSegment = "profile" | "club" | "competitions" | "equipment" | "goals" | "records" | "notifications" | "integrations" | "feedback" | "betaGuide" | "limitations" | "beta" | "betaTesters" | "coach" | "settings";
@@ -77,6 +78,7 @@ const navPageByPage: Partial<Record<PageId, PageId>> = {
 };
 
 const trainingSegments: SegmentItem<TrainingSegment>[] = [
+  { id: "overview", label: "Übersicht" },
   { id: "plan", label: "Plan" },
   { id: "sessions", label: "Einheiten" },
   { id: "journal", label: "Journal" },
@@ -158,7 +160,7 @@ const canUseCoachArea = (role: string): boolean => role === "coach" || role === 
 function AppContent() {
   const { session, data, setData, profile: cloudProfile, loading, cloudStatus, cloudMessage, syncCount, pendingSyncCount, lastSyncAt, signIn, signUp, signOut, resetPassword } = useAuth();
   const [activePage, setActivePage] = useState<PageId>("dashboard");
-  const [trainingSegment, setTrainingSegment] = useState<TrainingSegment>("plan");
+  const [trainingSegment, setTrainingSegment] = useState<TrainingSegment>("overview");
   const [competitionSegment, setCompetitionSegment] = useState<CompetitionSegment>("races");
   const [analysisSegment, setAnalysisSegment] = useState<AnalysisSegment>("overview");
   const [moreSegment, setMoreSegment] = useState<MoreSegment>("profile");
@@ -263,7 +265,9 @@ function AppContent() {
       const nextCompetition: Competition = {
         ...competition,
         id: competition.id ?? createId("competition"),
-        athleteId: current.athlete.id,
+        athleteId: cloudProfile?.id ?? current.activeUserId ?? current.athlete.id,
+        clubId: competition.clubId || cloudProfile?.club_id || activeUser.profile.club || "",
+        createdBy: competition.createdBy || cloudProfile?.id || current.activeUserId,
         createdAt: existing?.createdAt ?? timestamp,
         updatedAt: timestamp,
       };
@@ -322,11 +326,15 @@ function AppContent() {
     updateData((current) => {
       const existing = entry.id
         ? current.journal.find((item) => item.id === entry.id)
-        : current.journal.find((item) => item.trainingId === entry.trainingId);
+        : current.journal.find((item) =>
+            entry.trainingPlanEntryId
+              ? item.trainingPlanEntryId === entry.trainingPlanEntryId
+              : item.trainingId === entry.trainingId,
+          );
       const nextEntry: TrainingJournalEntry = {
         ...entry,
         id: existing?.id ?? entry.id ?? createId("journal"),
-        athleteId: current.athlete.id,
+        athleteId: cloudProfile?.id ?? current.athlete.id,
         createdAt: existing?.createdAt ?? timestamp,
         updatedAt: timestamp,
       };
@@ -528,6 +536,21 @@ function AppContent() {
     }));
   };
 
+  const updatePlanEntryStatus = (id: string, status: PlanEntry["status"]) => {
+    updateData((current) => ({
+      ...current,
+      plan: current.plan.map((entry) =>
+        entry.id === id
+          ? {
+              ...entry,
+              status,
+              updatedAt: getTimestamp(),
+            }
+          : entry,
+      ),
+    }));
+  };
+
   const updateProfile = (userProfile: UserProfile) => {
     const timestamp = getTimestamp();
 
@@ -588,7 +611,23 @@ function AppContent() {
           />
         );
       case "journal":
-        return <TrainingJournalView sessions={data.training} journal={data.journal} />;
+        return <TrainingJournalView sessions={data.training} plan={data.plan} journal={data.journal} />;
+      case "overview":
+        return (
+          <TrainingOverviewView
+            plan={data.plan}
+            sessions={data.training}
+            journal={data.journal}
+            onPlanStatusChange={updatePlanEntryStatus}
+            onSaveJournal={upsertJournalEntry}
+            onOpenPlan={() => setTrainingSegment("plan")}
+            onOpenSessions={() => {
+              setTrainingSegment("sessions");
+              setNewTrainingSignal((value) => value + 1);
+            }}
+            onOpenJournal={() => setTrainingSegment("journal")}
+          />
+        );
       case "sessions":
       default:
         return (

@@ -117,7 +117,11 @@ export function TrainingView({
     onSaveJournal({
       id: existing?.id,
       trainingId: session.id,
+      trainingPlanEntryId: undefined,
       date: session.date,
+      completionStatus: "completed",
+      actualDurationMinutes: session.durationMinutes,
+      perceivedExertion: session.rpe,
       trainingRating: toNumber(formData.get("trainingRating")),
       feeling: toNumber(formData.get("feeling")),
       fatigue: toNumber(formData.get("fatigue")),

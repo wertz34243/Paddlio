@@ -81,6 +81,9 @@ const today = new Date().toISOString().slice(0, 10);
 
 const statusLabel: Record<PlanStatus, string> = {
   planned: "Geplant",
+  in_progress: "Läuft",
+  completed: "Durchgeführt",
+  partially_completed: "Teilweise durchgeführt",
   done: "Erledigt",
   skipped: "Ausgelassen",
   cancelled: "Abgesagt",

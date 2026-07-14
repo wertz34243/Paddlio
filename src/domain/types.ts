@@ -139,7 +139,17 @@ export type User = {
   updatedAt: string;
 };
 
-export type PlanStatus = "planned" | "done" | "skipped" | "cancelled" | "geplant" | "erledigt" | "ausgelassen";
+export type PlanStatus =
+  | "planned"
+  | "in_progress"
+  | "completed"
+  | "partially_completed"
+  | "skipped"
+  | "cancelled"
+  | "done"
+  | "geplant"
+  | "erledigt"
+  | "ausgelassen";
 
 export type TrainingAssignedType = "self" | "athlete" | "group";
 
@@ -228,7 +238,7 @@ export type Competition = {
   organizer?: string;
   course?: string;
   courseName?: string;
-  level?: "Training" | "Vereinsrennen" | "Bezirk" | "Westdeutsch" | "DM" | "International";
+  level?: "general" | "club" | "district" | "state" | "national" | "international" | "Training" | "Vereinsrennen" | "Bezirk" | "Westdeutsch" | "DM" | "International";
   boatClass: BoatClass;
   ageClass?: string;
   run1TimeSeconds: number;
@@ -403,7 +413,14 @@ export type TrainingJournalEntry = {
   id: string;
   athleteId: string;
   trainingId: string;
+  trainingPlanEntryId?: string;
   date: string;
+  completionStatus?: "completed" | "partially_completed" | "skipped";
+  actualDurationMinutes?: number;
+  actualDistanceKm?: number;
+  averageHeartRate?: number;
+  perceivedExertion?: number;
+  painNotes?: string;
   trainingRating: number;
   feeling: number;
   fatigue: number;

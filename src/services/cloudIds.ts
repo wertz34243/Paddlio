@@ -58,6 +58,7 @@ const uuidColumns = new Set([
   "related_competition_id",
   "related_entity_id",
   "training_plan_item_id",
+  "training_plan_entry_id",
   "uploaded_by",
   "checked_by",
   "linked_training_id",

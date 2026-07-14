@@ -4,7 +4,20 @@ export const weekdays: Weekday[] = ["Montag", "Dienstag", "Mittwoch", "Donnersta
 
 export const trainingIntensities: TrainingIntensity[] = ["locker", "mittel", "hart", "maximal"];
 
-export const planStatuses: PlanStatus[] = ["planned", "done", "skipped", "cancelled"];
+export const planStatuses: PlanStatus[] = ["planned", "in_progress", "completed", "partially_completed", "skipped", "cancelled"];
+
+export const planStatusLabels: Record<string, string> = {
+  planned: "Geplant",
+  in_progress: "Läuft",
+  completed: "Durchgeführt",
+  partially_completed: "Teilweise durchgeführt",
+  skipped: "Übersprungen",
+  cancelled: "Abgesagt",
+  done: "Durchgeführt",
+  geplant: "Geplant",
+  erledigt: "Durchgeführt",
+  ausgelassen: "Übersprungen",
+};
 
 export const trainingTypeGroups: Record<TrainingArea, TrainingPlanType[]> = {
   Wassertraining: [
@@ -80,8 +93,8 @@ export const isPauseEntry = (entry: PlanEntry): boolean =>
 
 export const getTodayKey = (date = new Date()): string => formatBerlinDateKey(date);
 
-export const isPlannedStatus = (status: PlanStatus): boolean => status === "planned" || status === "geplant";
+export const isPlannedStatus = (status: PlanStatus): boolean => status === "planned" || status === "geplant" || status === "in_progress";
 
-export const isDoneStatus = (status: PlanStatus): boolean => status === "done" || status === "erledigt";
+export const isDoneStatus = (status: PlanStatus): boolean => status === "done" || status === "erledigt" || status === "completed" || status === "partially_completed";
 
 export const isSkippedStatus = (status: PlanStatus): boolean => status === "skipped" || status === "ausgelassen";

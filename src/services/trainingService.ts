@@ -25,7 +25,18 @@ export const toCloudTraining = (entry: PlanEntry) => ({
   boat_class: entry.boatClass,
   goal: entry.focus || entry.goal,
   intensity: entry.intensity,
-  status: entry.status === "done" || entry.status === "erledigt" ? "done" : entry.status === "skipped" || entry.status === "ausgelassen" ? "skipped" : "planned",
+  status:
+    entry.status === "done" || entry.status === "erledigt" || entry.status === "completed"
+      ? "completed"
+      : entry.status === "partially_completed"
+        ? "partially_completed"
+        : entry.status === "in_progress"
+          ? "in_progress"
+          : entry.status === "skipped" || entry.status === "ausgelassen"
+            ? "skipped"
+            : entry.status === "cancelled"
+              ? "cancelled"
+              : "planned",
   repeat_rule: entry.repeat === "none" ? null : entry.repeat,
   notes: entry.notes || entry.note,
 });

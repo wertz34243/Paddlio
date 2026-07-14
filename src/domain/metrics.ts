@@ -1,4 +1,5 @@
 import { getTodayKey, isDoneStatus, isPauseEntry, isPlannedStatus, isSkippedStatus, sortPlanEntries } from "./trainingPlan";
+import { calculateCompetitionTotalTime, getCompetitionRunTotals } from "./competition";
 import type { BoatClass, Competition, PlanEntry, TrainingArea, TrainingIntensity, TrainingSession } from "./types";
 
 export type BoatClassDifference = {
@@ -54,13 +55,13 @@ export type PlanWeekStats = {
 };
 
 export const getRun1Total = (competition: Competition): number =>
-  competition.run1TimeSeconds + competition.run1PenaltySeconds;
+  calculateCompetitionTotalTime(competition.run1TimeSeconds, competition.run1PenaltySeconds);
 
 export const getRun2Total = (competition: Competition): number =>
-  competition.run2TimeSeconds + competition.run2PenaltySeconds;
+  calculateCompetitionTotalTime(competition.run2TimeSeconds, competition.run2PenaltySeconds);
 
 export const getBestTotalTime = (competition: Competition): number =>
-  Math.min(getRun1Total(competition), getRun2Total(competition));
+  getCompetitionRunTotals(competition).bestTotal;
 
 export const getBestDriveTime = (competition: Competition): number =>
   Math.min(competition.run1TimeSeconds, competition.run2TimeSeconds);

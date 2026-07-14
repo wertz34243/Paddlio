@@ -242,7 +242,7 @@ export function ResultsReadinessView({ data, user, mode, onDataChange }: Results
       <div className="result-list">
         {personalBests.length ? personalBests.map((item) => (
           <article className="result-row" key={item.id}>
-            <div><strong>{item.boatClass} {item.location || "Strecke"}</strong><span>{item.courseName || "vergleichbare Strecke"} - {new Date(item.achievedAt).toLocaleDateString("de-DE")}</span><small>Resultat: {item.resultId || "manuell"}</small></div>
+            <div><strong>{item.boatClass} {item.location || "Gewässer"}</strong><span>{item.courseName || "vergleichbares Gewässer"} - {new Date(item.achievedAt).toLocaleDateString("de-DE")}</span><small>Resultat: {item.resultId || "manuell"}</small></div>
             <b>{formatSeconds(item.bestTimeSeconds)}</b>
           </article>
         )) : <p className="empty-state">Noch keine Bestzeiten vorhanden.</p>}

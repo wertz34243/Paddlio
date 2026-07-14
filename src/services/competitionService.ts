@@ -2,7 +2,8 @@ import { getSupabaseClient } from "../lib/supabase";
 import type { Competition } from "../domain/types";
 import { enqueueSyncChange } from "./syncService";
 import { calculatePersonalBests, upsertCloudPersonalBest } from "./resultsReadinessService";
-import { sanitizeCloudPayload, toCloudUuid } from "./cloudIds";
+import { sanitizeCloudPayload, toCloudUuid, toCloudUuidOrNull } from "./cloudIds";
+import { calculateCompetitionTotalTime, normalizeCompetitionLevel } from "../domain/competition";
 
 const competitionIdFor = (competition: Competition): string => toCloudUuid(competition.id) ?? crypto.randomUUID();
 
@@ -12,13 +13,15 @@ export const upsertCloudCompetition = async (competition: Competition, clubId?: 
   const competitionPayload = sanitizeCloudPayload({
     id: cloudCompetitionId,
     club_id: clubId || null,
+    user_id: toCloudUuidOrNull(competition.athleteId),
+    created_by: toCloudUuidOrNull(competition.createdBy || competition.athleteId),
     name: competition.name || competition.location || "Wettkampf",
     location: competition.location,
     start_date: competition.date,
     end_date: competition.date,
     organizer: competition.organizer ?? null,
     course: competition.course ?? null,
-    level: competition.level ?? null,
+    level: normalizeCompetitionLevel(competition.level),
     source: competition.source ?? "manual",
     external_id: competition.externalId ?? null,
     source_url: competition.sourceUrl ?? null,
@@ -28,7 +31,7 @@ export const upsertCloudCompetition = async (competition: Competition, clubId?: 
     id: `result-${competition.id}`,
     club_id: competition.clubId || clubId || null,
     competition_id: cloudCompetitionId,
-    athlete_id: competition.athleteId,
+    athlete_id: toCloudUuidOrNull(competition.athleteId),
     competition_name: competition.name || competition.location || "Wettkampf",
     competition_date: competition.date,
     location: competition.location,
@@ -39,14 +42,20 @@ export const upsertCloudCompetition = async (competition: Competition, clubId?: 
     run1_time_seconds: competition.run1TimeSeconds,
     run1_penalties: competition.run1PenaltySeconds,
     run1_penalty_seconds: competition.run1PenaltySeconds,
-    run1_total: competition.run1TotalSeconds ?? competition.run1TimeSeconds + competition.run1PenaltySeconds,
+    run1_total: calculateCompetitionTotalTime(competition.run1TimeSeconds, competition.run1PenaltySeconds),
     run2_time: competition.run2TimeSeconds,
     run2_time_seconds: competition.run2TimeSeconds,
     run2_penalties: competition.run2PenaltySeconds,
     run2_penalty_seconds: competition.run2PenaltySeconds,
-    run2_total: competition.run2TotalSeconds ?? competition.run2TimeSeconds + competition.run2PenaltySeconds,
-    best_total: competition.bestTotalSeconds ?? Math.min(competition.run1TimeSeconds + competition.run1PenaltySeconds, competition.run2TimeSeconds + competition.run2PenaltySeconds),
-    best_total_seconds: competition.bestTotalSeconds ?? Math.min(competition.run1TimeSeconds + competition.run1PenaltySeconds, competition.run2TimeSeconds + competition.run2PenaltySeconds),
+    run2_total: calculateCompetitionTotalTime(competition.run2TimeSeconds, competition.run2PenaltySeconds),
+    best_total: Math.min(
+      calculateCompetitionTotalTime(competition.run1TimeSeconds, competition.run1PenaltySeconds),
+      calculateCompetitionTotalTime(competition.run2TimeSeconds, competition.run2PenaltySeconds),
+    ),
+    best_total_seconds: Math.min(
+      calculateCompetitionTotalTime(competition.run1TimeSeconds, competition.run1PenaltySeconds),
+      calculateCompetitionTotalTime(competition.run2TimeSeconds, competition.run2PenaltySeconds),
+    ),
     ranking: competition.rank,
     rank: competition.rank,
     starter_count: competition.starterField ?? null,
@@ -60,7 +69,7 @@ export const upsertCloudCompetition = async (competition: Competition, clubId?: 
     notes: competition.note,
     source_url: competition.sourceUrl ?? null,
     source_type: competition.sourceType ?? competition.source ?? "manual",
-    created_by: competition.createdBy ?? null,
+    created_by: toCloudUuidOrNull(competition.createdBy || competition.athleteId),
   });
 
   if (!client || !navigator.onLine) {
@@ -94,7 +103,7 @@ export const listCloudCompetitions = async (): Promise<Competition[]> => {
     organizer: row.competitions?.organizer ?? "",
     course: row.course_name ?? row.competitions?.course ?? "",
     courseName: row.course_name ?? row.competitions?.course ?? "",
-    level: row.competitions?.level ?? "Training",
+    level: normalizeCompetitionLevel(row.competitions?.level),
     boatClass: row.boat_class,
     ageClass: row.age_class ?? "",
     run1TimeSeconds: row.run1_time ?? row.run1_time_seconds ?? 0,

@@ -7,6 +7,7 @@ import {
   getRun1Total,
   getRun2Total,
 } from "../domain/metrics";
+import { competitionLevelOptions, formatCompetitionLevel, normalizeCompetitionLevel, toNonNegativeNumber } from "../domain/competition";
 import type { BoatClass, Competition } from "../domain/types";
 
 type CompetitionDraft = Omit<Competition, "athleteId" | "createdAt" | "updatedAt">;
@@ -25,7 +26,7 @@ const emptyDraft: CompetitionDraft = {
   location: "",
   organizer: "",
   course: "",
-  level: "Training",
+  level: "general",
   boatClass: "K1",
   run1TimeSeconds: 0,
   run1PenaltySeconds: 0,
@@ -41,7 +42,7 @@ const emptyDraft: CompetitionDraft = {
   sourceUrl: "",
 };
 
-const toNumber = (value: FormDataEntryValue | null): number => Number(value ?? 0);
+const toNumber = (value: FormDataEntryValue | null): number => toNonNegativeNumber(value);
 
 export function CompetitionsView({ competitions, onSave, onDelete, openNewSignal = 0 }: CompetitionsViewProps) {
   const [draft, setDraft] = useState<CompetitionDraft | null>(null);
@@ -64,7 +65,7 @@ export function CompetitionsView({ competitions, onSave, onDelete, openNewSignal
       location: competition.location,
       organizer: competition.organizer ?? "",
       course: competition.course ?? "",
-      level: competition.level ?? "Training",
+      level: normalizeCompetitionLevel(competition.level),
       boatClass: competition.boatClass,
       run1TimeSeconds: competition.run1TimeSeconds,
       run1PenaltySeconds: competition.run1PenaltySeconds,
@@ -92,7 +93,7 @@ export function CompetitionsView({ competitions, onSave, onDelete, openNewSignal
       location: String(formData.get("location")).trim(),
       organizer: String(formData.get("organizer")).trim(),
       course: String(formData.get("course")).trim(),
-      level: String(formData.get("level")) as Competition["level"],
+      level: normalizeCompetitionLevel(formData.get("level")),
       boatClass: String(formData.get("boatClass")) as BoatClass,
       run1TimeSeconds: toNumber(formData.get("run1TimeSeconds")),
       run1PenaltySeconds: toNumber(formData.get("run1PenaltySeconds")),
@@ -144,18 +145,15 @@ export function CompetitionsView({ competitions, onSave, onDelete, openNewSignal
                 <input name="organizer" defaultValue={draft.organizer} placeholder="z. B. MKC" />
               </label>
               <label>
-                Strecke
-                <input name="course" defaultValue={draft.course} placeholder="z. B. Ruhr-Slalomstrecke" />
+                Gewässer
+                <input name="course" defaultValue={draft.course} placeholder="z. B. Erft, Rhein oder Wildwasserpark Hohenlimburg" />
               </label>
               <label>
                 Ebene
-                <select name="level" defaultValue={draft.level ?? "Training"}>
-                  <option value="Training">Training</option>
-                  <option value="Vereinsrennen">Vereinsrennen</option>
-                  <option value="Bezirk">Bezirk</option>
-                  <option value="Westdeutsch">Westdeutsch</option>
-                  <option value="DM">DM</option>
-                  <option value="International">International</option>
+                <select name="level" defaultValue={normalizeCompetitionLevel(draft.level)}>
+                  {competitionLevelOptions.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
                 </select>
               </label>
               <label>
@@ -241,7 +239,7 @@ export function CompetitionsView({ competitions, onSave, onDelete, openNewSignal
                       <span>{new Date(competition.date).toLocaleDateString("de-DE")}</span>
                       <h4>{competition.name || competition.location}</h4>
                       <small>
-                        {competition.location} - {competition.level ?? "Training"} - Platz {competition.rank}{competition.starterField ? `/${competition.starterField}` : ""} - {penalty.toLocaleString("de-DE", { maximumFractionDigits: 1 })} Strafsek.
+                        {competition.location} - {formatCompetitionLevel(competition.level)} - Platz {competition.rank}{competition.starterField ? `/${competition.starterField}` : ""} - {penalty.toLocaleString("de-DE", { maximumFractionDigits: 1 })} Strafsek.
                       </small>
                     </div>
                     <strong>{formatSeconds(getBestTotalTime(competition))}</strong>
@@ -250,12 +248,14 @@ export function CompetitionsView({ competitions, onSave, onDelete, openNewSignal
                     <div className="competition-details">
                       <div className="split-grid">
                         <div>
-                          <span>Lauf 1 Total</span>
+                          <span>Lauf 1 Gesamtzeit</span>
                           <b>{formatSeconds(getRun1Total(competition))}</b>
+                          <small>Fahrzeit {formatSeconds(competition.run1TimeSeconds)} s + Strafsekunden {formatSeconds(competition.run1PenaltySeconds)} s</small>
                         </div>
                         <div>
-                          <span>Lauf 2 Total</span>
+                          <span>Lauf 2 Gesamtzeit</span>
                           <b>{formatSeconds(getRun2Total(competition))}</b>
+                          <small>Fahrzeit {formatSeconds(competition.run2TimeSeconds)} s + Strafsekunden {formatSeconds(competition.run2PenaltySeconds)} s</small>
                         </div>
                         <div>
                           <span>Beste Fahrzeit</span>
@@ -270,7 +270,7 @@ export function CompetitionsView({ competitions, onSave, onDelete, openNewSignal
                           <b>{competition.feeling}/10</b>
                         </div>
                         <div>
-                          <span>Strecke</span>
+                          <span>Gewässer</span>
                           <b>{competition.course || competition.location}</b>
                         </div>
                         <div>

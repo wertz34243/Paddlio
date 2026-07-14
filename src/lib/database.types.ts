@@ -4,7 +4,7 @@ export type UserRole = "Athlete" | "Coach" | "TeamAdmin" | "ClubAdmin" | "Admin"
 export type UserStatus = "active" | "disabled";
 export type ClubStatus = "active" | "inactive";
 export type ReviewStatus = "open" | "approved" | "rejected";
-export type PlanStatus = "planned" | "done" | "skipped" | "cancelled";
+export type PlanStatus = "planned" | "in_progress" | "completed" | "partially_completed" | "done" | "skipped" | "cancelled";
 export type GoalStatus = "active" | "paused" | "achieved" | "archived";
 export type GoalType = "time" | "count" | "percent" | "text";
 

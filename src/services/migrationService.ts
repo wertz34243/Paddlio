@@ -79,7 +79,7 @@ export const syncDataSnapshotToCloud = async (data: PaddleMotionData, profile: C
     migrated += 1;
   }
   for (const entry of data.journal) {
-    await upsertCloudJournalEntry(entry);
+    await upsertCloudJournalEntry({ ...entry, athleteId: profile.id });
     migrated += 1;
   }
   for (const template of data.trainingTemplates) {
@@ -91,7 +91,12 @@ export const syncDataSnapshotToCloud = async (data: PaddleMotionData, profile: C
     migrated += 1;
   }
   for (const competition of data.competitions) {
-    await upsertCloudCompetition(competition, clubId);
+    await upsertCloudCompetition({
+      ...competition,
+      athleteId: profile.id,
+      createdBy: competition.createdBy || profile.id,
+      clubId: competition.clubId || clubId || "",
+    }, clubId);
     migrated += 1;
   }
   const personalBests = data.personalBests.length > 0 ? data.personalBests : calculatePersonalBests(data.competitions);

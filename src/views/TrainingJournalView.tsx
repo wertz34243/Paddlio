@@ -1,12 +1,14 @@
-import type { TrainingJournalEntry, TrainingSession } from "../domain/types";
+import type { PlanEntry, TrainingJournalEntry, TrainingSession } from "../domain/types";
 
 type TrainingJournalViewProps = {
   journal: TrainingJournalEntry[];
   sessions: TrainingSession[];
+  plan: PlanEntry[];
 };
 
-export function TrainingJournalView({ journal, sessions }: TrainingJournalViewProps) {
+export function TrainingJournalView({ journal, sessions, plan }: TrainingJournalViewProps) {
   const sessionsById = new Map(sessions.map((session) => [session.id, session]));
+  const planById = new Map(plan.map((entry) => [entry.id, entry]));
   const sortedJournal = [...journal].sort((a, b) => b.date.localeCompare(a.date));
 
   return (
@@ -22,15 +24,23 @@ export function TrainingJournalView({ journal, sessions }: TrainingJournalViewPr
         {sortedJournal.length > 0 ? (
           sortedJournal.map((entry) => {
             const session = sessionsById.get(entry.trainingId);
+            const planned = entry.trainingPlanEntryId ? planById.get(entry.trainingPlanEntryId) : undefined;
 
             return (
               <article className="result-row" key={entry.id}>
                 <div>
-                  <strong>{session?.focus || session?.type || "Training"}</strong>
+                  <strong>{planned?.title || planned?.trainingType || session?.focus || session?.type || "Freies Training"}</strong>
                   <span>{new Date(entry.date).toLocaleDateString("de-DE")}</span>
+                  {planned ? (
+                    <span>Geplant: {planned.durationMinutes} Minuten {planned.area}. Durchgeführt: {entry.actualDurationMinutes ?? planned.durationMinutes} Minuten.</span>
+                  ) : (
+                    <span>Freies Training ohne Planbezug.</span>
+                  )}
                   <span>
                     Gefühl {entry.feeling}/10 - Müdigkeit {entry.fatigue}/10 - Schlaf {entry.sleep}/10 - Motivation {entry.motivation}/10
                   </span>
+                  {entry.averageHeartRate ? <span>Durchschnittspuls {entry.averageHeartRate}</span> : null}
+                  {entry.painNotes ? <small>Beschwerden: {entry.painNotes}</small> : null}
                   {entry.notes ? <small>{entry.notes}</small> : null}
                 </div>
                 <b>{entry.trainingRating}/10</b>
