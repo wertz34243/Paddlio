@@ -611,7 +611,19 @@ function AppContent() {
           />
         );
       case "journal":
-        return <TrainingJournalView sessions={data.training} plan={data.plan} journal={data.journal} />;
+        return (
+          <TrainingJournalView
+            sessions={data.training}
+            plan={data.plan}
+            journal={data.journal}
+            onOpenOverview={() => setTrainingSegment("overview")}
+            onOpenPlan={() => setTrainingSegment("plan")}
+            onOpenSessions={() => {
+              setTrainingSegment("sessions");
+              setNewTrainingSignal((value) => value + 1);
+            }}
+          />
+        );
       case "overview":
         return (
           <TrainingOverviewView

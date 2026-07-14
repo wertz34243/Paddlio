@@ -2156,6 +2156,21 @@ p {
   padding: 10px 12px;
 }
 
+.training-journal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 16px;
+}
+
+.training-journal-actions button {
+  min-height: 44px;
+}
+
+.compact-action {
+  margin-top: 0;
+}
+
 .season-month-list {
   display: grid;
   gap: 12px;
