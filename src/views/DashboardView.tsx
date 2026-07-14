@@ -76,25 +76,32 @@ export function DashboardView({ data, user, onNavigate, onOpenMoreSegment, onOpe
   const openTasks = data.taskAssignments.filter((item) => item.assignedTo === user.userId && item.status !== "done").length;
   const pendingAttendance = scopedPlan.filter((entry) => !data.trainingAttendance.some((item) => item.trainingId === entry.id && item.athleteId === user.userId)).length;
   const latestNews = data.clubPosts.filter((post) => !post.deletedAt).sort((a, b) => Number(b.isPinned) - Number(a.isPinned) || b.createdAt.localeCompare(a.createdAt))[0];
+  const heroName = isAdmin ? "Admin" : displayName.includes("@") ? "Sportler" : displayName;
+  const roleIntro = isAdmin
+    ? "Systemstatus, Beta-Feedback und Nutzerverwaltung."
+    : isCoachLike
+      ? "Teamstatus, Planung und offene Rückmeldungen."
+      : "Training, Journal und Rückmeldungen für heute.";
+  const readinessScore = Math.max(0, Math.min(100, Math.round((intelligence.trainingQuote + Math.max(0, 100 - openFeedback * 12) + (intelligence.athleteStatus.tone === "warning" ? 58 : 86)) / 3)));
   const primaryActions = isAdmin
     ? [
-        { label: "Beta-Check", ariaLabel: "Beta-Check öffnen", onClick: () => onOpenMoreSegment("beta") },
-        { label: "Feedback prüfen", ariaLabel: "Beta-Feedback prüfen", onClick: () => onOpenMoreSegment("feedback") },
-        { label: "Sync prüfen", ariaLabel: "Cloud-Synchronisation im Beta-Check prüfen", onClick: () => onOpenMoreSegment("beta") },
-        { label: "Nutzer verwalten", ariaLabel: "Admin-Nutzerverwaltung öffnen", onClick: () => onOpenMoreSegment("coach") },
+        { label: "Beta-Check", detail: "Status prüfen", ariaLabel: "Beta-Check öffnen", onClick: () => onOpenMoreSegment("beta") },
+        { label: "Feedback", detail: "Rückmeldungen", ariaLabel: "Beta-Feedback prüfen", onClick: () => onOpenMoreSegment("feedback") },
+        { label: "Sync", detail: "Cloud prüfen", ariaLabel: "Cloud-Synchronisation im Beta-Check prüfen", onClick: () => onOpenMoreSegment("beta") },
+        { label: "Nutzer", detail: "Verwalten", ariaLabel: "Admin-Nutzerverwaltung öffnen", onClick: () => onOpenMoreSegment("coach") },
       ]
     : isCoachLike
       ? [
-          { label: "Training planen", ariaLabel: "Neues Training planen", onClick: () => onQuickAction("training") },
-          { label: "Rückmeldungen prüfen", ariaLabel: "Offene Trainingsrückmeldungen prüfen", onClick: () => onNavigate("training") },
-          { label: "Anwesenheit", ariaLabel: "Anwesenheit im Team-Bereich prüfen", onClick: () => onNavigate("communication") },
-          { label: "Nachricht schreiben", ariaLabel: "Nachricht an Team oder Sportler schreiben", onClick: () => onNavigate("communication") },
+          { label: "Planen", detail: "Training", ariaLabel: "Neues Training planen", onClick: () => onQuickAction("training") },
+          { label: "Feedback", detail: "Prüfen", ariaLabel: "Offene Trainingsrückmeldungen prüfen", onClick: () => onNavigate("training") },
+          { label: "Anwesenheit", detail: "Team", ariaLabel: "Anwesenheit im Team-Bereich prüfen", onClick: () => onNavigate("communication") },
+          { label: "Nachricht", detail: "Schreiben", ariaLabel: "Nachricht an Team oder Sportler schreiben", onClick: () => onNavigate("communication") },
         ]
       : [
-          { label: "Training eintragen", ariaLabel: "Training für heute eintragen", onClick: () => onQuickAction("training") },
-          { label: "Journal ausfüllen", ariaLabel: "Trainingstagebuch für heute ausfüllen", onClick: () => onQuickAction("journal") },
-          { label: "Anwesenheit", ariaLabel: "Anwesenheit im Team-Bereich beantworten", onClick: () => onNavigate("communication") },
-          { label: "Nachricht schreiben", ariaLabel: "Nachricht an Trainer oder Team schreiben", onClick: () => onNavigate("communication") },
+          { label: "Training", detail: "Eintragen", ariaLabel: "Training für heute eintragen", onClick: () => onQuickAction("training") },
+          { label: "Journal", detail: "Ausfüllen", ariaLabel: "Trainingstagebuch für heute ausfüllen", onClick: () => onQuickAction("journal") },
+          { label: "Anwesenheit", detail: "Antworten", ariaLabel: "Anwesenheit im Team-Bereich beantworten", onClick: () => onNavigate("communication") },
+          { label: "Nachricht", detail: "Schreiben", ariaLabel: "Nachricht an Trainer oder Team schreiben", onClick: () => onNavigate("communication") },
         ];
 
   return (
@@ -110,8 +117,9 @@ export function DashboardView({ data, user, onNavigate, onOpenMoreSegment, onOpe
         <div>
           <p className="eyebrow">{todayText()}</p>
           <h1>Heute</h1>
-          <p className="home-welcome-line">{getGreeting(displayName)} <span className="beta-badge">Paddlio Beta</span></p>
+          <p className="home-welcome-line">{isAdmin ? "Hallo Admin" : getGreeting(heroName)} <span className="beta-badge">Paddlio Beta</span></p>
           <p className="hero-slogan">{APP_SLOGAN}</p>
+          <p className="muted">{roleIntro}</p>
           <p className="muted">Version {APP_VERSION} - Testversion für Vereins- und Trainerfeedback.</p>
         </div>
       </section>
@@ -124,7 +132,8 @@ export function DashboardView({ data, user, onNavigate, onOpenMoreSegment, onOpe
       <section className="quick-actions priority-actions" aria-label="Wichtige Aktionen">
         {primaryActions.map((action) => (
           <button type="button" key={action.ariaLabel} onClick={action.onClick} aria-label={action.ariaLabel}>
-            {action.label}
+            <strong>{action.label}</strong>
+            <span>{action.detail}</span>
           </button>
         ))}
       </section>
@@ -144,20 +153,19 @@ export function DashboardView({ data, user, onNavigate, onOpenMoreSegment, onOpe
         </button>
       </section>
 
-      <section className="dashboard-card-grid">
-        <AppCard
-          icon="training"
-          title="Heute trainieren"
-          subtitle={intelligence.todayTraining ? `${intelligence.todayTraining.time} - ${intelligence.todayTraining.area}` : "Regeneration"}
-          value={intelligence.todayTraining?.trainingType ?? "Pause"}
-          tone={intelligence.todayTraining ? "primary" : "success"}
-        >
-          <div className="smart-detail-grid">
-            <span>Ziel: {intelligence.todayTraining?.goal || "Genieße heute deine Regeneration."}</span>
-            <span>Intensität: {intelligence.todayTraining?.intensity ?? "locker"}</span>
-          </div>
-        </AppCard>
+      <section className="home-readiness-panel">
+        <div className="readiness-ring" style={{ "--ring-value": `${readinessScore}%` } as CSSProperties}>
+          <strong>{readinessScore}</strong>
+          <span>Status</span>
+        </div>
+        <div>
+          <p className="eyebrow">Readiness</p>
+          <h3>{intelligence.athleteStatus.title}</h3>
+          <p>{intelligence.athleteStatus.detail}</p>
+        </div>
+      </section>
 
+      <section className="dashboard-card-grid home-priority-grid">
         <AppCard icon="bolt" title="Trainingsserie" subtitle="Konstanz" value={`${intelligence.currentStreak} Tage`} tone="success">
           <div className="smart-detail-grid">
             <span>Längste Serie: {intelligence.longestStreak} Tage</span>
@@ -178,30 +186,8 @@ export function DashboardView({ data, user, onNavigate, onOpenMoreSegment, onOpe
           <div className="smart-detail-grid">
             <span>{weeklyPlan.completedCount} erledigt diese Woche</span>
             <span>{weeklyPlan.minutes} Trainingsminuten</span>
-            {user.role === "coach" || user.role === "teamAdmin" || user.role === "admin" ? <span>{openFeedback} offene Rückmeldungen</span> : null}
+            {isCoachLike ? <span>{openFeedback} offene Rückmeldungen</span> : null}
           </div>
-        </AppCard>
-
-        <AppCard
-          icon="trophy"
-          title="Countdown"
-          subtitle={nextCompetition ? `${nextCompetition.location} - ${nextCompetition.boatClass}` : "Nächster Wettkampf"}
-          value={daysUntilRace === undefined ? "Kein Termin" : `${daysUntilRace} Tage`}
-          tone="warning"
-        >
-          <div className="countdown-ring" style={{ "--ring-value": `${raceRing}%` } as CSSProperties}>
-            <span>{daysUntilRace === undefined ? "--" : daysUntilRace}</span>
-          </div>
-        </AppCard>
-
-        <AppCard
-          icon="target"
-          title="Athletenstatus"
-          subtitle="Automatisch berechnet"
-          value={intelligence.athleteStatus.title}
-          tone={intelligence.athleteStatus.tone}
-        >
-          <p className="card-note">{intelligence.athleteStatus.detail}</p>
         </AppCard>
 
         <AppCard icon="message" title="Team" subtitle="Nachrichten & Gruppen" value={`${unreadDirect + groupActivity} neu`} tone="accent">
@@ -209,119 +195,49 @@ export function DashboardView({ data, user, onNavigate, onOpenMoreSegment, onOpe
             <span>Direkt: {unreadDirect}</span>
             <span>Gruppen: {groupActivity}</span>
           </div>
-          <button className="ghost-button wide" type="button" onClick={() => onNavigate("communication")}>
-            Team öffnen
-          </button>
+          <button className="ghost-button wide" type="button" onClick={() => onNavigate("communication")}>Team öffnen</button>
         </AppCard>
+      </section>
 
-        <AppCard icon="calendar" title="Team-Orga" subtitle="Aufgaben & Anwesenheit" value={`${openTasks + pendingAttendance} offen`} tone="warning">
+      <section className="dashboard-card-grid home-secondary-grid">
+        <AppCard icon="training" title="Heute trainieren" subtitle={intelligence.todayTraining ? `${intelligence.todayTraining.time} - ${intelligence.todayTraining.area}` : "Regeneration"} value={intelligence.todayTraining?.trainingType ?? "Pause"} tone={intelligence.todayTraining ? "primary" : "success"}>
           <div className="smart-detail-grid">
-            <span>Aufgaben: {openTasks}</span>
-            <span>Anwesenheit: {pendingAttendance}</span>
+            <span>Ziel: {intelligence.todayTraining?.goal || "Genieße heute deine Regeneration."}</span>
+            <span>Intensität: {intelligence.todayTraining?.intensity ?? "locker"}</span>
           </div>
+        </AppCard>
+        <AppCard icon="trophy" title="Countdown" subtitle={nextCompetition ? `${nextCompetition.location} - ${nextCompetition.boatClass}` : "Nächster Wettkampf"} value={daysUntilRace === undefined ? "Kein Termin" : `${daysUntilRace} Tage`} tone="warning">
+          <div className="countdown-ring" style={{ "--ring-value": `${raceRing}%` } as CSSProperties}><span>{daysUntilRace === undefined ? "--" : daysUntilRace}</span></div>
+        </AppCard>
+        <AppCard icon="calendar" title="Team-Orga" subtitle="Aufgaben & Anwesenheit" value={`${openTasks + pendingAttendance} offen`} tone="warning">
+          <div className="smart-detail-grid"><span>Aufgaben: {openTasks}</span><span>Anwesenheit: {pendingAttendance}</span></div>
         </AppCard>
       </section>
 
       <section className="section-block smart-coach-card">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Saisonziele</p>
-            <h3>Dein Fortschritt</h3>
-          </div>
-        </div>
+        <div className="section-heading"><div><p className="eyebrow">Saisonziele</p><h3>Dein Fortschritt</h3></div></div>
         <div className="goal-card-grid">
           {seasonGoals.length > 0 ? seasonGoals.slice(0, 4).map(({ goal, currentLabel, progress, statusLabel }) => (
             <article className={`goal-mini-card tone-${goal.category === "training" ? "training" : goal.category === "penalty" ? "penalty" : goal.metric === "bestC1Total" ? "c1" : "k1"}`} key={goal.id}>
-              <div>
-                <strong>{goal.title}</strong>
-                <span>{currentLabel}</span>
-              </div>
-              <b>{statusLabel}</b>
-              <div className="progress-track">
-                <span style={{ width: `${progress}%` }} />
-              </div>
+              <div><strong>{goal.title}</strong><span>{currentLabel}</span></div><b>{statusLabel}</b><div className="progress-track"><span style={{ width: `${progress}%` }} /></div>
             </article>
           )) : (
-            <article className="goal-mini-card tone-training">
-              <div>
-                <strong>Noch keine Saisonziele</strong>
-                <span>Erstelle dein erstes Ziel im Bereich Ziele.</span>
-              </div>
-              <button type="button" onClick={() => onNavigate("goals")} aria-label="Saisonziele öffnen">Ziele öffnen</button>
-            </article>
+            <article className="goal-mini-card tone-training"><div><strong>Noch keine Saisonziele</strong><span>Erstelle dein erstes Ziel im Bereich Ziele.</span></div><button type="button" onClick={() => onNavigate("goals")} aria-label="Saisonziele öffnen">Ziele öffnen</button></article>
           )}
         </div>
       </section>
 
-      <SmartCoachView
-        data={data}
-        user={user}
-        compact
-        onOpenDetails={onOpenSmartCoach}
-        onUpdateRecommendation={onUpdateRecommendation}
-      />
+      <SmartCoachView data={data} user={user} compact onOpenDetails={onOpenSmartCoach} onUpdateRecommendation={onUpdateRecommendation} />
 
       {latestNews ? (
-        <section className="section-block smart-coach-card">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Vereinsnews</p>
-              <h3>{latestNews.title}</h3>
-            </div>
-            {latestNews.isPinned ? <span className="status-pill planned">Wichtig</span> : null}
-          </div>
-          <p>{latestNews.content}</p>
-          <button className="ghost-button wide" type="button" onClick={() => onNavigate("communication")}>
-            Team öffnen
-          </button>
-        </section>
+        <section className="section-block smart-coach-card"><div className="section-heading"><div><p className="eyebrow">Vereinsnews</p><h3>{latestNews.title}</h3></div>{latestNews.isPinned ? <span className="status-pill planned">Wichtig</span> : null}</div><p>{latestNews.content}</p><button className="ghost-button wide" type="button" onClick={() => onNavigate("communication")}>Team öffnen</button></section>
       ) : null}
 
-      <section className="dashboard-card-grid">
-        <AppCard icon="target" title="Persönliche Rekorde" subtitle="Automatisch erkannt" value={records.k1Best} tone="k1">
-          <button className="ghost-button wide" type="button" onClick={() => onNavigate("records")}>
-            Alle Rekorde
-          </button>
-        </AppCard>
-
-        <AppCard
-          icon="chart"
-          title="Saisonübersicht"
-          subtitle="Monate und Belastung"
-          value={`${data.training.length} Trainings`}
-          tone="secondary"
-        >
-          <button className="ghost-button wide" type="button" onClick={() => onNavigate("season")}>
-            Saison ansehen
-          </button>
-        </AppCard>
-
-        <AppCard
-          icon="trophy"
-          title="Letzter Wettkampf"
-          subtitle={lastCompetition ? `${lastCompetition.location} - ${lastCompetition.boatClass}` : "Noch kein Rennen"}
-          value={lastCompetition ? `${formatSeconds(getBestTotalTime(lastCompetition))} s` : "--"}
-          tone="warning"
-        />
-
-        <AppCard
-          icon="training"
-          title="Letzter Trainingseintrag"
-          subtitle={lastTraining ? new Date(lastTraining.date).toLocaleDateString("de-DE") : "Noch kein Training"}
-          value={lastTraining ? `${lastTraining.durationMinutes} min` : "--"}
-          tone="success"
-        >
-          <p className="card-note">{lastTraining?.focus || "Dokumentiere deine erste Einheit."}</p>
-        </AppCard>
-
-        <AppCard icon="boat" title="Wetter Vorbereitung" subtitle="Demnächst" value="Bereit" tone="accent">
-          <div className="weather-placeholder">
-            <span>Temperatur</span>
-            <span>Wind</span>
-            <span>Regen</span>
-            <span>Wasserstand</span>
-          </div>
-        </AppCard>
+      <section className="dashboard-card-grid home-secondary-grid">
+        <AppCard icon="target" title="Persönliche Rekorde" subtitle="Automatisch erkannt" value={records.k1Best} tone="k1"><button className="ghost-button wide" type="button" onClick={() => onNavigate("records")}>Alle Rekorde</button></AppCard>
+        <AppCard icon="chart" title="Saisonübersicht" subtitle="Monate und Belastung" value={`${data.training.length} Trainings`} tone="secondary"><button className="ghost-button wide" type="button" onClick={() => onNavigate("season")}>Saison ansehen</button></AppCard>
+        <AppCard icon="trophy" title="Letzter Wettkampf" subtitle={lastCompetition ? `${lastCompetition.location} - ${lastCompetition.boatClass}` : "Noch kein Rennen"} value={lastCompetition ? `${formatSeconds(getBestTotalTime(lastCompetition))} s` : "--"} tone="warning" />
+        <AppCard icon="training" title="Letzter Trainingseintrag" subtitle={lastTraining ? new Date(lastTraining.date).toLocaleDateString("de-DE") : "Noch kein Training"} value={lastTraining ? `${lastTraining.durationMinutes} min` : "--"} tone="success"><p className="card-note">{lastTraining?.focus || "Dokumentiere deine erste Einheit."}</p></AppCard>
       </section>
     </div>
   );

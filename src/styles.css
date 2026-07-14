@@ -4058,6 +4058,89 @@ html {
     rgba(16, 24, 39, 0.92);
 }
 
+.priority-actions button {
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  min-height: 76px;
+  text-align: left;
+}
+
+.priority-actions button strong {
+  color: var(--text);
+  font-size: 1.05rem;
+  line-height: 1.05;
+}
+
+.priority-actions button span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.home-readiness-panel {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(141, 244, 90, 0.12), transparent 14rem),
+    rgba(16, 24, 39, 0.92);
+  box-shadow: var(--shadow-soft);
+}
+
+.home-readiness-panel h3 {
+  font-size: clamp(1.45rem, 5vw, 2.15rem);
+  line-height: 1.05;
+}
+
+.home-readiness-panel p:not(.eyebrow) {
+  margin-top: 7px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.readiness-ring {
+  --ring-value: 0%;
+  display: grid;
+  width: 104px;
+  height: 104px;
+  place-items: center;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle closest-side, #101827 68%, transparent 70%),
+    conic-gradient(#8df45a var(--ring-value), rgba(255, 255, 255, 0.12) 0);
+}
+
+.readiness-ring strong {
+  align-self: end;
+  color: var(--text);
+  font-size: 2.1rem;
+  line-height: 1;
+}
+
+.readiness-ring span {
+  align-self: start;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.home-priority-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.home-secondary-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.home-secondary-grid .app-card {
+  min-height: 142px;
+}
+
 .quick-actions button:hover,
 .training-overview-grid .action-card:hover {
   border-color: rgba(75, 216, 255, 0.36);
@@ -4206,5 +4289,23 @@ html {
   .dashboard-card-grid,
   .metric-grid {
     grid-template-columns: 1fr;
+  }
+
+  .home-priority-grid,
+  .home-secondary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-secondary-grid .app-card {
+    min-height: 128px;
+  }
+
+  .home-readiness-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .readiness-ring {
+    width: 92px;
+    height: 92px;
   }
 }
