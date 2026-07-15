@@ -6,9 +6,10 @@ import { SegmentNav, type SegmentItem } from "./components/SegmentNav";
 import { createId } from "./data/storage";
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import { getActiveUser, getDisplayName, getInitials } from "./domain/profile";
-import { getWeekdayFromDate, isDoneStatus } from "./domain/trainingPlan";
+import { formatLocalDateOnly, getWeekdayFromDate, isDoneStatus, parseLocalDateOnly } from "./domain/trainingPlan";
 import { updateCloudProfile } from "./services/profileService";
 import { createCloudNotification, markAllCloudNotificationsRead, markCloudNotificationRead } from "./services/notificationService";
+import { upsertCloudFeedback, upsertCloudTraining } from "./services/trainingService";
 import { upsertCloudSmartCoachRecommendation } from "./services/smartCoachService";
 import { upsertSmartCoachStatus } from "./domain/smartCoach";
 import { canSeeSystemPrivateData } from "./domain/privacy";
@@ -142,7 +143,7 @@ const moreSegmentMeta: Record<MoreSegment, { description: string; icon: IconName
   limitations: { description: "Bekannte Grenzen der Beta", icon: "timer" },
   beta: { description: "Beta-Check und Systemstatus", icon: "chart" },
   betaTesters: { description: "Testerstatus und Rückmeldungen", icon: "user" },
-  coach: { description: "Coach- und Adminbereich", icon: "club" },
+  coach: { description: "Coach-Bereich", icon: "club" },
   settings: { description: "Konto, App und Logout", icon: "more" },
 };
 
@@ -435,46 +436,49 @@ function AppContent() {
     },
   ) => {
     const timestamp = getTimestamp();
+    const existing = entry.id ? data.plan.find((item) => item.id === entry.id) : undefined;
+    const repeat = entry.repeat ?? "none";
+    const startDate = parseLocalDateOnly(entry.date);
+    const repeatUntil = entry.repeatUntil ? parseLocalDateOnly(entry.repeatUntil) : startDate;
+    const repeatLimit = entry.repeatMaxCount && entry.repeatMaxCount > 0 ? Math.min(entry.repeatMaxCount, 90) : 90;
+    const dates: string[] = [];
+    const cursor = parseLocalDateOnly(entry.date);
 
-    updateData((current) => {
-      const existing = entry.id ? current.plan.find((item) => item.id === entry.id) : undefined;
-      const repeat = entry.repeat ?? "none";
-      const startDate = new Date(`${entry.date}T00:00:00`);
-      const repeatUntil = entry.repeatUntil ? new Date(`${entry.repeatUntil}T00:00:00`) : startDate;
-      const repeatLimit = entry.repeatMaxCount && entry.repeatMaxCount > 0 ? Math.min(entry.repeatMaxCount, 90) : 90;
-      const dates: string[] = [];
-      const cursor = new Date(startDate);
+    while (dates.length === 0 || (repeat !== "none" && cursor <= repeatUntil && dates.length < repeatLimit)) {
+      dates.push(formatLocalDateOnly(cursor));
+      if (repeat === "daily") cursor.setDate(cursor.getDate() + 1);
+      else if (repeat === "weekly") cursor.setDate(cursor.getDate() + 7);
+      else if (repeat === "biweekly") cursor.setDate(cursor.getDate() + 14);
+      else if (repeat === "monthly") cursor.setMonth(cursor.getMonth() + 1);
+      else break;
+    }
 
-      while (dates.length === 0 || (repeat !== "none" && cursor <= repeatUntil && dates.length < repeatLimit)) {
-        dates.push(cursor.toISOString().slice(0, 10));
-        if (repeat === "daily") cursor.setDate(cursor.getDate() + 1);
-        else if (repeat === "weekly") cursor.setDate(cursor.getDate() + 7);
-        else if (repeat === "biweekly") cursor.setDate(cursor.getDate() + 14);
-        else if (repeat === "monthly") cursor.setMonth(cursor.getMonth() + 1);
-        else break;
-      }
-
-      const createdEntries = dates.map((date, index): PlanEntry => ({
+    const createdEntries = dates.map((date, index): PlanEntry => ({
         ...entry,
         id: index === 0 && entry.id ? entry.id : createId("plan"),
-        ownerUserId: entry.ownerUserId || current.activeUserId,
-        athleteId: current.athlete.id,
-        clubId: entry.clubId || activeUser.profile.club,
+        ownerUserId: entry.ownerUserId || activeUser.userId,
+        athleteId: data.athlete.id,
+        clubId: cloudProfile?.club_id || entry.clubId || activeUser.profile.club,
         date,
         weekday: getWeekdayFromDate(date),
         time: entry.startTime || entry.time,
         startTime: entry.startTime || entry.time,
-        createdByUserId: current.activeUserId,
+        createdByUserId: activeUser.userId,
         createdAt: index === 0 ? existing?.createdAt ?? timestamp : timestamp,
         updatedAt: timestamp,
       }));
 
+    updateData((current) => {
       return {
         ...current,
         plan: existing
           ? current.plan.map((item) => (item.id === createdEntries[0].id ? createdEntries[0] : item))
           : [...current.plan, ...createdEntries],
       };
+    });
+
+    createdEntries.forEach((createdEntry) => {
+      void upsertCloudTraining(createdEntry).catch((error) => console.error("Training konnte nicht direkt in Supabase gespeichert werden", error));
     });
 
     const targetUserIds = new Set(entry.assignedAthleteIds);
@@ -493,7 +497,7 @@ function AppContent() {
           message: `${entry.title || entry.trainingType} am ${entry.date}${entry.startTime ? ` um ${entry.startTime}` : ""}`,
           type: entry.status === "cancelled" ? "training_cancelled" : entry.id ? "training_updated" : "training_assigned",
           relatedEntityType: "training_plan_items",
-          relatedEntityId: entry.id,
+          relatedEntityId: createdEntries[0]?.id,
         }).catch((error) => console.error("Training-Benachrichtigung konnte nicht erstellt werden", error));
       }
     });
@@ -507,36 +511,47 @@ function AppContent() {
   };
 
   const saveTrainingFeedback = (feedback: Omit<TrainingFeedback, "id" | "completedAt"> & { id?: string }) => {
+    const timestamp = getTimestamp();
+    const existing = feedback.id ? data.trainingFeedback.find((item) => item.id === feedback.id) : undefined;
+    const nextFeedback: TrainingFeedback = {
+      ...feedback,
+      id: feedback.id ?? createId("feedback"),
+      completedAt: existing?.completedAt ?? timestamp,
+    };
+    const linkedPlanEntry = data.plan.find((entry) => entry.id === nextFeedback.trainingId);
+    const nextPlanEntry = linkedPlanEntry
+      ? { ...linkedPlanEntry, status: nextFeedback.status, feedbackNote: nextFeedback.comment ?? nextFeedback.reason ?? "", updatedAt: timestamp }
+      : null;
+
     updateData((current) => {
-      const timestamp = getTimestamp();
-      const existing = feedback.id ? current.trainingFeedback.find((item) => item.id === feedback.id) : undefined;
-      const nextFeedback: TrainingFeedback = {
-        ...feedback,
-        id: feedback.id ?? createId("feedback"),
-        completedAt: existing?.completedAt ?? timestamp,
-      };
+      const currentExisting = current.trainingFeedback.find((item) => item.id === nextFeedback.id);
 
       return {
         ...current,
-        trainingFeedback: existing
+        trainingFeedback: currentExisting
           ? current.trainingFeedback.map((item) => (item.id === nextFeedback.id ? nextFeedback : item))
           : [nextFeedback, ...current.trainingFeedback],
         plan: current.plan.map((entry) =>
-          entry.id === feedback.trainingId
-            ? { ...entry, status: feedback.status, feedbackNote: feedback.comment ?? feedback.reason ?? "", updatedAt: timestamp }
+          entry.id === nextFeedback.trainingId
+            ? { ...entry, status: nextFeedback.status, feedbackNote: nextFeedback.comment ?? nextFeedback.reason ?? "", updatedAt: timestamp }
             : entry,
         ),
       };
     });
 
-    if (feedback.coachUserId) {
+    void upsertCloudFeedback(nextFeedback).catch((error) => console.error("Training-Feedback konnte nicht direkt in Supabase gespeichert werden", error));
+    if (nextPlanEntry) {
+      void upsertCloudTraining(nextPlanEntry).catch((error) => console.error("Trainingstatus konnte nicht direkt in Supabase gespeichert werden", error));
+    }
+
+    if (nextFeedback.coachUserId) {
       void createCloudNotification({
-        userId: feedback.coachUserId,
+        userId: nextFeedback.coachUserId,
         title: "Neue Rückmeldung eingegangen",
-        message: feedback.status === "skipped" ? `Training ausgelassen: ${feedback.reason || "kein Grund angegeben"}` : `Feedback: Gefühl ${feedback.feeling}/10, Motivation ${feedback.motivation}/10`,
+        message: nextFeedback.status === "skipped" ? `Training ausgelassen: ${nextFeedback.reason || "kein Grund angegeben"}` : `Feedback: Gefühl ${nextFeedback.feeling}/10, Motivation ${nextFeedback.motivation}/10`,
         type: "feedback_received",
         relatedEntityType: "training_feedback",
-        relatedEntityId: feedback.id,
+        relatedEntityId: nextFeedback.id,
       }).catch((error) => console.error("Feedback-Benachrichtigung konnte nicht erstellt werden", error));
     }
   };
@@ -1311,3 +1326,4 @@ function App() {
 }
 
 export default App;
+

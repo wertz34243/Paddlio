@@ -58,6 +58,25 @@ export const getDateParts = (date: string): [number, number, number] => {
   return [year, month, day];
 };
 
+export const parseLocalDateOnly = (value: string): Date => {
+  const [year, month, day] = getDateParts(value);
+  return new Date(year, month - 1, day);
+};
+
+export const formatLocalDateOnly = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+export const getLocalWeekdayLabel = (value: string): Weekday => {
+  const weekday = parseLocalDateOnly(value).toLocaleDateString("de-DE", {
+    weekday: "long",
+  }) as Weekday;
+  return weekdays.includes(weekday) ? weekday : weekdays[0];
+};
+
 export const formatBerlinDateKey = (date: Date): string => {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Europe/Berlin",
@@ -69,15 +88,7 @@ export const formatBerlinDateKey = (date: Date): string => {
   return `${getPart("year")}-${getPart("month")}-${getPart("day")}`;
 };
 
-export const getWeekdayFromDate = (date: string): Weekday => {
-  const [year, month, day] = getDateParts(date);
-  const parsedDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
-  const weekday = new Intl.DateTimeFormat("de-DE", {
-    timeZone: "Europe/Berlin",
-    weekday: "long",
-  }).format(parsedDate) as Weekday;
-  return weekdays.includes(weekday) ? weekday : weekdays[0];
-};
+export const getWeekdayFromDate = (date: string): Weekday => getLocalWeekdayLabel(date);
 
 export const sortPlanEntries = (entries: PlanEntry[]): PlanEntry[] =>
   [...entries].sort(
@@ -94,24 +105,18 @@ export const isPauseEntry = (entry: PlanEntry): boolean =>
 export const getTodayKey = (date = new Date()): string => formatBerlinDateKey(date);
 
 export const getLocalDateKey = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = `${date.getMonth() + 1}`.padStart(2, "0");
-  const day = `${date.getDate()}`.padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return formatLocalDateOnly(date);
 };
 
 export const addCalendarDays = (date: string, days: number): string => {
-  const [year, month, day] = getDateParts(date);
-  const next = new Date(year, month - 1, day);
+  const next = parseLocalDateOnly(date);
   next.setDate(next.getDate() + days);
-  return getLocalDateKey(next);
+  return formatLocalDateOnly(next);
 };
 
 export const getCalendarDayOffset = (from: string, to: string): number => {
-  const [fromYear, fromMonth, fromDay] = getDateParts(from);
-  const [toYear, toMonth, toDay] = getDateParts(to);
-  const fromTime = new Date(fromYear, fromMonth - 1, fromDay).getTime();
-  const toTime = new Date(toYear, toMonth - 1, toDay).getTime();
+  const fromTime = parseLocalDateOnly(from).getTime();
+  const toTime = parseLocalDateOnly(to).getTime();
   return Math.round((toTime - fromTime) / 86400000);
 };
 

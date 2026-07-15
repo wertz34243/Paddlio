@@ -19,6 +19,7 @@ import {
   isPlannedStatus,
   isSkippedStatus,
   planStatuses,
+  parseLocalDateOnly,
   sortPlanEntries,
   trainingAreas,
   trainingIntensities,
@@ -156,8 +157,7 @@ const emptyDraft = (user: User, athleteId: string): PlanDraft => ({
 });
 
 const getMonday = (date: string): Date => {
-  const [year, month, day] = getDateParts(date);
-  const current = new Date(year, month - 1, day);
+  const current = parseLocalDateOnly(date);
   const weekday = current.getDay() || 7;
   current.setDate(current.getDate() - weekday + 1);
   return current;
@@ -332,6 +332,17 @@ export function PlanView({
 
   const getAthleteName = (athlete: CoachAthlete): string => athlete.name || `${athlete.firstName} ${athlete.lastName}`.trim() || athlete.email;
   const getGroupName = (group: CoachGroup): string => group.name;
+  const getUserProfileName = (profileUser: User): string =>
+    `${profileUser.profile.firstName} ${profileUser.profile.lastName}`.trim() || profileUser.profile.nickname || profileUser.id;
+  const getAssignedAthleteName = (athleteId: string): string => {
+    const athlete =
+      visibleAthletes.find((item) => item.id === athleteId) ??
+      data.coachAthletes.find((item) => item.id === athleteId);
+    if (athlete) return getAthleteName(athlete);
+
+    const profileUser = data.users.find((item) => item.userId === athleteId || item.id === athleteId);
+    return profileUser ? getUserProfileName(profileUser) : "";
+  };
 
   const getTargetSelection = (formData: FormData) => {
     const assignedType = String(formData.get("assignedType") ?? "self") as PlanEntry["assignedType"];
@@ -636,7 +647,8 @@ export function PlanView({
 
   const renderEntryCard = (entry: PlanEntry) => {
     const entryFeedback = data.trainingFeedback.filter((feedback) => feedback.trainingId === entry.id);
-    const assignedAthletes = visibleAthletes.filter((athlete) => entry.assignedAthleteIds.includes(athlete.id) || entry.assignedAthleteId === athlete.id);
+    const assignedAthleteIds = Array.from(new Set([...entry.assignedAthleteIds, entry.assignedAthleteId].filter(Boolean)));
+    const assignedAthleteNames = assignedAthleteIds.map(getAssignedAthleteName).filter(Boolean);
     const assignedGroups = visibleGroups.filter((group) => entry.assignedGroupIds.includes(group.id) || entry.assignedGroupId === group.id);
 
     return (
@@ -659,7 +671,7 @@ export function PlanView({
           {entry.assignedType === "group"
             ? `Gruppe: ${assignedGroups.map(getGroupName).join(", ") || "nicht gefunden"}`
             : entry.assignedType === "athlete"
-              ? `Sportler: ${assignedAthletes.map(getAthleteName).join(", ") || "nicht gefunden"}`
+              ? `Sportler: ${assignedAthleteNames.join(", ") || "wird geladen"}`
               : "Eigenes Training"}
         </small>
         {entryFeedback.length > 0 ? (
@@ -697,8 +709,8 @@ export function PlanView({
 
   const getRepeatPreview = (repeat: TrainingRepeat, repeatUntil: string, maxCount?: number): number => {
     if (!draft || repeat === "none" || !repeatUntil) return 1;
-    const cursor = new Date(`${draft.date}T00:00:00`);
-    const end = new Date(`${repeatUntil}T00:00:00`);
+    const cursor = parseLocalDateOnly(draft.date);
+    const end = parseLocalDateOnly(repeatUntil);
     let count = 0;
     while (cursor <= end && count < (maxCount || 90)) {
       count += 1;
@@ -1007,11 +1019,11 @@ export function PlanView({
       ) : null}
 
       {workflowTab === "week" && calendarView === "week" ? (
-        <section className="calendar-week-grid">{weekDates.map((date, index) => <article className="calendar-day-column" key={date}><div className="plan-day-heading"><strong>{weekdays[index]}</strong><span>{new Date(date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}</span></div>{visibleEntries.filter((entry) => entry.date === date).map(renderEntryCard)}{visibleEntries.filter((entry) => entry.date === date).length === 0 ? <p className="empty-state compact">Noch kein Training geplant.</p> : null}</article>)}</section>
+        <section className="calendar-week-grid">{weekDates.map((date, index) => <article className="calendar-day-column" key={date}><div className="plan-day-heading"><strong>{weekdays[index]}</strong><span>{parseLocalDateOnly(date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}</span></div>{visibleEntries.filter((entry) => entry.date === date).map(renderEntryCard)}{visibleEntries.filter((entry) => entry.date === date).length === 0 ? <p className="empty-state compact">Noch kein Training geplant.</p> : null}</article>)}</section>
       ) : workflowTab === "today" && calendarView === "day" ? (
         <section className="calendar-list">{visibleEntries.filter((entry) => entry.date === selectedDate).map(renderEntryCard)}{visibleEntries.filter((entry) => entry.date === selectedDate).length === 0 ? <p className="empty-state">Für diesen Tag ist noch kein Training geplant.</p> : null}</section>
       ) : workflowTab === "month" && calendarView === "month" ? (
-        <section className="calendar-month-grid">{getMonthDates(selectedDate).map((date) => { const count = visibleEntries.filter((entry) => entry.date === date).length; return <button className={count > 0 ? "has-training" : ""} key={date} type="button" onClick={() => { setSelectedDate(date); setCalendarView("day"); setWorkflowTab("today"); }}><strong>{new Date(date).getDate()}</strong><span>{count > 0 ? `${count} Einheiten` : "frei"}</span></button>; })}</section>
+        <section className="calendar-month-grid">{getMonthDates(selectedDate).map((date) => { const count = visibleEntries.filter((entry) => entry.date === date).length; return <button className={count > 0 ? "has-training" : ""} key={date} type="button" onClick={() => { setSelectedDate(date); setCalendarView("day"); setWorkflowTab("today"); }}><strong>{parseLocalDateOnly(date).getDate()}</strong><span>{count > 0 ? `${count} Einheiten` : "frei"}</span></button>; })}</section>
       ) : workflowTab === "upcoming" ? (
         <section className="calendar-list">{upcomingEntries.length > 0 ? upcomingEntries.map(renderEntryCard) : <p className="empty-state">Noch keine kommenden Einheiten geplant.</p>}</section>
       ) : workflowTab === "done" ? (

@@ -1,14 +1,8 @@
 import { getSupabaseClient } from "../lib/supabase";
-import type { PlanEntry, TrainingFeedback, Weekday } from "../domain/types";
+import type { PlanEntry, TrainingFeedback } from "../domain/types";
 import { enqueueSyncChange } from "./syncService";
 import { sanitizeCloudPayload, toCloudUuid, toCloudUuidOrNull } from "./cloudIds";
-import { getDateParts } from "../domain/trainingPlan";
-
-const toWeekday = (date: string): Weekday => {
-  const labels: Weekday[] = ["Sonntag" as Weekday, "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
-  const [year, month, day] = getDateParts(date);
-  return labels[new Date(year, month - 1, day).getDay()] ?? "Montag";
-};
+import { getWeekdayFromDate } from "../domain/trainingPlan";
 
 export const toCloudTraining = (entry: PlanEntry) => ({
   id: toCloudUuid(entry.id),
@@ -53,7 +47,7 @@ export const fromCloudTraining = (row: any, athleteId: string): PlanEntry => ({
   assignedGroupIds: row.assigned_group_id ? [row.assigned_group_id] : [],
   title: row.title,
   date: row.date,
-  weekday: toWeekday(row.date),
+  weekday: getWeekdayFromDate(row.date),
   time: row.start_time ?? "",
   startTime: row.start_time ?? "",
   endTime: row.end_time ?? "",

@@ -1,0 +1,44 @@
+import { readFileSync } from "node:fs";
+
+const read = (path) => readFileSync(path, "utf8");
+
+const assert = (condition, message) => {
+  if (!condition) {
+    throw new Error(message);
+  }
+};
+
+const parseLocalDateOnly = (value) => {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day);
+};
+
+const getLocalWeekdayLabel = (value) =>
+  parseLocalDateOnly(value).toLocaleDateString("de-DE", { weekday: "long" });
+
+const app = read("src/App.tsx");
+const planView = read("src/views/PlanView.tsx");
+const trainingPlan = read("src/domain/trainingPlan.ts");
+const trainingService = read("src/services/trainingService.ts");
+const migration = read("supabase/migrations/0024_training_feedback_beta_blockers.sql");
+
+assert(getLocalWeekdayLabel("2026-07-14") === "Dienstag", "2026-07-14 muss Dienstag bleiben.");
+assert(trainingPlan.includes("parseLocalDateOnly"), "Date-only Helper parseLocalDateOnly fehlt.");
+assert(trainingPlan.includes("getLocalWeekdayLabel"), "Date-only Helper getLocalWeekdayLabel fehlt.");
+assert(!planView.includes('new Date(`${draft.date}T00:00:00`)'), "PlanView nutzt noch UTC-anfaellige Date-String-Logik.");
+assert(!planView.includes("new Date(date)."), "PlanView nutzt noch new Date(date) fuer date-only Anzeige.");
+assert(trainingService.includes("getWeekdayFromDate(row.date)"), "Cloud-Training nutzt nicht den lokalen Wochentag-Helper.");
+
+assert(app.includes("upsertCloudFeedback(nextFeedback)"), "Feedback wird nicht direkt in Supabase gespeichert.");
+assert(app.includes("upsertCloudTraining(nextPlanEntry)"), "Planstatus nach Feedback wird nicht direkt in Supabase gespeichert.");
+assert(app.includes('coach: { description: "Coach-Bereich"'), "Coach-Mehr-Bereich ist nicht sauber getrennt.");
+assert(!app.includes("Coach- und Adminbereich"), "Alter Coach/Admin-Mischtext ist noch vorhanden.");
+
+assert(migration.includes("training_plan_items_select_0024"), "RLS-Policy fuer Training-Select fehlt.");
+assert(migration.includes("training_plan_items_insert_0024"), "RLS-Policy fuer Training-Insert fehlt.");
+assert(migration.includes("training_feedback_select_0024"), "RLS-Policy fuer Feedback-Select fehlt.");
+assert(migration.includes("training_feedback_insert_0024"), "RLS-Policy fuer Feedback-Insert fehlt.");
+assert(migration.includes("MKC Monheim"), "Canonical Club MKC Monheim fehlt in Migration.");
+assert(migration.includes("mohnheim"), "Club-Alias Mohnheim fehlt in Migration.");
+
+console.log("Beta blocker check passed.");
