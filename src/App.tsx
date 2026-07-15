@@ -10,7 +10,7 @@ import { formatLocalDateOnly, getWeekdayFromDate, isDoneStatus, parseLocalDateOn
 import { updateCloudProfile } from "./services/profileService";
 import { createCloudNotification, markAllCloudNotificationsRead, markCloudNotificationRead } from "./services/notificationService";
 import { upsertCloudJournalEntry } from "./services/journalService";
-import { upsertCloudFeedback, upsertCloudTraining } from "./services/trainingService";
+import { deleteCloudTraining, upsertCloudFeedback, upsertCloudTraining } from "./services/trainingService";
 import { upsertCloudSmartCoachRecommendation } from "./services/smartCoachService";
 import { upsertSmartCoachStatus } from "./domain/smartCoach";
 import { canSeeSystemPrivateData } from "./domain/privacy";
@@ -511,7 +511,12 @@ function AppContent() {
     updateData((current) => ({
       ...current,
       plan: current.plan.filter((entry) => entry.id !== id),
+      trainingFeedback: current.trainingFeedback.filter((feedback) => feedback.trainingId !== id),
     }));
+
+    void deleteCloudTraining(id).catch((error) =>
+      console.error("Training konnte nicht direkt aus Supabase gelöscht werden", error),
+    );
   };
 
   const saveTrainingFeedback = (feedback: Omit<TrainingFeedback, "id" | "completedAt"> & { id?: string }) => {

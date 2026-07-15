@@ -28,9 +28,11 @@ assert(trainingPlan.includes("getLocalWeekdayLabel"), "Date-only Helper getLocal
 assert(!planView.includes('new Date(`${draft.date}T00:00:00`)'), "PlanView nutzt noch UTC-anfaellige Date-String-Logik.");
 assert(!planView.includes("new Date(date)."), "PlanView nutzt noch new Date(date) fuer date-only Anzeige.");
 assert(trainingService.includes("getWeekdayFromDate(row.date)"), "Cloud-Training nutzt nicht den lokalen Wochentag-Helper.");
+assert(trainingService.includes("deleteCloudTraining"), "Trainingsplan-Loeschung wird nicht an Supabase gesendet.");
 
 assert(app.includes("upsertCloudFeedback(nextFeedback)"), "Feedback wird nicht direkt in Supabase gespeichert.");
 assert(app.includes("upsertCloudTraining(nextPlanEntry)"), "Planstatus nach Feedback wird nicht direkt in Supabase gespeichert.");
+assert(app.includes("deleteCloudTraining(id)"), "Plan-Loeschung nutzt keinen Cloud-Delete.");
 assert(app.includes('coach: { description: "Coach-Bereich"'), "Coach-Mehr-Bereich ist nicht sauber getrennt.");
 assert(!app.includes("Coach- und Adminbereich"), "Alter Coach/Admin-Mischtext ist noch vorhanden.");
 

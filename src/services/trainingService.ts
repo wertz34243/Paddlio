@@ -91,6 +91,21 @@ export const upsertCloudTraining = async (entry: PlanEntry): Promise<void> => {
   if (error) throw error;
 };
 
+export const deleteCloudTraining = async (id: string): Promise<void> => {
+  const cloudId = toCloudUuid(id);
+  if (!cloudId) return;
+
+  const payload = { id: cloudId };
+  const client = getSupabaseClient();
+  if (!client || !navigator.onLine) {
+    enqueueSyncChange({ tableName: "training_plan_items", action: "delete", payload });
+    return;
+  }
+
+  const { error } = await (client.from("training_plan_items") as any).delete().eq("id", cloudId);
+  if (error) throw error;
+};
+
 export const toCloudFeedback = (feedback: TrainingFeedback) => ({
   id: toCloudUuid(feedback.id),
   training_plan_item_id: toCloudUuid(feedback.trainingId),
