@@ -18,6 +18,7 @@ const getLocalWeekdayLabel = (value) =>
 
 const app = read("src/App.tsx");
 const planView = read("src/views/PlanView.tsx");
+const communicationView = read("src/views/CommunicationView.tsx");
 const trainingPlan = read("src/domain/trainingPlan.ts");
 const trainingService = read("src/services/trainingService.ts");
 const migration = read("supabase/migrations/0024_training_feedback_beta_blockers.sql");
@@ -33,8 +34,12 @@ assert(trainingService.includes("deleteCloudTraining"), "Trainingsplan-Loeschung
 assert(app.includes("upsertCloudFeedback(nextFeedback)"), "Feedback wird nicht direkt in Supabase gespeichert.");
 assert(app.includes("upsertCloudTraining(nextPlanEntry)"), "Planstatus nach Feedback wird nicht direkt in Supabase gespeichert.");
 assert(app.includes("deleteCloudTraining(id)"), "Plan-Loeschung nutzt keinen Cloud-Delete.");
+assert(app.includes("Rückmeldung gespeichert"), "Feedback ohne Kommentar wird nicht als gespeicherte Rueckmeldung markiert.");
 assert(app.includes('coach: { description: "Coach-Bereich"'), "Coach-Mehr-Bereich ist nicht sauber getrennt.");
 assert(!app.includes("Coach- und Adminbereich"), "Alter Coach/Admin-Mischtext ist noch vorhanden.");
+assert(planView.includes("Kommentar:"), "Coach/Plan-Rueckmeldungen zeigen den Feedback-Kommentar nicht sichtbar an.");
+assert(communicationView.includes("getKnownUserName"), "Team-Kontakte werden nicht aus geladenen Nachrichten abgeleitet.");
+assert(communicationView.includes("Paddlio Kontakt"), "Direktnachrichten ohne Profilkontakt haben keinen stabilen Fallback-Kontakt.");
 
 assert(migration.includes("training_plan_items_select_0024"), "RLS-Policy fuer Training-Select fehlt.");
 assert(migration.includes("training_plan_items_insert_0024"), "RLS-Policy fuer Training-Insert fehlt.");

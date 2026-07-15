@@ -527,9 +527,13 @@ function AppContent() {
       id: feedback.id ?? createId("feedback"),
       completedAt: existing?.completedAt ?? timestamp,
     };
+    const feedbackSummary =
+      nextFeedback.comment?.trim() ||
+      nextFeedback.reason?.trim() ||
+      (nextFeedback.status === "skipped" ? "Training ausgelassen" : "Rückmeldung gespeichert");
     const linkedPlanEntry = data.plan.find((entry) => entry.id === nextFeedback.trainingId);
     const nextPlanEntry = linkedPlanEntry
-      ? { ...linkedPlanEntry, status: nextFeedback.status, feedbackNote: nextFeedback.comment ?? nextFeedback.reason ?? "", updatedAt: timestamp }
+      ? { ...linkedPlanEntry, status: nextFeedback.status, feedbackNote: feedbackSummary, updatedAt: timestamp }
       : null;
 
     updateData((current) => {
@@ -542,7 +546,7 @@ function AppContent() {
           : [nextFeedback, ...current.trainingFeedback],
         plan: current.plan.map((entry) =>
           entry.id === nextFeedback.trainingId
-            ? { ...entry, status: nextFeedback.status, feedbackNote: nextFeedback.comment ?? nextFeedback.reason ?? "", updatedAt: timestamp }
+            ? { ...entry, status: nextFeedback.status, feedbackNote: feedbackSummary, updatedAt: timestamp }
             : entry,
         ),
       };

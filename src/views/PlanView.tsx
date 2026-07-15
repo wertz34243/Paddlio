@@ -677,7 +677,11 @@ export function PlanView({
         {entryFeedback.length > 0 ? (
           <div className="feedback-list">
             {entryFeedback.map((feedback) => (
-              <span key={feedback.id}>Feedback: Gefühl {feedback.feeling}/10, Motivation {feedback.motivation}/10</span>
+              <span key={feedback.id}>
+                Feedback: {feedback.status === "skipped" ? "ausgelassen" : "erledigt"} · Gefühl {feedback.feeling}/10 · Motivation {feedback.motivation}/10
+                {feedback.comment ? ` · Kommentar: ${feedback.comment}` : ""}
+                {feedback.reason ? ` · Grund: ${feedback.reason}` : ""}
+              </span>
             ))}
           </div>
         ) : null}
@@ -926,7 +930,34 @@ export function PlanView({
                 <p>{entry.focus || "Rückmeldung steht noch aus."}</p>
               </article>
             )) : null}
-            {entriesWithFeedback.length > 0 ? entriesWithFeedback.map(renderEntryCard) : null}
+            {entriesWithFeedback.length > 0 ? entriesWithFeedback.map((entry) => {
+              const feedbackItems = data.trainingFeedback.filter((feedback) => feedback.trainingId === entry.id);
+              const assignedAthleteIds = Array.from(new Set([...entry.assignedAthleteIds, entry.assignedAthleteId].filter(Boolean)));
+              const assignedAthleteNames = assignedAthleteIds.map(getAssignedAthleteName).filter(Boolean);
+
+              return (
+                <article className={`calendar-training-card status-${getEntryStatusClass(entry.status)}`} key={`feedback-${entry.id}`}>
+                  <div className="plan-card-head">
+                    <div>
+                      <span>{entry.date} · {assignedAthleteNames.join(", ") || "Sportler wird geladen"}</span>
+                      <h4>{entry.title || entry.trainingType}</h4>
+                    </div>
+                    <b className="status-pill done">{feedbackItems.length} Rückmeldung{feedbackItems.length === 1 ? "" : "en"}</b>
+                  </div>
+                  <p>{entry.focus || entry.goal || "Kein Trainingsfokus hinterlegt."}</p>
+                  <div className="feedback-list">
+                    {feedbackItems.map((feedback) => (
+                      <span key={feedback.id}>
+                        {feedback.status === "skipped" ? "Ausgelassen" : "Erledigt"} · Gefühl {feedback.feeling}/10 · Schwierigkeit {feedback.difficulty}/10 · Müdigkeit {feedback.fatigue}/10 · Motivation {feedback.motivation}/10
+                        {feedback.sleep ? ` · Schlaf ${feedback.sleep}/10` : ""}
+                        {feedback.comment ? ` · Kommentar: ${feedback.comment}` : ""}
+                        {feedback.reason ? ` · Grund: ${feedback.reason}` : ""}
+                      </span>
+                    ))}
+                  </div>
+                </article>
+              );
+            }) : null}
             {(!isCoach || openFeedbackEntries.length === 0) && entriesWithFeedback.length === 0 ? (
               <p className="empty-state">{isCoach ? "Noch keine Rückmeldungen vorhanden." : "Noch keine erledigten Trainings mit Rückmeldung."}</p>
             ) : null}

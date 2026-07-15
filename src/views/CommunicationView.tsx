@@ -110,9 +110,33 @@ export function CommunicationView({ data, user, onDataChange }: CommunicationVie
   const isCoachLike = canUseCoachArea(user.role);
   const clubIds = useMemo(() => Array.from(new Set([user.profile.club, ...data.coachGroups.map((group) => group.clubId)].filter(Boolean))), [data.coachGroups, user.profile.club]);
   const contacts = useMemo(() => {
-    const athletes = getAthletesForCurrentUser(data, user, clubIds).map((athlete) => ({ id: athlete.id, name: athlete.name, role: "Athlete", clubId: athlete.clubId }));
-    const local = data.users.map((item) => ({ id: item.userId, name: `${item.profile.firstName} ${item.profile.lastName}`.trim() || item.profile.nickname || "Paddlio Nutzer", role: item.role, clubId: item.profile.club }));
-    return [...local, ...athletes].filter((item, index, list) => item.id !== user.userId && list.findIndex((candidate) => candidate.id === item.id) === index);
+    const contactNameById = new Map<string, { id: string; name: string; role: string; clubId: string }>();
+    const addContact = (id: string, name: string, role: string, clubId = "") => {
+      if (!id || id === user.userId || contactNameById.has(id)) return;
+      contactNameById.set(id, { id, name: name || "Paddlio Nutzer", role, clubId });
+    };
+
+    data.users.forEach((item) =>
+      addContact(
+        item.userId,
+        `${item.profile.firstName} ${item.profile.lastName}`.trim() || item.profile.nickname,
+        item.role,
+        item.profile.club,
+      ),
+    );
+    getAthletesForCurrentUser(data, user, clubIds).forEach((athlete) => addContact(athlete.id, athlete.name, "Athlete", athlete.clubId));
+    data.directMessages
+      .filter((item) => !item.deletedAt && (item.senderId === user.userId || item.receiverId === user.userId))
+      .forEach((item) => {
+        const otherId = item.senderId === user.userId ? item.receiverId : item.senderId;
+        addContact(otherId, getKnownUserName(data, otherId), "Kontakt", item.clubId);
+      });
+
+    return Array.from(contactNameById.values()).sort((left, right) => {
+      const leftLast = data.directMessages.filter((item) => item.senderId === left.id || item.receiverId === left.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]?.createdAt ?? "";
+      const rightLast = data.directMessages.filter((item) => item.senderId === right.id || item.receiverId === right.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]?.createdAt ?? "";
+      return rightLast.localeCompare(leftLast) || left.name.localeCompare(right.name);
+    });
   }, [clubIds, data, user]);
   const groups = useMemo(() => getGroupsForCurrentUser(data, user, clubIds), [clubIds, data, user]);
   const trainings = useMemo(() => getTrainingsForCurrentUser(data, user, clubIds), [clubIds, data, user]);
@@ -302,14 +326,16 @@ export function CommunicationView({ data, user, onDataChange }: CommunicationVie
       <div className="section-block">
         <div className="section-heading"><div><p className="eyebrow">Direktnachrichten</p><h3>{unreadDirect} ungelesen</h3></div></div>
         <div className="club-card-list">{contacts.length ? contacts.map((contact) => {
-          const last = data.directMessages.filter((item) => item.senderId === contact.id || item.receiverId === contact.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+          const last = data.directMessages
+            .filter((item) => !item.deletedAt && ((item.senderId === user.userId && item.receiverId === contact.id) || (item.receiverId === user.userId && item.senderId === contact.id)))
+            .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
           return <button className={contactId === contact.id ? "communication-contact active" : "communication-contact"} type="button" key={contact.id} onClick={() => setSelectedContactId(contact.id)}><strong>{contact.name}</strong><span>{last?.message ?? "Noch keine Nachricht"}</span><small>{last ? formatShort(last.createdAt) : contact.role}</small></button>;
         }) : <p className="empty-state">Du hast noch keine Kontakte.</p>}</div>
       </div>
       <div className="section-block chat-panel">
         <h3>{contacts.find((item) => item.id === contactId)?.name ?? "Chat"}</h3>
         <div className="chat-thread">{directThread.length ? directThread.map((item) => <article className={item.senderId === user.userId ? "chat-bubble own" : "chat-bubble"} key={item.id}><p>{item.message}</p><small>{formatShort(item.createdAt)} {item.isRead ? "gelesen" : "ungelesen"}</small></article>) : <p className="empty-state">Du hast noch keine Nachrichten.</p>}</div>
-        <form className="chat-form" onSubmit={sendDirect}><input name="message" placeholder="Nachricht schreiben" /><button className="save-button" type="submit">Senden</button></form>
+        <form className="chat-form" onSubmit={sendDirect}><input name="message" placeholder="Nachricht schreiben" disabled={!contactId} /><button className="save-button" type="submit" disabled={!contactId}>Senden</button></form>
       </div>
     </section>
   );
@@ -392,4 +418,16 @@ export function CommunicationView({ data, user, onDataChange }: CommunicationVie
       </div>
     </div>
   );
+}
+
+function getKnownUserName(data: PaddleMotionData, userId: string): string {
+  const appUser = data.users.find((item) => item.userId === userId || item.id === userId);
+  if (appUser) {
+    return `${appUser.profile.firstName} ${appUser.profile.lastName}`.trim() || appUser.profile.nickname || "Paddlio Nutzer";
+  }
+
+  const athlete = data.coachAthletes.find((item) => item.id === userId);
+  if (athlete) return athlete.name;
+
+  return "Paddlio Kontakt";
 }
