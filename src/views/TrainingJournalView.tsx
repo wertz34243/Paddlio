@@ -1,4 +1,5 @@
 import type { PlanEntry, TrainingJournalEntry, TrainingSession } from "../domain/types";
+import { parseLocalDateOnly } from "../domain/trainingPlan";
 
 type TrainingJournalViewProps = {
   journal: TrainingJournalEntry[];
@@ -52,7 +53,7 @@ export function TrainingJournalView({
               <article className="result-row" key={entry.id}>
                 <div>
                   <strong>{planned?.title || planned?.trainingType || session?.focus || session?.type || "Freies Training"}</strong>
-                  <span>{new Date(entry.date).toLocaleDateString("de-DE")}</span>
+                  <span>{parseLocalDateOnly(entry.date).toLocaleDateString("de-DE")}</span>
                   {planned ? (
                     <span>
                       Geplant: {planned.durationMinutes} Minuten {planned.area}. Durchgeführt:{" "}

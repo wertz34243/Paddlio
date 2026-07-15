@@ -9,6 +9,7 @@ import { getActiveUser, getDisplayName, getInitials } from "./domain/profile";
 import { formatLocalDateOnly, getWeekdayFromDate, isDoneStatus, parseLocalDateOnly } from "./domain/trainingPlan";
 import { updateCloudProfile } from "./services/profileService";
 import { createCloudNotification, markAllCloudNotificationsRead, markCloudNotificationRead } from "./services/notificationService";
+import { upsertCloudJournalEntry } from "./services/journalService";
 import { upsertCloudFeedback, upsertCloudTraining } from "./services/trainingService";
 import { upsertCloudSmartCoachRecommendation } from "./services/smartCoachService";
 import { upsertSmartCoachStatus } from "./domain/smartCoach";
@@ -375,30 +376,33 @@ function AppContent() {
     entry: Omit<TrainingJournalEntry, "id" | "athleteId" | "createdAt" | "updatedAt"> & { id?: string },
   ) => {
     const timestamp = getTimestamp();
+    const existing = entry.id
+      ? data.journal.find((item) => item.id === entry.id)
+      : data.journal.find((item) =>
+          entry.trainingPlanEntryId
+            ? item.trainingPlanEntryId === entry.trainingPlanEntryId
+            : item.trainingId === entry.trainingId,
+        );
+    const nextEntry: TrainingJournalEntry = {
+      ...entry,
+      id: existing?.id ?? entry.id ?? createId("journal"),
+      athleteId: cloudProfile?.id ?? data.athlete.id,
+      createdAt: existing?.createdAt ?? timestamp,
+      updatedAt: timestamp,
+    };
 
     updateData((current) => {
-      const existing = entry.id
-        ? current.journal.find((item) => item.id === entry.id)
-        : current.journal.find((item) =>
-            entry.trainingPlanEntryId
-              ? item.trainingPlanEntryId === entry.trainingPlanEntryId
-              : item.trainingId === entry.trainingId,
-          );
-      const nextEntry: TrainingJournalEntry = {
-        ...entry,
-        id: existing?.id ?? entry.id ?? createId("journal"),
-        athleteId: cloudProfile?.id ?? current.athlete.id,
-        createdAt: existing?.createdAt ?? timestamp,
-        updatedAt: timestamp,
-      };
+      const currentExisting = current.journal.find((item) => item.id === nextEntry.id);
 
       return {
         ...current,
-        journal: existing
+        journal: currentExisting
           ? current.journal.map((item) => (item.id === nextEntry.id ? nextEntry : item))
           : [nextEntry, ...current.journal],
       };
     });
+
+    void upsertCloudJournalEntry(nextEntry).catch((error) => console.error("Trainingstagebuch konnte nicht direkt in Supabase gespeichert werden", error));
   };
 
   const upsertMaterial = (item: Omit<MaterialItem, "id" | "athleteId" | "createdAt" | "updatedAt"> & { id?: string }) => {
@@ -604,6 +608,10 @@ function AppContent() {
   };
 
   const updatePlanEntryStatus = (id: string, status: PlanEntry["status"]) => {
+    const timestamp = getTimestamp();
+    const existing = data.plan.find((entry) => entry.id === id);
+    const nextEntry = existing ? { ...existing, status, updatedAt: timestamp } : undefined;
+
     updateData((current) => ({
       ...current,
       plan: current.plan.map((entry) =>
@@ -611,11 +619,15 @@ function AppContent() {
           ? {
               ...entry,
               status,
-              updatedAt: getTimestamp(),
+              updatedAt: timestamp,
             }
           : entry,
       ),
     }));
+
+    if (nextEntry) {
+      void upsertCloudTraining(nextEntry).catch((error) => console.error("Trainingstatus konnte nicht direkt in Supabase gespeichert werden", error));
+    }
   };
 
   const updateProfile = (userProfile: UserProfile) => {
@@ -771,7 +783,6 @@ function AppContent() {
             setActivePage("training");
           }}
         />
-        <small className="swipe-hint">Hier wischen oder antippen, um den Trainingsbereich zu wechseln.</small>
       </div>
       <div className="segment-content">{renderTrainingContent(segment)}</div>
     </div>

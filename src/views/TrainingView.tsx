@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { getTrainingLoad, isDateInCurrentWeek } from "../domain/metrics";
-import { getTodayKey } from "../domain/trainingPlan";
+import { getTodayKey, parseLocalDateOnly } from "../domain/trainingPlan";
 import type { TrainingJournalEntry, TrainingSession, TrainingType } from "../domain/types";
 
 type TrainingDraft = Omit<TrainingSession, "athleteId" | "createdAt" | "updatedAt">;
@@ -265,7 +265,7 @@ export function TrainingView({
                     <span className="activity-ring">{session.durationMinutes}</span>
                     <div>
                       <strong>{session.type}</strong>
-                      <small>{new Date(session.date).toLocaleDateString("de-DE")}</small>
+                      <small>{parseLocalDateOnly(session.date).toLocaleDateString("de-DE")}</small>
                       <p>{session.focus || "Ohne Fokus"}</p>
                     </div>
                     <b>{journalEntry ? "reflektiert" : intensity}</b>
