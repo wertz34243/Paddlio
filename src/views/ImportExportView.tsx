@@ -7,14 +7,16 @@ import type { ExportJob, ExportType, ImportAnalysis, ImportField, ImportFileForm
 import { requiredFieldsFor, supportedImportTypes, targetFieldLabels } from "../features/importExport/mappings";
 import type { PaddleMotionData, User } from "../domain/types";
 import { listCloudImportJobs, listCloudImportProfiles, upsertCloudExportJob, upsertCloudImportJob, upsertCloudImportProfile, upsertCloudImportRow } from "../services/importExportService";
+import { PolarIntegrationView } from "./PolarIntegrationView";
 
 type ImportExportViewProps = {
   data: PaddleMotionData;
   user: User;
+  sessionAccessToken?: string;
   onDataChange: (updater: (current: PaddleMotionData) => PaddleMotionData) => void;
 };
 
-type Panel = "import" | "export" | "history" | "profiles" | "help";
+type Panel = "import" | "export" | "polar" | "history" | "profiles" | "help";
 
 const importSteps = ["Datei", "Zuordnung", "Prüfung", "Import", "Bericht"];
 const previewLimit = 20;
@@ -34,8 +36,8 @@ const exportTypes: ExportType[] = [
   "academy_progress",
 ];
 
-export function ImportExportView({ data, user, onDataChange }: ImportExportViewProps) {
-  const [panel, setPanel] = useState<Panel>("import");
+export function ImportExportView({ data, user, sessionAccessToken, onDataChange }: ImportExportViewProps) {
+  const [panel, setPanel] = useState<Panel>("polar");
   const [importType, setImportType] = useState<ImportType>("athletes");
   const [workbook, setWorkbook] = useState<ParsedWorkbook | null>(null);
   const [analysis, setAnalysis] = useState<ImportAnalysis | null>(null);
@@ -186,7 +188,7 @@ export function ImportExportView({ data, user, onDataChange }: ImportExportViewP
       </header>
 
       <nav className="import-export-tabs" aria-label="Import und Export">
-        {(["import", "export", "history", "profiles", "help"] as Panel[]).map((item) => (
+        {(["polar", "import", "export", "history", "profiles", "help"] as Panel[]).map((item) => (
           <button className={panel === item ? "active" : ""} key={item} type="button" onClick={() => setPanel(item)}>
             {panelLabel(item)}
           </button>
@@ -340,6 +342,15 @@ export function ImportExportView({ data, user, onDataChange }: ImportExportViewP
         </div>
       ) : null}
 
+      {panel === "polar" ? (
+        <PolarIntegrationView
+          data={data}
+          user={user}
+          sessionAccessToken={sessionAccessToken}
+          onDataChange={onDataChange}
+        />
+      ) : null}
+
       {panel === "export" ? (
         <section className="import-export-panel import-card">
           <p className="eyebrow">Export-Assistent</p>
@@ -418,6 +429,7 @@ function ImportReportSummary({ report, compact }: { report: ImportReport; compac
 }
 
 function panelLabel(panel: Panel) {
+  if (panel === "polar") return "Polar";
   if (panel === "import") return "Import";
   if (panel === "export") return "Export";
   if (panel === "history") return "Historie";

@@ -934,7 +934,7 @@ function AppContent() {
       case "notifications":
         return <NotificationsView notifications={data.notifications} canRevealPrivateData={canSeeSystemPrivateData(activeUser.role)} onMarkRead={markNotificationRead} onMarkAllRead={markAllNotificationsRead} />;
       case "integrations":
-        return <ImportExportView data={data} user={activeUser} onDataChange={updateData} />;
+        return <ImportExportView data={data} user={activeUser} sessionAccessToken={session?.access_token} onDataChange={updateData} />;
       case "feedback":
         return <BetaReleaseView data={data} user={activeUser} mode="feedback" onDataChange={updateData} />;
       case "betaGuide":

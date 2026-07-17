@@ -2,6 +2,13 @@
 
 ## 5.0.0
 
+- Added Polar AccessLink integration under `Mehr -> Integrationen -> Polar`.
+- Added server-side Polar OAuth endpoints for connect, callback, status, sync and disconnect.
+- Added encrypted token storage via Supabase-backed `polar_accounts`, without exposing Polar tokens to the frontend.
+- Added idempotent Supabase migration `0028_polar_integration.sql` for Polar accounts, OAuth state, sync jobs, training imports and device connections.
+- Added Polar training import into `external_training_sessions`, with duplicate prevention by Polar activity id.
+- Added Polar UI for connection status, manual sync, imported training metrics, heart-rate chart, Paddlio zone summary and prepared future device adapters.
+- Documented required Vercel environment variables in `docs/polar-integration.md`.
 - Introduced a new Apple Fitness / Polar Flow inspired design direction.
 - Reduced the Heute dashboard to the essential daily information: greeting, date, today's training, weekly goal, last session, trainer messages and feedback.
 - Added central 5.0 design tokens for spacing, typography, colors, 22px cards, shadows, buttons, tab bars, bottom navigation and CloudStatus toast behavior.

@@ -14,6 +14,16 @@ Designstand:
 - `Mehr` wirkt auf Mobile stärker wie eine Einstellungs-/Listenansicht statt wie ein Dashboard.
 - CloudStatus wird als kurzer Toast am unteren Bildschirmrand dargestellt.
 
+Integrationsstand:
+
+- `Mehr -> Integrationen -> Polar` ist als eigener Polar-Bereich umgesetzt.
+- Polar OAuth läuft serverseitig über `/api/polar/start` und `/api/polar/callback`.
+- Tokens werden verschlüsselt in `polar_accounts` gespeichert und nicht im Frontend angezeigt.
+- `polar_training_imports`, `polar_sync_jobs` und `device_connections` protokollieren Synchronisation, Status und importierte Einheiten.
+- Importierte Polar-Einheiten werden zusätzlich in `external_training_sessions` gespiegelt, damit Analyse und Smart Coach sie nutzen können.
+- Die Adapter-Struktur in `src/features/integrations/deviceAdapters.ts` bereitet Garmin, Apple Health, Strava, Coros und Suunto vor.
+- Für die Live-Aktivierung müssen Vercel-Umgebungsvariablen für Polar Client, Secret, Redirect URI, Encryption Key und Supabase Service Role gesetzt sein.
+
 ## Stand Version 4.1.5
 
 Paddlio ist eine React/Vite/TypeScript-PWA für Kanuslalom mit Supabase Auth und Supabase als Hauptspeicher für die Plattformbereiche. LocalStorage bleibt als Cache und Offline-Fallback erhalten.
