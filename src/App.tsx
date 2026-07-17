@@ -7,7 +7,7 @@ import { createId } from "./data/storage";
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import { getActiveUser, getDisplayName, getInitials } from "./domain/profile";
 import { formatLocalDateOnly, getWeekdayFromDate, isDoneStatus, parseLocalDateOnly } from "./domain/trainingPlan";
-import { useAutoHideOnScroll } from "./hooks/useAutoHideOnScroll";
+import { useAppChromeVisibility } from "./hooks/useAutoHideOnScroll";
 import { updateCloudProfile } from "./services/profileService";
 import { createCloudNotification, markAllCloudNotificationsRead, markCloudNotificationRead } from "./services/notificationService";
 import { upsertCloudJournalEntry } from "./services/journalService";
@@ -46,6 +46,7 @@ import { CoachView } from "./views/CoachView";
 import { DashboardView, type DashboardMoreTarget, type DashboardQuickAction } from "./views/DashboardView";
 import { EquipmentView } from "./views/EquipmentView";
 import { GoalsView } from "./views/GoalsView";
+import { ImportExportView } from "./views/ImportExportView";
 import { PlanView } from "./views/PlanView";
 import { NotificationsView } from "./views/NotificationsView";
 import { ProfileView } from "./views/ProfileView";
@@ -145,7 +146,7 @@ const moreSegmentMeta: Record<MoreSegment, { description: string; icon: IconName
   goals: { description: "Saisonziele und Entwicklung", icon: "target" },
   records: { description: "PersÃ¶nliche Rekorde", icon: "bolt" },
   notifications: { description: "Nachrichten und Cloud-Updates", icon: "message" },
-  integrations: { description: "Externe Datenquellen und Importstatus", icon: "chart" },
+  integrations: { description: "Import, Export und externe Datenquellen", icon: "chart" },
   feedback: { description: "Beta-Feedback an Paddlio senden", icon: "message" },
   betaGuide: { description: "Anleitung fÃ¼r externe Beta-Tests", icon: "calendar" },
   limitations: { description: "Bekannte Grenzen der Beta", icon: "timer" },
@@ -185,7 +186,7 @@ function AppContent() {
   const [analysisSegment, setAnalysisSegment] = useState<AnalysisSegment>("overview");
   const [moreSegment, setMoreSegment] = useState<MoreSegment>("profile");
   const [moreHubOpen, setMoreHubOpen] = useState(true);
-  const scrollChromeVisible = useAutoHideOnScroll({ threshold: 8, topOffset: 8 });
+  const { topChromeVisible, bottomNavVisible } = useAppChromeVisibility({ threshold: 8, topOffset: 8, idleMs: 1300 });
   const [newTrainingSignal, setNewTrainingSignal] = useState(0);
   const [newCompetitionSignal, setNewCompetitionSignal] = useState(0);
   const [journalSignal, setJournalSignal] = useState(0);
@@ -933,7 +934,7 @@ function AppContent() {
       case "notifications":
         return <NotificationsView notifications={data.notifications} canRevealPrivateData={canSeeSystemPrivateData(activeUser.role)} onMarkRead={markNotificationRead} onMarkAllRead={markAllNotificationsRead} />;
       case "integrations":
-        return <ResultsReadinessView data={data} user={activeUser} mode="integrations" onDataChange={updateData} />;
+        return <ImportExportView data={data} user={activeUser} onDataChange={updateData} />;
       case "feedback":
         return <BetaReleaseView data={data} user={activeUser} mode="feedback" onDataChange={updateData} />;
       case "betaGuide":
@@ -1255,11 +1256,11 @@ function AppContent() {
   const isHome = activePage === "dashboard";
 
   return (
-    <div className={`${isHome ? "app-shell app-shell-home" : "app-shell"} ${scrollChromeVisible ? "scroll-chrome-visible" : "scroll-chrome-hidden"}`}>
+    <div className={`${isHome ? "app-shell app-shell-home" : "app-shell"} ${topChromeVisible ? "scroll-chrome-visible" : "scroll-chrome-hidden"}`}>
       <a className="skip-link" href="#main">
         Zum Inhalt springen
       </a>
-      <aside className="desktop-side-nav" aria-label="Desktop-Navigation">
+      <aside className="desktop-side-nav app-sidebar" aria-label="Desktop-Navigation" data-testid="app-sidebar">
         <div className="desktop-brand">
           <span aria-hidden="true">{APP_NAME.slice(0, 1)}</span>
           <div>
@@ -1292,7 +1293,7 @@ function AppContent() {
         </nav>
       </aside>
       {!isHome ? (
-        <header className={`app-header app-header-compact ${scrollChromeVisible ? "" : "is-hidden"}`} data-testid="app-header">
+        <header className={`app-header app-header-compact ${topChromeVisible ? "" : "is-hidden"}`} data-testid="app-header">
           <div className="brand-lockup">
             <p className="app-brand">{APP_NAME}</p>
             <p className="brand-slogan">{APP_SLOGAN}</p>
@@ -1306,7 +1307,11 @@ function AppContent() {
 
       <main className="page-content" id="main">{renderPage()}</main>
 
-      <nav className="bottom-nav bottom-navigation is-visible" aria-label="Hauptnavigation" data-testid="bottom-navigation">
+      <nav
+        className={`bottom-nav bottom-navigation ${bottomNavVisible ? "is-visible" : "is-idle-hidden"}`}
+        aria-label="Hauptnavigation"
+        data-testid="bottom-navigation"
+      >
         {navItems.map((item) => (
           <button
             className={activeNavPage === item.id ? "nav-item active" : "nav-item"}
