@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState, type TouchEvent } from "react";
+﻿import { useState, type TouchEvent } from "react";
 import { APP_NAME, APP_SLOGAN, APP_VERSION } from "./brand";
 import { LoadingState } from "./components/AppSupport";
 import { Icon, type IconName } from "./components/Icon";
@@ -7,6 +7,7 @@ import { createId } from "./data/storage";
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import { getActiveUser, getDisplayName, getInitials } from "./domain/profile";
 import { formatLocalDateOnly, getWeekdayFromDate, isDoneStatus, parseLocalDateOnly } from "./domain/trainingPlan";
+import { useAutoHideOnScroll } from "./hooks/useAutoHideOnScroll";
 import { updateCloudProfile } from "./services/profileService";
 import { createCloudNotification, markAllCloudNotificationsRead, markCloudNotificationRead } from "./services/notificationService";
 import { upsertCloudJournalEntry } from "./services/journalService";
@@ -184,9 +185,7 @@ function AppContent() {
   const [analysisSegment, setAnalysisSegment] = useState<AnalysisSegment>("overview");
   const [moreSegment, setMoreSegment] = useState<MoreSegment>("profile");
   const [moreHubOpen, setMoreHubOpen] = useState(true);
-  const [scrollChromeHidden, setScrollChromeHidden] = useState(false);
-  const lastScrollYRef = useRef(0);
-  const tickingScrollRef = useRef(false);
+  const scrollChromeVisible = useAutoHideOnScroll({ threshold: 8, topOffset: 8 });
   const [newTrainingSignal, setNewTrainingSignal] = useState(0);
   const [newCompetitionSignal, setNewCompetitionSignal] = useState(0);
   const [journalSignal, setJournalSignal] = useState(0);
@@ -194,42 +193,6 @@ function AppContent() {
     await signOut();
     setActivePage("dashboard");
   };
-
-  useEffect(() => {
-    lastScrollYRef.current = window.scrollY;
-    setScrollChromeHidden(false);
-
-    const handleScroll = () => {
-      if (tickingScrollRef.current) {
-        return;
-      }
-
-      tickingScrollRef.current = true;
-      window.requestAnimationFrame(() => {
-        const currentScrollY = Math.max(0, window.scrollY);
-        const previousScrollY = lastScrollYRef.current;
-        const delta = currentScrollY - previousScrollY;
-
-        if (currentScrollY <= 8) {
-          setScrollChromeHidden(false);
-        } else if (Math.abs(delta) >= 8) {
-          setScrollChromeHidden(delta > 0);
-        }
-
-        lastScrollYRef.current = currentScrollY;
-        tickingScrollRef.current = false;
-      });
-    };
-
-    const passiveOptions: AddEventListenerOptions = { passive: true };
-    window.addEventListener("scroll", handleScroll, passiveOptions);
-    window.addEventListener("resize", handleScroll, passiveOptions);
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("resize", handleScroll);
-    };
-  }, [activePage]);
 
   if (loading) {
     return <LoadingState />;
@@ -1292,7 +1255,7 @@ function AppContent() {
   const isHome = activePage === "dashboard";
 
   return (
-    <div className={`${isHome ? "app-shell app-shell-home" : "app-shell"} ${scrollChromeHidden ? "scroll-chrome-hidden" : "scroll-chrome-visible"}`}>
+    <div className={`${isHome ? "app-shell app-shell-home" : "app-shell"} ${scrollChromeVisible ? "scroll-chrome-visible" : "scroll-chrome-hidden"}`}>
       <a className="skip-link" href="#main">
         Zum Inhalt springen
       </a>
@@ -1329,7 +1292,7 @@ function AppContent() {
         </nav>
       </aside>
       {!isHome ? (
-        <header className="app-header app-header-compact">
+        <header className={`app-header app-header-compact ${scrollChromeVisible ? "" : "is-hidden"}`} data-testid="app-header">
           <div className="brand-lockup">
             <p className="app-brand">{APP_NAME}</p>
             <p className="brand-slogan">{APP_SLOGAN}</p>
@@ -1343,7 +1306,7 @@ function AppContent() {
 
       <main className="page-content" id="main">{renderPage()}</main>
 
-      <nav className="bottom-nav is-visible" aria-label="Hauptnavigation">
+      <nav className="bottom-nav bottom-navigation is-visible" aria-label="Hauptnavigation" data-testid="bottom-navigation">
         {navItems.map((item) => (
           <button
             className={activeNavPage === item.id ? "nav-item active" : "nav-item"}
@@ -1379,4 +1342,5 @@ function App() {
 }
 
 export default App;
+
 

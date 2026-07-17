@@ -12,7 +12,7 @@ type SegmentNavProps<T extends string> = {
 
 export function SegmentNav<T extends string>({ label, items, activeId, onChange }: SegmentNavProps<T>) {
   return (
-    <div className="segment-nav" aria-label={label} role="tablist">
+    <div className="segment-nav section-tabs" aria-label={label} role="tablist" data-testid="section-tabs">
       {items.map((item) => (
         <button
           className={activeId === item.id ? "segment-button active" : "segment-button"}

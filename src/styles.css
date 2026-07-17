@@ -6224,3 +6224,82 @@ body {
     padding: 18px;
   }
 }
+
+/* Paddlio global auto-hide scroll chrome.
+   The hook only toggles the shell class; layout height and spacing stay stable. */
+.app-shell,
+.app-shell.scroll-chrome-visible,
+.app-shell.scroll-chrome-hidden {
+  --scroll-chrome-secondary-top: calc(72px + env(safe-area-inset-top));
+}
+
+.app-header,
+.app-header-compact,
+.section-tabs,
+.segment-nav,
+.workflow-tabs,
+.calendar-view-tabs,
+.filter-tabs,
+.training-journal-actions,
+.desktop-side-nav {
+  will-change: transform, opacity;
+  transition:
+    transform 220ms ease,
+    opacity 220ms ease;
+}
+
+.app-header.is-hidden,
+.app-shell.scroll-chrome-hidden .app-header,
+.app-shell.scroll-chrome-hidden .app-header-compact {
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(calc(-100% - 12px));
+}
+
+.app-shell.scroll-chrome-hidden .section-tabs,
+.app-shell.scroll-chrome-hidden .segment-nav,
+.app-shell.scroll-chrome-hidden .workflow-tabs,
+.app-shell.scroll-chrome-hidden .calendar-view-tabs,
+.app-shell.scroll-chrome-hidden .filter-tabs,
+.app-shell.scroll-chrome-hidden .training-journal-actions {
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(calc(-100% - 8px));
+}
+
+.bottom-navigation,
+.bottom-nav,
+.bottom-nav.is-visible,
+.bottom-nav.is-hidden {
+  pointer-events: auto;
+  opacity: 1;
+  transform: none;
+}
+
+@media (min-width: 900px) {
+  .app-shell,
+  .app-shell.scroll-chrome-visible,
+  .app-shell.scroll-chrome-hidden {
+    --scroll-chrome-secondary-top: calc(18px + env(safe-area-inset-top));
+  }
+
+  .app-shell.scroll-chrome-hidden .desktop-side-nav {
+    pointer-events: none;
+    opacity: 0;
+    transform: translateX(calc(-100% - 12px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-header,
+  .app-header-compact,
+  .section-tabs,
+  .segment-nav,
+  .workflow-tabs,
+  .calendar-view-tabs,
+  .filter-tabs,
+  .training-journal-actions,
+  .desktop-side-nav {
+    transition: none;
+  }
+}
