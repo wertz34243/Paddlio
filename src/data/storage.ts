@@ -1,4 +1,5 @@
 import { seedData } from "./seed";
+import { academyInitialData } from "../features/academy/academyContent";
 import { getWeekdayFromDate } from "../domain/trainingPlan";
 import type {
   AgeClass,
@@ -854,6 +855,19 @@ const normalizeDataShape = (data: PaddleMotionData): PaddleMotionData => ({
   taskAssignments: Array.isArray(data.taskAssignments) ? normalizeTaskAssignments(data.taskAssignments) : [],
   trainingAttendance: Array.isArray(data.trainingAttendance) ? normalizeTrainingAttendance(data.trainingAttendance) : [],
   fileAttachments: Array.isArray(data.fileAttachments) ? normalizeFileAttachments(data.fileAttachments) : [],
+  academyCategories: Array.isArray(data.academyCategories) && data.academyCategories.length > 0 ? data.academyCategories : academyInitialData.academyCategories,
+  academyCourses: Array.isArray(data.academyCourses) && data.academyCourses.length > 0 ? data.academyCourses : academyInitialData.academyCourses,
+  academyLessons: Array.isArray(data.academyLessons) && data.academyLessons.length > 0 ? data.academyLessons : academyInitialData.academyLessons,
+  academyContentBlocks: Array.isArray(data.academyContentBlocks) && data.academyContentBlocks.length > 0 ? data.academyContentBlocks : academyInitialData.academyContentBlocks,
+  academyLearningPaths: Array.isArray(data.academyLearningPaths) && data.academyLearningPaths.length > 0 ? data.academyLearningPaths : academyInitialData.academyLearningPaths,
+  academyLearningPathItems: Array.isArray(data.academyLearningPathItems) && data.academyLearningPathItems.length > 0 ? data.academyLearningPathItems : academyInitialData.academyLearningPathItems,
+  academyProgress: Array.isArray(data.academyProgress) ? data.academyProgress : [],
+  academyAssignments: Array.isArray(data.academyAssignments) ? data.academyAssignments : [],
+  academyQuizzes: Array.isArray(data.academyQuizzes) && data.academyQuizzes.length > 0 ? data.academyQuizzes : academyInitialData.academyQuizzes,
+  academyQuizQuestions: Array.isArray(data.academyQuizQuestions) && data.academyQuizQuestions.length > 0 ? data.academyQuizQuestions : academyInitialData.academyQuizQuestions,
+  academyQuizAttempts: Array.isArray(data.academyQuizAttempts) ? data.academyQuizAttempts : [],
+  academyFavorites: Array.isArray(data.academyFavorites) ? data.academyFavorites : [],
+  academyMedia: Array.isArray(data.academyMedia) ? data.academyMedia : [],
 });
 
 const normalizeSeasonGoals = (
@@ -1825,6 +1839,7 @@ const createEmptyDataForUser = (authUser: AuthUser): PaddleMotionData => {
     taskAssignments: [],
     trainingAttendance: [],
     fileAttachments: [],
+    ...academyInitialData,
   };
 };
 
@@ -1868,6 +1883,19 @@ const withUsers = (data: V03Data): PaddleMotionData => {
     taskAssignments: data.taskAssignments ?? [],
     trainingAttendance: data.trainingAttendance ?? [],
     fileAttachments: data.fileAttachments ?? [],
+    academyCategories: data.academyCategories ?? academyInitialData.academyCategories,
+    academyCourses: data.academyCourses ?? academyInitialData.academyCourses,
+    academyLessons: data.academyLessons ?? academyInitialData.academyLessons,
+    academyContentBlocks: data.academyContentBlocks ?? academyInitialData.academyContentBlocks,
+    academyLearningPaths: data.academyLearningPaths ?? academyInitialData.academyLearningPaths,
+    academyLearningPathItems: data.academyLearningPathItems ?? academyInitialData.academyLearningPathItems,
+    academyProgress: data.academyProgress ?? [],
+    academyAssignments: data.academyAssignments ?? [],
+    academyQuizzes: data.academyQuizzes ?? academyInitialData.academyQuizzes,
+    academyQuizQuestions: data.academyQuizQuestions ?? academyInitialData.academyQuizQuestions,
+    academyQuizAttempts: data.academyQuizAttempts ?? [],
+    academyFavorites: data.academyFavorites ?? [],
+    academyMedia: data.academyMedia ?? [],
   };
 };
 
@@ -2045,6 +2073,7 @@ const migrateLegacyData = (legacy: LegacyData): PaddleMotionData => {
     taskAssignments: [],
     trainingAttendance: [],
     fileAttachments: [],
+    ...academyInitialData,
   };
 };
 

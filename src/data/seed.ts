@@ -1,4 +1,5 @@
 import type { PaddleMotionData } from "../domain/types";
+import { academyInitialData } from "../features/academy/academyContent";
 
 const now = "2026-06-29T00:00:00.000Z";
 
@@ -320,4 +321,5 @@ export const seedData: PaddleMotionData = {
   taskAssignments: [],
   trainingAttendance: [],
   fileAttachments: [],
+  ...academyInitialData,
 };

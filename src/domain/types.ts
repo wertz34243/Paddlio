@@ -499,6 +499,7 @@ export type TrainingTemplate = {
   description?: string;
   notes?: string;
   tags: string[];
+  academyLessonId?: string;
   isFavorite: boolean;
   visibility: TrainingTemplateVisibility;
   createdAt: string;
@@ -894,6 +895,198 @@ export type SmartCoachRecommendation = {
   updatedAt: string;
 };
 
+export type AcademyCategoryId =
+  | "technik"
+  | "kraft"
+  | "koordination"
+  | "ausdauer"
+  | "mental"
+  | "sicherheit"
+  | "wettkampf"
+  | "trainerwissen";
+
+export type AcademyStatus = "draft" | "review" | "published" | "archived";
+
+export type AcademyDifficulty = "beginner" | "intermediate" | "advanced" | "coach";
+
+export type AcademyContentBlockType =
+  | "text"
+  | "video"
+  | "image"
+  | "knotenpunkte"
+  | "kontrollpunkte"
+  | "fehler"
+  | "korrektur"
+  | "uebung"
+  | "trainerhinweis"
+  | "sicherheit"
+  | "checkliste"
+  | "quiz"
+  | "reflexion"
+  | "training_link";
+
+export type AcademyCategory = {
+  id: AcademyCategoryId;
+  slug: string;
+  title: string;
+  description: string;
+  icon: string;
+  color: string;
+  sortOrder: number;
+  targetGroups: string[];
+  subcategories: string[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AcademyCourse = {
+  id: string;
+  categoryId: AcademyCategoryId;
+  title: string;
+  description: string;
+  targetGroup: string;
+  difficulty: AcademyDifficulty;
+  estimatedMinutes: number;
+  status: AcademyStatus;
+  clubId?: string;
+  createdBy?: string;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AcademyLesson = {
+  id: string;
+  courseId: string;
+  categoryId: AcademyCategoryId;
+  slug: string;
+  title: string;
+  summary: string;
+  estimatedMinutes: number;
+  lessonType: "technique" | "strength" | "coordination" | "endurance" | "mental" | "safety" | "competition" | "coach";
+  difficulty: AcademyDifficulty;
+  boatClasses: TrainingBoatClass[];
+  ageGroups: string[];
+  status: AcademyStatus;
+  sortOrder: number;
+  linkedTrainingTemplateIds: string[];
+  clubId?: string;
+  createdBy?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AcademyContentBlock = {
+  id: string;
+  lessonId: string;
+  blockType: AcademyContentBlockType;
+  title?: string;
+  content: string;
+  items?: string[];
+  metadata?: Record<string, string | number | boolean | string[]>;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AcademyLearningPath = {
+  id: string;
+  title: string;
+  description: string;
+  targetGroup: string;
+  badge?: string;
+  isActive: boolean;
+  clubId?: string;
+  createdBy?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AcademyLearningPathItem = {
+  id: string;
+  learningPathId: string;
+  lessonId?: string;
+  courseId?: string;
+  sortOrder: number;
+  isRequired: boolean;
+};
+
+export type AcademyProgress = {
+  id: string;
+  userId: string;
+  lessonId: string;
+  status: "not_started" | "started" | "completed";
+  progressPercent: number;
+  lastPosition: string;
+  startedAt?: string;
+  completedAt?: string;
+  updatedAt: string;
+};
+
+export type AcademyAssignment = {
+  id: string;
+  assignedBy: string;
+  assignedTo?: string;
+  groupId?: string;
+  lessonId?: string;
+  courseId?: string;
+  dueDate?: string;
+  status: "open" | "done" | "dismissed";
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AcademyQuiz = {
+  id: string;
+  lessonId: string;
+  title: string;
+  passingScore: number;
+};
+
+export type AcademyQuizQuestion = {
+  id: string;
+  quizId: string;
+  questionType: "single" | "multiple" | "true_false" | "order" | "reflection";
+  question: string;
+  answers: string[];
+  correctAnswer: string | string[];
+  explanation: string;
+  sortOrder: number;
+};
+
+export type AcademyQuizAttempt = {
+  id: string;
+  quizId: string;
+  userId: string;
+  score: number;
+  answers: Record<string, string | string[]>;
+  completedAt: string;
+};
+
+export type AcademyFavorite = {
+  id: string;
+  userId: string;
+  lessonId: string;
+  createdAt: string;
+};
+
+export type AcademyMedia = {
+  id: string;
+  title: string;
+  mediaType: "video" | "image" | "audio" | "pdf" | "external";
+  storagePath?: string;
+  externalUrl?: string;
+  thumbnailPath?: string;
+  durationSeconds?: number;
+  source?: string;
+  copyrightStatus: "own" | "licensed" | "external_link" | "pending";
+  clubId?: string;
+  createdBy?: string;
+  createdAt: string;
+};
+
 export type PaddleMotionData = {
   activeUserId: string;
   users: User[];
@@ -930,6 +1123,19 @@ export type PaddleMotionData = {
   taskAssignments: TeamTaskAssignment[];
   trainingAttendance: TrainingAttendance[];
   fileAttachments: FileAttachment[];
+  academyCategories: AcademyCategory[];
+  academyCourses: AcademyCourse[];
+  academyLessons: AcademyLesson[];
+  academyContentBlocks: AcademyContentBlock[];
+  academyLearningPaths: AcademyLearningPath[];
+  academyLearningPathItems: AcademyLearningPathItem[];
+  academyProgress: AcademyProgress[];
+  academyAssignments: AcademyAssignment[];
+  academyQuizzes: AcademyQuiz[];
+  academyQuizQuestions: AcademyQuizQuestion[];
+  academyQuizAttempts: AcademyQuizAttempt[];
+  academyFavorites: AcademyFavorite[];
+  academyMedia: AcademyMedia[];
 };
 
 export type PageId =
@@ -945,4 +1151,5 @@ export type PageId =
   | "season"
   | "plan"
   | "equipment"
-  | "profile";
+  | "profile"
+  | "academy";

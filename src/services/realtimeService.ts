@@ -52,6 +52,9 @@ export const subscribeToUserTrainings = (userId: string, onChange: RealtimeHandl
     .on("postgres_changes", { event: "*", schema: "public", table: "training_attendance", filter: `athlete_id=eq.${userId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "beta_feedback", filter: `user_id=eq.${userId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "beta_testers", filter: `user_id=eq.${userId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "academy_progress", filter: `user_id=eq.${userId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "academy_favorites", filter: `user_id=eq.${userId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "academy_assignments", filter: `assigned_to=eq.${userId}` }, onChange)
     .subscribe();
 
   return registerChannel(channel);
@@ -85,6 +88,9 @@ export const subscribeToCoachClub = (clubId: string, onChange: RealtimeHandler):
     .on("postgres_changes", { event: "*", schema: "public", table: "beta_testers", filter: `club_id=eq.${clubId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "profiles", filter: `club_id=eq.${clubId}` }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "trainer_requests", filter: `club_id=eq.${clubId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "academy_courses", filter: `club_id=eq.${clubId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "academy_lessons", filter: `club_id=eq.${clubId}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "academy_media", filter: `club_id=eq.${clubId}` }, onChange)
     .subscribe();
 
   return registerChannel(channel);
@@ -154,6 +160,14 @@ export const subscribeToGeneralCloudChanges = (onChange: RealtimeHandler): (() =
     .on("postgres_changes", { event: "*", schema: "public", table: "task_assignments" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "training_attendance" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "file_attachments" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "academy_categories" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "academy_courses" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "academy_lessons" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "academy_content_blocks" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "academy_learning_paths" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "academy_progress" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "academy_assignments" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "academy_favorites" }, onChange)
     .subscribe();
 
   return registerChannel(channel);
