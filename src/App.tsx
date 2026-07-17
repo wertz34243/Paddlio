@@ -204,6 +204,8 @@ function AppContent() {
   }
 
   const activeUser = getActiveUser(data.users, data.activeUserId);
+  const activePlanEntries = data.plan.filter((entry) => !entry.deletedAt);
+  const activeData = { ...data, plan: activePlanEntries };
   const activeNavPage = navPageByPage[activePage] ?? activePage;
   const moreSegments = canUseCoachArea(activeUser.role)
     ? [
@@ -411,7 +413,7 @@ function AppContent() {
     },
   ) => {
     const timestamp = getTimestamp();
-    const existing = entry.id ? data.plan.find((item) => item.id === entry.id) : undefined;
+    const existing = entry.id ? data.plan.find((item) => item.id === entry.id && !item.deletedAt) : undefined;
     const repeat = entry.repeat ?? "none";
     const startDate = parseLocalDateOnly(entry.date);
     const repeatUntil = entry.repeatUntil ? parseLocalDateOnly(entry.repeatUntil) : startDate;
@@ -479,13 +481,14 @@ function AppContent() {
   };
 
   const deletePlanEntry = (id: string) => {
+    const timestamp = getTimestamp();
     updateData((current) => ({
       ...current,
-      plan: current.plan.filter((entry) => entry.id !== id),
+      plan: current.plan.map((entry) => entry.id === id ? { ...entry, deletedAt: timestamp, updatedAt: timestamp } : entry),
       trainingFeedback: current.trainingFeedback.filter((feedback) => feedback.trainingId !== id),
     }));
 
-    void deleteCloudTraining(id).catch((error) =>
+    void deleteCloudTraining(id, timestamp).catch((error) =>
       console.error("Training konnte nicht direkt aus Supabase gelöscht werden", error),
     );
   };
@@ -502,7 +505,7 @@ function AppContent() {
       nextFeedback.comment?.trim() ||
       nextFeedback.reason?.trim() ||
       (nextFeedback.status === "skipped" ? "Training ausgelassen" : "Rückmeldung gespeichert");
-    const linkedPlanEntry = data.plan.find((entry) => entry.id === nextFeedback.trainingId);
+    const linkedPlanEntry = data.plan.find((entry) => entry.id === nextFeedback.trainingId && !entry.deletedAt);
     const nextPlanEntry = linkedPlanEntry
       ? { ...linkedPlanEntry, status: nextFeedback.status, feedbackNote: feedbackSummary, updatedAt: timestamp }
       : null;
@@ -659,8 +662,8 @@ function AppContent() {
       case "plan":
         return (
           <PlanView
-            data={data}
-            entries={data.plan}
+            data={activeData}
+            entries={activePlanEntries}
             user={activeUser}
             onSave={upsertPlanEntry}
             onDelete={deletePlanEntry}
@@ -679,7 +682,7 @@ function AppContent() {
         return (
           <TrainingJournalView
             sessions={data.training}
-            plan={data.plan}
+            plan={activePlanEntries}
             journal={data.journal}
             onOpenOverview={() => setTrainingSegment("overview")}
             onOpenPlan={() => setTrainingSegment("plan")}
@@ -692,7 +695,7 @@ function AppContent() {
       case "calendar":
         return (
           <TrainingCalendarView
-            entries={data.plan}
+            entries={activePlanEntries}
             journal={data.journal}
             onOpenPlan={() => setTrainingSegment("plan")}
             onOpenJournal={() => setTrainingSegment("journal")}
@@ -702,7 +705,7 @@ function AppContent() {
       case "overview":
         return (
           <TrainingOverviewView
-            plan={data.plan}
+            plan={activePlanEntries}
             sessions={data.training}
             journal={data.journal}
             onPlanStatusChange={updatePlanEntryStatus}
@@ -787,9 +790,9 @@ function AppContent() {
       case "stats":
         return <CompetitionSeasonStatsView competitions={data.competitions} />;
       case "advanced":
-        return <ResultsReadinessView data={data} user={activeUser} mode="results" onDataChange={updateData} />;
+        return <ResultsReadinessView data={activeData} user={activeUser} mode="results" onDataChange={updateData} />;
       case "imports":
-        return <ResultsReadinessView data={data} user={activeUser} mode="imports" onDataChange={updateData} />;
+        return <ResultsReadinessView data={activeData} user={activeUser} mode="imports" onDataChange={updateData} />;
       case "coach":
       case "admin":
         return <CompetitionCoachAdminView competitions={data.competitions} user={activeUser} />;
@@ -828,22 +831,22 @@ function AppContent() {
       case "boats":
         return <BoatComparisonView competitions={data.competitions} />;
       case "season":
-        return <SeasonView competitions={data.competitions} training={data.training} plan={data.plan} />;
+        return <SeasonView competitions={data.competitions} training={data.training} plan={activePlanEntries} />;
       case "coach":
-        return <AnalyticsCenterView data={data} user={activeUser} mode="coach" />;
+        return <AnalyticsCenterView data={activeData} user={activeUser} mode="coach" />;
       case "admin":
-        return <AnalyticsCenterView data={data} user={activeUser} mode="admin" />;
+        return <AnalyticsCenterView data={activeData} user={activeUser} mode="admin" />;
       case "smartCoach":
-        return <SmartCoachView data={data} user={activeUser} onUpdateRecommendation={updateSmartCoachRecommendation} />;
+        return <SmartCoachView data={activeData} user={activeUser} onUpdateRecommendation={updateSmartCoachRecommendation} />;
       case "training":
       case "competition":
       case "goals":
-        return <AnalyticsCenterView data={data} user={activeUser} mode={segment as AnalyticsMode} />;
+        return <AnalyticsCenterView data={activeData} user={activeUser} mode={segment as AnalyticsMode} />;
       case "load":
         return (
           <div className="stack">
-            <AnalyticsCenterView data={data} user={activeUser} mode="load" />
-            <ResultsReadinessView data={data} user={activeUser} mode="load" onDataChange={updateData} />
+            <AnalyticsCenterView data={activeData} user={activeUser} mode="load" />
+            <ResultsReadinessView data={activeData} user={activeUser} mode="load" onDataChange={updateData} />
           </div>
         );
       case "overview":
@@ -851,7 +854,7 @@ function AppContent() {
         return (
           <div className="stack">
             <AnalyticsCenterView
-              data={data}
+              data={activeData}
               user={activeUser}
               mode="overview"
               onNavigate={(target) => {
@@ -868,7 +871,7 @@ function AppContent() {
                 }
               }}
             />
-            <AnalysisView competitions={data.competitions} training={data.training} plan={data.plan} feedback={data.trainingFeedback} />
+            <AnalysisView competitions={data.competitions} training={data.training} plan={activePlanEntries} feedback={data.trainingFeedback} />
           </div>
         );
     }
@@ -897,7 +900,7 @@ function AppContent() {
       case "academy":
         return (
           <AcademyView
-            data={data}
+            data={activeData}
             user={activeUser}
             onDataChange={updateData}
             onOpenTrainingPlan={() => {
@@ -915,7 +918,7 @@ function AppContent() {
           />
         );
       case "club":
-        return <ClubPortalView data={data} user={activeUser} onDataChange={updateData} />;
+        return <ClubPortalView data={activeData} user={activeUser} onDataChange={updateData} />;
       case "competitions":
         return renderCompetitionArea();
       case "goals":
@@ -934,24 +937,24 @@ function AppContent() {
       case "notifications":
         return <NotificationsView notifications={data.notifications} canRevealPrivateData={canSeeSystemPrivateData(activeUser.role)} onMarkRead={markNotificationRead} onMarkAllRead={markAllNotificationsRead} />;
       case "integrations":
-        return <ImportExportView data={data} user={activeUser} sessionAccessToken={session?.access_token} onDataChange={updateData} />;
+        return <ImportExportView data={activeData} user={activeUser} sessionAccessToken={session?.access_token} onDataChange={updateData} />;
       case "feedback":
-        return <BetaReleaseView data={data} user={activeUser} mode="feedback" onDataChange={updateData} />;
+        return <BetaReleaseView data={activeData} user={activeUser} mode="feedback" onDataChange={updateData} />;
       case "betaGuide":
-        return <BetaReleaseView data={data} user={activeUser} mode="guide" onDataChange={updateData} />;
+        return <BetaReleaseView data={activeData} user={activeUser} mode="guide" onDataChange={updateData} />;
       case "limitations":
-        return <BetaReleaseView data={data} user={activeUser} mode="limitations" onDataChange={updateData} />;
+        return <BetaReleaseView data={activeData} user={activeUser} mode="limitations" onDataChange={updateData} />;
       case "beta":
         return (
           <div className="stack">
-            <ResultsReadinessView data={data} user={activeUser} mode="beta" onDataChange={updateData} />
-            <BetaReleaseView data={data} user={activeUser} mode="feedback" onDataChange={updateData} />
+            <ResultsReadinessView data={activeData} user={activeUser} mode="beta" onDataChange={updateData} />
+            <BetaReleaseView data={activeData} user={activeUser} mode="feedback" onDataChange={updateData} />
           </div>
         );
       case "betaTesters":
-        return <BetaReleaseView data={data} user={activeUser} mode="testers" onDataChange={updateData} />;
+        return <BetaReleaseView data={activeData} user={activeUser} mode="testers" onDataChange={updateData} />;
       case "coach":
-        return <CoachView data={data} user={activeUser} onDataChange={updateData} />;
+        return <CoachView data={activeData} user={activeUser} onDataChange={updateData} />;
       case "settings":
         return (
           <SettingsView
@@ -1216,7 +1219,7 @@ function AppContent() {
       case "dashboard":
         return (
           <DashboardView
-            data={data}
+            data={activeData}
             user={activeUser}
             onNavigate={openMainNavPage}
             onOpenMoreSegment={openMoreSegment}
@@ -1235,9 +1238,9 @@ function AppContent() {
       case "analysis":
         return renderAnalysisArea();
       case "club":
-        return <ClubPortalView data={data} user={activeUser} onDataChange={updateData} />;
+        return <ClubPortalView data={activeData} user={activeUser} onDataChange={updateData} />;
       case "communication":
-        return <CommunicationView data={data} user={activeUser} onDataChange={updateData} />;
+        return <CommunicationView data={activeData} user={activeUser} onDataChange={updateData} />;
       case "more":
         return renderMoreArea();
       case "goals":

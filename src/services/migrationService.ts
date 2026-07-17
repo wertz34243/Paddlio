@@ -70,7 +70,7 @@ export const syncDataSnapshotToCloud = async (data: PaddleMotionData, profile: C
   });
   migrated += 1;
 
-  for (const entry of data.plan) {
+  for (const entry of data.plan.filter((item) => !item.deletedAt)) {
     await upsertCloudTraining({ ...entry, ownerUserId: entry.ownerUserId || profile.id, clubId: entry.clubId || clubId || "" });
     migrated += 1;
   }

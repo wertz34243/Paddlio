@@ -479,6 +479,7 @@ export type PlanEntry = {
   assignedAthleteId: string;
   assignedGroupId: string;
   feedbackNote: string;
+  deletedAt?: string;
   createdAt: string;
   updatedAt: string;
 };

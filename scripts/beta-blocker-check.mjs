@@ -33,7 +33,9 @@ assert(trainingService.includes("deleteCloudTraining"), "Trainingsplan-Loeschung
 
 assert(app.includes("upsertCloudFeedback(nextFeedback)"), "Feedback wird nicht direkt in Supabase gespeichert.");
 assert(app.includes("upsertCloudTraining(nextPlanEntry)"), "Planstatus nach Feedback wird nicht direkt in Supabase gespeichert.");
-assert(app.includes("deleteCloudTraining(id)"), "Plan-Loeschung nutzt keinen Cloud-Delete.");
+assert(app.includes("deleteCloudTraining(id, timestamp)"), "Plan-Loeschung nutzt keinen Cloud-Soft-Delete.");
+assert(trainingService.includes('.is("deleted_at", null)'), "Geloeschte Trainings werden beim Cloud-Load nicht gefiltert.");
+assert(trainingService.includes("deleted_at: deletedAt"), "Cloud-Training-Delete setzt keinen Soft-Delete-Zeitstempel.");
 assert(app.includes("Rückmeldung gespeichert"), "Feedback ohne Kommentar wird nicht als gespeicherte Rueckmeldung markiert.");
 assert(app.includes('coach: { description: "Coach-Bereich"'), "Coach-Mehr-Bereich ist nicht sauber getrennt.");
 assert(!app.includes("Coach- und Adminbereich"), "Alter Coach/Admin-Mischtext ist noch vorhanden.");

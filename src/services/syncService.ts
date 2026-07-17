@@ -4,7 +4,7 @@ import { subscribeToGeneralCloudChanges } from "./realtimeService";
 export type SyncQueueItem = {
   id: string;
   tableName: string;
-  action: "upsert" | "delete";
+  action: "insert" | "update" | "upsert" | "delete";
   payload: Record<string, unknown>;
   createdAt: string;
   attempts: number;
@@ -15,7 +15,7 @@ export const getPendingSyncCount = (): number => getOfflineQueueCount();
 export const enqueueSyncChange = (item: Omit<SyncQueueItem, "id" | "createdAt" | "attempts">): void => {
   enqueueOfflineChange({
     table: item.tableName,
-    operation: item.action === "delete" ? "delete" : "upsert",
+    operation: item.action,
     payload: item.payload,
   });
 };

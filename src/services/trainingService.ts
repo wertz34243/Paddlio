@@ -35,6 +35,7 @@ export const toCloudTraining = (entry: PlanEntry) => ({
               : "planned",
   repeat_rule: entry.repeat === "none" ? null : entry.repeat,
   notes: entry.notes || entry.note,
+  deleted_at: entry.deletedAt || null,
 });
 
 export const fromCloudTraining = (row: any, athleteId: string): PlanEntry => ({
@@ -68,6 +69,7 @@ export const fromCloudTraining = (row: any, athleteId: string): PlanEntry => ({
   assignedAthleteId: row.assigned_athlete_id ?? "",
   assignedGroupId: row.assigned_group_id ?? "",
   feedbackNote: "",
+  deletedAt: row.deleted_at ?? "",
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
@@ -75,7 +77,7 @@ export const fromCloudTraining = (row: any, athleteId: string): PlanEntry => ({
 export const listCloudTraining = async (athleteId: string): Promise<PlanEntry[]> => {
   const client = getSupabaseClient();
   if (!client) return [];
-  const { data, error } = await client.from("training_plan_items").select("*").order("date", { ascending: true });
+  const { data, error } = await client.from("training_plan_items").select("*").is("deleted_at", null).order("date", { ascending: true });
   if (error) throw error;
   return (data ?? []).map((row) => fromCloudTraining(row, athleteId));
 };
@@ -91,18 +93,20 @@ export const upsertCloudTraining = async (entry: PlanEntry): Promise<void> => {
   if (error) throw error;
 };
 
-export const deleteCloudTraining = async (id: string): Promise<void> => {
+export const deleteCloudTraining = async (id: string, deletedAt = new Date().toISOString()): Promise<void> => {
   const cloudId = toCloudUuid(id);
   if (!cloudId) return;
 
-  const payload = { id: cloudId };
+  const payload = { id: cloudId, deleted_at: deletedAt, updated_at: deletedAt };
   const client = getSupabaseClient();
   if (!client || !navigator.onLine) {
-    enqueueSyncChange({ tableName: "training_plan_items", action: "delete", payload });
+    enqueueSyncChange({ tableName: "training_plan_items", action: "update", payload });
     return;
   }
 
-  const { error } = await (client.from("training_plan_items") as any).delete().eq("id", cloudId);
+  const { error } = await (client.from("training_plan_items") as any)
+    .update({ deleted_at: deletedAt, updated_at: deletedAt })
+    .eq("id", cloudId);
   if (error) throw error;
 };
 
