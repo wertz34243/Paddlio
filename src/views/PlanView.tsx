@@ -196,6 +196,130 @@ const getDateOffset = getCalendarDayOffset;
 const parseTags = (value: string): string[] =>
   value.split(",").map((tag) => tag.trim()).filter(Boolean);
 
+const createPeriodizationTemplates = (clubId: string): TrainingTemplate[] => {
+  const timestamp = "2026-01-01T00:00:00.000Z";
+  const base = {
+    ownerUserId: "paddlio-system",
+    clubId,
+    createdByUserId: "paddlio-system",
+    visibility: "club" as TrainingTemplateVisibility,
+    isFavorite: true,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  };
+
+  return [
+    {
+      ...base,
+      id: "system-periodization-ga1",
+      title: "GA1 Grundlagenfahrt",
+      category: "Ausdauer",
+      trainingArea: "Ausdauer",
+      trainingType: "GA1",
+      boatClass: "K1+C1",
+      defaultDurationMinutes: 75,
+      defaultIntensity: "locker",
+      focus: "Ruhige Grundlagenausdauer, saubere Technik und stabile Linien.",
+      description: "Längere lockere Einheit. Ziel ist aerobe Basis, nicht Maximaltempo.",
+      notes: "Passt in Grundlagen- und Entlastungswochen. Pulsbereich ruhig halten.",
+      tags: ["Periodisierung", "GA1", "Grundlage"],
+    },
+    {
+      ...base,
+      id: "system-periodization-ga2",
+      title: "GA2 Tempoausdauer",
+      category: "Ausdauer",
+      trainingArea: "Ausdauer",
+      trainingType: "GA2",
+      boatClass: "K1+C1",
+      defaultDurationMinutes: 60,
+      defaultIntensity: "mittel",
+      focus: "Kontrollierte Tempoausdauer mit Technik unter Belastung.",
+      description: "Längere Serien oder Intervalle mit sauberem Bewegungsablauf.",
+      notes: "Nicht direkt nach sehr harten Einheiten einplanen.",
+      tags: ["Periodisierung", "GA2", "Aufbau"],
+    },
+    {
+      ...base,
+      id: "system-periodization-wa",
+      title: "Wettkampfausdauer Simulation",
+      category: "Wettkampf",
+      trainingArea: "Wettkampf",
+      trainingType: "Wettkampfsimulation",
+      boatClass: "K1+C1",
+      defaultDurationMinutes: 70,
+      defaultIntensity: "hart",
+      focus: "Rennnahe Belastung, Taktik und saubere Entscheidungen unter Ermüdung.",
+      description: "Mehrere wettkampfähnliche Läufe mit klaren Pausen und Auswertung.",
+      notes: "Gut vier bis sechs Wochen vor wichtigen Wettkämpfen.",
+      tags: ["Periodisierung", "WA", "Wettkampf"],
+    },
+    {
+      ...base,
+      id: "system-periodization-sa",
+      title: "Schnelligkeitsausdauer",
+      category: "Technik",
+      trainingArea: "Wassertraining",
+      trainingType: "Starttraining",
+      boatClass: "K1+C1",
+      defaultDurationMinutes: 50,
+      defaultIntensity: "hart",
+      focus: "Kurze intensive Belastungen mit hoher Qualität.",
+      description: "15 bis 45 Sekunden Belastung, vollständige Erholung, klare Technikaufgabe.",
+      notes: "Nur einsetzen, wenn Sportler erholt sind.",
+      tags: ["Periodisierung", "SA", "Start"],
+    },
+    {
+      ...base,
+      id: "system-periodization-technik",
+      title: "Technik unter geringer Belastung",
+      category: "Technik",
+      trainingArea: "Wassertraining",
+      trainingType: "K1 Technik",
+      boatClass: "K1+C1",
+      defaultDurationMinutes: 60,
+      defaultIntensity: "locker",
+      focus: "Linienwahl, Kehrwasser und Bootskontrolle ohne Zeitdruck.",
+      description: "Qualität vor Umfang. Viele Wiederholungen mit direktem Feedback.",
+      notes: "Ideal in Entlastungswochen und nach Wettkämpfen.",
+      tags: ["Periodisierung", "KB", "Technik"],
+    },
+    {
+      ...base,
+      id: "system-periodization-kaus",
+      title: "Kraftausdauer Zirkel",
+      category: "Kraft",
+      trainingArea: "Krafttraining",
+      trainingType: "Kraftausdauer",
+      boatClass: "none",
+      defaultDurationMinutes: 55,
+      defaultIntensity: "mittel",
+      focus: "Druck halten, Rumpf stabilisieren und Wiederholungen sauber ausführen.",
+      description: "Zirkeltraining mit Rumpf, Schulter, Rotation und Zugbewegungen.",
+      notes: "In Aufbauphasen einsetzen. Technikqualität nicht verlieren.",
+      tags: ["Periodisierung", "Kaus", "Kraft"],
+    },
+    {
+      ...base,
+      id: "system-periodization-regeneration",
+      title: "Regeneration & Beweglichkeit",
+      category: "Regeneration",
+      trainingArea: "Regeneration",
+      trainingType: "Mobility",
+      boatClass: "none",
+      defaultDurationMinutes: 35,
+      defaultIntensity: "locker",
+      focus: "Entlastung, Beweglichkeit und aktive Erholung.",
+      description: "Lockere Mobility, Dehnen oder Spaziergang. Keine harte Belastung.",
+      notes: "Nach Wettkampfblöcken oder jeder dritten Belastungswoche sinnvoll.",
+      tags: ["Periodisierung", "KB", "Regeneration"],
+    },
+  ];
+};
+
+const isSystemTemplate = (template: TrainingTemplate): boolean =>
+  template.id.startsWith("system-periodization-") || template.createdByUserId === "paddlio-system";
+
 export function PlanView({
   data,
   entries,
@@ -235,9 +359,10 @@ export function PlanView({
 
   const visibleAthletes = useMemo(() => getAthletesForCurrentUser(data, user), [data, user]);
   const visibleGroups = useMemo(() => getGroupsForCurrentUser(data, user), [data, user]);
+  const periodizationTemplates = useMemo(() => createPeriodizationTemplates(user.profile.club), [user.profile.club]);
   const visibleTemplates = useMemo(() => {
     const query = templateSearch.trim().toLowerCase();
-    return getTrainingTemplatesForCurrentUser(data, user, [user.profile.club])
+    return [...periodizationTemplates, ...getTrainingTemplatesForCurrentUser(data, user, [user.profile.club])]
       .filter((template) => templateCategoryFilter === "all" || template.category === templateCategoryFilter)
       .filter((template) => {
         if (!query) return true;
@@ -246,8 +371,8 @@ export function PlanView({
           .toLowerCase()
           .includes(query);
       })
-      .sort((a, b) => Number(b.isFavorite) - Number(a.isFavorite) || a.title.localeCompare(b.title));
-  }, [data, templateCategoryFilter, templateSearch, user]);
+      .sort((a, b) => Number(isSystemTemplate(b)) - Number(isSystemTemplate(a)) || Number(b.isFavorite) - Number(a.isFavorite) || a.title.localeCompare(b.title));
+  }, [data, periodizationTemplates, templateCategoryFilter, templateSearch, user]);
 
   const visibleEntries = useMemo(() => {
     const scopedEntries = getTrainingsForCurrentUser({ ...data, plan: entries }, user);
@@ -408,6 +533,10 @@ export function PlanView({
   };
 
   const deleteTemplate = (template: TrainingTemplate) => {
+    if (isSystemTemplate(template)) {
+      setFormMessage("Paddlio-Systemvorlagen können nicht gelöscht werden.");
+      return;
+    }
     if (!canEditTrainingTemplate(user, template)) {
       setFormMessage("Du hast keine Berechtigung für diese Vorlage.");
       return;
@@ -809,6 +938,7 @@ export function PlanView({
           <div>
             <p className="eyebrow">Trainingsbibliothek</p>
             <h3>{visibleTemplates.length > 0 ? `${visibleTemplates.length} Vorlagen` : "Noch keine Trainingsvorlagen."}</h3>
+            <p className="card-note">Paddlio-Vorlagen aus der Periodisierung helfen bei Grundlagen-, Aufbau-, Wettkampf- und Regenerationsphasen.</p>
           </div>
           <button className="primary-button" type="button" onClick={startTemplateCreate}>{visibleTemplates.length > 0 ? "Vorlage erstellen" : "Erste Vorlage erstellen"}</button>
         </div>
@@ -820,7 +950,7 @@ export function PlanView({
           {visibleTemplates.length > 0 ? visibleTemplates.map((template) => (
             <article className="calendar-training-card" key={template.id}>
               <div className="plan-card-head">
-                <div><span>{template.category} - {visibilityLabel[template.visibility]}</span><h4>{template.isFavorite ? "* " : ""}{template.title}</h4></div>
+                <div><span>{isSystemTemplate(template) ? "Paddlio-Periodisierung" : `${template.category} - ${visibilityLabel[template.visibility]}`}</span><h4>{template.isFavorite ? "* " : ""}{template.title}</h4></div>
                 <b className="status-pill planned">{template.defaultDurationMinutes ?? 0} min</b>
               </div>
               <div className="smart-detail-grid">
@@ -832,8 +962,9 @@ export function PlanView({
               <p>{template.focus || "Noch kein Fokus eingetragen."}</p>
               {template.tags.length > 0 ? <small className="card-note">{template.tags.join(" - ")}</small> : null}
               <div className="card-actions">
-                {canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => { setTemplateDraft(template); setTemplateArea(template.trainingArea); }} aria-label={`Vorlage ${template.title} bearbeiten`}>Bearbeiten</button> : null}
-                {canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => deleteTemplate(template)} aria-label={`Vorlage ${template.title} löschen`}>Löschen</button> : null}
+                {isSystemTemplate(template) ? <span className="status-pill planned">Systemvorlage</span> : null}
+                {!isSystemTemplate(template) && canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => { setTemplateDraft(template); setTemplateArea(template.trainingArea); }} aria-label={`Vorlage ${template.title} bearbeiten`}>Bearbeiten</button> : null}
+                {!isSystemTemplate(template) && canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => deleteTemplate(template)} aria-label={`Vorlage ${template.title} löschen`}>Löschen</button> : null}
               </div>
             </article>
           )) : <p className="empty-state">Noch keine Trainingsvorlagen. Erstelle deine erste Vorlage für schnelle Trainingsplanung.</p>}
