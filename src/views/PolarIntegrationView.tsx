@@ -197,7 +197,7 @@ export function PolarIntegrationView({ data, user, sessionAccessToken, onDataCha
       {!envReady ? (
         <article className="polar-warning">
           <strong>Server-Konfiguration fehlt</strong>
-          <p>Für Live-OAuth müssen in Vercel/Supabase die Variablen `POLAR_CLIENT_ID`, `POLAR_CLIENT_SECRET`, `POLAR_REDIRECT_URI`, `POLAR_TOKEN_ENCRYPTION_KEY` und `SUPABASE_SERVICE_ROLE_KEY` gesetzt sein.</p>
+          <p>Für Live-OAuth müssen die Polar- und Supabase-Servervariablen vollständig in der geschützten Deployment-Umgebung gesetzt sein.</p>
         </article>
       ) : null}
 
