@@ -5321,6 +5321,168 @@ body {
   gap: 14px;
 }
 
+.periodization-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.periodization-summary {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  min-width: 9rem;
+}
+
+.periodization-summary strong {
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  line-height: 0.9;
+}
+
+.periodization-summary span,
+.periodization-month small,
+.periodization-insights small,
+.principle-card small,
+.principle-card span {
+  color: var(--muted);
+}
+
+.periodization-timeline {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(92px, 1fr));
+  gap: 10px;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 4px 2px 10px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.periodization-month {
+  display: grid;
+  align-content: space-between;
+  gap: 10px;
+  min-height: 220px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.periodization-month div:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.periodization-month strong {
+  font-size: 1.1rem;
+}
+
+.periodization-month span {
+  color: var(--secondary);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.periodization-load-track {
+  display: flex;
+  align-items: end;
+  height: 96px;
+  padding: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.periodization-load-track i {
+  display: block;
+  width: 100%;
+  border-radius: inherit;
+  background: linear-gradient(180deg, var(--secondary), var(--success));
+  box-shadow: 0 10px 24px rgba(48, 209, 88, 0.18);
+}
+
+.periodization-month small {
+  display: block;
+  min-height: 42px;
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.periodization-insights {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.periodization-insights article {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.periodization-insights span {
+  color: var(--secondary);
+  font-size: 0.8rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.periodization-insights strong {
+  font-size: clamp(1.35rem, 3vw, 2rem);
+}
+
+.periodization-principles {
+  display: grid;
+  gap: 14px;
+}
+
+.principle-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.principle-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 14px;
+  align-items: start;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.principle-card b {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3rem;
+  min-height: 3rem;
+  border-radius: 14px;
+  background: rgba(56, 189, 248, 0.14);
+  color: var(--secondary);
+}
+
+.principle-card div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.principle-card em {
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: rgba(48, 209, 88, 0.14);
+  color: var(--success);
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
 .calendar-training-card {
   border: 0;
   border-left: 4px solid var(--secondary);
@@ -5388,6 +5550,28 @@ body {
 
   .training-calendar-weekday {
     min-width: 74px;
+  }
+
+  .periodization-summary {
+    justify-items: start;
+  }
+
+  .periodization-timeline {
+    grid-template-columns: repeat(12, minmax(112px, 1fr));
+  }
+
+  .periodization-insights,
+  .principle-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .principle-card {
+    grid-template-columns: auto 1fr;
+  }
+
+  .principle-card em {
+    grid-column: 2;
+    justify-self: start;
   }
 }
 
