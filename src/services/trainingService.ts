@@ -138,8 +138,8 @@ export const upsertCloudFeedback = async (feedback: TrainingFeedback): Promise<v
 
 export const fromCloudFeedback = (row: any): TrainingFeedback => ({
   id: row.id,
-  trainingId: row.training_plan_item_id,
-  athleteUserId: row.athlete_id,
+  trainingId: row.training_plan_item_id ?? row.training_id,
+  athleteUserId: row.athlete_id ?? row.athlete_user_id,
   coachUserId: row.coach_id ?? "",
   status: row.status ?? "done",
   feeling: row.feeling ?? 7,

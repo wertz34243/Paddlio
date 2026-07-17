@@ -495,7 +495,11 @@ function AppContent() {
 
   const saveTrainingFeedback = (feedback: Omit<TrainingFeedback, "id" | "completedAt"> & { id?: string }) => {
     const timestamp = getTimestamp();
-    const existing = feedback.id ? data.trainingFeedback.find((item) => item.id === feedback.id) : undefined;
+    const existing = feedback.id
+      ? data.trainingFeedback.find((item) => item.id === feedback.id)
+      : data.trainingFeedback.find(
+          (item) => item.trainingId === feedback.trainingId && item.athleteUserId === feedback.athleteUserId,
+        );
     const nextFeedback: TrainingFeedback = {
       ...feedback,
       id: feedback.id ?? createId("feedback"),

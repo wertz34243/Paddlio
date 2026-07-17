@@ -110,6 +110,19 @@ export function CommunicationView({ data, user, onDataChange }: CommunicationVie
   const isAdmin = canManageAdminArea(user.role);
   const isCoachLike = canUseCoachArea(user.role);
   const clubIds = useMemo(() => Array.from(new Set([user.profile.club, ...data.coachGroups.map((group) => group.clubId)].filter(Boolean))), [data.coachGroups, user.profile.club]);
+  const visibleDirectMessages = useMemo(
+    () =>
+      data.directMessages
+        .filter((item) => !item.deletedAt)
+        .filter(
+          (item) =>
+            isAdmin ||
+            item.senderId === user.userId ||
+            item.receiverId === user.userId ||
+            Boolean(item.clubId && clubIds.includes(item.clubId)),
+        ),
+    [clubIds, data.directMessages, isAdmin, user.userId],
+  );
   const contacts = useMemo(() => {
     const contactNameById = new Map<string, { id: string; name: string; role: string; clubId: string }>();
     const addContact = (id: string, name: string, role: string, clubId = "") => {
@@ -126,25 +139,23 @@ export function CommunicationView({ data, user, onDataChange }: CommunicationVie
       ),
     );
     getAthletesForCurrentUser(data, user, clubIds).forEach((athlete) => addContact(athlete.id, athlete.name, "Athlete", athlete.clubId));
-    data.directMessages
-      .filter((item) => !item.deletedAt && (item.senderId === user.userId || item.receiverId === user.userId))
-      .forEach((item) => {
-        const otherId = item.senderId === user.userId ? item.receiverId : item.senderId;
-        addContact(otherId, getKnownUserName(data, otherId), "Kontakt", item.clubId);
-      });
+    visibleDirectMessages.forEach((item) => {
+      const otherId = item.senderId === user.userId ? item.receiverId : item.senderId;
+      addContact(otherId, getKnownUserName(data, otherId), "Kontakt", item.clubId);
+    });
 
     return Array.from(contactNameById.values()).sort((left, right) => {
-      const leftLast = data.directMessages.filter((item) => item.senderId === left.id || item.receiverId === left.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]?.createdAt ?? "";
-      const rightLast = data.directMessages.filter((item) => item.senderId === right.id || item.receiverId === right.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]?.createdAt ?? "";
+      const leftLast = visibleDirectMessages.filter((item) => item.senderId === left.id || item.receiverId === left.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]?.createdAt ?? "";
+      const rightLast = visibleDirectMessages.filter((item) => item.senderId === right.id || item.receiverId === right.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]?.createdAt ?? "";
       return rightLast.localeCompare(leftLast) || left.name.localeCompare(right.name);
     });
-  }, [clubIds, data, user]);
+  }, [clubIds, data, user, visibleDirectMessages]);
   const groups = useMemo(() => getGroupsForCurrentUser(data, user, clubIds), [clubIds, data, user]);
   const trainings = useMemo(() => getTrainingsForCurrentUser(data, user, clubIds), [clubIds, data, user]);
   const contactId = selectedContactId || contacts[0]?.id || "";
   const groupId = selectedGroupId || groups[0]?.id || "";
-  const directThread = data.directMessages
-    .filter((item) => !item.deletedAt && ((item.senderId === user.userId && item.receiverId === contactId) || (item.receiverId === user.userId && item.senderId === contactId)))
+  const directThread = visibleDirectMessages
+    .filter((item) => contactId ? ((item.senderId === user.userId && item.receiverId === contactId) || (item.receiverId === user.userId && item.senderId === contactId)) : true)
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   const groupThread = data.groupMessages.filter((item) => !item.deletedAt && item.groupId === groupId).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   const visiblePosts = data.clubPosts
@@ -154,7 +165,7 @@ export function CommunicationView({ data, user, onDataChange }: CommunicationVie
   const visibleTasks = data.tasks.filter((task) => !task.deletedAt && (isAdmin || clubIds.includes(task.clubId) || data.taskAssignments.some((assignment) => assignment.taskId === task.id && assignment.assignedTo === user.userId)));
   const myAssignments = data.taskAssignments.filter((assignment) => assignment.assignedTo === user.userId || isCoachLike || isAdmin);
   const attendance = data.trainingAttendance;
-  const unreadDirect = data.directMessages.filter((item) => item.receiverId === user.userId && !item.isRead && !item.deletedAt).length;
+  const unreadDirect = visibleDirectMessages.filter((item) => item.receiverId === user.userId && !item.isRead).length;
   const unreadGroups = data.groupMessages.filter((item) => item.senderId !== user.userId && groups.some((group) => group.id === item.groupId) && !item.deletedAt).length;
   const openTasks = data.taskAssignments.filter((item) => item.assignedTo === user.userId && item.status !== "done").length;
   const pendingAttendance = trainings.filter((entry) => !attendance.some((item) => item.trainingId === entry.id && item.athleteId === user.userId)).length;
@@ -327,8 +338,8 @@ export function CommunicationView({ data, user, onDataChange }: CommunicationVie
       <div className="section-block">
         <div className="section-heading"><div><p className="eyebrow">Direktnachrichten</p><h3>{unreadDirect} ungelesen</h3></div></div>
         <div className="club-card-list">{contacts.length ? contacts.map((contact) => {
-          const last = data.directMessages
-            .filter((item) => !item.deletedAt && ((item.senderId === user.userId && item.receiverId === contact.id) || (item.receiverId === user.userId && item.senderId === contact.id)))
+          const last = visibleDirectMessages
+            .filter((item) => (item.senderId === user.userId && item.receiverId === contact.id) || (item.receiverId === user.userId && item.senderId === contact.id))
             .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
           return <button className={contactId === contact.id ? "communication-contact active" : "communication-contact"} type="button" key={contact.id} onClick={() => setSelectedContactId(contact.id)}><strong>{contact.name}</strong><span>{last?.message ?? "Noch keine Nachricht"}</span><small>{last ? formatShort(last.createdAt) : contact.role}</small></button>;
         }) : <p className="empty-state">Du hast noch keine Kontakte.</p>}</div>
