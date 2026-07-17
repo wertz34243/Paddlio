@@ -26,6 +26,13 @@ import {
   trainingTypeGroups,
   weekdays,
 } from "../domain/trainingPlan";
+import {
+  buildExerciseDescription,
+  createPeriodizationTemplates as createSystemTrainingTemplates,
+  getTemplateGuidance,
+  isSystemTemplate as isSystemTrainingTemplate,
+  type TrainingTemplateExercise,
+} from "../features/training/templates/trainingTemplates";
 import type {
   BoatClass,
   CoachAthlete,
@@ -196,130 +203,6 @@ const getDateOffset = getCalendarDayOffset;
 const parseTags = (value: string): string[] =>
   value.split(",").map((tag) => tag.trim()).filter(Boolean);
 
-const createPeriodizationTemplates = (clubId: string): TrainingTemplate[] => {
-  const timestamp = "2026-01-01T00:00:00.000Z";
-  const base = {
-    ownerUserId: "paddlio-system",
-    clubId,
-    createdByUserId: "paddlio-system",
-    visibility: "club" as TrainingTemplateVisibility,
-    isFavorite: true,
-    createdAt: timestamp,
-    updatedAt: timestamp,
-  };
-
-  return [
-    {
-      ...base,
-      id: "system-periodization-ga1",
-      title: "GA1 Grundlagenfahrt",
-      category: "Ausdauer",
-      trainingArea: "Ausdauer",
-      trainingType: "GA1",
-      boatClass: "K1+C1",
-      defaultDurationMinutes: 75,
-      defaultIntensity: "locker",
-      focus: "Ruhige Grundlagenausdauer, saubere Technik und stabile Linien.",
-      description: "Längere lockere Einheit. Ziel ist aerobe Basis, nicht Maximaltempo.",
-      notes: "Passt in Grundlagen- und Entlastungswochen. Pulsbereich ruhig halten.",
-      tags: ["Periodisierung", "GA1", "Grundlage"],
-    },
-    {
-      ...base,
-      id: "system-periodization-ga2",
-      title: "GA2 Tempoausdauer",
-      category: "Ausdauer",
-      trainingArea: "Ausdauer",
-      trainingType: "GA2",
-      boatClass: "K1+C1",
-      defaultDurationMinutes: 60,
-      defaultIntensity: "mittel",
-      focus: "Kontrollierte Tempoausdauer mit Technik unter Belastung.",
-      description: "Längere Serien oder Intervalle mit sauberem Bewegungsablauf.",
-      notes: "Nicht direkt nach sehr harten Einheiten einplanen.",
-      tags: ["Periodisierung", "GA2", "Aufbau"],
-    },
-    {
-      ...base,
-      id: "system-periodization-wa",
-      title: "Wettkampfausdauer Simulation",
-      category: "Wettkampf",
-      trainingArea: "Wettkampf",
-      trainingType: "Wettkampfsimulation",
-      boatClass: "K1+C1",
-      defaultDurationMinutes: 70,
-      defaultIntensity: "hart",
-      focus: "Rennnahe Belastung, Taktik und saubere Entscheidungen unter Ermüdung.",
-      description: "Mehrere wettkampfähnliche Läufe mit klaren Pausen und Auswertung.",
-      notes: "Gut vier bis sechs Wochen vor wichtigen Wettkämpfen.",
-      tags: ["Periodisierung", "WA", "Wettkampf"],
-    },
-    {
-      ...base,
-      id: "system-periodization-sa",
-      title: "Schnelligkeitsausdauer",
-      category: "Technik",
-      trainingArea: "Wassertraining",
-      trainingType: "Starttraining",
-      boatClass: "K1+C1",
-      defaultDurationMinutes: 50,
-      defaultIntensity: "hart",
-      focus: "Kurze intensive Belastungen mit hoher Qualität.",
-      description: "15 bis 45 Sekunden Belastung, vollständige Erholung, klare Technikaufgabe.",
-      notes: "Nur einsetzen, wenn Sportler erholt sind.",
-      tags: ["Periodisierung", "SA", "Start"],
-    },
-    {
-      ...base,
-      id: "system-periodization-technik",
-      title: "Technik unter geringer Belastung",
-      category: "Technik",
-      trainingArea: "Wassertraining",
-      trainingType: "K1 Technik",
-      boatClass: "K1+C1",
-      defaultDurationMinutes: 60,
-      defaultIntensity: "locker",
-      focus: "Linienwahl, Kehrwasser und Bootskontrolle ohne Zeitdruck.",
-      description: "Qualität vor Umfang. Viele Wiederholungen mit direktem Feedback.",
-      notes: "Ideal in Entlastungswochen und nach Wettkämpfen.",
-      tags: ["Periodisierung", "KB", "Technik"],
-    },
-    {
-      ...base,
-      id: "system-periodization-kaus",
-      title: "Kraftausdauer Zirkel",
-      category: "Kraft",
-      trainingArea: "Krafttraining",
-      trainingType: "Kraftausdauer",
-      boatClass: "none",
-      defaultDurationMinutes: 55,
-      defaultIntensity: "mittel",
-      focus: "Druck halten, Rumpf stabilisieren und Wiederholungen sauber ausführen.",
-      description: "Zirkeltraining mit Rumpf, Schulter, Rotation und Zugbewegungen.",
-      notes: "In Aufbauphasen einsetzen. Technikqualität nicht verlieren.",
-      tags: ["Periodisierung", "Kaus", "Kraft"],
-    },
-    {
-      ...base,
-      id: "system-periodization-regeneration",
-      title: "Regeneration & Beweglichkeit",
-      category: "Regeneration",
-      trainingArea: "Regeneration",
-      trainingType: "Mobility",
-      boatClass: "none",
-      defaultDurationMinutes: 35,
-      defaultIntensity: "locker",
-      focus: "Entlastung, Beweglichkeit und aktive Erholung.",
-      description: "Lockere Mobility, Dehnen oder Spaziergang. Keine harte Belastung.",
-      notes: "Nach Wettkampfblöcken oder jeder dritten Belastungswoche sinnvoll.",
-      tags: ["Periodisierung", "KB", "Regeneration"],
-    },
-  ];
-};
-
-const isSystemTemplate = (template: TrainingTemplate): boolean =>
-  template.id.startsWith("system-periodization-") || template.createdByUserId === "paddlio-system";
-
 export function PlanView({
   data,
   entries,
@@ -350,6 +233,15 @@ export function PlanView({
   const [intensityFilter, setIntensityFilter] = useState<"all" | TrainingIntensity>("all");
   const [templateCategoryFilter, setTemplateCategoryFilter] = useState<"all" | TrainingTemplateCategory>("all");
   const [templateSearch, setTemplateSearch] = useState("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [templatePickerSearch, setTemplatePickerSearch] = useState("");
+  const [selectedFocusOptions, setSelectedFocusOptions] = useState<string[]>([]);
+  const [customFocus, setCustomFocus] = useState("");
+  const [selectedExerciseIds, setSelectedExerciseIds] = useState<string[]>([]);
+  const [customDescription, setCustomDescription] = useState("");
+  const [manualGeneratedDescription, setManualGeneratedDescription] = useState("");
+  const [pendingTemplateId, setPendingTemplateId] = useState("");
   const [athleteFilter, setAthleteFilter] = useState("all");
   const [groupFilter, setGroupFilter] = useState("all");
   const [formMessage, setFormMessage] = useState("");
@@ -359,10 +251,11 @@ export function PlanView({
 
   const visibleAthletes = useMemo(() => getAthletesForCurrentUser(data, user), [data, user]);
   const visibleGroups = useMemo(() => getGroupsForCurrentUser(data, user), [data, user]);
-  const periodizationTemplates = useMemo(() => createPeriodizationTemplates(user.profile.club), [user.profile.club]);
+  const periodizationTemplates = useMemo(() => createSystemTrainingTemplates(user.profile.club), [user.profile.club]);
   const visibleTemplates = useMemo(() => {
     const query = templateSearch.trim().toLowerCase();
     return [...periodizationTemplates, ...getTrainingTemplatesForCurrentUser(data, user, [user.profile.club])]
+      .filter((template) => template.title.trim().toLowerCase() !== "test")
       .filter((template) => templateCategoryFilter === "all" || template.category === templateCategoryFilter)
       .filter((template) => {
         if (!query) return true;
@@ -371,7 +264,7 @@ export function PlanView({
           .toLowerCase()
           .includes(query);
       })
-      .sort((a, b) => Number(isSystemTemplate(b)) - Number(isSystemTemplate(a)) || Number(b.isFavorite) - Number(a.isFavorite) || a.title.localeCompare(b.title));
+      .sort((a, b) => Number(isSystemTrainingTemplate(b)) - Number(isSystemTrainingTemplate(a)) || Number(b.isFavorite) - Number(a.isFavorite) || a.title.localeCompare(b.title));
   }, [data, periodizationTemplates, templateCategoryFilter, templateSearch, user]);
 
   const visibleEntries = useMemo(() => {
@@ -403,6 +296,107 @@ export function PlanView({
   );
   const upcomingEntries = visibleEntries.filter((entry) => entry.date >= today && isPlannedStatus(entry.status));
   const doneEntries = visibleEntries.filter((entry) => isDoneStatus(entry.status));
+  const selectedTemplate = useMemo(
+    () => visibleTemplates.find((template) => template.id === selectedTemplateId),
+    [selectedTemplateId, visibleTemplates],
+  );
+  const selectedTemplateGuidance = useMemo(() => getTemplateGuidance(selectedTemplate), [selectedTemplate]);
+  const selectedExercises = useMemo(
+    () => selectedExerciseIds
+      .map((id) => selectedTemplateGuidance.exercises.find((exerciseItem) => exerciseItem.id === id))
+      .filter((exerciseItem): exerciseItem is TrainingTemplateExercise => Boolean(exerciseItem)),
+    [selectedExerciseIds, selectedTemplateGuidance.exercises],
+  );
+  const generatedDescription = useMemo(
+    () => buildExerciseDescription(selectedExercises, customDescription),
+    [customDescription, selectedExercises],
+  );
+  const effectiveGeneratedDescription = manualGeneratedDescription || generatedDescription;
+  const focusText = useMemo(
+    () => [...selectedFocusOptions, customFocus.trim()].filter(Boolean).join(", "),
+    [customFocus, selectedFocusOptions],
+  );
+  const recentFocusOptions = useMemo(() => {
+    const values = visibleEntries.flatMap((entry) => (entry.focus || entry.goal || "").split(","));
+    return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean))).slice(0, 8);
+  }, [visibleEntries]);
+  const recentDescriptionOptions = useMemo(() => {
+    const values = visibleEntries.flatMap((entry) => [entry.description, entry.notes, entry.note]);
+    return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean))).slice(0, 5);
+  }, [visibleEntries]);
+  const pickerTemplates = useMemo(() => {
+    const query = templatePickerSearch.trim().toLowerCase();
+    return visibleTemplates.filter((template) => {
+      if (!query) return true;
+      return [template.title, template.focus, template.trainingArea, template.trainingType, template.tags.join(" ")]
+        .join(" ")
+        .toLowerCase()
+        .includes(query);
+    });
+  }, [templatePickerSearch, visibleTemplates]);
+
+  const hasTemplateInput = (): boolean =>
+    selectedFocusOptions.length > 0 || selectedExerciseIds.length > 0 || Boolean(customFocus.trim()) || Boolean(customDescription.trim());
+
+  const applyTemplateSelection = (templateId: string, mode: "keep" | "replace" = "keep") => {
+    const template = visibleTemplates.find((item) => item.id === templateId);
+    const guidance = getTemplateGuidance(template);
+    setSelectedTemplateId(templateId);
+    setShowTemplatePicker(false);
+    setPendingTemplateId("");
+    setTemplatePickerSearch("");
+
+    if (mode === "replace") {
+      setSelectedFocusOptions(guidance.focusOptions.slice(0, 3));
+      setSelectedExerciseIds(guidance.exercises.slice(0, 1).map((exerciseItem) => exerciseItem.id));
+      setCustomFocus("");
+      setCustomDescription("");
+      setManualGeneratedDescription("");
+    }
+  };
+
+  const requestTemplateSelection = (templateId: string) => {
+    if (!selectedTemplateId || selectedTemplateId === templateId || !hasTemplateInput()) {
+      applyTemplateSelection(templateId, selectedTemplateId === templateId ? "keep" : "replace");
+      return;
+    }
+    setPendingTemplateId(templateId);
+    setShowTemplatePicker(false);
+  };
+
+  const toggleFocusOption = (label: string) => {
+    setSelectedFocusOptions((current) =>
+      current.includes(label) ? current.filter((item) => item !== label) : [...current, label],
+    );
+  };
+
+  const toggleExerciseOption = (exerciseId: string) => {
+    setSelectedExerciseIds((current) =>
+      current.includes(exerciseId) ? current.filter((item) => item !== exerciseId) : [...current, exerciseId],
+    );
+  };
+
+  const moveSelectedExercise = (exerciseId: string, direction: -1 | 1) => {
+    setSelectedExerciseIds((current) => {
+      const index = current.indexOf(exerciseId);
+      const targetIndex = index + direction;
+      if (index < 0 || targetIndex < 0 || targetIndex >= current.length) return current;
+      const next = [...current];
+      [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+      return next;
+    });
+  };
+
+  const appendExerciseText = (exerciseItem: TrainingTemplateExercise) => {
+    setCustomDescription((current) =>
+      [current.trim(), `${exerciseItem.name}: ${exerciseItem.shortDescription}`].filter(Boolean).join("\n\n"),
+    );
+  };
+
+  const groupedExerciseOptions = selectedTemplateGuidance.exercises.reduce<Record<string, TrainingTemplateExercise[]>>((groups, exerciseItem) => {
+    groups[exerciseItem.category] = [...(groups[exerciseItem.category] ?? []), exerciseItem];
+    return groups;
+  }, {});
 
   const switchWorkflowTab = (tab: WorkflowTabConfig) => {
     setWorkflowTab(tab.id);
@@ -533,7 +527,7 @@ export function PlanView({
   };
 
   const deleteTemplate = (template: TrainingTemplate) => {
-    if (isSystemTemplate(template)) {
+    if (isSystemTrainingTemplate(template)) {
       setFormMessage("Paddlio-Systemvorlagen können nicht gelöscht werden.");
       return;
     }
@@ -603,6 +597,12 @@ export function PlanView({
       return;
     }
 
+    const selectedFocus = String(formData.get("focus") ?? "").trim() || template.focus;
+    const selectedDescription = String(formData.get("generatedDescription") ?? "").trim() || template.description || "";
+    const selectedNotes = String(formData.get("notes") ?? template.notes ?? "").trim();
+    const durationInput = String(formData.get("durationMinutes") ?? "").trim();
+    const durationMinutes = durationInput ? Number(durationInput) : template.defaultDurationMinutes ?? 75;
+
     onSave({
       ownerUserId: user.userId,
       clubId: user.profile.club,
@@ -615,16 +615,16 @@ export function PlanView({
       time: String(formData.get("startTime") ?? "17:30"),
       startTime: String(formData.get("startTime") ?? "17:30"),
       endTime: "",
-      durationMinutes: Number(formData.get("durationMinutes") ?? template.defaultDurationMinutes ?? 75),
+      durationMinutes,
       area: template.trainingArea,
       trainingType: template.trainingType,
       boatClass: template.boatClass ?? "none",
-      goal: String(formData.get("focus") ?? template.focus).trim(),
-      focus: String(formData.get("focus") ?? template.focus).trim(),
-      description: template.description ?? "",
+      goal: selectedFocus,
+      focus: selectedFocus,
+      description: selectedDescription,
       intensity: String(formData.get("intensity") ?? template.defaultIntensity) as TrainingIntensity,
-      note: String(formData.get("notes") ?? template.notes ?? "").trim(),
-      notes: String(formData.get("notes") ?? template.notes ?? "").trim(),
+      note: selectedNotes,
+      notes: selectedNotes,
       status: "planned",
       repeat: "none",
       repeatUntil: "",
@@ -950,7 +950,7 @@ export function PlanView({
           {visibleTemplates.length > 0 ? visibleTemplates.map((template) => (
             <article className="calendar-training-card" key={template.id}>
               <div className="plan-card-head">
-                <div><span>{isSystemTemplate(template) ? "Paddlio-Periodisierung" : `${template.category} - ${visibilityLabel[template.visibility]}`}</span><h4>{template.isFavorite ? "* " : ""}{template.title}</h4></div>
+                <div><span>{isSystemTrainingTemplate(template) ? "Paddlio-Periodisierung" : `${template.category} - ${visibilityLabel[template.visibility]}`}</span><h4>{template.isFavorite ? "* " : ""}{template.title}</h4></div>
                 <b className="status-pill planned">{template.defaultDurationMinutes ?? 0} min</b>
               </div>
               <div className="smart-detail-grid">
@@ -962,9 +962,9 @@ export function PlanView({
               <p>{template.focus || "Noch kein Fokus eingetragen."}</p>
               {template.tags.length > 0 ? <small className="card-note">{template.tags.join(" - ")}</small> : null}
               <div className="card-actions">
-                {isSystemTemplate(template) ? <span className="status-pill planned">Systemvorlage</span> : null}
-                {!isSystemTemplate(template) && canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => { setTemplateDraft(template); setTemplateArea(template.trainingArea); }} aria-label={`Vorlage ${template.title} bearbeiten`}>Bearbeiten</button> : null}
-                {!isSystemTemplate(template) && canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => deleteTemplate(template)} aria-label={`Vorlage ${template.title} löschen`}>Löschen</button> : null}
+                {isSystemTrainingTemplate(template) ? <span className="status-pill planned">Systemvorlage</span> : null}
+                {!isSystemTrainingTemplate(template) && canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => { setTemplateDraft(template); setTemplateArea(template.trainingArea); }} aria-label={`Vorlage ${template.title} bearbeiten`}>Bearbeiten</button> : null}
+                {!isSystemTrainingTemplate(template) && canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => deleteTemplate(template)} aria-label={`Vorlage ${template.title} löschen`}>Löschen</button> : null}
               </div>
             </article>
           )) : <p className="empty-state">Noch keine Trainingsvorlagen. Erstelle deine erste Vorlage für schnelle Trainingsplanung.</p>}
@@ -998,16 +998,159 @@ export function PlanView({
       {workflowTab === "templates" || workflowTab === "week" ? <section className="section-block">
         <div className="section-heading"><div><p className="eyebrow">Schnell planen</p><h3>Aus Vorlage planen</h3></div></div>
         {formMessage ? <p className="auth-message">{formMessage}</p> : null}
+        {pendingTemplateId ? (
+          <div className="template-change-confirm" role="alert">
+            <strong>Die Vorlage wurde geändert.</strong>
+            <p>Möchtest du Fokus und Beschreibung durch passende Vorschläge ersetzen oder deine bisherigen Angaben behalten?</p>
+            <div className="card-actions">
+              <button type="button" onClick={() => applyTemplateSelection(pendingTemplateId, "replace")}>Vorschläge übernehmen</button>
+              <button type="button" onClick={() => applyTemplateSelection(pendingTemplateId, "keep")}>Angaben behalten</button>
+              <button type="button" onClick={() => setPendingTemplateId("")}>Abbrechen</button>
+            </div>
+          </div>
+        ) : null}
+        {showTemplatePicker ? (
+          <div className="template-picker-sheet" role="dialog" aria-label="Trainingsvorlage auswählen">
+            <div className="template-picker-head">
+              <div>
+                <p className="eyebrow">Vorlage auswählen</p>
+                <h4>Trainingsvorlagen</h4>
+              </div>
+              <button type="button" onClick={() => setShowTemplatePicker(false)} aria-label="Vorlagenauswahl schließen">Schließen</button>
+            </div>
+            <input
+              value={templatePickerSearch}
+              onChange={(event) => setTemplatePickerSearch(event.target.value)}
+              placeholder="Vorlage suchen"
+              aria-label="Vorlage suchen"
+            />
+            <div className="template-option-list">
+              {pickerTemplates.map((template) => (
+                <button
+                  className={template.id === selectedTemplateId ? "active" : ""}
+                  key={template.id}
+                  type="button"
+                  onClick={() => requestTemplateSelection(template.id)}
+                >
+                  <strong>{template.title}</strong>
+                  <span>{template.trainingArea} · {template.trainingType} · {intensityLabel[template.defaultIntensity]}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
         <form className="entry-form" onSubmit={planFromTemplate}>
           <div className="form-grid">
-            <label>Vorlage<select name="templateId" required><option value="">Bitte wählen</option>{visibleTemplates.map((template) => <option key={template.id} value={template.id}>{template.title}</option>)}</select></label>
+            <div className="template-picker-field">
+              <span>Vorlage</span>
+              <button type="button" onClick={() => setShowTemplatePicker(true)}>
+                {selectedTemplate ? selectedTemplate.title : "Vorlage wählen"}
+              </button>
+              <input name="templateId" type="hidden" value={selectedTemplateId} />
+            </div>
             <label>Datum<input name="date" type="date" defaultValue={selectedDate} required /></label>
             <label>Uhrzeit<input name="startTime" type="time" defaultValue="17:30" /></label>
             <label>Dauer<input name="durationMinutes" type="number" min="0" step="5" placeholder="aus Vorlage" /></label>
             <label>Intensität<select name="intensity" defaultValue="mittel">{trainingIntensities.map((intensity) => <option key={intensity} value={intensity}>{intensityLabel[intensity]}</option>)}</select></label>
           </div>
           {renderTargetControls()}
-          <label>Fokus anpassen<input name="focus" placeholder="optional" /></label>
+          {selectedTemplate ? (
+            <div className="template-guidance-panel">
+              <div className="template-guidance-head">
+                <div>
+                  <p className="eyebrow">Vorlage</p>
+                  <h4>{selectedTemplate.title}</h4>
+                </div>
+                <span className="status-pill planned">{selectedTemplateGuidance.focusOptions.length} Fokusoptionen</span>
+              </div>
+
+              <div className="template-suggestion-group">
+                <strong>Fokus</strong>
+                <p className="card-note">Mehrfachauswahl möglich. Für eine klare Trainingseinheit werden höchstens drei Hauptfokusse empfohlen.</p>
+                <div className="suggestion-chip-row">
+                  {selectedTemplateGuidance.focusOptions.map((option) => (
+                    <button
+                      className={selectedFocusOptions.includes(option) ? "active" : ""}
+                      key={option}
+                      type="button"
+                      onClick={() => toggleFocusOption(option)}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+                {recentFocusOptions.length > 0 ? (
+                  <>
+                    <span className="template-mini-label">Zuletzt verwendet</span>
+                    <div className="suggestion-chip-row compact">
+                      {recentFocusOptions.map((option) => (
+                        <button key={option} type="button" onClick={() => toggleFocusOption(option)}>{option}</button>
+                      ))}
+                    </div>
+                  </>
+                ) : null}
+                <label>Eigener Fokus<input value={customFocus} onChange={(event) => setCustomFocus(event.target.value)} placeholder="z. B. sauberer Ziehschlag am Innenstab" /></label>
+                {selectedFocusOptions.length > 3 ? <p className="auth-message">Hinweis: Für eine klare Trainingseinheit sind höchstens drei Hauptfokusse empfohlen.</p> : null}
+                <input name="focus" type="hidden" value={focusText} />
+              </div>
+
+              <div className="template-suggestion-group">
+                <strong>Übungen</strong>
+                {Object.entries(groupedExerciseOptions).map(([category, exercises]) => (
+                  <div className="exercise-category" key={category}>
+                    <span className="template-mini-label">{category}</span>
+                    <div className="exercise-option-grid">
+                      {exercises.map((exerciseItem) => (
+                        <button
+                          className={selectedExerciseIds.includes(exerciseItem.id) ? "active" : ""}
+                          key={exerciseItem.id}
+                          type="button"
+                          onClick={() => toggleExerciseOption(exerciseItem.id)}
+                        >
+                          <strong>{exerciseItem.name}</strong>
+                          <small>{exerciseItem.shortDescription}</small>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                {selectedExercises.length > 0 ? (
+                  <div className="selected-exercise-list">
+                    {selectedExercises.map((exerciseItem, index) => (
+                      <article className="selected-exercise-card" key={exerciseItem.id}>
+                        <div>
+                          <span>{index + 1}. {exerciseItem.category}</span>
+                          <strong>{exerciseItem.name}</strong>
+                          <p>{exerciseItem.shortDescription}</p>
+                          <small>Ziel: {exerciseItem.trainingGoal}</small>
+                        </div>
+                        <div className="card-actions">
+                          <button type="button" onClick={() => moveSelectedExercise(exerciseItem.id, -1)} aria-label={`${exerciseItem.name} nach oben verschieben`}>Hoch</button>
+                          <button type="button" onClick={() => moveSelectedExercise(exerciseItem.id, 1)} aria-label={`${exerciseItem.name} nach unten verschieben`}>Runter</button>
+                          <button type="button" onClick={() => appendExerciseText(exerciseItem)} aria-label={`${exerciseItem.name} in eigene Beschreibung kopieren`}>Kopieren</button>
+                          <button type="button" onClick={() => toggleExerciseOption(exerciseItem.id)} aria-label={`${exerciseItem.name} entfernen`}>Entfernen</button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                ) : null}
+                {recentDescriptionOptions.length > 0 ? (
+                  <>
+                    <span className="template-mini-label">Zuletzt verwendete Beschreibungen</span>
+                    <div className="suggestion-chip-row compact">
+                      {recentDescriptionOptions.map((description) => (
+                        <button key={description} type="button" onClick={() => setCustomDescription((current) => [current.trim(), description].filter(Boolean).join("\n\n"))}>
+                          {description.slice(0, 48)}{description.length > 48 ? "..." : ""}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : null}
+                <label>Eigene Beschreibung<textarea value={customDescription} onChange={(event) => setCustomDescription(event.target.value)} rows={3} placeholder="Eigene Ergänzung, Strecke, Dauer oder Trainerhinweis" /></label>
+                <label>Erzeugte Beschreibung<textarea name="generatedDescription" value={effectiveGeneratedDescription} onChange={(event) => setManualGeneratedDescription(event.target.value)} rows={5} /></label>
+              </div>
+            </div>
+          ) : null}
           <label>Notiz<textarea name="notes" rows={2} /></label>
           <button className="save-button" type="submit">Aus Vorlage planen</button>
         </form>

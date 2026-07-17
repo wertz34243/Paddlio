@@ -5560,10 +5560,10 @@ body {
     grid-template-columns: repeat(12, minmax(112px, 1fr));
   }
 
-  .periodization-insights,
-  .principle-grid {
-    grid-template-columns: 1fr;
-  }
+.periodization-insights,
+.principle-grid {
+  grid-template-columns: 1fr;
+}
 
   .principle-card {
     grid-template-columns: auto 1fr;
@@ -5572,6 +5572,211 @@ body {
   .principle-card em {
     grid-column: 2;
     justify-self: start;
+  }
+}
+
+.template-picker-field {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.template-picker-field button,
+.template-picker-sheet button,
+.suggestion-chip-row button,
+.exercise-option-grid button {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(15, 23, 42, 0.78);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.template-picker-field button {
+  min-height: 52px;
+  border-radius: 18px;
+  padding: 0 16px;
+  text-align: left;
+  font-weight: 900;
+}
+
+.template-picker-sheet {
+  position: fixed;
+  left: 50%;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  z-index: 70;
+  width: min(calc(100vw - 24px), 720px);
+  max-height: min(82dvh, 720px);
+  transform: translateX(-50%);
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  overflow: auto;
+  border: 1px solid rgba(75, 216, 255, 0.24);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(75, 216, 255, 0.22), transparent 18rem),
+    rgba(8, 17, 29, 0.98);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.52);
+}
+
+.template-picker-head,
+.template-guidance-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.template-picker-head h4,
+.template-guidance-head h4 {
+  margin: 0;
+}
+
+.template-picker-sheet input {
+  width: 100%;
+  min-height: 50px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 18px;
+  padding: 0 14px;
+  background: rgba(15, 23, 42, 0.86);
+  color: var(--text);
+}
+
+.template-option-list {
+  display: grid;
+  gap: 8px;
+}
+
+.template-option-list button {
+  display: grid;
+  gap: 4px;
+  min-height: 68px;
+  border-radius: 18px;
+  padding: 12px 14px;
+  text-align: left;
+}
+
+.template-option-list button.active,
+.suggestion-chip-row button.active,
+.exercise-option-grid button.active {
+  border-color: rgba(75, 216, 255, 0.7);
+  background: rgba(75, 216, 255, 0.16);
+}
+
+.template-option-list span,
+.template-mini-label,
+.exercise-option-grid small,
+.selected-exercise-card small {
+  color: var(--muted);
+}
+
+.template-change-confirm,
+.template-guidance-panel {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid rgba(75, 216, 255, 0.22);
+  border-radius: 22px;
+  background: rgba(15, 23, 42, 0.72);
+}
+
+.template-change-confirm p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.template-suggestion-group {
+  display: grid;
+  gap: 12px;
+}
+
+.suggestion-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.suggestion-chip-row button {
+  min-height: 40px;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-weight: 850;
+}
+
+.suggestion-chip-row.compact button {
+  min-height: 34px;
+  font-size: 14px;
+}
+
+.template-mini-label {
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.exercise-category {
+  display: grid;
+  gap: 8px;
+}
+
+.exercise-option-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.exercise-option-grid button {
+  display: grid;
+  gap: 6px;
+  min-height: 96px;
+  border-radius: 18px;
+  padding: 12px;
+  text-align: left;
+}
+
+.selected-exercise-list {
+  display: grid;
+  gap: 10px;
+}
+
+.selected-exercise-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 20px;
+  background: rgba(2, 6, 23, 0.28);
+}
+
+.selected-exercise-card span {
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.selected-exercise-card strong,
+.selected-exercise-card p,
+.selected-exercise-card small {
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .template-picker-sheet {
+    width: calc(100vw - 20px);
+    max-height: 84dvh;
+    padding: 14px;
+  }
+
+  .template-picker-head,
+  .template-guidance-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .exercise-option-grid {
+    grid-template-columns: 1fr;
   }
 }
 
