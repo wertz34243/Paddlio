@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "check:beta": "node scripts/beta-blocker-check.mjs",
+    "check:encoding": "node scripts/check-encoding.mjs",
+    "check:beta": "node scripts/check-encoding.mjs && node scripts/beta-blocker-check.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

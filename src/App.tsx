@@ -94,7 +94,7 @@ const navPageByPage: Partial<Record<PageId, PageId>> = {
 };
 
 const trainingSegments: SegmentItem<TrainingSegment>[] = [
-  { id: "overview", label: "Ãœbersicht" },
+  { id: "overview", label: "Übersicht" },
   { id: "calendar", label: "Kalender" },
   { id: "plan", label: "Plan" },
   { id: "sessions", label: "Einheiten" },
@@ -102,7 +102,7 @@ const trainingSegments: SegmentItem<TrainingSegment>[] = [
 ];
 
 const competitionSegments: SegmentItem<CompetitionSegment>[] = [
-  { id: "races", label: "Meine WettkÃ¤mpfe" },
+  { id: "races", label: "Meine Wettkämpfe" },
   { id: "results", label: "Ergebnisse" },
   { id: "bests", label: "Bestzeiten" },
   { id: "stats", label: "Saisonstatistik" },
@@ -112,7 +112,7 @@ const competitionSegments: SegmentItem<CompetitionSegment>[] = [
 ];
 
 const analysisSegments: SegmentItem<AnalysisSegment>[] = [
-  { id: "overview", label: "Ãœbersicht" },
+  { id: "overview", label: "Übersicht" },
   { id: "smartCoach", label: "Smart Coach" },
   { id: "training", label: "Training" },
   { id: "competition", label: "Wettkampf" },
@@ -139,19 +139,19 @@ const baseMoreSegments: SegmentItem<MoreSegment>[] = [
 
 const moreSegmentMeta: Record<MoreSegment, { description: string; icon: IconName }> = {
   academy: { description: "Lernen, Technik verstehen und Fortschritt speichern", icon: "bolt" },
-  profile: { description: "PersÃ¶nliche Daten und Kanuslalom-Profil", icon: "user" },
+  profile: { description: "Persönliche Daten und Kanuslalom-Profil", icon: "user" },
   club: { description: "Verein, Mitglieder und Organisation", icon: "club" },
-  competitions: { description: "WettkÃ¤mpfe, Ergebnisse und Bestzeiten", icon: "trophy" },
+  competitions: { description: "Wettkämpfe, Ergebnisse und Bestzeiten", icon: "trophy" },
   equipment: { description: "Boote, Paddel und Materialstatus", icon: "wallet" },
   goals: { description: "Saisonziele und Entwicklung", icon: "target" },
-  records: { description: "PersÃ¶nliche Rekorde", icon: "bolt" },
+  records: { description: "Persönliche Rekorde", icon: "bolt" },
   notifications: { description: "Nachrichten und Cloud-Updates", icon: "message" },
   integrations: { description: "Import, Export und externe Datenquellen", icon: "chart" },
   feedback: { description: "Beta-Feedback an Paddlio senden", icon: "message" },
-  betaGuide: { description: "Anleitung fÃ¼r externe Beta-Tests", icon: "calendar" },
+  betaGuide: { description: "Anleitung für externe Beta-Tests", icon: "calendar" },
   limitations: { description: "Bekannte Grenzen der Beta", icon: "timer" },
   beta: { description: "Beta-Check und Systemstatus", icon: "chart" },
-  betaTesters: { description: "Testerstatus und RÃ¼ckmeldungen", icon: "user" },
+  betaTesters: { description: "Testerstatus und Rückmeldungen", icon: "user" },
   coach: { description: "Coach-Bereich", icon: "club" },
   settings: { description: "Konto, App und Logout", icon: "more" },
 };
@@ -159,7 +159,7 @@ const moreSegmentMeta: Record<MoreSegment, { description: string; icon: IconName
 const pageTitles: Record<PageId, string> = {
   dashboard: "Heute",
   training: "Training",
-  competitions: "WettkÃ¤mpfe",
+  competitions: "Wettkämpfe",
   analysis: "Analyse",
   club: "Verein",
   communication: "Team",
@@ -468,7 +468,7 @@ function AppContent() {
       if (userId && userId !== activeUser.userId) {
         void createCloudNotification({
           userId,
-          title: entry.id ? "Training wurde geÃ¤ndert" : "Neues Training zugewiesen",
+          title: entry.id ? "Training wurde geändert" : "Neues Training zugewiesen",
           message: `${entry.title || entry.trainingType} am ${entry.date}${entry.startTime ? ` um ${entry.startTime}` : ""}`,
           type: entry.status === "cancelled" ? "training_cancelled" : entry.id ? "training_updated" : "training_assigned",
           relatedEntityType: "training_plan_items",
@@ -486,7 +486,7 @@ function AppContent() {
     }));
 
     void deleteCloudTraining(id).catch((error) =>
-      console.error("Training konnte nicht direkt aus Supabase gelÃ¶scht werden", error),
+      console.error("Training konnte nicht direkt aus Supabase gelöscht werden", error),
     );
   };
 
@@ -531,8 +531,8 @@ function AppContent() {
     if (nextFeedback.coachUserId) {
       void createCloudNotification({
         userId: nextFeedback.coachUserId,
-        title: "Neue RÃ¼ckmeldung eingegangen",
-        message: nextFeedback.status === "skipped" ? `Training ausgelassen: ${nextFeedback.reason || "kein Grund angegeben"}` : `Feedback: GefÃ¼hl ${nextFeedback.feeling}/10, Motivation ${nextFeedback.motivation}/10`,
+        title: "Neue Rückmeldung eingegangen",
+        message: nextFeedback.status === "skipped" ? `Training ausgelassen: ${nextFeedback.reason || "kein Grund angegeben"}` : `Feedback: Gefühl ${nextFeedback.feeling}/10, Motivation ${nextFeedback.motivation}/10`,
         type: "feedback_received",
         relatedEntityType: "training_feedback",
         relatedEntityId: nextFeedback.id,
@@ -880,7 +880,7 @@ function AppContent() {
         label="Analyse Kategorien"
         items={[
           ...analysisSegments,
-          ...(canUseCoachArea(activeUser.role) ? [{ id: activeUser.role === "admin" ? "admin" as const : "coach" as const, label: activeUser.role === "admin" ? "Admin Ãœbersicht" : "Coach Analyse" }] : []),
+          ...(canUseCoachArea(activeUser.role) ? [{ id: activeUser.role === "admin" ? "admin" as const : "coach" as const, label: activeUser.role === "admin" ? "Admin Übersicht" : "Coach Analyse" }] : []),
         ]}
         activeId={segment}
         onChange={(nextSegment) => {
@@ -1015,7 +1015,7 @@ function AppContent() {
     account: "Profil und App",
     sport: "Training, Ziele und Wettkampf",
     team: canUseCoachArea(activeUser.role) ? "Organisation" : "Kontakt zum Team",
-    beta: "Hilfe und RÃ¼ckmeldung",
+    beta: "Hilfe und Rückmeldung",
     admin: "Kontrolle und Freigabe",
     system: "Verbindungen und Import",
   };
@@ -1037,8 +1037,8 @@ function AppContent() {
   const moreRoleSubtitle = activeUser.role === "admin"
     ? "Nutzer, Rollen, Beta-Status und App-Bereiche sauber getrennt."
     : canUseCoachArea(activeUser.role)
-      ? "Team, Planung, RÃ¼ckmeldungen und eigene Einstellungen an einem Ort."
-      : "Alles Wichtige fÃ¼r dein Training ohne Coach- oder Admin-Ballast.";
+      ? "Team, Planung, Rückmeldungen und eigene Einstellungen an einem Ort."
+      : "Alles Wichtige für dein Training ohne Coach- oder Admin-Ballast.";
   const moreHelper = activeUser.role === "admin"
     ? "Admins sehen alles, aber zuerst die wichtigsten Kontrollpunkte."
     : canUseCoachArea(activeUser.role)
@@ -1068,9 +1068,9 @@ function AppContent() {
             className="secondary-button more-back-button"
             type="button"
             onClick={() => setMoreHubOpen(true)}
-            aria-label="ZurÃ¼ck zur Mehr-Ãœbersicht"
+            aria-label="Zurück zur Mehr-Übersicht"
           >
-            ZurÃ¼ck zu Mehr
+            Zurück zu Mehr
           </button>
           <SegmentNav
             label="Mehr Kategorien"
@@ -1088,7 +1088,7 @@ function AppContent() {
         <section className="smart-more-panel" aria-label="Mehr Hub">
         <header className="smart-more-hero">
           <div>
-            <p className="eyebrow">Paddlio Â· Version {APP_VERSION}</p>
+            <p className="eyebrow">Paddlio · Version {APP_VERSION}</p>
             <h2>{moreRoleTitle}</h2>
             <p>{moreRoleSubtitle}</p>
           </div>
@@ -1116,7 +1116,7 @@ function AppContent() {
                   type="button"
                   key={item.id}
                   aria-current={segment === item.id ? "page" : undefined}
-                  aria-label={`${item.label} Ã¶ffnen`}
+                  aria-label={`${item.label} öffnen`}
                   onClick={() => openMoreItem(item)}
                 >
                   <span className="more-menu-icon smart-icon" aria-hidden="true"><Icon name={item.icon} /></span>
@@ -1124,7 +1124,7 @@ function AppContent() {
                     <strong>{item.label}{item.badge ? <em>{item.badge}</em> : null}</strong>
                     <small>{item.description}</small>
                   </span>
-                  <span className="smart-arrow" aria-hidden="true">â€º</span>
+                  <span className="smart-arrow" aria-hidden="true">›</span>
                 </button>
               ))}
             </div>
@@ -1150,7 +1150,7 @@ function AppContent() {
                     <button
                       className={activeNavPage === "communication" ? "smart-tile active kind-team" : "smart-tile kind-team"}
                       type="button"
-                      aria-label="Team-Bereich Ã¶ffnen"
+                      aria-label="Team-Bereich öffnen"
                       onClick={() => setActivePage("communication")}
                     >
                       <span className="more-menu-icon smart-icon" aria-hidden="true"><Icon name="message" /></span>
@@ -1158,7 +1158,7 @@ function AppContent() {
                         <strong>Team</strong>
                         <small>Nachrichten, Aufgaben, Anwesenheit und Gruppen</small>
                       </span>
-                      <span className="smart-arrow" aria-hidden="true">â€º</span>
+                      <span className="smart-arrow" aria-hidden="true">›</span>
                     </button>
                   ) : null}
                   {items.map((item) => (
@@ -1167,7 +1167,7 @@ function AppContent() {
                       key={item.id}
                       type="button"
                       aria-current={segment === item.id ? "page" : undefined}
-                      aria-label={`${item.label} Ã¶ffnen`}
+                      aria-label={`${item.label} öffnen`}
                       onClick={() => openMoreItem(item)}
                     >
                       <span className="more-menu-icon smart-icon" aria-hidden="true"><Icon name={item.icon} /></span>
@@ -1175,7 +1175,7 @@ function AppContent() {
                         <strong>{item.label}{item.badge ? <em>{item.badge}</em> : null}</strong>
                         <small>{item.description}</small>
                       </span>
-                      <span className="smart-arrow" aria-hidden="true">â€º</span>
+                      <span className="smart-arrow" aria-hidden="true">›</span>
                     </button>
                   ))}
                 </div>
@@ -1272,7 +1272,7 @@ function AppContent() {
           <span aria-hidden="true">{getInitials(activeUser.profile)}</span>
           <div>
             <strong>{getDisplayName(activeUser.profile)}</strong>
-            <small>{roleLabelMap[activeUser.role] ?? activeUser.role} Â· Version {APP_VERSION}</small>
+            <small>{roleLabelMap[activeUser.role] ?? activeUser.role} · Version {APP_VERSION}</small>
           </div>
         </div>
         <nav className="desktop-nav-list" aria-label="Hauptnavigation Desktop">
@@ -1299,7 +1299,7 @@ function AppContent() {
             <p className="brand-slogan">{APP_SLOGAN}</p>
           </div>
           <div className="page-title-lockup">
-            <span>Version {APP_VERSION} Â· Paddlio Beta</span>
+            <span>Version {APP_VERSION} · Paddlio Beta</span>
             <h1>{pageTitles[activePage]}</h1>
           </div>
         </header>
@@ -1320,11 +1320,11 @@ function AppContent() {
             onClick={() => openMainNavPage(item.id)}
             aria-current={activeNavPage === item.id ? "page" : undefined}
             aria-label={
-              item.id === "dashboard" ? "Zur Heute-Ãœbersicht wechseln" :
-                item.id === "training" ? "Training-Bereich Ã¶ffnen" :
-                  item.id === "analysis" ? "Analyse-Bereich Ã¶ffnen" :
-                    item.id === "communication" ? "Team-Bereich Ã¶ffnen" :
-                      "Mehr-Bereich Ã¶ffnen"
+              item.id === "dashboard" ? "Zur Heute-Übersicht wechseln" :
+                item.id === "training" ? "Training-Bereich öffnen" :
+                  item.id === "analysis" ? "Analyse-Bereich öffnen" :
+                    item.id === "communication" ? "Team-Bereich öffnen" :
+                      "Mehr-Bereich öffnen"
             }
           >
             <span className="nav-icon" aria-hidden="true">
