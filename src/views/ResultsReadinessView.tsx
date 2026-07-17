@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { createId } from "../data/storage";
 import { getBestTotalTime } from "../domain/metrics";
 import type { BetaReadinessCheck, ExternalConnection, ExternalTrainingSession, PaddleMotionData, ResultImport, User } from "../domain/types";
+import { addDaysToDateKey, startOfWeekDateKey, todayDateKey } from "../lib/dateOnly";
 import {
   calculatePersonalBests,
   upsertCloudBetaReadinessCheck,
@@ -19,14 +20,9 @@ type ResultsReadinessViewProps = {
 };
 
 const now = (): string => new Date().toISOString();
-const today = (): string => now().slice(0, 10);
+const today = todayDateKey;
 
-const weekKey = (date: string): string => {
-  const parsed = new Date(date);
-  const firstDay = new Date(parsed.getFullYear(), 0, 1);
-  const days = Math.floor((parsed.getTime() - firstDay.getTime()) / 86400000);
-  return `${parsed.getFullYear()}-${Math.ceil((days + firstDay.getDay() + 1) / 7).toString().padStart(2, "0")}`;
-};
+const weekKey = startOfWeekDateKey;
 
 const formatSeconds = (value: number): string =>
   value > 0 ? `${value.toLocaleString("de-DE", { maximumFractionDigits: 2 })} s` : "--";
@@ -62,9 +58,7 @@ export function ResultsReadinessView({ data, user, mode, onDataChange }: Results
       return acc;
     }, {});
     const currentWeek = weekKey(today());
-    const previousDate = new Date();
-    previousDate.setDate(previousDate.getDate() - 7);
-    const previousWeek = weekKey(previousDate.toISOString());
+    const previousWeek = weekKey(addDaysToDateKey(today(), -7));
     const current = externalByWeek[currentWeek] ?? 0;
     const previous = externalByWeek[previousWeek] ?? 0;
     return {

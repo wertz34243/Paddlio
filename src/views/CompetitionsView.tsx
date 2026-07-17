@@ -9,6 +9,7 @@ import {
 } from "../domain/metrics";
 import { competitionLevelOptions, formatCompetitionLevel, normalizeCompetitionLevel, toNonNegativeNumber } from "../domain/competition";
 import type { BoatClass, Competition } from "../domain/types";
+import { formatDateKeyForDisplay, todayDateKey } from "../lib/dateOnly";
 
 type CompetitionDraft = Omit<Competition, "athleteId" | "createdAt" | "updatedAt">;
 
@@ -22,7 +23,7 @@ type CompetitionsViewProps = {
 const emptyDraft: CompetitionDraft = {
   id: "",
   name: "",
-  date: new Date().toISOString().slice(0, 10),
+  date: todayDateKey(),
   location: "",
   organizer: "",
   course: "",
@@ -51,7 +52,7 @@ export function CompetitionsView({ competitions, onSave, onDelete, openNewSignal
 
   useEffect(() => {
     if (openNewSignal > 0) {
-      setDraft({ ...emptyDraft, date: new Date().toISOString().slice(0, 10) });
+      setDraft({ ...emptyDraft, date: todayDateKey() });
     }
   }, [openNewSignal]);
 
@@ -236,7 +237,7 @@ export function CompetitionsView({ competitions, onSave, onDelete, openNewSignal
                   <div className="competition-logo">{competition.boatClass}</div>
                   <button className="competition-summary" type="button" onClick={() => setOpenId(isOpen ? "" : competition.id)}>
                     <div>
-                      <span>{new Date(competition.date).toLocaleDateString("de-DE")}</span>
+                      <span>{formatDateKeyForDisplay(competition.date)}</span>
                       <h4>{competition.name || competition.location}</h4>
                       <small>
                         {competition.location} - {formatCompetitionLevel(competition.level)} - Platz {competition.rank}{competition.starterField ? `/${competition.starterField}` : ""} - {penalty.toLocaleString("de-DE", { maximumFractionDigits: 1 })} Strafsek.

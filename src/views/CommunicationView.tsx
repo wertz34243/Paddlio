@@ -31,6 +31,7 @@ import {
   upsertCloudTaskAssignment,
   upsertCloudTrainingAttendance,
 } from "../services/communicationService";
+import { todayDateKey } from "../lib/dateOnly";
 
 type CommunicationSegment = "messages" | "groups" | "news" | "tasks" | "attendance" | "files";
 
@@ -89,7 +90,7 @@ const targetTypeLabels: Record<ClubPostTargetType, string> = {
   athlete: "Sportler",
 };
 
-const todayKey = (): string => new Date().toISOString().slice(0, 10);
+const todayKey = todayDateKey;
 
 const formatShort = (value: string): string =>
   value ? new Date(value).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "--";

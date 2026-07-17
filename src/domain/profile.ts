@@ -1,3 +1,4 @@
+import { dateKeyFromLocalDate, dateKeyToLocalDate } from "../lib/dateOnly";
 import type { TrainingSession, User, UserProfile } from "./types";
 
 export const getActiveUser = (users: User[], activeUserId: string): User => {
@@ -34,8 +35,8 @@ export const getAge = (birthDate: string, referenceDate = new Date()): number | 
     return undefined;
   }
 
-  const date = new Date(birthDate);
-  if (Number.isNaN(date.getTime())) {
+  const date = dateKeyToLocalDate(birthDate);
+  if (Number.isNaN(date.getTime()) || dateKeyFromLocalDate(date) !== birthDate) {
     return undefined;
   }
 
@@ -60,7 +61,7 @@ export const getSportProfileSummary = (profile: UserProfile): string => {
   return `${ageClass} • ${boats}`;
 };
 
-const toLocalDateKey = (date: Date): string => date.toISOString().slice(0, 10);
+const toLocalDateKey = dateKeyFromLocalDate;
 
 export const getTrainingStreak = (sessions: TrainingSession[], referenceDate = new Date()): number => {
   const trainingDates = new Set(sessions.map((session) => session.date));

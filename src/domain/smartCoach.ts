@@ -14,21 +14,20 @@ import type {
 } from "./types";
 import { getAthletesForCurrentUser, getGoalsForCurrentUser, getTrainingsForCurrentUser, isAdminRole, isCoachLikeRole } from "./accessControl";
 import { getGoalProgressList } from "./goalProgress";
+import { addDaysToDateKey, dateKeyToLocalDate, todayDateKey } from "../lib/dateOnly";
 
 type RecommendationDraft = Omit<SmartCoachRecommendation, "createdAt" | "updatedAt" | "status" | "note"> & {
   status?: SmartCoachRecommendation["status"];
 };
 
-const todayKey = (): string => new Date().toISOString().slice(0, 10);
+const todayKey = todayDateKey;
 
 const addDays = (date: string, days: number): string => {
-  const result = new Date(`${date}T00:00:00`);
-  result.setDate(result.getDate() + days);
-  return result.toISOString().slice(0, 10);
+  return addDaysToDateKey(date, days);
 };
 
 const daysBetween = (left: string, right: string): number =>
-  Math.round((new Date(`${left}T00:00:00`).getTime() - new Date(`${right}T00:00:00`).getTime()) / 86400000);
+  Math.round((dateKeyToLocalDate(left).getTime() - dateKeyToLocalDate(right).getTime()) / 86400000);
 
 const inLastDays = (date: string, days: number, reference = todayKey()): boolean =>
   date <= reference && daysBetween(reference, date) <= days;

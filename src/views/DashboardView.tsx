@@ -5,6 +5,7 @@ import { getTrainingIntelligence } from "../domain/intelligence";
 import { getLastTrainingSession, getNextPlannedEntry, getWeeklyPlanSummary } from "../domain/metrics";
 import { getDisplayName, getGreeting, getInitials } from "../domain/profile";
 import type { PaddleMotionData, PageId, SmartCoachRecommendation, User } from "../domain/types";
+import { dateKeyToLocalDate } from "../lib/dateOnly";
 
 type DashboardViewProps = {
   data: PaddleMotionData;
@@ -31,7 +32,7 @@ const formatDate = (date?: string): string => {
     return "Noch keine Einheit";
   }
 
-  return new Date(date).toLocaleDateString("de-DE", {
+  return dateKeyToLocalDate(date).toLocaleDateString("de-DE", {
     weekday: "short",
     day: "2-digit",
     month: "2-digit",

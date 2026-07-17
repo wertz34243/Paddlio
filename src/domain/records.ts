@@ -7,6 +7,13 @@ import {
   getTrainingLoad,
   getTotalTrainingMinutes,
 } from "./metrics";
+import {
+  addDaysToDateKey,
+  dateKeyFromLocalDate,
+  dateKeyToLocalDate,
+  formatDateKeyForDisplay,
+  startOfWeekDateKey,
+} from "../lib/dateOnly";
 import type { Competition, PlanEntry, TrainingSession } from "./types";
 
 export type AthleteRecords = {
@@ -29,27 +36,19 @@ export type SeasonMonth = {
   load: number;
 };
 
-const dateLabel = (date?: string): string => (date ? new Date(date).toLocaleDateString("de-DE") : "--");
+const dateLabel = (date?: string): string => (date ? formatDateKeyForDisplay(date) : "--");
 
-const getWeekKey = (date: string): string => {
-  const [year, month, day] = date.split("-").map(Number);
-  const value = new Date(year, month - 1, day);
-  const weekday = value.getDay() || 7;
-  value.setDate(value.getDate() + 1 - weekday);
-  return value.toISOString().slice(0, 10);
-};
+const getWeekKey = startOfWeekDateKey;
 
 export const getLongestTrainingStreak = (sessions: TrainingSession[]): number => {
   const uniqueDates = [...new Set(sessions.map((session) => session.date))].sort();
   let longest = 0;
   let current = 0;
-  let previousTime = 0;
 
-  uniqueDates.forEach((date) => {
-    const time = new Date(`${date}T00:00:00`).getTime();
-    current = previousTime && time - previousTime === 86400000 ? current + 1 : 1;
+  uniqueDates.forEach((date, index) => {
+    const previousDate = uniqueDates[index - 1];
+    current = previousDate && addDaysToDateKey(previousDate, 1) === date ? current + 1 : 1;
     longest = Math.max(longest, current);
-    previousTime = time;
   });
 
   return longest;
@@ -92,8 +91,7 @@ export const getSeasonMonths = (
 
   const ensureMonth = (date: string): SeasonMonth => {
     const key = date.slice(0, 7);
-    const [year, month] = key.split("-").map(Number);
-    const label = new Date(year, month - 1, 1).toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+    const label = dateKeyToLocalDate(`${key}-01`).toLocaleDateString("de-DE", { month: "long", year: "numeric" });
     const monthData = months.get(key) ?? {
       key,
       label,

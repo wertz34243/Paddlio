@@ -11,6 +11,7 @@ import {
 import { getGoalProgressList } from "../domain/goalProgress";
 import { isDoneStatus, isPlannedStatus, isSkippedStatus } from "../domain/trainingPlan";
 import type { PaddleMotionData, PlanEntry, User } from "../domain/types";
+import { addDaysToDateKey, todayDateKey } from "../lib/dateOnly";
 
 export type AnalyticsMode = "overview" | "training" | "competition" | "goals" | "load" | "coach" | "admin";
 
@@ -24,12 +25,10 @@ type AnalyticsCenterViewProps = {
 type RangeKey = "7" | "30" | "90" | "season" | "year" | "custom";
 
 const startOfYear = (): string => `${new Date().getFullYear()}-01-01`;
-const todayKey = (): string => new Date().toISOString().slice(0, 10);
+const todayKey = todayDateKey;
 
 const addDays = (days: number): string => {
-  const date = new Date();
-  date.setDate(date.getDate() + days);
-  return date.toISOString().slice(0, 10);
+  return addDaysToDateKey(todayDateKey(), days);
 };
 
 const inRange = (date: string, start: string, end: string): boolean => date >= start && date <= end;

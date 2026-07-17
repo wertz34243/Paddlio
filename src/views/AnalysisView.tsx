@@ -12,6 +12,7 @@ import {
   getWeeklyPlanSummary,
 } from "../domain/metrics";
 import type { BoatClass, Competition, PlanEntry, TrainingFeedback, TrainingSession } from "../domain/types";
+import { formatDateKeyForDisplay } from "../lib/dateOnly";
 
 type AnalysisViewProps = {
   competitions: Competition[];
@@ -197,7 +198,7 @@ export function AnalysisView({ competitions, training, plan, feedback }: Analysi
                 <div>
                   <strong>{difference.location}</strong>
                   <span>
-                    {new Date(difference.date).toLocaleDateString("de-DE")} - K1 {formatSeconds(difference.k1TotalSeconds)} / C1 {formatSeconds(difference.c1TotalSeconds)}
+                    {formatDateKeyForDisplay(difference.date)} - K1 {formatSeconds(difference.k1TotalSeconds)} / C1 {formatSeconds(difference.c1TotalSeconds)}
                   </span>
                 </div>
                 <b>+{formatSeconds(difference.differenceSeconds)}</b>
@@ -261,7 +262,7 @@ export function AnalysisView({ competitions, training, plan, feedback }: Analysi
             weekStats.map((week) => (
               <article className="result-row" key={week.weekLabel}>
                 <div>
-                  <strong>Woche ab {new Date(week.weekLabel).toLocaleDateString("de-DE")}</strong>
+                  <strong>Woche ab {formatDateKeyForDisplay(week.weekLabel)}</strong>
                   <span>
                     {week.completedCount} von {week.totalCount} Einheiten erledigt
                   </span>

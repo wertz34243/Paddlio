@@ -1,4 +1,11 @@
 import type { PlanEntry, PlanStatus, TrainingArea, TrainingIntensity, TrainingPlanType, Weekday } from "./types";
+import {
+  addDaysToDateKey,
+  dateKeyFromLocalDate,
+  dateKeyToLocalDate,
+  getLocalWeekdayLabel as getDateOnlyWeekdayLabel,
+  todayDateKey,
+} from "../lib/dateOnly";
 
 export const weekdays: Weekday[] = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
 
@@ -58,22 +65,12 @@ export const getDateParts = (date: string): [number, number, number] => {
   return [year, month, day];
 };
 
-export const parseLocalDateOnly = (value: string): Date => {
-  const [year, month, day] = getDateParts(value);
-  return new Date(year, month - 1, day);
-};
+export const parseLocalDateOnly = dateKeyToLocalDate;
 
-export const formatLocalDateOnly = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
+export const formatLocalDateOnly = dateKeyFromLocalDate;
 
 export const getLocalWeekdayLabel = (value: string): Weekday => {
-  const weekday = parseLocalDateOnly(value).toLocaleDateString("de-DE", {
-    weekday: "long",
-  }) as Weekday;
+  const weekday = getDateOnlyWeekdayLabel(value) as Weekday;
   return weekdays.includes(weekday) ? weekday : weekdays[0];
 };
 
@@ -102,16 +99,14 @@ export const sortPlanEntries = (entries: PlanEntry[]): PlanEntry[] =>
 export const isPauseEntry = (entry: PlanEntry): boolean =>
   entry.area === "Regeneration" && entry.trainingType === "Pause";
 
-export const getTodayKey = (date = new Date()): string => formatBerlinDateKey(date);
+export const getTodayKey = (date = new Date()): string => todayDateKey(date);
 
 export const getLocalDateKey = (date: Date): string => {
   return formatLocalDateOnly(date);
 };
 
 export const addCalendarDays = (date: string, days: number): string => {
-  const next = parseLocalDateOnly(date);
-  next.setDate(next.getDate() + days);
-  return formatLocalDateOnly(next);
+  return addDaysToDateKey(date, days);
 };
 
 export const getCalendarDayOffset = (from: string, to: string): number => {

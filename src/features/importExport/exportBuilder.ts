@@ -1,4 +1,5 @@
 import type { PaddleMotionData, User } from "../../domain/types";
+import { todayDateKey } from "../../lib/dateOnly";
 import type { ExportType, ImportFileFormat } from "./types";
 
 export const exportTypeLabels: Record<ExportType, string> = {
@@ -25,7 +26,7 @@ export type ExportDataset = {
 
 export function buildExportDataset(exportType: ExportType, data: PaddleMotionData, user: User): ExportDataset {
   const prefix = exportTypeLabels[exportType].replace(/\s+/g, "-").toLowerCase();
-  const fileName = `paddlio-${prefix}-${new Date().toISOString().slice(0, 10)}`;
+  const fileName = `paddlio-${prefix}-${todayDateKey()}`;
 
   if (exportType === "training_plans") {
     return {

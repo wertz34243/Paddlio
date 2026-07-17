@@ -11,6 +11,7 @@ import type {
   TrainingSession,
   User,
 } from "../domain/types";
+import { dateKeyFromLocalDate, todayDateKey } from "../lib/dateOnly";
 
 type GoalsViewProps = {
   user: User;
@@ -51,12 +52,12 @@ const priorities: Array<{ value: SeasonGoalPriority; label: string }> = [
   { value: "low", label: "Niedrig" },
 ];
 
-const todayKey = (): string => new Date().toISOString().slice(0, 10);
+const todayKey = todayDateKey;
 
 const getDefaultDueDate = (): string => {
   const date = new Date();
   date.setMonth(11, 31);
-  return date.toISOString().slice(0, 10);
+  return dateKeyFromLocalDate(date);
 };
 
 const getMetricDefaults = (metric: SeasonGoalMetric) =>

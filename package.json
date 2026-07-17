@@ -8,6 +8,8 @@
     "build": "tsc && vite build",
     "check:encoding": "node scripts/check-encoding.mjs",
     "check:beta": "node scripts/check-encoding.mjs && node scripts/beta-blocker-check.mjs",
+    "test": "vitest run",
+    "test:unit": "vitest run",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -21,6 +23,7 @@
     "@types/react-dom": "^19.0.2",
     "@vitejs/plugin-react": "^4.3.4",
     "typescript": "^5.7.2",
-    "vite": "^6.0.7"
+    "vite": "^6.0.7",
+    "vitest": "^4.1.10"
   }
 }

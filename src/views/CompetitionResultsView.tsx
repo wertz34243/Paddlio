@@ -1,5 +1,6 @@
 import { formatSeconds, getBestTotalTime, getCompetitionAveragePenalty, getRun1Total, getRun2Total } from "../domain/metrics";
 import type { Competition } from "../domain/types";
+import { formatDateKeyForDisplay } from "../lib/dateOnly";
 
 type CompetitionResultsViewProps = {
   competitions: Competition[];
@@ -38,7 +39,7 @@ export function CompetitionResultsView({ competitions }: CompetitionResultsViewP
                   {competition.location} {competition.boatClass}
                 </strong>
                 <span>
-                  {new Date(competition.date).toLocaleDateString("de-DE")} - Platz {competition.rank}
+                  {formatDateKeyForDisplay(competition.date)} - Platz {competition.rank}
                 </span>
                 <small>
                   L1 {formatSeconds(getRun1Total(competition))} - L2 {formatSeconds(getRun2Total(competition))} - Strafschnitt {getCompetitionAveragePenalty(competition).toLocaleString("de-DE", { maximumFractionDigits: 1 })} s

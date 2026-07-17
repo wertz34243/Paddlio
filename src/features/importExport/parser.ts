@@ -1,4 +1,5 @@
 import type { ImportFileFormat, ParsedSheet, ParsedWorkbook } from "./types";
+import { dateKeyFromLocalDate } from "../../lib/dateOnly";
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024;
 
@@ -140,7 +141,7 @@ function detectHeaderRow(rows: string[][]): number {
 }
 
 function formatCell(value: string | number | boolean | Date | null): string {
-  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  if (value instanceof Date) return dateKeyFromLocalDate(value);
   if (value === null || value === undefined) return "";
   return String(value).trim();
 }

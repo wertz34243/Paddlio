@@ -26,6 +26,7 @@ import {
   upsertCloudClubMessage,
   upsertCloudClubSettings,
 } from "../services/clubPortalService";
+import { todayDateKey } from "../lib/dateOnly";
 
 type ClubPortalViewProps = {
   data: PaddleMotionData;
@@ -77,7 +78,7 @@ const audienceLabel: Record<ClubMessageAudience, string> = {
   athlete: "einzelner Sportler",
 };
 
-const todayKey = (): string => new Date().toISOString().slice(0, 10);
+const todayKey = todayDateKey;
 
 const getWeekStart = (): Date => {
   const today = new Date();

@@ -1,5 +1,6 @@
 import { formatSeconds, getBoatClassDifferences, getBoatClassStats } from "../domain/metrics";
 import type { Competition } from "../domain/types";
+import { formatDateKeyForDisplay } from "../lib/dateOnly";
 
 type BoatComparisonViewProps = {
   competitions: Competition[];
@@ -50,7 +51,7 @@ export function BoatComparisonView({ competitions }: BoatComparisonViewProps) {
               <article className="result-row" key={`${difference.date}-${difference.location}`}>
                 <div>
                   <strong>{difference.location}</strong>
-                  <span>{new Date(difference.date).toLocaleDateString("de-DE")}</span>
+                  <span>{formatDateKeyForDisplay(difference.date)}</span>
                   <small>
                     K1 {formatSeconds(difference.k1TotalSeconds)} / C1 {formatSeconds(difference.c1TotalSeconds)}
                   </small>

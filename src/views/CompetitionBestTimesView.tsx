@@ -1,5 +1,6 @@
 import { formatSeconds, getBestTotalTime, getCompetitionAveragePenalty } from "../domain/metrics";
 import type { BoatClass, Competition } from "../domain/types";
+import { formatDateKeyForDisplay } from "../lib/dateOnly";
 
 type CompetitionBestTimesViewProps = {
   competitions: Competition[];
@@ -54,7 +55,7 @@ export function CompetitionBestTimesView({ competitions }: CompetitionBestTimesV
               <div>
                 <strong>{key}</strong>
                 <span>{competition.boatClass} - {competition.name || competition.location}</span>
-                <small>{new Date(competition.date).toLocaleDateString("de-DE")}</small>
+                <small>{formatDateKeyForDisplay(competition.date)}</small>
               </div>
               <b>{formatSeconds(getBestTotalTime(competition))}</b>
             </article>

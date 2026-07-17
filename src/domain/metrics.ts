@@ -1,3 +1,4 @@
+import { dateKeyFromLocalDate, dateKeyToLocalDate } from "../lib/dateOnly";
 import { getTodayKey, isDoneStatus, isPauseEntry, isPlannedStatus, isSkippedStatus, sortPlanEntries } from "./trainingPlan";
 import { calculateCompetitionTotalTime, getCompetitionRunTotals } from "./competition";
 import type { BoatClass, Competition, PlanEntry, TrainingArea, TrainingIntensity, TrainingSession } from "./types";
@@ -133,13 +134,10 @@ export const getTrainingLoad = (sessions: TrainingSession[]): number =>
 export const getTotalTrainingMinutes = (sessions: TrainingSession[]): number =>
   sessions.reduce((sum, session) => sum + session.durationMinutes, 0);
 
-const getLocalDate = (date: string): Date => {
-  const [year, month, day] = date.split("-").map(Number);
-  return new Date(year, month - 1, day);
-};
+const getLocalDate = dateKeyToLocalDate;
 
-const getWeekStart = (date: Date): Date => {
-  const result = new Date(date);
+const getWeekStart = (referenceDate: Date): Date => {
+  const result = new Date(referenceDate);
   result.setHours(0, 0, 0, 0);
   const day = result.getDay();
   const mondayOffset = day === 0 ? -6 : 1 - day;
@@ -230,7 +228,7 @@ export const getPlanWeekStats = (entries: PlanEntry[]): PlanWeekStats[] => {
 
   entries.forEach((entry) => {
     const weekStart = getWeekStart(getLocalDate(entry.date));
-    const weekKey = weekStart.toISOString().slice(0, 10);
+    const weekKey = dateKeyFromLocalDate(weekStart);
     grouped.set(weekKey, [...(grouped.get(weekKey) ?? []), entry]);
   });
 

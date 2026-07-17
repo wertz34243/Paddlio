@@ -58,6 +58,7 @@ import type {
   UserRole,
 } from "../domain/types";
 import { canSeeSystemPrivateData, maskEmail } from "../domain/privacy";
+import { dateKeyToLocalDate, todayDateKey } from "../lib/dateOnly";
 
 type CoachViewProps = {
   data: PaddleMotionData;
@@ -101,7 +102,7 @@ const toCloudRoles = (role: UserRole): Array<"Athlete" | "Coach" | "TeamAdmin" |
 
 const toCloudPaddleSide = (value: PaddleSide): "Links" | "Rechts" => value === "links" ? "Links" : "Rechts";
 
-const todayKey = (): string => new Date().toISOString().slice(0, 10);
+const todayKey = todayDateKey;
 
 const getWeekStart = (): Date => {
   const today = new Date();
@@ -116,7 +117,7 @@ const isThisWeek = (date: string): boolean => {
   const start = getWeekStart();
   const end = new Date(start);
   end.setDate(start.getDate() + 7);
-  const current = new Date(date);
+  const current = dateKeyToLocalDate(date);
   return current >= start && current < end;
 };
 

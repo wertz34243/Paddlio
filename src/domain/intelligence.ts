@@ -7,6 +7,7 @@ import {
 import { getLongestTrainingStreak } from "./records";
 import { isDoneStatus } from "./trainingPlan";
 import type { Competition, PlanEntry, TrainingJournalEntry, TrainingSession } from "./types";
+import { dateKeyFromLocalDate, dateKeyToLocalDate } from "../lib/dateOnly";
 
 export type AthleteStatus = {
   title: string;
@@ -40,16 +41,16 @@ const motivations = [
   "Sauber bleiben, Druck aufbauen, weiterfahren.",
 ];
 
-const dayKey = (date = new Date()): string => date.toISOString().slice(0, 10);
+const dayKey = (date = new Date()): string => dateKeyFromLocalDate(date);
 
 const dayDiff = (a: string, b: string): number => {
-  const left = new Date(`${a}T00:00:00`).getTime();
-  const right = new Date(`${b}T00:00:00`).getTime();
+  const left = dateKeyToLocalDate(a).getTime();
+  const right = dateKeyToLocalDate(b).getTime();
   return Math.round((left - right) / 86400000);
 };
 
 export const getDailyMotivation = (date = new Date()): string => {
-  const key = date.toISOString().slice(0, 10).replace(/-/g, "");
+  const key = dateKeyFromLocalDate(date).replace(/-/g, "");
   const index = Number(key) % motivations.length;
   return motivations[index];
 };

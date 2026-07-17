@@ -8,10 +8,11 @@ import type {
   ResultImport,
 } from "../domain/types";
 import { getSupabaseClient } from "../lib/supabase";
+import { todayDateKey } from "../lib/dateOnly";
 import { enqueueSyncChange } from "./syncService";
 import { sanitizeCloudPayload } from "./cloudIds";
 
-const today = (): string => new Date().toISOString().slice(0, 10);
+const today = todayDateKey;
 
 const tableUpsert = async (tableName: string, payload: Record<string, unknown>): Promise<void> => {
   const cloudPayload = sanitizeCloudPayload(payload);
