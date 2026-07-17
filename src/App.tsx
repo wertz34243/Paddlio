@@ -52,11 +52,12 @@ import { ResultsReadinessView } from "./views/ResultsReadinessView";
 import { SeasonView } from "./views/SeasonView";
 import { SettingsView } from "./views/SettingsView";
 import { SmartCoachView } from "./views/SmartCoachView";
+import { TrainingCalendarView } from "./views/TrainingCalendarView";
 import { TrainingJournalView } from "./views/TrainingJournalView";
 import { TrainingOverviewView } from "./views/TrainingOverviewView";
 import { TrainingView } from "./views/TrainingView";
 
-type TrainingSegment = "overview" | "plan" | "sessions" | "journal";
+type TrainingSegment = "overview" | "calendar" | "plan" | "sessions" | "journal";
 type CompetitionSegment = "races" | "results" | "bests" | "stats" | "advanced" | "imports" | "coach" | "admin" | "videos";
 type AnalysisSegment = "overview" | "smartCoach" | "training" | "competition" | "goals" | "load" | "boats" | "season" | "coach" | "admin";
 type MoreSegment = "profile" | "club" | "competitions" | "equipment" | "goals" | "records" | "notifications" | "integrations" | "feedback" | "betaGuide" | "limitations" | "beta" | "betaTesters" | "coach" | "settings";
@@ -90,6 +91,7 @@ const navPageByPage: Partial<Record<PageId, PageId>> = {
 
 const trainingSegments: SegmentItem<TrainingSegment>[] = [
   { id: "overview", label: "Übersicht" },
+  { id: "calendar", label: "Kalender" },
   { id: "plan", label: "Plan" },
   { id: "sessions", label: "Einheiten" },
   { id: "journal", label: "Journal" },
@@ -718,6 +720,16 @@ function AppContent() {
             }}
           />
         );
+      case "calendar":
+        return (
+          <TrainingCalendarView
+            entries={data.plan}
+            journal={data.journal}
+            onOpenPlan={() => setTrainingSegment("plan")}
+            onOpenJournal={() => setTrainingSegment("journal")}
+            onStatusChange={updatePlanEntryStatus}
+          />
+        );
       case "overview":
         return (
           <TrainingOverviewView
@@ -754,7 +766,7 @@ function AppContent() {
   };
 
   const moveTrainingSegment = (direction: 1 | -1) => {
-    const order: TrainingSegment[] = ["overview", "plan", "sessions", "journal"];
+    const order: TrainingSegment[] = ["overview", "calendar", "plan", "sessions", "journal"];
     const currentIndex = order.indexOf(trainingSegment);
     const nextIndex = Math.min(order.length - 1, Math.max(0, currentIndex + direction));
     if (nextIndex !== currentIndex) {
