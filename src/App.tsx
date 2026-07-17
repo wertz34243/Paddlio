@@ -1,4 +1,4 @@
-import { useEffect, useState, type TouchEvent } from "react";
+import { useEffect, useRef, useState, type TouchEvent } from "react";
 import { APP_NAME, APP_SLOGAN, APP_VERSION } from "./brand";
 import { LoadingState } from "./components/AppSupport";
 import { Icon, type IconName } from "./components/Icon";
@@ -179,7 +179,9 @@ function AppContent() {
   const [analysisSegment, setAnalysisSegment] = useState<AnalysisSegment>("overview");
   const [moreSegment, setMoreSegment] = useState<MoreSegment>("profile");
   const [moreHubOpen, setMoreHubOpen] = useState(true);
-  const [bottomNavVisible, setBottomNavVisible] = useState(true);
+  const [scrollChromeHidden, setScrollChromeHidden] = useState(false);
+  const lastScrollYRef = useRef(0);
+  const tickingScrollRef = useRef(false);
   const [newTrainingSignal, setNewTrainingSignal] = useState(0);
   const [newCompetitionSignal, setNewCompetitionSignal] = useState(0);
   const [journalSignal, setJournalSignal] = useState(0);
@@ -189,40 +191,38 @@ function AppContent() {
   };
 
   useEffect(() => {
-    let hideTimer: ReturnType<typeof window.setTimeout> | undefined;
-    const isCompactTouch = () => window.matchMedia("(hover: none) and (pointer: coarse)").matches;
-    const showBottomNav = () => {
-      setBottomNavVisible(true);
+    lastScrollYRef.current = window.scrollY;
+    setScrollChromeHidden(false);
 
-      if (!isCompactTouch()) {
+    const handleScroll = () => {
+      if (tickingScrollRef.current) {
         return;
       }
 
-      if (hideTimer) {
-        window.clearTimeout(hideTimer);
-      }
+      tickingScrollRef.current = true;
+      window.requestAnimationFrame(() => {
+        const currentScrollY = Math.max(0, window.scrollY);
+        const previousScrollY = lastScrollYRef.current;
+        const delta = currentScrollY - previousScrollY;
 
-      hideTimer = window.setTimeout(() => setBottomNavVisible(false), 3200);
+        if (currentScrollY <= 8) {
+          setScrollChromeHidden(false);
+        } else if (Math.abs(delta) >= 8) {
+          setScrollChromeHidden(delta > 0);
+        }
+
+        lastScrollYRef.current = currentScrollY;
+        tickingScrollRef.current = false;
+      });
     };
 
-    showBottomNav();
-
     const passiveOptions: AddEventListenerOptions = { passive: true };
-    window.addEventListener("pointerdown", showBottomNav, passiveOptions);
-    window.addEventListener("touchstart", showBottomNav, passiveOptions);
-    window.addEventListener("scroll", showBottomNav, passiveOptions);
-    window.addEventListener("resize", showBottomNav, passiveOptions);
-    window.addEventListener("keydown", showBottomNav);
+    window.addEventListener("scroll", handleScroll, passiveOptions);
+    window.addEventListener("resize", handleScroll, passiveOptions);
 
     return () => {
-      if (hideTimer) {
-        window.clearTimeout(hideTimer);
-      }
-      window.removeEventListener("pointerdown", showBottomNav);
-      window.removeEventListener("touchstart", showBottomNav);
-      window.removeEventListener("scroll", showBottomNav);
-      window.removeEventListener("resize", showBottomNav);
-      window.removeEventListener("keydown", showBottomNav);
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
     };
   }, [activePage]);
 
@@ -1271,7 +1271,7 @@ function AppContent() {
   const isHome = activePage === "dashboard";
 
   return (
-    <div className={isHome ? "app-shell app-shell-home" : "app-shell"}>
+    <div className={`${isHome ? "app-shell app-shell-home" : "app-shell"} ${scrollChromeHidden ? "scroll-chrome-hidden" : "scroll-chrome-visible"}`}>
       <a className="skip-link" href="#main">
         Zum Inhalt springen
       </a>
@@ -1322,7 +1322,7 @@ function AppContent() {
 
       <main className="page-content" id="main">{renderPage()}</main>
 
-      <nav className={bottomNavVisible ? "bottom-nav is-visible" : "bottom-nav is-hidden"} aria-label="Hauptnavigation">
+      <nav className="bottom-nav is-visible" aria-label="Hauptnavigation">
         {navItems.map((item) => (
           <button
             className={activeNavPage === item.id ? "nav-item active" : "nav-item"}

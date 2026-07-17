@@ -5793,3 +5793,87 @@ body {
     display: none !important;
   }
 }
+
+/* Global scroll chrome behavior: header and secondary page tabs hide on downward scroll. */
+.app-shell {
+  --scroll-chrome-secondary-top: calc(72px + env(safe-area-inset-top));
+}
+
+.app-shell.scroll-chrome-hidden {
+  --scroll-chrome-secondary-top: calc(8px + env(safe-area-inset-top));
+}
+
+.app-header-compact {
+  will-change: transform, opacity;
+  transition:
+    transform 230ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 200ms ease;
+  transition-delay: 70ms;
+}
+
+.app-shell.scroll-chrome-hidden .app-header-compact {
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(calc(-100% - 24px));
+  transition-delay: 0ms;
+}
+
+.segment-nav,
+.workflow-tabs,
+.calendar-view-tabs,
+.filter-tabs,
+.training-journal-actions {
+  position: sticky;
+  top: var(--scroll-chrome-secondary-top);
+  z-index: 14;
+  will-change: transform, opacity, top;
+  transition:
+    top 220ms cubic-bezier(0.2, 0, 0, 1),
+    transform 220ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 190ms ease;
+  transition-delay: 0ms;
+}
+
+.app-shell.scroll-chrome-hidden .segment-nav,
+.app-shell.scroll-chrome-hidden .workflow-tabs,
+.app-shell.scroll-chrome-hidden .calendar-view-tabs,
+.app-shell.scroll-chrome-hidden .filter-tabs,
+.app-shell.scroll-chrome-hidden .training-journal-actions {
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(calc(-100% - 18px));
+}
+
+.bottom-nav,
+.bottom-nav.is-visible,
+.bottom-nav.is-hidden {
+  pointer-events: auto;
+  opacity: 1;
+  transform: translateY(0);
+  transition: none;
+}
+
+@media (min-width: 900px) {
+  .app-shell {
+    --scroll-chrome-secondary-top: calc(18px + env(safe-area-inset-top));
+  }
+
+  .app-shell.scroll-chrome-hidden {
+    --scroll-chrome-secondary-top: calc(10px + env(safe-area-inset-top));
+  }
+
+  .app-header-compact {
+    transition-delay: 80ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-header-compact,
+  .segment-nav,
+  .workflow-tabs,
+  .calendar-view-tabs,
+  .filter-tabs,
+  .training-journal-actions {
+    transition: none;
+  }
+}
