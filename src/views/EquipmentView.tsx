@@ -110,7 +110,7 @@ export function EquipmentView({ material, onSave, onDelete }: EquipmentViewProps
                 <input name="weightKg" type="number" min="0" step="0.1" defaultValue={draft.weightKg} />
               </label>
               <label>
-                Laenge cm
+                Länge cm
                 <input name="lengthCm" type="number" min="0" step="1" defaultValue={draft.lengthCm} />
               </label>
               <label>
@@ -158,7 +158,7 @@ export function EquipmentView({ material, onSave, onDelete }: EquipmentViewProps
                       <strong>{item.weightKg > 0 ? `${item.weightKg} kg` : "--"}</strong>
                     </div>
                     <div>
-                      <span>Laenge</span>
+                      <span>Länge</span>
                       <strong>{item.lengthCm > 0 ? `${item.lengthCm} cm` : "--"}</strong>
                     </div>
                     <div>

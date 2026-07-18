@@ -31,7 +31,7 @@ export const buildTrainingSessionFromPolar = (
   durationMinutes: Math.max(1, Math.round(session.durationSeconds / 60)),
   rpe: session.trainingLoad > 70 ? 8 : session.avgHeartRate > 155 ? 7 : 5,
   focus: `Polar ${session.title}`,
-  note: `${Math.round(session.distanceMeters / 100) / 10} km · HF ${session.avgHeartRate || "-"} Ø / ${session.maxHeartRate || "-"} max`,
+  note: `${Math.round(session.distanceMeters / 100) / 10} km · HF ${session.avgHeartRate || "-"} Durchschnitt / ${session.maxHeartRate || "-"} max`,
   createdAt: timestamp,
   updatedAt: timestamp,
 });

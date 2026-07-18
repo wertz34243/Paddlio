@@ -25,7 +25,7 @@ Die zentralen Tokens liegen in `src/styles.css`.
 
 - AppShell: Safe-Area, Bottom-Navigation und Seitenabstand.
 - Cards: alle wichtigen Inhalte in ruhigen, einheitlichen Karten.
-- StatCards: wichtige Zahlen groesser, Meta-Text kleiner.
+- StatCards: wichtige Zahlen größer, Meta-Text kleiner.
 - EmptyState: hilfreicher Text plus Aktion, wenn der Nutzer berechtigt ist.
 - ErrorState: keine rohen Supabase-Fehler für normale Nutzer.
 - StatusPill: kurze Statusbegriffe, keine langen Saetze.

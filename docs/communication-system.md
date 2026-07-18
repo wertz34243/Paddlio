@@ -4,7 +4,7 @@ Stand: Version 3.8
 
 ## Ziel
 
-Paddlio 3.8 integriert Kommunikation, Vereinsmeldungen, Aufgaben und Anwesenheit in die Plattform. Trainer, Sportler, ClubAdmins und Admins sollen Trainings- und Vereinsorganisation nicht mehr auf WhatsApp, Excel oder Zettel auslagern muessen.
+Paddlio 3.8 integriert Kommunikation, Vereinsmeldungen, Aufgaben und Anwesenheit in die Plattform. Trainer, Sportler, ClubAdmins und Admins sollen Trainings- und Vereinsorganisation nicht mehr auf WhatsApp, Excel oder Zettel auslagern müssen.
 
 ## Module
 
@@ -52,7 +52,7 @@ Der Bucket `paddlio-files` wird vorbereitet. Die App speichert stabile Anhang-Me
 
 ## Grenzen
 
-- Keine Ende-zu-Ende-Verschluesselung.
+- Keine Ende-zu-Ende-Verschlüsselung.
 - Keine native Push API.
 - Datei-Upload ist vorbereitet, aber noch kein vollständiger Storage-Workflow.
 - Reaktionen, Kommentare und Threading sind für später vorbereitet.

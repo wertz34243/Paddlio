@@ -26,27 +26,27 @@ const migration = read("supabase/migrations/0024_training_feedback_beta_blockers
 assert(getLocalWeekdayLabel("2026-07-14") === "Dienstag", "2026-07-14 muss Dienstag bleiben.");
 assert(trainingPlan.includes("parseLocalDateOnly"), "Date-only Helper parseLocalDateOnly fehlt.");
 assert(trainingPlan.includes("getLocalWeekdayLabel"), "Date-only Helper getLocalWeekdayLabel fehlt.");
-assert(!planView.includes('new Date(`${draft.date}T00:00:00`)'), "PlanView nutzt noch UTC-anfaellige Date-String-Logik.");
-assert(!planView.includes("new Date(date)."), "PlanView nutzt noch new Date(date) fuer date-only Anzeige.");
+assert(!planView.includes('new Date(`${draft.date}T00:00:00`)'), "PlanView nutzt noch UTC-anfällige Date-String-Logik.");
+assert(!planView.includes("new Date(date)."), "PlanView nutzt noch new Date(date) für date-only Anzeige.");
 assert(trainingService.includes("getWeekdayFromDate(row.date)"), "Cloud-Training nutzt nicht den lokalen Wochentag-Helper.");
-assert(trainingService.includes("deleteCloudTraining"), "Trainingsplan-Loeschung wird nicht an Supabase gesendet.");
+assert(trainingService.includes("deleteCloudTraining"), "Trainingsplan-Löschung wird nicht an Supabase gesendet.");
 
 assert(app.includes("upsertCloudFeedback(nextFeedback)"), "Feedback wird nicht direkt in Supabase gespeichert.");
 assert(app.includes("upsertCloudTraining(nextPlanEntry)"), "Planstatus nach Feedback wird nicht direkt in Supabase gespeichert.");
-assert(app.includes("deleteCloudTraining(id, timestamp)"), "Plan-Loeschung nutzt keinen Cloud-Soft-Delete.");
-assert(trainingService.includes('.is("deleted_at", null)'), "Geloeschte Trainings werden beim Cloud-Load nicht gefiltert.");
+assert(app.includes("deleteCloudTraining(id, timestamp)"), "Plan-Löschung nutzt keinen Cloud-Soft-Delete.");
+assert(trainingService.includes('.is("deleted_at", null)'), "Gelöschte Trainings werden beim Cloud-Load nicht gefiltert.");
 assert(trainingService.includes("deleted_at: deletedAt"), "Cloud-Training-Delete setzt keinen Soft-Delete-Zeitstempel.");
-assert(app.includes("Rückmeldung gespeichert"), "Feedback ohne Kommentar wird nicht als gespeicherte Rueckmeldung markiert.");
+assert(app.includes("Rückmeldung gespeichert"), "Feedback ohne Kommentar wird nicht als gespeicherte Rückmeldung markiert.");
 assert(app.includes('coach: { description: "Coach-Bereich"'), "Coach-Mehr-Bereich ist nicht sauber getrennt.");
 assert(!app.includes("Coach- und Adminbereich"), "Alter Coach/Admin-Mischtext ist noch vorhanden.");
-assert(planView.includes("Kommentar:"), "Coach/Plan-Rueckmeldungen zeigen den Feedback-Kommentar nicht sichtbar an.");
+assert(planView.includes("Kommentar:"), "Coach/Plan-Rückmeldungen zeigen den Feedback-Kommentar nicht sichtbar an.");
 assert(communicationView.includes("getKnownUserName"), "Team-Kontakte werden nicht aus geladenen Nachrichten abgeleitet.");
 assert(communicationView.includes("Paddlio Kontakt"), "Direktnachrichten ohne Profilkontakt haben keinen stabilen Fallback-Kontakt.");
 
-assert(migration.includes("training_plan_items_select_0024"), "RLS-Policy fuer Training-Select fehlt.");
-assert(migration.includes("training_plan_items_insert_0024"), "RLS-Policy fuer Training-Insert fehlt.");
-assert(migration.includes("training_feedback_select_0024"), "RLS-Policy fuer Feedback-Select fehlt.");
-assert(migration.includes("training_feedback_insert_0024"), "RLS-Policy fuer Feedback-Insert fehlt.");
+assert(migration.includes("training_plan_items_select_0024"), "RLS-Policy für Training-Select fehlt.");
+assert(migration.includes("training_plan_items_insert_0024"), "RLS-Policy für Training-Insert fehlt.");
+assert(migration.includes("training_feedback_select_0024"), "RLS-Policy für Feedback-Select fehlt.");
+assert(migration.includes("training_feedback_insert_0024"), "RLS-Policy für Feedback-Insert fehlt.");
 assert(migration.includes("MKC Monheim"), "Canonical Club MKC Monheim fehlt in Migration.");
 assert(migration.includes("mohnheim"), "Club-Alias Mohnheim fehlt in Migration.");
 

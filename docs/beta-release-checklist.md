@@ -11,10 +11,10 @@ Vor externer Beta ausfuehren und dokumentieren.
 - [ ] `npm.cmd run test:e2e`
 - [ ] `npm.cmd run test:e2e:roles` mit Test-Credentials
 - [ ] `npm.cmd audit --omit=dev`
-- [ ] Bundle-Budget pruefen
-- [ ] Encoding-Check pruefen
-- [ ] Date-only-Tests pruefen
-- [ ] RLS-Tests pruefen
+- [ ] Bundle-Budget prüfen
+- [ ] Encoding-Check prüfen
+- [ ] Date-only-Tests prüfen
+- [ ] RLS-Tests prüfen
 - [ ] Migrationen in Supabase ausfuehren
 - [ ] keine Secrets im Git-Diff
 
@@ -22,12 +22,12 @@ Vor externer Beta ausfuehren und dokumentieren.
 
 - [ ] Admin, ClubAdmin, Coach, Athlete testen
 - [ ] fremder Verein isoliert
-- [ ] zwei Geraete gleichzeitig
+- [ ] zwei Geräte gleichzeitig
 - [ ] Offline/Reconnect
-- [ ] Training erstellen, bearbeiten, loeschen
+- [ ] Training erstellen, bearbeiten, löschen
 - [ ] Feedback Coach/Athlete
 - [ ] Nachrichten Coach/Athlete
-- [ ] Akademie oeffnen, Fortschritt speichern
+- [ ] Akademie öffnen, Fortschritt speichern
 - [ ] Importvorschau und Importbericht
 - [ ] Export CSV/XLSX
 - [ ] Polar verbinden, Sync, Duplikatschutz
@@ -46,7 +46,7 @@ Vor externer Beta ausfuehren und dokumentieren.
 - [ ] Adminbereiche nur Admin
 - [ ] Coach sieht keine fremden Vereine
 - [ ] Athlete sieht keine Coach/Adminbereiche
-- [ ] Export sensibler Spalten geprueft
+- [ ] Export sensibler Spalten geprüft
 - [ ] Polar-Tokens serverseitig geschuetzt
 
 ## Betrieb

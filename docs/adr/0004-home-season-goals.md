@@ -12,6 +12,5 @@ Saisonziele werden nur noch auf der Home-Seite angezeigt. Die Material-Seite zei
 
 - Home bekommt prominentere Zielkarten mit Fortschrittsbalken.
 - Material bleibt fachlich auf Boote, Paddel und Zubehör fokussiert.
-- Das Datenmodell bleibt unverändert; der LocalStorage-Key `paddlemotion:v0.3:data` bleibt gueltig.
+- Das Datenmodell bleibt unverändert; der LocalStorage-Key `paddlemotion:v0.3:data` bleibt gültig.
 - Version 0.4 ist eine UI- und Motivationsverbesserung ohne Datenmigration.
-

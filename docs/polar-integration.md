@@ -1,10 +1,10 @@
 # Paddlio Polar Integration
 
-Paddlio verbindet Polar ueber Polar AccessLink OAuth2. Der Browser erhaelt keine Polar-Tokens. OAuth, Tokenablage, Token-Erneuerung und Sync laufen ueber serverseitige API-Endpunkte unter `/api/polar/*`.
+Paddlio verbindet Polar über Polar AccessLink OAuth2. Der Browser erhaelt keine Polar-Tokens. OAuth, Tokenablage, Token-Erneuerung und Sync laufen über serverseitige API-Endpunkte unter `/api/polar/*`.
 
 ## Supabase
 
-Diese Migration muss auf der bestehenden Datenbank ausgefuehrt sein:
+Diese Migration muss auf der bestehenden Datenbank ausgeführt sein:
 
 `supabase/migrations/0028_polar_integration.sql`
 
@@ -15,7 +15,7 @@ Sie ergaenzt:
 - `polar_oauth_states`
 - `polar_sync_jobs`
 - `polar_training_imports`
-- zusaetzliche Felder auf `external_training_sessions`
+- zusätzliche Felder auf `external_training_sessions`
 
 Die Tabelle `polar_accounts` hat bewusst keine Frontend-Policies. Tokens werden nur serverseitig mit `SUPABASE_SERVICE_ROLE_KEY` gelesen und geschrieben.
 
@@ -42,7 +42,7 @@ Erforderlich:
 1. Nutzer oeffnet `Mehr -> Integrationen -> Polar`.
 2. `Polar verbinden` ruft `/api/polar/start` auf.
 3. Paddlio erzeugt einen kurzlebigen OAuth-State in `polar_oauth_states`.
-4. Polar leitet nach `/api/polar/callback` zurueck.
+4. Polar leitet nach `/api/polar/callback` zurück.
 5. Paddlio tauscht den Code gegen ein Token und speichert Access- und Refresh-Token verschluesselt.
 6. `Jetzt synchronisieren` ruft `/api/polar/sync` auf.
 7. Vor dem Sync erneuert Paddlio ablaufende Access-Tokens serverseitig mit dem Refresh-Token.
@@ -55,9 +55,9 @@ Erforderlich:
 
 Importierte Polar-Einheiten werden lokal auch als Trainingstagebuch-Eintrag angelegt. Das Datum wird aus dem Polar-Zeitstempel als lokaler Kalendertag erzeugt, nicht per UTC-Slice.
 
-Wenn eine Polar-Einheit zu einer geplanten Paddlio-Einheit passen koennte, zeigt die UI nur einen Vorschlag. Automatisches Zusammenfuehren passiert nicht, solange die Zuordnung unsicher ist.
+Wenn eine Polar-Einheit zu einer geplanten Paddlio-Einheit passen könnte, zeigt die UI nur einen Vorschlag. Automatisches Zusammenfuehren passiert nicht, solange die Zuordnung unsicher ist.
 
-Kriterien fuer Vorschlaege:
+Kriterien für Vorschläge:
 
 - gleicher lokaler Kalendertag
 - gleicher Sportler
@@ -85,4 +85,4 @@ Die Adapter-Struktur liegt in `src/features/integrations/deviceAdapters.ts` und 
 
 - Webhook-Sync ist vorbereitet, aber noch nicht aktiv verdrahtet.
 - Polar AccessLink liefert je nach Sportart und Datenschutzeinstellung nicht immer GPS, HR-Samples oder Training Benefit.
-- Trainerzugriff auf Polar-Daten ist RLS-seitig nur ueber Vereinskontext vorbereitet. Eine ausdrueckliche Freigabe pro Sportler bleibt fuer eine spaetere Version sinnvoll.
+- Trainerzugriff auf Polar-Daten ist RLS-seitig nur über Vereinskontext vorbereitet. Eine ausdrueckliche Freigabe pro Sportler bleibt für eine spätere Version sinnvoll.

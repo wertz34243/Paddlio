@@ -2,7 +2,7 @@
 
 ## Beta-Check
 
-Der Admin-Bereich `Mehr > Beta-Check` prueft und dokumentiert:
+Der Admin-Bereich `Mehr > Beta-Check` prüft und dokumentiert:
 
 - Supabase Verbindung
 - Vercel Deployment
@@ -20,7 +20,7 @@ Der Admin-Bereich `Mehr > Beta-Check` prueft und dokumentiert:
 - Testanleitung und bekannte Grenzen
 - Datenschutz/RLS
 
-Einige Punkte sind bewusst `manual`, weil sie im echten Supabase-/Vercel-/Geräte-Setup bestaetigt werden muessen.
+Einige Punkte sind bewusst `manual`, weil sie im echten Supabase-/Vercel-/Geräte-Setup bestätigt werden müssen.
 
 ## Supabase Health Check
 
@@ -30,7 +30,7 @@ Aktuelle App-Signale:
 - Admins sehen Sync-Anzahl und letzten Sync-Zeitpunkt.
 - Cloud-Fehler werden in der Konsole mit `[Paddlio Cloud]` protokolliert.
 
-## Datenschutzpruefung
+## Datenschutzprüfung
 
 Beta-Regeln:
 
@@ -39,7 +39,7 @@ Beta-Regeln:
 - ClubAdmin: eigener Verein.
 - Admin: alles.
 
-RLS muss im Supabase Dashboard zusaetzlich geprueft werden. UI-Filter ersetzen keine serverseitigen Policies.
+RLS muss im Supabase Dashboard zusätzlich geprüft werden. UI-Filter ersetzen keine serverseitigen Policies.
 
 ## Freigabe
 

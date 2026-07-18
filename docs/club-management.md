@@ -13,7 +13,7 @@ Das Vereinsportal erweitert Paddlio von einer Trainingsplattform zu einer Verein
 - Trainer: Trainerprofile, Lizenz- und Qualifikationsplatzhalter
 - Gruppen: Gruppenübersicht mit Altersklasse, Bootsklassen, Trainer und Teilnehmern
 - Material: Inventarnummer, Kategorie, Zustand, Besitzer, Foto, letzte Prüfung und Bemerkung
-- Boote: Hersteller, Modell, Bootsklasse, Laenge, Gewicht, Baujahr, Besitzer, Vereinsboot und Sportlerverknuepfung
+- Boote: Hersteller, Modell, Bootsklasse, Länge, Gewicht, Baujahr, Besitzer, Vereinsboot und Sportlerverknüpfung
 - Vereinskalender: Training, Wettkampf, Sitzung, Vereinsfeier und Arbeitseinsatz
 - Dokumente: PDF/Word/Excel/Bild-Metadaten und Ordnerstruktur
 - Nachrichten: Mitteilungen an Verein, Trainer, Sportler, Gruppen oder einzelne Sportler

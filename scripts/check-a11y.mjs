@@ -15,11 +15,11 @@ const styles = read("src/styles.css");
 
 assert(
   app.includes('data-testid="app-header"'),
-  "App-Header braucht data-testid=\"app-header\" fuer E2E- und A11y-Pruefungen.",
+  "App-Header braucht data-testid=\"app-header\" für E2E- und A11y-Prüfungen.",
 );
 assert(
   segmentNav.includes('data-testid="section-tabs"'),
-  "Bereichsnavigation braucht data-testid=\"section-tabs\" fuer E2E- und A11y-Pruefungen.",
+  "Bereichsnavigation braucht data-testid=\"section-tabs\" für E2E- und A11y-Prüfungen.",
 );
 assert(
   appNavigation.includes('data-testid="bottom-navigation"'),
@@ -41,15 +41,15 @@ assert(
 );
 assert(
   /:focus-visible/.test(styles),
-  "Styles brauchen sichtbare :focus-visible-Zustaende.",
+  "Styles brauchen sichtbare :focus-visible-Zustände.",
 );
 assert(
   styles.includes("@media (prefers-reduced-motion: reduce)"),
-  "Styles brauchen prefers-reduced-motion-Unterstuetzung.",
+  "Styles brauchen prefers-reduced-motion-Unterstützung.",
 );
 assert(
   styles.includes("min-height: 44px") || styles.includes("min-height: 48px"),
-  "Touch-Ziele brauchen eine Mindesthoehe.",
+  "Touch-Ziele brauchen eine Mindesthöhe.",
 );
 
 console.log("Accessibility beta check passed.");

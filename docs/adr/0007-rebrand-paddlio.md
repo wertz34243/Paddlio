@@ -6,7 +6,7 @@ Die App wird zu Paddlio umbenannt. Das Rebranding betrifft sichtbare Produktname
 
 ## Entscheidung
 
-Version 0.7 fuehrt zentrale Brand-Konstanten ein:
+Version 0.7 führt zentrale Brand-Konstanten ein:
 
 - `APP_NAME = "Paddlio"`
 - `APP_SLOGAN = "Train. Analyze. Improve."`

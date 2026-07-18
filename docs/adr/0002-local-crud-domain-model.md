@@ -6,7 +6,7 @@ Paddlio 0.2 soll echte Daten im Browser speichern können. Die App braucht dafü
 
 ## Entscheidung
 
-Die App verwendet ein versioniertes LocalStorage-Modell unter `paddlemotion:v0.2:data`. React-State ist die aktive Datenquelle der UI; jede Aenderung wird automatisch persistiert. Fachliche Berechnungen liegen weiterhin in `src/domain/metrics.ts`.
+Die App verwendet ein versioniertes LocalStorage-Modell unter `paddlemotion:v0.2:data`. React-State ist die aktive Datenquelle der UI; jede Änderung wird automatisch persistiert. Fachliche Berechnungen liegen weiterhin in `src/domain/metrics.ts`.
 
 ## Modell
 

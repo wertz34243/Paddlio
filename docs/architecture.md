@@ -2,7 +2,7 @@
 
 ## Grundsatz
 
-Paddlio wird architekturgetrieben entwickelt. Vor jeder groesseren Implementierung wird zuerst festgelegt:
+Paddlio wird architekturgetrieben entwickelt. Vor jeder größeren Implementierung wird zuerst festgelegt:
 
 - welche fachliche Domaene betroffen ist
 - welche Daten und Regeln entstehen
@@ -145,7 +145,7 @@ Enthaelt:
 Spätere Erweiterung:
 
 - Trainerfeedback
-- Trainingsplaene
+- Trainingspläne
 - Videoanalyse
 - Abschnittszeiten
 - Sensorwerte
@@ -191,7 +191,7 @@ Material ist eine eigenständige Domaene, nicht nur ein Freitextfeld.
 
 Enthaelt:
 
-- Ausruestungsgegenstaende
+- Ausrüstungsgegenstaende
 - Zustand
 - Wartung
 - Setup-Notizen
@@ -229,7 +229,7 @@ Jedes zentrale Objekt sollte langfristig eindeutig zuordenbar sein.
 
 V1:
 
-- athleteId als primaerer Besitzer
+- athleteId als primärer Besitzer
 
 Später:
 

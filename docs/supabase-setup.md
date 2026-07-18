@@ -1,6 +1,6 @@
 # Supabase Setup für Paddlio
 
-Paddlio 3.0.1 bereitet Supabase vor, schaltet die App aber noch nicht vollständig auf Cloud-Daten um. Ohne Supabase-Variablen laeuft Paddlio weiterhin mit LocalStorage.
+Paddlio 3.0.1 bereitet Supabase vor, schaltet die App aber noch nicht vollständig auf Cloud-Daten um. Ohne Supabase-Variablen läuft Paddlio weiterhin mit LocalStorage.
 
 ## Benötigte Environment Variablen
 
@@ -47,18 +47,18 @@ Paddlio nutzt ausschließlich Supabase Auth. Neue Nutzer können selbst ein Kont
 Empfohlene Supabase-Einstellungen:
 
 1. `Authentication` -> `Providers` -> `Email`: Email Provider aktivieren.
-2. Für produktive Nutzung: `Confirm email` aktivieren, damit Nutzer ihre E-Mail bestaetigen.
+2. Für produktive Nutzung: `Confirm email` aktivieren, damit Nutzer ihre E-Mail bestätigen.
 3. Für geschlossene Tests ohne E-Mail-Versand: `Confirm email` deaktivieren oder Nutzer im Dashboard mit `Auto Confirm User` anlegen.
 4. Wenn `Confirm email` deaktiviert ist, versendet Supabase bei normalem Sign-up keine Bestätigungs-E-Mail und Paddlio meldet den Nutzer direkt an.
 5. Rate Limits prüfen: `Authentication` -> `Rate Limits`. Bei `email rate limit exceeded` muss im Supabase-Projekt gewartet oder das Limit/SMTP-Setup angepasst werden.
-6. Für hoehere produktive Limits sollte ein eigener SMTP-Anbieter konfiguriert werden. Ohne eigenen SMTP können Supabase-Standardlimits schnell greifen.
+6. Für höhere produktive Limits sollte ein eigener SMTP-Anbieter konfiguriert werden. Ohne eigenen SMTP können Supabase-Standardlimits schnell greifen.
 
-Wichtig: Ein Frontend mit Publishable/Anon Key darf keine Benutzer am E-Mail-Rate-Limit vorbei erstellen. Ein Fallback ohne E-Mail-Bestätigung waere nur über einen serverseitigen Admin-Pfad möglich, zum Beispiel Supabase Edge Function mit Service-Role-Key. Dieser Key darf niemals in Vite, Vercel Public Environments oder im Browser landen.
+Wichtig: Ein Frontend mit Publishable/Anon Key darf keine Benutzer am E-Mail-Rate-Limit vorbei erstellen. Ein Fallback ohne E-Mail-Bestätigung wäre nur über einen serverseitigen Admin-Pfad möglich, zum Beispiel Supabase Edge Function mit Service-Role-Key. Dieser Key darf niemals in Vite, Vercel Public Environments oder im Browser landen.
 
 Bei jeder neuen Registrierung erstellt der Datenbank-Trigger:
 
 - ein `profiles`-Profil mit Rolle `Athlete`
-- optional einen `club_requests`-Eintrag, wenn der Nutzer einen neuen Verein vorschlaegt
+- optional einen `club_requests`-Eintrag, wenn der Nutzer einen neuen Verein vorschlägt
 - eine `notifications`-Benachrichtigung für vorhandene Admin-Profile
 
 ## Migration ausführen
@@ -106,6 +106,6 @@ Die Migrationen legen diese Tabellen und Auth-Helfer an:
 
 ## Sicherheit
 
-Die Migration aktiviert Row Level Security für alle App-Tabellen und legt erste Policies für Athlete, Coach, TeamAdmin und Admin an. Diese Policies sind die Grundlage für Version 3.0, muessen aber vor produktiver Vereinsnutzung mit echten Testnutzern und Supabase Auth End-to-End geprueft werden. Adminrechte dürfen nur durch einen bereits berechtigten Admin oder eine kontrollierte serverseitige Bootstrap-Aktion vergeben werden.
+Die Migration aktiviert Row Level Security für alle App-Tabellen und legt erste Policies für Athlete, Coach, TeamAdmin und Admin an. Diese Policies sind die Grundlage für Version 3.0, müssen aber vor produktiver Vereinsnutzung mit echten Testnutzern und Supabase Auth End-to-End geprüft werden. Adminrechte dürfen nur durch einen bereits berechtigten Admin oder eine kontrollierte serverseitige Bootstrap-Aktion vergeben werden.
 
-Ab Version 3.0.2 ruft React Supabase nicht direkt in Seitenkomponenten auf. Auth laeuft über `AuthProvider`, Datenzugriffe laufen über Services unter `src/services/`.
+Ab Version 3.0.2 ruft React Supabase nicht direkt in Seitenkomponenten auf. Auth läuft über `AuthProvider`, Datenzugriffe laufen über Services unter `src/services/`.

@@ -37,7 +37,7 @@ Der Client berechnet aus dem rollenbasiert geladenen Daten-Snapshot. Supabase RL
 - Coach sieht eigene Daten, Sportler im eigenen Verein und eigene Gruppen.
 - Admin sieht die Plattformübersicht.
 
-Die UI blendet Views passend zur Rolle ein. Die Datenabfragen muessen weiterhin in Supabase nach Rolle, `userId` und `clubId` geschützt sein.
+Die UI blendet Views passend zur Rolle ein. Die Datenabfragen müssen weiterhin in Supabase nach Rolle, `userId` und `clubId` geschützt sein.
 
 ## Belastungsanalyse
 

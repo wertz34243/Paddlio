@@ -410,16 +410,16 @@ export function ClubPortalView({ data, user, onDataChange }: ClubPortalViewProps
           <label>Hersteller<input name="manufacturer" /></label>
           <label>Modell<input name="model" required /></label>
           <label>Bootsklasse<select name="boatClass"><option value="K1">K1</option><option value="C1">C1</option><option value="C2">C2</option><option value="Mannschaft">Mannschaft</option></select></label>
-          <label>Laenge cm<input name="lengthCm" type="number" /></label>
+          <label>Länge cm<input name="lengthCm" type="number" /></label>
           <label>Gewicht kg<input name="weightKg" type="number" step="0.1" /></label>
           <label>Baujahr<input name="buildYear" type="number" /></label>
           <label>Besitzer<input name="ownerName" /></label>
           <label className="toggle-row">Vereinsboot<input name="isClubBoat" type="checkbox" defaultChecked /></label>
         </div>
-        <div className="choice-group"><span>Sportler verknuepfen</span><div className="tag-row">{clubAthletes.map((athlete) => <label className="toggle-row" key={athlete.id}>{athlete.name}<input name="linkedAthleteIds" type="checkbox" value={athlete.id} /></label>)}</div></div>
+        <div className="choice-group"><span>Sportler verknüpfen</span><div className="tag-row">{clubAthletes.map((athlete) => <label className="toggle-row" key={athlete.id}>{athlete.name}<input name="linkedAthleteIds" type="checkbox" value={athlete.id} /></label>)}</div></div>
         <button className="save-button" type="submit">Boot speichern</button>
       </form>
-      <div className="wallet-list">{boats.length ? boats.map((boat) => <article className="wallet-card" key={boat.id}><div className="wallet-image"><span>{boat.boatClass}</span></div><div className="wallet-content"><div className="wallet-topline"><div><span>{boat.manufacturer || "Hersteller offen"}</span><h4>{boat.model || "Boot ohne Modell"}</h4></div><b className="status-pill planned">{boat.isClubBoat ? "Verein" : "Privat"}</b></div><div className="wallet-stats"><div><span>Laenge</span><strong>{boat.lengthCm || "--"} cm</strong></div><div><span>Gewicht</span><strong>{boat.weightKg || "--"} kg</strong></div><div><span>Baujahr</span><strong>{boat.buildYear || "--"}</strong></div></div><p>{boat.ownerName || "Kein Besitzer hinterlegt."}</p></div></article>) : <p className="empty-state">Noch keine Boote hinterlegt.</p>}</div>
+      <div className="wallet-list">{boats.length ? boats.map((boat) => <article className="wallet-card" key={boat.id}><div className="wallet-image"><span>{boat.boatClass}</span></div><div className="wallet-content"><div className="wallet-topline"><div><span>{boat.manufacturer || "Hersteller offen"}</span><h4>{boat.model || "Boot ohne Modell"}</h4></div><b className="status-pill planned">{boat.isClubBoat ? "Verein" : "Privat"}</b></div><div className="wallet-stats"><div><span>Länge</span><strong>{boat.lengthCm || "--"} cm</strong></div><div><span>Gewicht</span><strong>{boat.weightKg || "--"} kg</strong></div><div><span>Baujahr</span><strong>{boat.buildYear || "--"}</strong></div></div><p>{boat.ownerName || "Kein Besitzer hinterlegt."}</p></div></article>) : <p className="empty-state">Noch keine Boote hinterlegt.</p>}</div>
     </section>
   );
 
@@ -445,7 +445,7 @@ export function ClubPortalView({ data, user, onDataChange }: ClubPortalViewProps
   const messagesView = (
     <section className="section-block">
       <div className="section-heading"><div><p className="eyebrow">Verein</p><h3>Nachrichten</h3></div></div>
-      <form className="entry-form" onSubmit={upsertMessage}><div className="form-grid"><label>Empfaenger<select name="audience">{audiences.map((audience) => <option key={audience} value={audience}>{audienceLabel[audience]}</option>)}</select></label><label>Gruppe<select name="groupId"><option value="">Keine Gruppe</option>{clubGroups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select></label><label>Titel<input name="title" required /></label></div><label>Nachricht<textarea name="body" rows={4} required /></label><button className="save-button" type="submit">Nachricht speichern</button></form>
+      <form className="entry-form" onSubmit={upsertMessage}><div className="form-grid"><label>Empfänger<select name="audience">{audiences.map((audience) => <option key={audience} value={audience}>{audienceLabel[audience]}</option>)}</select></label><label>Gruppe<select name="groupId"><option value="">Keine Gruppe</option>{clubGroups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select></label><label>Titel<input name="title" required /></label></div><label>Nachricht<textarea name="body" rows={4} required /></label><button className="save-button" type="submit">Nachricht speichern</button></form>
       <div className="club-card-list">{messages.length ? messages.map((item) => <article className="user-admin-card" key={item.id}><strong>{item.title}</strong><span>{audienceLabel[item.audience]} - {item.createdAt.slice(0, 10)}</span><small>{item.body}</small></article>) : <p className="empty-state">Noch keine Vereinsnachrichten vorhanden.</p>}</div>
     </section>
   );
@@ -454,7 +454,7 @@ export function ClubPortalView({ data, user, onDataChange }: ClubPortalViewProps
     <section className="section-block">
       <div className="section-heading"><div><p className="eyebrow">Verein</p><h3>Einstellungen</h3></div></div>
       <form className="entry-form" onSubmit={upsertSettings}>
-        <div className="form-grid"><label>Logo URL<input name="logoUrl" defaultValue={settings.logoUrl} /></label><label>Primaerfarbe<input name="primaryColor" type="color" defaultValue={settings.primaryColor} /></label><label>Sekundaerfarbe<input name="secondaryColor" type="color" defaultValue={settings.secondaryColor} /></label><label>Homepage<input name="homepage" defaultValue={settings.homepage} /></label><label>Ansprechpartner<input name="contactName" defaultValue={settings.contactName} /></label><label>Kontakt-E-Mail<input name="contactEmail" type="email" defaultValue={settings.contactEmail} /></label><label>Vereinsnummer<input name="clubNumber" defaultValue={settings.clubNumber} /></label></div>
+        <div className="form-grid"><label>Logo URL<input name="logoUrl" defaultValue={settings.logoUrl} /></label><label>Primärfarbe<input name="primaryColor" type="color" defaultValue={settings.primaryColor} /></label><label>Sekundärfarbe<input name="secondaryColor" type="color" defaultValue={settings.secondaryColor} /></label><label>Homepage<input name="homepage" defaultValue={settings.homepage} /></label><label>Ansprechpartner<input name="contactName" defaultValue={settings.contactName} /></label><label>Kontakt-E-Mail<input name="contactEmail" type="email" defaultValue={settings.contactEmail} /></label><label>Vereinsnummer<input name="clubNumber" defaultValue={settings.clubNumber} /></label></div>
         <label>Adresse<textarea name="address" rows={3} defaultValue={settings.address} /></label><label>Impressum<textarea name="imprint" rows={4} defaultValue={settings.imprint} /></label><button className="save-button" type="submit">Einstellungen speichern</button>
       </form>
     </section>

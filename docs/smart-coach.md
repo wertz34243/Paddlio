@@ -43,7 +43,7 @@ Empfehlungen haben:
 - Coach sieht Hinweise für Sportler aus dem eigenen Verein und eigene Gruppen.
 - Admin sieht alle geladenen Empfehlungen.
 
-RLS muss diese Regeln serverseitig absichern. Das Frontend filtert zusaetzlich, ersetzt aber keine Datenbankrechte.
+RLS muss diese Regeln serverseitig absichern. Das Frontend filtert zusätzlich, ersetzt aber keine Datenbankrechte.
 
 ## Grenzen
 

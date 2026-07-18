@@ -2,7 +2,7 @@
 
 ## Kontext
 
-Paddlio 0.3 soll intelligenter werden. Dashboard und Analyse dürfen nicht mehr mit festen Werten arbeiten, sondern muessen Kennzahlen aus gespeicherten Wettkampf- und Trainingsdaten berechnen. Zusätzlich braucht die Athleten-App einen einfachen Wochenplan.
+Paddlio 0.3 soll intelligenter werden. Dashboard und Analyse dürfen nicht mehr mit festen Werten arbeiten, sondern müssen Kennzahlen aus gespeicherten Wettkampf- und Trainingsdaten berechnen. Zusätzlich braucht die Athleten-App einen einfachen Wochenplan.
 
 ## Entscheidung
 

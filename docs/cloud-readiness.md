@@ -1,12 +1,12 @@
 # Paddlio Cloud Readiness
 
-Paddlio 2.7 bleibt eine lokale Demo-App mit LocalStorage. Diese Datei beschreibt, welche Teile für echte Mehrbenutzerfähigkeit in eine Cloud-Schicht verschoben und serverseitig abgesichert werden muessen.
+Paddlio 2.7 bleibt eine lokale Demo-App mit LocalStorage. Diese Datei beschreibt, welche Teile für echte Mehrbenutzerfähigkeit in eine Cloud-Schicht verschoben und serverseitig abgesichert werden müssen.
 
 ## Datenmodelle für die Cloud
 
 - Users und Profile: `AuthUser`, `User`, Rollen, Status, Vereinszuordnung, Profilbild-Metadaten.
-- Auth und Sessions: echte Auth-Provider-Identitaet, Session-Token, Passwort-Reset, MFA optional.
-- Clubs und Club Requests: offizielle Vereine, Vereinsvorschlaege, Status und Admin-Review.
+- Auth und Sessions: echte Auth-Provider-Identität, Session-Token, Passwort-Reset, MFA optional.
+- Clubs und Club Requests: offizielle Vereine, Vereinsvorschläge, Status und Admin-Review.
 - Trainer Requests: Traineranfragen, Review-Status, Review-Historie und Admin-Entscheidungen.
 - Training Groups: Gruppen pro Verein, Coach-Zuordnung, Sportler-Zuordnung, Status.
 - Training Templates: private Vorlagen, Vereinsvorlagen, Favoriten, Tags, Trainingsbereich, Bootsklasse, Standarddauer und Standardintensität.
@@ -29,13 +29,13 @@ Paddlio 2.7 bleibt eine lokale Demo-App mit LocalStorage. Diese Datei beschreibt
 
 ## Serverrechte
 
-- Athlete: darf nur eigene Datensaetze lesen und schreiben.
+- Athlete: darf nur eigene Datensätze lesen und schreiben.
 - Coach: darf nur Sportler, Gruppen, Trainingsvorlagen, Trainings, Feedback und Ziele des eigenen Vereins beziehungsweise der eigenen Gruppen lesen und bearbeiten.
 - TeamAdmin: bleibt strukturell separat und kann zunächst Coach-Rechte erhalten.
-- Admin: darf alle Datensaetze sehen und verwalten.
+- Admin: darf alle Datensätze sehen und verwalten.
 - Trainerrechte dürfen nur durch Admin-Review oder eine serverseitige Admin-Aktion vergeben werden.
 - Adminrechte dürfen niemals aus Client-State, LocalStorage oder Formularwerten entstehen.
-- Traineranfragen, Rollenwechsel, Benutzerdeaktivierung und Loeschungen brauchen Audit-Felder wie `reviewedBy`, `updatedBy` und Zeitstempel.
+- Traineranfragen, Rollenwechsel, Benutzerdeaktivierung und Löschungen brauchen Audit-Felder wie `reviewedBy`, `updatedBy` und Zeitstempel.
 
 ## Empfehlung
 
@@ -45,8 +45,8 @@ Supabase ist für Paddlio der naheliegende erste Schritt, weil Postgres, Row Lev
 
 - Passwörter und Sessions liegen lokal im Browser und sind nicht für sensible produktive Daten geeignet.
 - Rollen können in einer reinen Frontend-Demo nicht wirklich vertrauenswürdig geschützt werden.
-- LocalStorage ist geraete- und browsergebunden, nicht synchronisiert und kann gelöscht werden.
-- Coach- und Admin-Funktionen wirken lokal, sind aber ohne Serverpruefung keine echte Zugriffskontrolle.
+- LocalStorage ist geräte- und browsergebunden, nicht synchronisiert und kann gelöscht werden.
+- Coach- und Admin-Funktionen wirken lokal, sind aber ohne Serverprüfung keine echte Zugriffskontrolle.
 
 ## Nächste Schritte für Version 3.0
 
@@ -61,7 +61,7 @@ Supabase ist für Paddlio der naheliegende erste Schritt, weil Postgres, Row Lev
 
 ## Stand Version 3.0.2
 
-- Supabase Auth ist als primaerer Login-Pfad vorbereitet.
+- Supabase Auth ist als primärer Login-Pfad vorbereitet.
 - `profiles`, `clubs`, `trainer_requests` und `training_groups` werden über Services geladen und lokal gecacht.
 - Trainings, Ziele, Wettkämpfe und Material werden in 3.0.3 in Supabase migriert; Analyse nutzt weiterhin die lokal gecachten Cloud-Daten.
 

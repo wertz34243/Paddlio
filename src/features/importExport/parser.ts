@@ -87,7 +87,7 @@ function decodeBuffer(buffer: ArrayBuffer, encoding: string) {
 }
 
 function looksLikeMojibake(value: string) {
-  return /Ã.|ï¿½|�/.test(value);
+  return /\u00c3.|\u00ef\u00bf\u00bd|\ufffd/.test(value);
 }
 
 function detectDelimiter(text: string): string {

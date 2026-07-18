@@ -4,7 +4,7 @@ Paddlio 3.0.3 macht Supabase zum Hauptspeicher für migrierte App-Daten. LocalSt
 
 ## Migration
 
-Nach dem ersten erfolgreichen Supabase-Login prueft Paddlio pro Nutzer den Key:
+Nach dem ersten erfolgreichen Supabase-Login prüft Paddlio pro Nutzer den Key:
 
 ```text
 paddlio_cloud_migration_<userId>
@@ -30,7 +30,7 @@ Wenn Supabase nicht erreichbar ist oder das Gerät offline ist, landen Änderung
 paddlio_sync_queue
 ```
 
-Beim Onlinegehen wird die Queue automatisch abgearbeitet. Gelingt ein Eintrag nicht, bleibt er mit erhoehter Attempt-Zahl in der Queue.
+Beim Onlinegehen wird die Queue automatisch abgearbeitet. Gelingt ein Eintrag nicht, bleibt er mit erhöhter Attempt-Zahl in der Queue.
 
 ## Realtime
 
@@ -50,7 +50,7 @@ Wenn sich Daten ändern, wird der Cloud-Cache neu geladen. Das Dashboard reagier
 Aktuelle Strategie:
 
 ```text
-Neueste Aenderung gewinnt.
+Neueste Änderung gewinnt.
 ```
 
 Die App zeigt einen Hinweis, wenn Daten zwischen Geräten synchronisiert wurden. Für spätere Versionen kann daraus eine detaillierte Konfliktansicht entstehen.
@@ -75,4 +75,4 @@ Die Trainingsplanung nutzt weiterhin den lokalen Snapshot als Offline-fähige Ar
 - `training_feedback`: Rückmeldungen von Athleten an Coaches.
 - `training_templates`: private und vereinsweite Trainingsvorlagen.
 
-Migration `0006_training_planning_2_0.sql` legt Indizes für Datum, Verein, Athlet, Coach, Gruppen-/Athletenlisten und Vorlagen-Sichtbarkeit an. Ausserdem wird Supabase Realtime für Training, Feedback und Vorlagen vorbereitet, damit Coach und Athlet denselben Plan ohne manuelles Neuladen sehen können.
+Migration `0006_training_planning_2_0.sql` legt Indizes für Datum, Verein, Athlet, Coach, Gruppen-/Athletenlisten und Vorlagen-Sichtbarkeit an. Außerdem wird Supabase Realtime für Training, Feedback und Vorlagen vorbereitet, damit Coach und Athlet denselben Plan ohne manuelles Neuladen sehen können.

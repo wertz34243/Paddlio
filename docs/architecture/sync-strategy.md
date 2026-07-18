@@ -1,6 +1,6 @@
 # Paddlio Sync Strategy
 
-Paddlio verwendet Supabase als fuehrende Quelle, sobald ein Nutzer angemeldet und das Profil bestaetigt ist. LocalStorage ist eine Offline-Arbeitskopie und darf Cloud-Daten nicht dauerhaft ueberschreiben.
+Paddlio verwendet Supabase als führende Quelle, sobald ein Nutzer angemeldet und das Profil bestätigt ist. LocalStorage ist eine Offline-Arbeitskopie und darf Cloud-Daten nicht dauerhaft überschreiben.
 
 ## Fuehrende Quelle
 
@@ -11,10 +11,10 @@ Paddlio verwendet Supabase als fuehrende Quelle, sobald ein Nutzer angemeldet un
 ## Initialer Sync
 
 1. Auth-Session laden.
-2. Profil/Rolle/Verein bestaetigen.
+2. Profil/Rolle/Verein bestätigen.
 3. Kernbereiche laden.
 4. Wartende Queue tabellenspezifisch abarbeiten.
-5. Optionale Module spaeter laden.
+5. Optionale Module später laden.
 
 ## Tabellenbezogene Sync-Regeln
 
@@ -24,14 +24,14 @@ Jede synchronisierte Tabelle braucht explizite Regeln:
 |---|---|---|---|
 | `training_plan_items` | `id` | Soft Delete `deleted_at` | `updated_at` |
 | `training_feedback` | `training_id, athlete_user_id` | fachlich nur wenn erlaubt | `completed_at` |
-| `messages` | `id` | nicht hart loeschen im Client | `created_at` |
+| `messages` | `id` | nicht hart löschen im Client | `created_at` |
 | `academy_progress` | `user_id, lesson_id` | Statusupdate | `updated_at` |
-| `external_training_sessions` | `provider, provider_activity_id` | keine automatische Loeschung | `updated_at` |
-| `polar_training_imports` | `user_id, provider_activity_id` | keine automatische Loeschung | `updated_at` |
+| `external_training_sessions` | `provider, provider_activity_id` | keine automatische Löschung | `updated_at` |
+| `polar_training_imports` | `user_id, provider_activity_id` | keine automatische Löschung | `updated_at` |
 
-## Loeschungen
+## Löschungen
 
-Trainingsplaene nutzen Soft Deletes. Geloeschte Eintraege bleiben als Tombstone erhalten, damit ein zweites Geraet alte lokale Daten nicht erneut hochlaedt.
+Trainingspläne nutzen Soft Deletes. Gelöschte Einträge bleiben als Tombstone erhalten, damit ein zweites Gerät alte lokale Daten nicht erneut hochlädt.
 
 ## Konflikte
 
@@ -43,9 +43,9 @@ Trainingsplaene nutzen Soft Deletes. Geloeschte Eintraege bleiben als Tombstone 
 
 Die UI unterscheidet:
 
-- Synchronisierung laeuft
+- Synchronisierung läuft
 - synchronisiert
-- lokale Aenderungen ausstehend
+- lokale Änderungen ausstehend
 - offline
 - eingeschraenkt
 - Fehler

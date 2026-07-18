@@ -70,13 +70,13 @@ Supabase `updated_at` und der lokale Sync-Zeitpunkt bilden die Grundlage für sp
 
 ## Datenschutz
 
-Realtime ersetzt keine Rechtepruefung. Zugriff muss weiterhin über Supabase RLS abgesichert sein:
+Realtime ersetzt keine Rechteprüfung. Zugriff muss weiterhin über Supabase RLS abgesichert sein:
 
 - Athlete sieht nur eigene Trainings, Ziele, Gruppenmitgliedschaften und Notifications.
 - Coach sieht nur Daten des eigenen Vereins.
 - Admin sieht alles.
 
-Das Frontend filtert zusaetzlich, aber die serverseitige RLS bleibt entscheidend.
+Das Frontend filtert zusätzlich, aber die serverseitige RLS bleibt entscheidend.
 
 ## Grenzen der aktuellen Version
 

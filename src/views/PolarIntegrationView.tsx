@@ -223,7 +223,7 @@ export function PolarIntegrationView({ data, user, sessionAccessToken, onDataCha
           <small>Synchronisierte Polar-Minuten.</small>
         </article>
         <article className="polar-card">
-          <span>Ø Herzfrequenz</span>
+          <span>Durchschnitt Herzfrequenz</span>
           <strong>{average(polarSessions.map((session) => session.avgHeartRate).filter(Boolean)) || "--"}</strong>
           <small>Aus importierten Einheiten.</small>
         </article>

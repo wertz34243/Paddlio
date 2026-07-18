@@ -45,7 +45,7 @@ Statuswerte:
 Wichtig:
 
 - Keine Client-Secrets in `VITE_*` Variablen speichern.
-- Echte OAuth-Flows muessen über Supabase Edge Functions oder ein separates Backend laufen.
+- Echte OAuth-Flows müssen über Supabase Edge Functions oder ein separates Backend laufen.
 - Frontend zeigt nur Status, Metadaten und importierte Trainings.
 
 Unterstuetzte vorbereitete Provider:
@@ -89,7 +89,7 @@ Admins können eine Checkliste ausführen für:
 - Mobile Ansicht
 - Datenschutz/RLS
 
-Automatische Checks nutzen den geladenen Snapshot. Einige Punkte bleiben bewusst manuell, weil echte Mobile- und RLS-Validierung im Supabase/Vercel-Setup bestaetigt werden muss.
+Automatische Checks nutzen den geladenen Snapshot. Einige Punkte bleiben bewusst manuell, weil echte Mobile- und RLS-Validierung im Supabase/Vercel-Setup bestätigt werden muss.
 
 ## Supabase Tabellen
 
@@ -115,7 +115,7 @@ Grundregeln:
 - ClubAdmin sieht den eigenen Verein.
 - Admin sieht alles.
 
-RLS bleibt Pflicht. UI-Filter sind nur zusaetzliche UX.
+RLS bleibt Pflicht. UI-Filter sind nur zusätzliche UX.
 
 ## Grenzen
 

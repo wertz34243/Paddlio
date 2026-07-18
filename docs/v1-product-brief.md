@@ -10,7 +10,7 @@ Slogan: Train. Analyze. Improve.
 
 Version 1 richtet sich an einzelne Athletinnen und Athleten im Kanuslalom.
 
-Primaere Nutzer:
+Primäre Nutzer:
 
 - ambitionierte Nachwuchsathleten
 - Kader- und Leistungssportler
@@ -29,7 +29,7 @@ Noch nicht Teil von V1:
 2. Wettkämpfe und Ergebnisse werden mit relevanten Kanuslalom-Daten abgebildet.
 3. Entwicklungen werden über Zeit sichtbar: Technik, Zeiten, Strafsekunden, Belastung und Material.
 4. Material wird nicht als Nebenliste behandelt, sondern mit Training und Wettkampf verknüpft.
-5. Die Plattform bleibt fokussiert genug, um als taegliches Arbeitswerkzeug genutzt zu werden.
+5. Die Plattform bleibt fokussiert genug, um als tägliches Arbeitswerkzeug genutzt zu werden.
 
 ## Kernmodule
 
@@ -72,7 +72,7 @@ Wichtige Kennzahlen:
 
 ### Wettkämpfe
 
-Das Wettkampfmodul hilft bei Vorbereitung, Durchfuehrung und Nachbereitung.
+Das Wettkampfmodul hilft bei Vorbereitung, Durchführung und Nachbereitung.
 
 Funktionen:
 
@@ -81,7 +81,7 @@ Funktionen:
 - Qualifikation, Halbfinale und Finale dokumentieren
 - Zeiten, Strafsekunden, Platzierung und Abstand zur Spitze speichern
 - Streckennotizen und Learnings festhalten
-- verwendetes Material verknuepfen
+- verwendetes Material verknüpfen
 
 Wichtige Kennzahlen:
 
@@ -101,7 +101,7 @@ Ansichten:
 
 - Wochen- und Monatsübersicht
 - Entwicklung der Laufzeiten
-- Strafsekunden und Fehlerhaeufigkeit
+- Strafsekunden und Fehlerhäufigkeit
 - Vergleich Training gegen Wettkampf
 - Schwerpunktverteilung im Training
 - Belastungsentwicklung
@@ -117,7 +117,7 @@ Erste V1-Analysen:
 
 ### Material
 
-Das Materialmodul verwaltet Ausruestung und Setups.
+Das Materialmodul verwaltet Ausrüstung und Setups.
 
 Objekte:
 
@@ -126,7 +126,7 @@ Objekte:
 - Spritzdecke
 - Helm
 - Schwimmweste
-- Schuhe und weitere Ausruestung
+- Schuhe und weitere Ausrüstung
 
 Funktionen:
 
@@ -134,7 +134,7 @@ Funktionen:
 - Seriennummern, Modell, Kaufdatum und Zustand speichern
 - Setup-Notizen dokumentieren
 - Wartungen und Reparaturen festhalten
-- Material mit Training oder Wettkampf verknuepfen
+- Material mit Training oder Wettkampf verknüpfen
 
 ## Datenmodell V1
 
@@ -242,11 +242,11 @@ Hauptnavigation:
 
 ## Wichtige User Stories
 
-1. Als Athlet moechte ich eine Trainingseinheit in unter zwei Minuten erfassen, damit mein Trainingstagebuch vollständig bleibt.
-2. Als Athlet moechte ich einzelne Läufe mit Zeit und Strafsekunden speichern, damit ich meine technische Entwicklung sehe.
-3. Als Athlet moechte ich Wettkampfergebnisse nach Runden dokumentieren, damit ich später nachvollziehen kann, wo ich Zeit verloren habe.
-4. Als Athlet moechte ich Material mit Trainings und Wettkämpfen verknuepfen, damit Setup-Änderungen nicht verloren gehen.
-5. Als Athlet moechte ich Trends über Wochen und Monate sehen, damit ich meine Saison besser steuern kann.
+1. Als Athlet möchte ich eine Trainingseinheit in unter zwei Minuten erfassen, damit mein Trainingstagebuch vollständig bleibt.
+2. Als Athlet möchte ich einzelne Läufe mit Zeit und Strafsekunden speichern, damit ich meine technische Entwicklung sehe.
+3. Als Athlet möchte ich Wettkampfergebnisse nach Runden dokumentieren, damit ich später nachvollziehen kann, wo ich Zeit verloren habe.
+4. Als Athlet möchte ich Material mit Trainings und Wettkämpfen verknüpfen, damit Setup-Änderungen nicht verloren gehen.
+5. Als Athlet möchte ich Trends über Wochen und Monate sehen, damit ich meine Saison besser steuern kann.
 
 ## Nichtziele für V1
 
@@ -264,7 +264,7 @@ Hauptnavigation:
 ### Trainer-Modus
 
 - mehrere Athleten verwalten
-- Trainingsplaene zuweisen
+- Trainingspläne zuweisen
 - Feedback geben
 - Fortschritt vergleichen
 - Wettkampfreisen und Gruppenplanung
@@ -273,7 +273,7 @@ Hauptnavigation:
 
 - vereinfachte Ansicht für jüngere oder breitensportliche Nutzer
 - weniger Kennzahlen
-- staerker geführte Eingabe
+- stärker geführte Eingabe
 - Motivation und Fortschrittsmarker
 
 ### Erweiterte Analyse
@@ -299,6 +299,6 @@ Ein erster MVP sollte diese Funktionen enthalten:
 
 - Soll V1 als mobile-first Web-App, Desktop-Web-App oder responsive Plattform starten?
 - Sollen Videos nur verlinkt oder direkt hochgeladen werden?
-- Welche Bootsklassen muessen zu Beginn unterstuetzt werden?
+- Welche Bootsklassen müssen zu Beginn unterstuetzt werden?
 - Wird eine Offline-Funktion für Trainings am Kanal gebraucht?
 - Soll es bereits in V1 Datenexport als CSV oder PDF geben?

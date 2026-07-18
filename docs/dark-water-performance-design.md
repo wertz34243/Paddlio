@@ -52,11 +52,11 @@ Analyse soll motivieren, nicht überfordern.
 - Oben Zeitraum und wichtigste Kennzahlen.
 - Darunter Trainingsumfang, Ergebnisse, Belastung, Ziele.
 - Mobile Charts bleiben einfach.
-- Desktop darf groessere Raster zeigen.
+- Desktop darf größere Raster zeigen.
 
 ## Nächste Design-Schritte
 
 - 4.2 Excel Import: Import-Flows als klare Stepper.
-- 4.3 Paddlio Academy: Ausbildungsplaene als ruhige Lernpfade.
+- 4.3 Paddlio Academy: Ausbildungspläne als ruhige Lernpfade.
 - 4.4 Technik-Check nach DKV Manual: strukturierte Checklisten und Bewertungsraster.
 - 4.5 Trainingsvorlagen aus Ausbildungs- und Technikmanual: Template-Bibliothek mit Filterlogik.
