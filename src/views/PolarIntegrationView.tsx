@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ExternalConnection, ExternalTrainingSession, PaddleMotionData, TrainingSession, User } from "../domain/types";
+import {
+  buildTrainingSessionFromPolar,
+  mergeExternalSessionsByProviderActivity,
+  mergeTrainingSessionsById,
+  suggestPolarTrainingMatches,
+} from "../features/integrations/polarTrainingSync";
 import { calculatePaddlioZones, formatDurationCompact } from "../features/integrations/polarZones";
 import { deviceAdapters } from "../features/integrations/deviceAdapters";
 import {
@@ -25,6 +31,7 @@ export function PolarIntegrationView({ data, user, sessionAccessToken, onDataCha
   const polarLocalConnection = data.externalConnections.find((connection) => connection.provider === "polar");
   const polarSessions = data.externalTrainingSessions.filter((session) => session.provider === "polar");
   const latestSession = polarSessions[0];
+  const latestSessionMatches = latestSession ? suggestPolarTrainingMatches(latestSession, data.plan) : [];
 
   const zoneSummary = useMemo(() => {
     const samples = latestSession?.rawData?.paddlio && typeof latestSession.rawData.paddlio === "object"
@@ -128,7 +135,7 @@ export function PolarIntegrationView({ data, user, sessionAccessToken, onDataCha
       externalConnections: current.externalConnections.some((item) => item.id === connection.id)
         ? current.externalConnections.map((item) => item.id === connection.id ? connection : item)
         : [connection, ...current.externalConnections],
-      externalTrainingSessions: mergeExternalSessions(current.externalTrainingSessions, sessions),
+      externalTrainingSessions: mergeExternalSessionsByProviderActivity(current.externalTrainingSessions, sessions),
     }));
   };
 
@@ -156,22 +163,11 @@ export function PolarIntegrationView({ data, user, sessionAccessToken, onDataCha
       createdAt: String(row.created_at || timestamp),
       updatedAt: String(row.updated_at || timestamp),
     }));
-    const journalSessions: TrainingSession[] = sessions.map((session) => ({
-      id: `training-${session.id}`,
-      athleteId: user.userId,
-      date: session.startedAt.slice(0, 10),
-      type: trainingTypeFromSport(session.sportType),
-      durationMinutes: Math.max(1, Math.round(session.durationSeconds / 60)),
-      rpe: session.trainingLoad > 70 ? 8 : session.avgHeartRate > 155 ? 7 : 5,
-      focus: `Polar ${session.title}`,
-      note: `${Math.round(session.distanceMeters / 100) / 10} km · HF ${session.avgHeartRate || "-"} Ø / ${session.maxHeartRate || "-"} max`,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    }));
+    const journalSessions: TrainingSession[] = sessions.map((session) => buildTrainingSessionFromPolar(session, user.userId, timestamp));
     onDataChange((current) => ({
       ...current,
-      externalTrainingSessions: mergeExternalSessions(current.externalTrainingSessions, sessions),
-      training: mergeTrainingSessions(current.training, journalSessions),
+      externalTrainingSessions: mergeExternalSessionsByProviderActivity(current.externalTrainingSessions, sessions),
+      training: mergeTrainingSessionsById(current.training, journalSessions),
     }));
   };
 
@@ -257,6 +253,22 @@ export function PolarIntegrationView({ data, user, sessionAccessToken, onDataCha
         </div>
       </section>
 
+      {latestSessionMatches.length > 0 ? (
+        <section className="polar-panel">
+          <p className="eyebrow">Trainingsabgleich</p>
+          <h3>Mögliche Paddlio-Zuordnung</h3>
+          <div className="device-adapter-list">
+            {latestSessionMatches.map((match) => (
+              <article key={match.planEntry.id}>
+                <strong>{match.planEntry.title}</strong>
+                <span>{match.score}% · {match.reasons.join(", ")}</span>
+              </article>
+            ))}
+          </div>
+          <p className="polar-message">Unsichere Zuordnungen werden nur vorgeschlagen und nicht automatisch zusammengeführt.</p>
+        </section>
+      ) : null}
+
       <section className="polar-panel">
         <p className="eyebrow">Adapter-Architektur</p>
         <h3>Weitere Geräte vorbereitet</h3>
@@ -271,25 +283,6 @@ export function PolarIntegrationView({ data, user, sessionAccessToken, onDataCha
       </section>
     </section>
   );
-}
-
-function mergeExternalSessions(current: ExternalTrainingSession[], incoming: ExternalTrainingSession[]): ExternalTrainingSession[] {
-  const byKey = new Map<string, ExternalTrainingSession>();
-  current.forEach((session) => byKey.set(`${session.provider}:${session.providerActivityId || session.id}`, session));
-  incoming.forEach((session) => byKey.set(`${session.provider}:${session.providerActivityId || session.id}`, session));
-  return [...byKey.values()].sort((a, b) => b.startedAt.localeCompare(a.startedAt));
-}
-
-function mergeTrainingSessions(current: TrainingSession[], incoming: TrainingSession[]): TrainingSession[] {
-  const existing = new Set(current.map((session) => session.id));
-  return [...incoming.filter((session) => !existing.has(session.id)), ...current];
-}
-
-function trainingTypeFromSport(sport: ExternalTrainingSession["sportType"]): TrainingSession["type"] {
-  if (sport === "strength") return "Kraft";
-  if (sport === "mobility") return "Pause";
-  if (sport === "kayak" || sport === "canoe" || sport === "paddling") return "Ausdauer";
-  return "Technik";
 }
 
 function extractHeartRateSamples(session?: ExternalTrainingSession): number[] {
@@ -307,6 +300,10 @@ function average(values: number[]): number {
 function explainPolarError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   if (message.includes("Missing environment variable")) return "Polar ist serverseitig noch nicht vollständig konfiguriert.";
+  if (message.includes("polar_token_expired")) return "Die Polar-Verbindung ist abgelaufen. Bitte verbinde Polar erneut.";
+  if (message.includes("polar_token_refresh_failed")) return "Die Polar-Verbindung konnte nicht erneuert werden. Bitte verbinde Polar erneut.";
+  if (message.includes("polar_request_failed:401")) return "Polar hat die Verbindung abgelehnt. Bitte verbinde Polar erneut.";
+  if (message.includes("polar_request_failed:429")) return "Polar begrenzt gerade die Anfragen. Bitte versuche es später erneut.";
   if (message.includes("polar_not_connected")) return "Polar ist noch nicht verbunden.";
   if (message.includes("invalid_auth_token")) return "Bitte melde dich erneut an.";
   return "Polar-Aktion konnte nicht abgeschlossen werden. Details stehen in der Konsole.";

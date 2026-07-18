@@ -1,4 +1,4 @@
-import { decryptSecret, normalizePolarExercise, polarFetch, requirePost, requireUser, sendJson } from "../_polar.js";
+import { getValidPolarAccessToken, normalizePolarExercise, polarFetch, requirePost, requireUser, sendJson } from "../_polar.js";
 
 const tryRegisterPolarUser = async (accessToken, userId) => {
   try {
@@ -57,7 +57,7 @@ export default async function handler(req, res) {
     if (jobError) throw jobError;
     jobId = job.id;
 
-    const accessToken = decryptSecret(account.access_token_encrypted);
+    const accessToken = await getValidPolarAccessToken(supabase, account);
     await tryRegisterPolarUser(accessToken, user.id);
 
     const list = await polarFetch("/v3/exercises", accessToken);

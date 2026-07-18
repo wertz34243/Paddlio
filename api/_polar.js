@@ -121,6 +121,56 @@ export const exchangeAuthorizationCode = async (code) => {
   return json;
 };
 
+export const refreshPolarToken = async (refreshToken) => {
+  const body = new URLSearchParams({
+    grant_type: "refresh_token",
+    refresh_token: refreshToken,
+  });
+  const response = await fetch(POLAR_TOKEN_URL, {
+    method: "POST",
+    headers: {
+      Authorization: polarBasicAuth(),
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/json;charset=UTF-8",
+    },
+    body,
+  });
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(`polar_token_refresh_failed:${json.error || response.status}`);
+  }
+  return json;
+};
+
+export const getValidPolarAccessToken = async (supabase, account) => {
+  const expiresAt = account?.token_expires_at ? new Date(account.token_expires_at).getTime() : 0;
+  const expiresSoon = expiresAt > 0 && expiresAt < Date.now() + 60_000;
+  if (!expiresSoon) return decryptSecret(account.access_token_encrypted);
+
+  const refreshToken = decryptSecret(account.refresh_token_encrypted);
+  if (!refreshToken) {
+    await supabase.from("polar_accounts").update({
+      status: "expired",
+      updated_at: new Date().toISOString(),
+    }).eq("id", account.id);
+    throw new Error("polar_token_expired");
+  }
+
+  const token = await refreshPolarToken(refreshToken);
+  const now = new Date().toISOString();
+  const expiresAtIso = token.expires_in ? new Date(Date.now() + Number(token.expires_in) * 1000).toISOString() : null;
+  await supabase.from("polar_accounts").update({
+    access_token_encrypted: encryptSecret(token.access_token),
+    refresh_token_encrypted: token.refresh_token ? encryptSecret(token.refresh_token) : account.refresh_token_encrypted,
+    token_expires_at: expiresAtIso,
+    scope: token.scope || account.scope,
+    status: "connected",
+    updated_at: now,
+  }).eq("id", account.id);
+
+  return token.access_token;
+};
+
 export const polarFetch = async (path, accessToken, init = {}) => {
   const response = await fetch(`${POLAR_API_URL}${path}`, {
     ...init,
