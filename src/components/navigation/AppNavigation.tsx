@@ -35,6 +35,7 @@ export function DesktopSideNavigation({
   appVersion = APP_VERSION,
   activePage,
   user,
+  items = mainNavItems,
   onNavigate,
 }: {
   appName: string;
@@ -42,6 +43,7 @@ export function DesktopSideNavigation({
   appVersion?: string;
   activePage: PageId;
   user: User;
+  items?: MainNavItem[];
   onNavigate: (page: PageId) => void;
 }) {
   return (
@@ -61,7 +63,7 @@ export function DesktopSideNavigation({
         </div>
       </div>
       <nav className="desktop-nav-list" aria-label="Hauptnavigation Desktop">
-        {mainNavItems.map((item) => (
+        {items.map((item) => (
           <button
             className={activePage === item.id ? "desktop-nav-item active" : "desktop-nav-item"}
             key={item.id}
@@ -83,10 +85,12 @@ export function DesktopSideNavigation({
 export function BottomNavigation({
   activePage,
   visible,
+  items = mainNavItems,
   onNavigate,
 }: {
   activePage: PageId;
   visible: boolean;
+  items?: MainNavItem[];
   onNavigate: (page: PageId) => void;
 }) {
   return (
@@ -95,7 +99,7 @@ export function BottomNavigation({
       aria-label="Hauptnavigation"
       data-testid="bottom-navigation"
     >
-      {mainNavItems.map((item) => (
+      {items.map((item) => (
         <button
           className={activePage === item.id ? "nav-item active" : "nav-item"}
           key={item.id}

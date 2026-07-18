@@ -2,13 +2,16 @@
 import { APP_NAME, APP_SLOGAN, APP_VERSION } from "./brand";
 import { LoadingState } from "./components/AppSupport";
 import { Icon, type IconName } from "./components/Icon";
-import { BottomNavigation, DesktopSideNavigation } from "./components/navigation/AppNavigation";
+import { BottomNavigation, DesktopSideNavigation, mainNavItems } from "./components/navigation/AppNavigation";
 import { SegmentNav, type SegmentItem } from "./components/SegmentNav";
 import { createId } from "./data/storage";
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
+import { canUseCoachArea } from "./domain/accessControl";
 import { getActiveUser, getDisplayName, getInitials } from "./domain/profile";
 import { formatLocalDateOnly, getWeekdayFromDate, isDoneStatus, parseLocalDateOnly } from "./domain/trainingPlan";
 import { useAppChromeVisibility } from "./hooks/useAutoHideOnScroll";
+import { useResponsiveCapabilities } from "./hooks/useResponsiveCapabilities";
+import { isFeatureAvailable, pageFeatureMap, type FeatureId } from "./lib/deviceCapabilities";
 import { updateCloudProfile } from "./services/profileService";
 import { createCloudNotification, markAllCloudNotificationsRead, markCloudNotificationRead } from "./services/notificationService";
 import { upsertCloudJournalEntry } from "./services/journalService";
@@ -169,7 +172,45 @@ const pageTitles: Record<PageId, string> = {
 
 const getTimestamp = (): string => new Date().toISOString();
 
-const canUseCoachArea = (role: string): boolean => role === "coach" || role === "teamAdmin" || role === "clubAdmin" || role === "admin";
+const trainingFeatureBySegment: Record<TrainingSegment, FeatureId> = {
+  overview: "trainingOverview",
+  calendar: "trainingCalendar",
+  plan: "trainingPlan",
+  sessions: "trainingSessions",
+  journal: "trainingJournal",
+};
+
+const moreFeatureBySegment: Record<MoreSegment, FeatureId> = {
+  profile: "settings",
+  academy: "academyLearning",
+  club: "clubAdministration",
+  competitions: "competitions",
+  equipment: "equipment",
+  goals: "goals",
+  records: "records",
+  notifications: "notifications",
+  integrations: "integrations",
+  feedback: "feedback",
+  betaGuide: "feedback",
+  limitations: "feedback",
+  beta: "beta",
+  betaTesters: "beta",
+  coach: "coachArea",
+  settings: "settings",
+};
+
+const compactPhoneMoreSegments = new Set<MoreSegment>([
+  "academy",
+  "integrations",
+  "profile",
+  "settings",
+  "feedback",
+  "goals",
+  "equipment",
+  "notifications",
+  "coach",
+  "beta",
+]);
 
 function AppContent() {
   const { session, data, setData, profile: cloudProfile, loading, cloudStatus, cloudMessage, syncCount, pendingSyncCount, lastSyncAt, signIn, signUp, signOut, resetPassword } = useAuth();
@@ -181,6 +222,7 @@ function AppContent() {
   const [moreSegment, setMoreSegment] = useState<MoreSegment>("profile");
   const [moreHubOpen, setMoreHubOpen] = useState(true);
   const { topChromeVisible, bottomNavVisible } = useAppChromeVisibility({ threshold: 8, topOffset: 8, idleMs: 1300 });
+  const responsiveCapabilities = useResponsiveCapabilities();
   const [newTrainingSignal, setNewTrainingSignal] = useState(0);
   const [newCompetitionSignal, setNewCompetitionSignal] = useState(0);
   const [journalSignal, setJournalSignal] = useState(0);
@@ -201,7 +243,10 @@ function AppContent() {
   const activePlanEntries = data.plan.filter((entry) => !entry.deletedAt);
   const activeData = { ...data, plan: activePlanEntries };
   const activeNavPage = navPageByPage[activePage] ?? activePage;
-  const moreSegments = canUseCoachArea(activeUser.role)
+  const visibleMainNavItems = mainNavItems
+    .filter((item) => isFeatureAvailable(pageFeatureMap[item.id] ?? "today", activeUser.role, responsiveCapabilities.deviceClass))
+    .slice(0, 5);
+  const baseRoleMoreSegments = canUseCoachArea(activeUser.role)
     ? [
         ...baseMoreSegments.filter((segment) => segment.id !== "settings"),
         ...(activeUser.role === "admin" ? [{ id: "beta" as const, label: "Beta-Check" }, { id: "betaTesters" as const, label: "Beta-Tester" }] : []),
@@ -209,6 +254,17 @@ function AppContent() {
         baseMoreSegments.find((segment) => segment.id === "settings")!,
       ]
     : baseMoreSegments;
+  const moreSegments = baseRoleMoreSegments.filter((segment) => {
+    const feature = moreFeatureBySegment[segment.id];
+    if (!isFeatureAvailable(feature, activeUser.role, responsiveCapabilities.deviceClass)) {
+      return false;
+    }
+
+    return responsiveCapabilities.deviceClass !== "phone" || compactPhoneMoreSegments.has(segment.id);
+  });
+  const visibleTrainingSegments = trainingSegments.filter((segment) =>
+    isFeatureAvailable(trainingFeatureBySegment[segment.id], activeUser.role, responsiveCapabilities.deviceClass),
+  );
   const unreadNotificationCount = data.notifications.filter((notification) => !notification.read).length;
   const updateData = (updater: (current: PaddleMotionData) => PaddleMotionData) => {
     setData((current) => (current ? updater(current) : current));
@@ -736,7 +792,7 @@ function AppContent() {
   };
 
   const moveTrainingSegment = (direction: 1 | -1) => {
-    const order: TrainingSegment[] = ["overview", "calendar", "plan", "sessions", "journal"];
+    const order = visibleTrainingSegments.map((segment) => segment.id);
     const currentIndex = order.indexOf(trainingSegment);
     const nextIndex = Math.min(order.length - 1, Math.max(0, currentIndex + direction));
     if (nextIndex !== currentIndex) {
@@ -767,7 +823,7 @@ function AppContent() {
       <div className="training-segment-switcher" onTouchStart={handleTrainingTouchStart} onTouchEnd={handleTrainingTouchEnd}>
         <SegmentNav
           label="Training Kategorien"
-          items={trainingSegments}
+          items={visibleTrainingSegments}
           activeId={segment}
           onChange={(nextSegment) => {
             setTrainingSegment(nextSegment);
@@ -1261,7 +1317,7 @@ function AppContent() {
       <a className="skip-link" href="#main">
         Zum Inhalt springen
       </a>
-      <DesktopSideNavigation appName={APP_NAME} activePage={activeNavPage} user={activeUser} onNavigate={openMainNavPage} />
+      <DesktopSideNavigation appName={APP_NAME} activePage={activeNavPage} user={activeUser} items={visibleMainNavItems} onNavigate={openMainNavPage} />
       {!isHome ? (
         <header className={`app-header app-header-compact ${topChromeVisible ? "" : "is-hidden"}`} data-testid="app-header">
           <div className="brand-lockup">
@@ -1277,7 +1333,7 @@ function AppContent() {
 
       <main className="page-content" id="main"><Suspense fallback={<LoadingState />}>{renderPage()}</Suspense></main>
 
-      <BottomNavigation activePage={activeNavPage} visible={bottomNavVisible} onNavigate={openMainNavPage} />
+      <BottomNavigation activePage={activeNavPage} visible={bottomNavVisible} items={visibleMainNavItems} onNavigate={openMainNavPage} />
     </div>
   );
 }
