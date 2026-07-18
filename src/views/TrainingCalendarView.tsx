@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   addCalendarDays,
   formatLocalDateOnly,
@@ -12,6 +12,7 @@ import {
   weekdays,
 } from "../domain/trainingPlan";
 import type { PlanEntry, PlanStatus, TrainingJournalEntry } from "../domain/types";
+import type { DeviceClass } from "../lib/deviceCapabilities";
 
 type CalendarMode = "month" | "week" | "day" | "periodization";
 
@@ -113,6 +114,7 @@ type TrainingCalendarViewProps = {
   onOpenPlan: () => void;
   onOpenJournal: () => void;
   onStatusChange: (id: string, status: PlanStatus) => void;
+  deviceClass?: DeviceClass;
 };
 
 const monthLabel = (dateKey: string): string =>
@@ -229,10 +231,16 @@ export function TrainingCalendarView({
   onOpenPlan,
   onOpenJournal,
   onStatusChange,
+  deviceClass = "desktop",
 }: TrainingCalendarViewProps) {
   const today = getTodayKey();
   const [selectedDate, setSelectedDate] = useState(today);
-  const [mode, setMode] = useState<CalendarMode>("month");
+  const [mode, setMode] = useState<CalendarMode>(deviceClass === "phone" ? "day" : "month");
+  const isPhone = deviceClass === "phone";
+  const availableModes = useMemo<CalendarMode[]>(
+    () => (isPhone ? ["day", "week"] : ["month", "week", "day", "periodization"]),
+    [isPhone],
+  );
 
   const sortedEntries = useMemo(() => sortPlanEntries(entries), [entries]);
   const journalByPlan = useMemo(
@@ -262,6 +270,25 @@ export function TrainingCalendarView({
   };
 
   const moveDay = (direction: -1 | 1) => setSelectedDate(addCalendarDays(selectedDate, direction));
+  const moveWeek = (direction: -1 | 1) => setSelectedDate(addCalendarDays(selectedDate, direction * 7));
+  const moveVisibleRange = (direction: -1 | 1) => {
+    if (mode === "day") {
+      moveDay(direction);
+      return;
+    }
+    if (mode === "week") {
+      moveWeek(direction);
+      return;
+    }
+    moveMonth(direction);
+  };
+  const rangeLabel = mode === "day" ? "Tag" : mode === "week" ? "Woche" : "Monat";
+
+  useEffect(() => {
+    if (!availableModes.includes(mode)) {
+      setMode(availableModes[0] ?? "day");
+    }
+  }, [availableModes, mode]);
 
   return (
     <div className="stack training-calendar-page">
@@ -274,7 +301,7 @@ export function TrainingCalendarView({
           </p>
         </div>
         <div className="calendar-mode-control" role="tablist" aria-label="Kalenderansicht">
-          {(["month", "week", "day", "periodization"] as CalendarMode[]).map((item) => (
+          {availableModes.map((item) => (
             <button
               key={item}
               type="button"
@@ -290,13 +317,13 @@ export function TrainingCalendarView({
       </section>
 
       <section className="section-block training-calendar-controls">
-        <button type="button" className="ghost-button" onClick={() => moveMonth(-1)} aria-label="Vorherigen Monat anzeigen">
+        <button type="button" className="ghost-button" onClick={() => moveVisibleRange(-1)} aria-label={`Vorherige ${rangeLabel} anzeigen`}>
           Zurück
         </button>
         <button type="button" className="secondary-button" onClick={() => setSelectedDate(today)} aria-label="Heute im Kalender anzeigen">
           Heute
         </button>
-        <button type="button" className="ghost-button" onClick={() => moveMonth(1)} aria-label="Nächsten Monat anzeigen">
+        <button type="button" className="ghost-button" onClick={() => moveVisibleRange(1)} aria-label={`Nächste ${rangeLabel} anzeigen`}>
           Weiter
         </button>
       </section>

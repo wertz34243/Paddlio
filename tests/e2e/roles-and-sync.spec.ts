@@ -15,7 +15,17 @@ async function login(page: Page, email: string, password: string) {
   await page.getByLabel("E-Mail").fill(email);
   await page.getByLabel("Passwort").fill(password);
   await page.getByRole("button", { name: "Einloggen" }).click();
-  await expect(page.getByTestId("bottom-navigation")).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("heading", { name: "Heute" })).toBeVisible({ timeout: 20_000 });
+}
+
+async function openMore(page: Page) {
+  const mobileButton = page.getByRole("button", { name: "Mehr-Bereich öffnen" });
+  if (await mobileButton.isVisible().catch(() => false)) {
+    await mobileButton.click();
+    return;
+  }
+
+  await page.locator(".desktop-nav-item").filter({ hasText: "Mehr" }).click();
 }
 
 test.describe("role isolation", () => {
@@ -25,7 +35,7 @@ test.describe("role isolation", () => {
     const context = await browser.newContext();
     const page = await context.newPage();
     await login(page, athleteEmail!, athletePassword!);
-    await page.getByRole("button", { name: "Mehr" }).click();
+    await openMore(page);
 
     await expect(page.getByText("Admin Hub")).not.toBeVisible();
     await expect(page.getByText("Coach Hub")).not.toBeVisible();
@@ -34,7 +44,7 @@ test.describe("role isolation", () => {
 
   test("coach can use coach hub but not admin hub", async ({ page }) => {
     await login(page, coachEmail!, coachPassword!);
-    await page.getByRole("button", { name: "Mehr" }).click();
+    await openMore(page);
 
     await expect(page.getByText("Coach Hub")).toBeVisible();
     await expect(page.getByText("Admin Hub")).not.toBeVisible();
@@ -53,8 +63,8 @@ test.describe("two-device training and feedback flow", () => {
     await login(coachPage, coachEmail!, coachPassword!);
     await login(athletePage, athleteEmail!, athletePassword!);
 
-    await expect(coachPage.getByTestId("bottom-navigation")).toBeVisible();
-    await expect(athletePage.getByTestId("bottom-navigation")).toBeVisible();
+    await expect(coachPage.getByRole("heading", { name: "Heute" })).toBeVisible();
+    await expect(athletePage.getByRole("heading", { name: "Heute" })).toBeVisible();
 
     await coachContext.close();
     await athleteContext.close();
@@ -66,7 +76,7 @@ test.describe("admin access", () => {
 
   test("admin sees admin hub", async ({ page }) => {
     await login(page, adminEmail!, adminPassword!);
-    await page.getByRole("button", { name: "Mehr" }).click();
+    await openMore(page);
     await expect(page.getByText("Admin Hub")).toBeVisible();
   });
 });

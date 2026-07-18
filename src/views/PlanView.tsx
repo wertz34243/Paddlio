@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   canAccessPlanEntry,
   canEditTrainingTemplate,
@@ -51,6 +51,7 @@ import type {
   TrainingTemplateVisibility,
   User,
 } from "../domain/types";
+import type { DeviceClass } from "../lib/deviceCapabilities";
 
 type PlanDraft = Omit<PlanEntry, "athleteId" | "createdAt" | "updatedAt" | "createdByUserId">;
 
@@ -66,6 +67,7 @@ type PlanViewProps = {
   onOpenOverview: () => void;
   onOpenSessions: () => void;
   onOpenJournal: () => void;
+  deviceClass?: DeviceClass;
 };
 
 type CalendarView = "day" | "week" | "month" | "list";
@@ -215,6 +217,7 @@ export function PlanView({
   onOpenOverview,
   onOpenSessions,
   onOpenJournal,
+  deviceClass = "desktop",
 }: PlanViewProps) {
   const [draft, setDraft] = useState<PlanDraft | null>(null);
   const [templateDraft, setTemplateDraft] = useState<TrainingTemplate | null>(null);
@@ -247,7 +250,29 @@ export function PlanView({
   const [formMessage, setFormMessage] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
   const isCoach = canUseCoachArea(user.role);
-  const workflowTabs = isCoach ? coachWorkflowTabs : athleteWorkflowTabs;
+  const isPhone = deviceClass === "phone";
+  const workflowTabs = useMemo(() => {
+    const baseTabs = isCoach ? coachWorkflowTabs : athleteWorkflowTabs;
+
+    if (!isPhone) {
+      return baseTabs;
+    }
+
+    const phoneTabs: WorkflowTab[] = isCoach ? ["today", "week", "feedback"] : ["today", "upcoming", "done", "feedback"];
+    return baseTabs.filter((tab) => phoneTabs.includes(tab.id));
+  }, [isPhone, isCoach]);
+  const calendarViews = useMemo<CalendarView[]>(
+    () => (isPhone ? ["day", "list"] : ["day", "week", "month", "list"]),
+    [isPhone],
+  );
+
+  useEffect(() => {
+    if (!workflowTabs.some((tab) => tab.id === workflowTab)) {
+      const fallbackTab = workflowTabs[0] ?? { id: "today", label: "Heute", calendarView: "day" };
+      setWorkflowTab(fallbackTab.id);
+      setCalendarView(fallbackTab.calendarView ?? "day");
+    }
+  }, [workflowTab, workflowTabs]);
 
   const visibleAthletes = useMemo(() => getAthletesForCurrentUser(data, user), [data, user]);
   const visibleGroups = useMemo(() => getGroupsForCurrentUser(data, user), [data, user]);
@@ -400,6 +425,10 @@ export function PlanView({
 
   const switchWorkflowTab = (tab: WorkflowTabConfig) => {
     setWorkflowTab(tab.id);
+    if (isPhone && tab.id === "week") {
+      setCalendarView("list");
+      return;
+    }
     if (tab.calendarView) {
       setCalendarView(tab.calendarView);
     }
@@ -916,7 +945,7 @@ export function PlanView({
         </div>
         {copyMessage ? <p className="auth-message">{copyMessage} <button type="button" onClick={() => setCalendarView("list")}>Trainings anzeigen</button></p> : null}
         <div className="calendar-view-tabs">
-          {(["day", "week", "month", "list"] as CalendarView[]).map((view) => (
+          {calendarViews.map((view) => (
             <button className={calendarView === view ? "active" : ""} key={view} type="button" onClick={() => setCalendarView(view)}>
               {view === "day" ? "Tag" : view === "week" ? "Woche" : view === "month" ? "Monat" : "Liste"}
             </button>
@@ -1323,7 +1352,20 @@ export function PlanView({
         </section>
       ) : null}
 
-      {workflowTab === "week" && calendarView === "week" ? (
+      {isPhone && workflowTab === "week" ? (
+        <section className="section-block">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Diese Woche</p>
+              <h3>{plannedThisWeek.length > 0 ? `${plannedThisWeek.length} Einheiten` : "Keine Einheit geplant"}</h3>
+            </div>
+            <button className="primary-button" type="button" onClick={startCreate}>Training planen</button>
+          </div>
+          <div className="calendar-list">
+            {plannedThisWeek.length > 0 ? plannedThisWeek.map(renderEntryCard) : <p className="empty-state">Für diese Woche ist noch kein Training geplant.</p>}
+          </div>
+        </section>
+      ) : workflowTab === "week" && calendarView === "week" ? (
         <section className="calendar-week-grid">{weekDates.map((date, index) => <article className="calendar-day-column" key={date}><div className="plan-day-heading"><strong>{weekdays[index]}</strong><span>{parseLocalDateOnly(date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}</span></div>{visibleEntries.filter((entry) => entry.date === date).map(renderEntryCard)}{visibleEntries.filter((entry) => entry.date === date).length === 0 ? <p className="empty-state compact">Noch kein Training geplant.</p> : null}</article>)}</section>
       ) : workflowTab === "today" && calendarView === "day" ? (
         <section className="calendar-list">{visibleEntries.filter((entry) => entry.date === selectedDate).map(renderEntryCard)}{visibleEntries.filter((entry) => entry.date === selectedDate).length === 0 ? <p className="empty-state">Für diesen Tag ist noch kein Training geplant.</p> : null}</section>

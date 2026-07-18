@@ -769,6 +769,7 @@ function AppContent() {
               setNewTrainingSignal((value) => value + 1);
             }}
             onOpenJournal={() => setTrainingSegment("journal")}
+            deviceClass={currentDeviceClass}
           />
         );
       case "journal":
@@ -793,6 +794,7 @@ function AppContent() {
             onOpenPlan={() => setTrainingSegment("plan")}
             onOpenJournal={() => setTrainingSegment("journal")}
             onStatusChange={updatePlanEntryStatus}
+            deviceClass={currentDeviceClass}
           />
         );
       case "overview":
