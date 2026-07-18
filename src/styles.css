@@ -6304,6 +6304,50 @@ body {
   }
 }
 
+.device-mode-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: start;
+  border-color: rgba(75, 216, 255, 0.18);
+  background:
+    linear-gradient(135deg, rgba(75, 216, 255, 0.1), rgba(141, 244, 90, 0.06)),
+    rgba(16, 24, 39, 0.92);
+}
+
+.device-mode-panel h3 {
+  margin: 0 0 8px;
+}
+
+.device-mode-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.device-quick-summary .metric-grid {
+  margin-top: 12px;
+}
+
+.app-shell-phone .smart-grid,
+.app-shell-phone .smart-list {
+  grid-template-columns: 1fr;
+}
+
+.app-shell-phone .device-mode-panel {
+  grid-template-columns: 1fr;
+}
+
+.app-shell-phone .device-mode-panel .status-pill {
+  justify-self: start;
+}
+
+.app-shell-tablet .category-shell.device-tablet .segment-content,
+.app-shell-desktop .category-shell.device-desktop .segment-content {
+  min-width: 0;
+}
+
 /* Final app chrome visibility rules.
    Keep these at the end so older broad nav rules cannot override hidden states. */
 .app-header,

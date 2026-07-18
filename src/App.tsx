@@ -11,7 +11,7 @@ import { getActiveUser, getDisplayName, getInitials } from "./domain/profile";
 import { formatLocalDateOnly, getWeekdayFromDate, isDoneStatus, parseLocalDateOnly } from "./domain/trainingPlan";
 import { useAppChromeVisibility } from "./hooks/useAutoHideOnScroll";
 import { useResponsiveCapabilities } from "./hooks/useResponsiveCapabilities";
-import { isFeatureAvailable, pageFeatureMap, type FeatureId } from "./lib/deviceCapabilities";
+import { getFeatureMode, isFeatureAvailable, pageFeatureMap, type FeatureId, type FeatureMode } from "./lib/deviceCapabilities";
 import { updateCloudProfile } from "./services/profileService";
 import { createCloudNotification, markAllCloudNotificationsRead, markCloudNotificationRead } from "./services/notificationService";
 import { upsertCloudJournalEntry } from "./services/journalService";
@@ -72,6 +72,7 @@ type MoreSegment = "profile" | "academy" | "club" | "competitions" | "equipment"
 type MoreSegmentMeta = SegmentItem<MoreSegment> & { description: string; icon: IconName };
 type MoreGroupKind = "account" | "sport" | "team" | "beta" | "admin" | "system";
 type SmartMoreItem = MoreSegmentMeta & { kind: MoreGroupKind; priority?: boolean; badge?: string };
+type DeviceLimitedAction = { label: string; onClick: () => void };
 
 const roleLabelMap: Record<string, string> = {
   athlete: "Sportler",
@@ -212,6 +213,42 @@ const compactPhoneMoreSegments = new Set<MoreSegment>([
   "beta",
 ]);
 
+function DeviceLimitedPanel({
+  eyebrow = "Kompakte Ansicht",
+  title,
+  description,
+  mode,
+  actions = [],
+}: {
+  eyebrow?: string;
+  title: string;
+  description: string;
+  mode: FeatureMode;
+  actions?: DeviceLimitedAction[];
+}) {
+  const modeLabel = mode === "readOnly" ? "Nur lesen" : mode === "limited" ? "Eingeschränkt" : "Vereinfacht";
+
+  return (
+    <section className="section-block device-mode-panel" aria-live="polite">
+      <div>
+        <p className="eyebrow">{eyebrow}</p>
+        <h3>{title}</h3>
+        <p className="card-note">{description}</p>
+      </div>
+      <span className="status-pill">{modeLabel}</span>
+      {actions.length > 0 ? (
+        <div className="device-mode-actions">
+          {actions.map((action) => (
+            <button className="secondary-button" type="button" key={action.label} onClick={action.onClick}>
+              {action.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 function AppContent() {
   const { session, data, setData, profile: cloudProfile, loading, cloudStatus, cloudMessage, syncCount, pendingSyncCount, lastSyncAt, signIn, signUp, signOut, resetPassword } = useAuth();
   const [activePage, setActivePage] = useState<PageId>("dashboard");
@@ -223,6 +260,7 @@ function AppContent() {
   const [moreHubOpen, setMoreHubOpen] = useState(true);
   const { topChromeVisible, bottomNavVisible } = useAppChromeVisibility({ threshold: 8, topOffset: 8, idleMs: 1300 });
   const responsiveCapabilities = useResponsiveCapabilities();
+  const currentDeviceClass = responsiveCapabilities.deviceClass;
   const [newTrainingSignal, setNewTrainingSignal] = useState(0);
   const [newCompetitionSignal, setNewCompetitionSignal] = useState(0);
   const [journalSignal, setJournalSignal] = useState(0);
@@ -240,6 +278,7 @@ function AppContent() {
   }
 
   const activeUser = getActiveUser(data.users, data.activeUserId);
+  const getCurrentFeatureMode = (feature: FeatureId): FeatureMode => getFeatureMode(feature, activeUser.role, currentDeviceClass);
   const activePlanEntries = data.plan.filter((entry) => !entry.deletedAt);
   const activeData = { ...data, plan: activePlanEntries };
   const activeNavPage = navPageByPage[activePage] ?? activePage;
@@ -818,22 +857,38 @@ function AppContent() {
     moveTrainingSegment(dx < 0 ? 1 : -1);
   };
 
-  const renderTrainingArea = (segment: TrainingSegment = trainingSegment) => (
-    <div className="category-shell more-category-shell">
-      <div className="training-segment-switcher" onTouchStart={handleTrainingTouchStart} onTouchEnd={handleTrainingTouchEnd}>
-        <SegmentNav
-          label="Training Kategorien"
-          items={visibleTrainingSegments}
-          activeId={segment}
-          onChange={(nextSegment) => {
-            setTrainingSegment(nextSegment);
-            setActivePage("training");
-          }}
-        />
+  const renderTrainingArea = (segment: TrainingSegment = trainingSegment) => {
+    const featureMode = getCurrentFeatureMode(trainingFeatureBySegment[segment]);
+    const showCompactTrainingNotice = currentDeviceClass === "phone" && (featureMode === "simplified" || featureMode === "limited");
+
+    return (
+      <div className={`category-shell more-category-shell device-${currentDeviceClass}`}>
+        <div className="training-segment-switcher" onTouchStart={handleTrainingTouchStart} onTouchEnd={handleTrainingTouchEnd}>
+          <SegmentNav
+            label="Training Kategorien"
+            items={visibleTrainingSegments}
+            activeId={segment}
+            onChange={(nextSegment) => {
+              setTrainingSegment(nextSegment);
+              setActivePage("training");
+            }}
+          />
+        </div>
+        {showCompactTrainingNotice ? (
+          <DeviceLimitedPanel
+            title={segment === "calendar" ? "Kalender kompakt" : "Trainingsplanung kompakt"}
+            description={
+              segment === "calendar"
+                ? "Auf dem Smartphone sind Tag, Liste und schnelle Statuswechsel im Fokus. Wochenmatrix und Detailarbeit sind auf Tablet und Desktop übersichtlicher."
+                : "Auf dem Smartphone bleiben schnelle Planung, Status und Feedback erreichbar. Umfangreiche Wochenplanung nutzt du besser auf Tablet oder Computer."
+            }
+            mode={featureMode}
+          />
+        ) : null}
+        <div className="segment-content">{renderTrainingContent(segment)}</div>
       </div>
-      <div className="segment-content">{renderTrainingContent(segment)}</div>
-    </div>
-  );
+    );
+  };
 
   const renderCompetitionContent = (segment: CompetitionSegment) => {
     switch (segment) {
@@ -972,6 +1027,26 @@ function AppContent() {
           />
         );
       case "club":
+        if (currentDeviceClass === "phone" && getCurrentFeatureMode("clubAdministration") !== "full") {
+          return (
+            <DeviceLimitedPanel
+              title="Verein kompakt"
+              description="Auf dem Smartphone siehst du die wichtigsten Vereins- und Team-Einstiege. Vollständige Mitglieder-, Rollen- und Verwaltungsarbeit bleibt Tablet und Desktop vorbehalten."
+              mode={getCurrentFeatureMode("clubAdministration")}
+              actions={[
+                { label: "Team öffnen", onClick: () => setActivePage("communication") },
+                {
+                  label: "Profil öffnen",
+                  onClick: () => {
+                    setMoreSegment("profile");
+                    setMoreHubOpen(false);
+                    setActivePage("more");
+                  },
+                },
+              ]}
+            />
+          );
+        }
         return <ClubPortalView data={activeData} user={activeUser} onDataChange={updateData} />;
       case "competitions":
         return renderCompetitionArea();
@@ -991,6 +1066,26 @@ function AppContent() {
       case "notifications":
         return <NotificationsView notifications={data.notifications} canRevealPrivateData={canSeeSystemPrivateData(activeUser.role)} onMarkRead={markNotificationRead} onMarkAllRead={markAllNotificationsRead} />;
       case "integrations":
+        if (currentDeviceClass === "phone" && getCurrentFeatureMode("integrations") !== "full") {
+          return (
+            <DeviceLimitedPanel
+              title="Import & Export kompakt"
+              description="Auf dem Smartphone bleiben Sync-Status und schnelle Integrationshinweise erreichbar. Große Excel-Importe, Spaltenmapping und Massenexporte sind auf Tablet oder Computer sicherer bedienbar."
+              mode={getCurrentFeatureMode("integrations")}
+              actions={[
+                {
+                  label: "Sync-Status öffnen",
+                  onClick: () => {
+                    setMoreSegment("settings");
+                    setMoreHubOpen(false);
+                    setActivePage("more");
+                  },
+                },
+                { label: "Feedback senden", onClick: () => openMoreSegment("feedback") },
+              ]}
+            />
+          );
+        }
         return <ImportExportView data={activeData} user={activeUser} sessionAccessToken={session?.access_token} onDataChange={updateData} />;
       case "feedback":
         return <BetaReleaseView data={activeData} user={activeUser} mode="feedback" onDataChange={updateData} />;
@@ -1008,6 +1103,55 @@ function AppContent() {
       case "betaTesters":
         return <BetaReleaseView data={activeData} user={activeUser} mode="testers" onDataChange={updateData} />;
       case "coach":
+        if (currentDeviceClass === "phone" && getCurrentFeatureMode("coachArea") === "simplified") {
+          return (
+            <div className="stack">
+              <DeviceLimitedPanel
+                title={activeUser.role === "admin" ? "Admin kompakt" : "Coach kompakt"}
+                description={
+                  activeUser.role === "admin"
+                    ? "Auf dem Smartphone sind Status, Team und schnelle Prüfungen verfügbar. Vollständige Adminarbeit bleibt Tablet und Desktop vorbehalten."
+                    : "Auf dem Smartphone sind schnelle Traineraktionen verfügbar. Gruppenverwaltung, Rollen und größere Planungsarbeit nutzt du besser auf Tablet oder Computer."
+                }
+                mode={getCurrentFeatureMode("coachArea")}
+                actions={[
+                  {
+                    label: "Training planen",
+                    onClick: () => {
+                      setTrainingSegment("plan");
+                      setActivePage("training");
+                    },
+                  },
+                  { label: "Team öffnen", onClick: () => setActivePage("communication") },
+                  {
+                    label: "Analyse öffnen",
+                    onClick: () => {
+                      setAnalysisSegment("overview");
+                      setActivePage("analysis");
+                    },
+                  },
+                ]}
+              />
+              <section className="section-block device-quick-summary">
+                <p className="eyebrow">Schnellstatus</p>
+                <div className="metric-grid">
+                  <article className="metric-card">
+                    <strong>{activeData.coachAthletes.length}</strong>
+                    <span>Sportler</span>
+                  </article>
+                  <article className="metric-card">
+                    <strong>{activeData.coachGroups.length}</strong>
+                    <span>Gruppen</span>
+                  </article>
+                  <article className="metric-card">
+                    <strong>{activeData.trainingFeedback.length}</strong>
+                    <span>Rückmeldungen</span>
+                  </article>
+                </div>
+              </section>
+            </div>
+          );
+        }
         return <CoachView data={activeData} user={activeUser} onDataChange={updateData} />;
       case "settings":
         return (
@@ -1313,7 +1457,7 @@ function AppContent() {
   const isHome = activePage === "dashboard";
 
   return (
-    <div className={`${isHome ? "app-shell app-shell-home" : "app-shell"} ${topChromeVisible ? "scroll-chrome-visible" : "scroll-chrome-hidden"}`}>
+    <div className={`${isHome ? "app-shell app-shell-home" : "app-shell"} app-shell-${currentDeviceClass} ${topChromeVisible ? "scroll-chrome-visible" : "scroll-chrome-hidden"}`}>
       <a className="skip-link" href="#main">
         Zum Inhalt springen
       </a>
