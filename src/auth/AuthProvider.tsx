@@ -493,86 +493,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         cloudJournal,
         cloudTemplates,
         cloudGoals,
-        cloudPersonalBests,
-        cloudResultImports,
-        cloudExternalConnections,
-        cloudExternalTrainingSessions,
-        cloudBetaReadinessChecks,
-        cloudBetaFeedback,
-        cloudBetaTesters,
         cloudCompetitions,
         cloudMaterials,
         cloudNotifications,
         cloudSmartCoach,
-        cloudClubMaterial,
-        cloudClubBoats,
-        cloudClubEvents,
-        cloudClubDocuments,
         cloudClubMessages,
-        cloudClubSettings,
         cloudDirectMessages,
         cloudGroupMessages,
-        cloudClubPosts,
         cloudTasks,
         cloudTaskAssignments,
         cloudTrainingAttendance,
-        cloudFileAttachments,
-        cloudAcademyCategories,
-        cloudAcademyCourses,
-        cloudAcademyLessons,
-        cloudAcademyContentBlocks,
-        cloudAcademyLearningPaths,
-        cloudAcademyLearningPathItems,
-        cloudAcademyProgress,
-        cloudAcademyAssignments,
-        cloudAcademyQuizzes,
-        cloudAcademyQuizQuestions,
-        cloudAcademyQuizAttempts,
-        cloudAcademyFavorites,
-        cloudAcademyMedia,
       ] = await Promise.all([
         loadOptionalCloudData("training_plan_items lesen", () => listCloudTraining(activeSession.user.id), []),
         loadOptionalCloudData("training_feedback lesen", listCloudFeedback, []),
         loadOptionalCloudData("training_journal_entries lesen", listCloudJournalEntries, []),
         loadOptionalCloudData("training_templates lesen", listCloudTrainingTemplates, []),
         loadOptionalCloudData("season_goals lesen", listCloudGoals, []),
-        loadOptionalCloudData("personal_bests lesen", listCloudPersonalBests, []),
-        loadOptionalCloudData("result_imports lesen", listCloudResultImports, []),
-        loadOptionalCloudData("external_connections lesen", listCloudExternalConnections, []),
-        loadOptionalCloudData("external_training_sessions lesen", listCloudExternalTrainingSessions, []),
-        loadOptionalCloudData("beta_readiness_checks lesen", listCloudBetaReadinessChecks, []),
-        loadOptionalCloudData("beta_feedback lesen", listCloudBetaFeedback, []),
-        loadOptionalCloudData("beta_testers lesen", listCloudBetaTesters, []),
         loadOptionalCloudData("competitions lesen", listCloudCompetitions, []),
         loadOptionalCloudData("materials lesen", listCloudMaterials, []),
         loadOptionalCloudData("notifications lesen", () => listCloudNotifications(activeSession.user.id), []),
         loadOptionalCloudData("smart_coach_recommendations lesen", listCloudSmartCoachRecommendations, []),
-        loadOptionalCloudData("club_material lesen", listCloudClubMaterial, []),
-        loadOptionalCloudData("boats lesen", listCloudClubBoats, []),
-        loadOptionalCloudData("club_events lesen", listCloudClubEvents, []),
-        loadOptionalCloudData("club_documents lesen", listCloudClubDocuments, []),
         loadOptionalCloudData("club_messages lesen", listCloudClubMessages, []),
-        loadOptionalCloudData("club_settings lesen", listCloudClubSettings, []),
         loadOptionalCloudData("direct_messages lesen", listCloudDirectMessages, []),
         loadOptionalCloudData("group_messages lesen", listCloudGroupMessages, []),
-        loadOptionalCloudData("club_posts lesen", listCloudClubPosts, []),
         loadOptionalCloudData("tasks lesen", listCloudTasks, []),
         loadOptionalCloudData("task_assignments lesen", listCloudTaskAssignments, []),
         loadOptionalCloudData("training_attendance lesen", listCloudTrainingAttendance, []),
-        loadOptionalCloudData("file_attachments lesen", listCloudFileAttachments, []),
-        loadOptionalCloudData("academy_categories lesen", listCloudAcademyCategories, []),
-        loadOptionalCloudData("academy_courses lesen", listCloudAcademyCourses, []),
-        loadOptionalCloudData("academy_lessons lesen", listCloudAcademyLessons, []),
-        loadOptionalCloudData("academy_content_blocks lesen", listCloudAcademyContentBlocks, []),
-        loadOptionalCloudData("academy_learning_paths lesen", listCloudAcademyLearningPaths, []),
-        loadOptionalCloudData("academy_learning_path_items lesen", listCloudAcademyLearningPathItems, []),
-        loadOptionalCloudData("academy_progress lesen", listCloudAcademyProgress, []),
-        loadOptionalCloudData("academy_assignments lesen", listCloudAcademyAssignments, []),
-        loadOptionalCloudData("academy_quizzes lesen", listCloudAcademyQuizzes, []),
-        loadOptionalCloudData("academy_quiz_questions lesen", listCloudAcademyQuizQuestions, []),
-        loadOptionalCloudData("academy_quiz_attempts lesen", listCloudAcademyQuizAttempts, []),
-        loadOptionalCloudData("academy_favorites lesen", listCloudAcademyFavorites, []),
-        loadOptionalCloudData("academy_media lesen", listCloudAcademyMedia, []),
       ]);
       const nextData = mergeCloudData(activeSession.user.id, nextProfile, clubs, allProfiles.length > 0 ? allProfiles : [nextProfile], groups, groupMembers, {
         plan: cloudPlan,
@@ -580,43 +526,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         journal: cloudJournal,
         trainingTemplates: cloudTemplates,
         goals: cloudGoals,
-        personalBests: cloudPersonalBests,
-        resultImports: cloudResultImports,
-        externalConnections: cloudExternalConnections,
-        externalTrainingSessions: cloudExternalTrainingSessions,
-        betaReadinessChecks: cloudBetaReadinessChecks,
-        betaFeedback: cloudBetaFeedback,
-        betaTesters: cloudBetaTesters,
         competitions: cloudCompetitions,
         material: cloudMaterials,
         notifications: cloudNotifications,
         smartCoachRecommendations: cloudSmartCoach,
-        clubMaterial: cloudClubMaterial,
-        clubBoats: cloudClubBoats,
-        clubEvents: cloudClubEvents,
-        clubDocuments: cloudClubDocuments,
         clubMessages: cloudClubMessages,
-        clubSettings: cloudClubSettings,
         directMessages: cloudDirectMessages,
         groupMessages: cloudGroupMessages,
-        clubPosts: cloudClubPosts,
         tasks: cloudTasks,
         taskAssignments: cloudTaskAssignments,
         trainingAttendance: cloudTrainingAttendance,
-        fileAttachments: cloudFileAttachments,
-        academyCategories: cloudAcademyCategories,
-        academyCourses: cloudAcademyCourses,
-        academyLessons: cloudAcademyLessons,
-        academyContentBlocks: cloudAcademyContentBlocks,
-        academyLearningPaths: cloudAcademyLearningPaths,
-        academyLearningPathItems: cloudAcademyLearningPathItems,
-        academyProgress: cloudAcademyProgress,
-        academyAssignments: cloudAcademyAssignments,
-        academyQuizzes: cloudAcademyQuizzes,
-        academyQuizQuestions: cloudAcademyQuizQuestions,
-        academyQuizAttempts: cloudAcademyQuizAttempts,
-        academyFavorites: cloudAcademyFavorites,
-        academyMedia: cloudAcademyMedia,
       });
       const pendingCount = getPendingSyncCount();
       setProfile(nextProfile);
@@ -624,7 +543,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setDataState(nextData);
       setPendingSyncCount(pendingCount);
       setLastSyncAt(new Date().toISOString());
-      setSyncCount(allProfiles.length + clubs.length + requests.length + clubRequests.length + groups.length + groupMembers.length + cloudPlan.length + cloudFeedback.length + cloudJournal.length + cloudTemplates.length + cloudGoals.length + cloudPersonalBests.length + cloudResultImports.length + cloudExternalConnections.length + cloudExternalTrainingSessions.length + cloudBetaReadinessChecks.length + cloudBetaFeedback.length + cloudBetaTesters.length + cloudCompetitions.length + cloudMaterials.length + cloudNotifications.length + cloudSmartCoach.length + cloudClubMaterial.length + cloudClubBoats.length + cloudClubEvents.length + cloudClubDocuments.length + cloudClubMessages.length + cloudClubSettings.length + cloudDirectMessages.length + cloudGroupMessages.length + cloudClubPosts.length + cloudTasks.length + cloudTaskAssignments.length + cloudTrainingAttendance.length + cloudFileAttachments.length + cloudAcademyCategories.length + cloudAcademyCourses.length + cloudAcademyLessons.length + cloudAcademyContentBlocks.length + cloudAcademyLearningPaths.length + cloudAcademyLearningPathItems.length + cloudAcademyProgress.length + cloudAcademyAssignments.length + cloudAcademyQuizzes.length + cloudAcademyQuizQuestions.length + cloudAcademyQuizAttempts.length + cloudAcademyFavorites.length + cloudAcademyMedia.length + pendingCount);
+      const coreSyncCount = allProfiles.length + clubs.length + requests.length + clubRequests.length + groups.length + groupMembers.length + cloudPlan.length + cloudFeedback.length + cloudJournal.length + cloudTemplates.length + cloudGoals.length + cloudCompetitions.length + cloudMaterials.length + cloudNotifications.length + cloudSmartCoach.length + cloudClubMessages.length + cloudDirectMessages.length + cloudGroupMessages.length + cloudTasks.length + cloudTaskAssignments.length + cloudTrainingAttendance.length + pendingCount;
+      setSyncCount(coreSyncCount);
       setCloudMessage(pendingCount > 0 ? `${pendingCount} Änderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensätze wurden in die Cloud migriert.` : "");
       setCloudStatus(!navigator.onLine ? "offline" : pendingCount > 0 ? "pending" : "connected");
       if (profileIsFallback) {
@@ -636,6 +556,140 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setCloudMessage(pendingCount > 0 ? `${pendingCount} Änderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensätze wurden in die Cloud migriert.` : "");
       }
+
+      window.setTimeout(() => {
+        void (async () => {
+          const optionalErrorsBefore = optionalCloudErrorCount;
+          const [
+            cloudPersonalBests,
+            cloudResultImports,
+            cloudExternalConnections,
+            cloudExternalTrainingSessions,
+            cloudBetaReadinessChecks,
+            cloudBetaFeedback,
+            cloudBetaTesters,
+            cloudClubMaterial,
+            cloudClubBoats,
+            cloudClubEvents,
+            cloudClubDocuments,
+            cloudClubSettings,
+            cloudClubPosts,
+            cloudFileAttachments,
+            cloudAcademyCategories,
+            cloudAcademyCourses,
+            cloudAcademyLessons,
+            cloudAcademyContentBlocks,
+            cloudAcademyLearningPaths,
+            cloudAcademyLearningPathItems,
+            cloudAcademyProgress,
+            cloudAcademyAssignments,
+            cloudAcademyQuizzes,
+            cloudAcademyQuizQuestions,
+            cloudAcademyQuizAttempts,
+            cloudAcademyFavorites,
+            cloudAcademyMedia,
+          ] = await Promise.all([
+            loadOptionalCloudData("personal_bests lesen", listCloudPersonalBests, []),
+            loadOptionalCloudData("result_imports lesen", listCloudResultImports, []),
+            loadOptionalCloudData("external_connections lesen", listCloudExternalConnections, []),
+            loadOptionalCloudData("external_training_sessions lesen", listCloudExternalTrainingSessions, []),
+            loadOptionalCloudData("beta_readiness_checks lesen", listCloudBetaReadinessChecks, []),
+            loadOptionalCloudData("beta_feedback lesen", listCloudBetaFeedback, []),
+            loadOptionalCloudData("beta_testers lesen", listCloudBetaTesters, []),
+            loadOptionalCloudData("club_material lesen", listCloudClubMaterial, []),
+            loadOptionalCloudData("boats lesen", listCloudClubBoats, []),
+            loadOptionalCloudData("club_events lesen", listCloudClubEvents, []),
+            loadOptionalCloudData("club_documents lesen", listCloudClubDocuments, []),
+            loadOptionalCloudData("club_settings lesen", listCloudClubSettings, []),
+            loadOptionalCloudData("club_posts lesen", listCloudClubPosts, []),
+            loadOptionalCloudData("file_attachments lesen", listCloudFileAttachments, []),
+            loadOptionalCloudData("academy_categories lesen", listCloudAcademyCategories, []),
+            loadOptionalCloudData("academy_courses lesen", listCloudAcademyCourses, []),
+            loadOptionalCloudData("academy_lessons lesen", listCloudAcademyLessons, []),
+            loadOptionalCloudData("academy_content_blocks lesen", listCloudAcademyContentBlocks, []),
+            loadOptionalCloudData("academy_learning_paths lesen", listCloudAcademyLearningPaths, []),
+            loadOptionalCloudData("academy_learning_path_items lesen", listCloudAcademyLearningPathItems, []),
+            loadOptionalCloudData("academy_progress lesen", listCloudAcademyProgress, []),
+            loadOptionalCloudData("academy_assignments lesen", listCloudAcademyAssignments, []),
+            loadOptionalCloudData("academy_quizzes lesen", listCloudAcademyQuizzes, []),
+            loadOptionalCloudData("academy_quiz_questions lesen", listCloudAcademyQuizQuestions, []),
+            loadOptionalCloudData("academy_quiz_attempts lesen", listCloudAcademyQuizAttempts, []),
+            loadOptionalCloudData("academy_favorites lesen", listCloudAcademyFavorites, []),
+            loadOptionalCloudData("academy_media lesen", listCloudAcademyMedia, []),
+          ]);
+
+          if (!supabase) return;
+          const latestSession = (await supabase.auth.getSession()).data.session;
+          if (latestSession?.user.id !== activeSession.user.id) return;
+
+          const optionalData = mergeCloudData(activeSession.user.id, nextProfile, clubs, allProfiles.length > 0 ? allProfiles : [nextProfile], groups, groupMembers, {
+            personalBests: cloudPersonalBests,
+            resultImports: cloudResultImports,
+            externalConnections: cloudExternalConnections,
+            externalTrainingSessions: cloudExternalTrainingSessions,
+            betaReadinessChecks: cloudBetaReadinessChecks,
+            betaFeedback: cloudBetaFeedback,
+            betaTesters: cloudBetaTesters,
+            clubMaterial: cloudClubMaterial,
+            clubBoats: cloudClubBoats,
+            clubEvents: cloudClubEvents,
+            clubDocuments: cloudClubDocuments,
+            clubSettings: cloudClubSettings,
+            clubPosts: cloudClubPosts,
+            fileAttachments: cloudFileAttachments,
+            academyCategories: cloudAcademyCategories,
+            academyCourses: cloudAcademyCourses,
+            academyLessons: cloudAcademyLessons,
+            academyContentBlocks: cloudAcademyContentBlocks,
+            academyLearningPaths: cloudAcademyLearningPaths,
+            academyLearningPathItems: cloudAcademyLearningPathItems,
+            academyProgress: cloudAcademyProgress,
+            academyAssignments: cloudAcademyAssignments,
+            academyQuizzes: cloudAcademyQuizzes,
+            academyQuizQuestions: cloudAcademyQuizQuestions,
+            academyQuizAttempts: cloudAcademyQuizAttempts,
+            academyFavorites: cloudAcademyFavorites,
+            academyMedia: cloudAcademyMedia,
+          });
+
+          setDataState(optionalData);
+          setSyncCount(
+            coreSyncCount +
+              cloudPersonalBests.length +
+              cloudResultImports.length +
+              cloudExternalConnections.length +
+              cloudExternalTrainingSessions.length +
+              cloudBetaReadinessChecks.length +
+              cloudBetaFeedback.length +
+              cloudBetaTesters.length +
+              cloudClubMaterial.length +
+              cloudClubBoats.length +
+              cloudClubEvents.length +
+              cloudClubDocuments.length +
+              cloudClubSettings.length +
+              cloudClubPosts.length +
+              cloudFileAttachments.length +
+              cloudAcademyCategories.length +
+              cloudAcademyCourses.length +
+              cloudAcademyLessons.length +
+              cloudAcademyContentBlocks.length +
+              cloudAcademyLearningPaths.length +
+              cloudAcademyLearningPathItems.length +
+              cloudAcademyProgress.length +
+              cloudAcademyAssignments.length +
+              cloudAcademyQuizzes.length +
+              cloudAcademyQuizQuestions.length +
+              cloudAcademyQuizAttempts.length +
+              cloudAcademyFavorites.length +
+              cloudAcademyMedia.length,
+          );
+
+          if (!profileIsFallback && optionalCloudErrorCount > optionalErrorsBefore) {
+            setCloudStatus(navigator.onLine ? "limited" : "offline");
+            setCloudMessage(`Cloud eingeschränkt: ${optionalCloudErrorCount - optionalErrorsBefore} optionale Module konnten später nicht synchronisiert werden.`);
+          }
+        })();
+      }, 0);
     } catch (error) {
       logCloudError("Login-Synchronisation", error);
       setCloudMessage(`Cloud-Synchronisation ist fehlgeschlagen. Lokaler Cache wird verwendet. ${describeCloudError(error)}`);
