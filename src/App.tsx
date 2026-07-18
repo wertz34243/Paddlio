@@ -1,4 +1,4 @@
-﻿import { useState, type TouchEvent } from "react";
+﻿import { lazy, Suspense, useState, type TouchEvent } from "react";
 import { APP_NAME, APP_SLOGAN, APP_VERSION } from "./brand";
 import { LoadingState } from "./components/AppSupport";
 import { Icon, type IconName } from "./components/Icon";
@@ -29,8 +29,7 @@ import type {
   UserProfile,
 } from "./domain/types";
 import { AnalysisView } from "./views/AnalysisView";
-import { AnalyticsCenterView, type AnalyticsMode } from "./views/AnalyticsCenterView";
-import { AcademyView } from "./views/AcademyView";
+import type { AnalyticsMode } from "./views/AnalyticsCenterView";
 import { AuthView } from "./views/AuthView";
 import { BetaReleaseView } from "./views/BetaReleaseView";
 import { BoatComparisonView } from "./views/BoatComparisonView";
@@ -42,16 +41,13 @@ import { CompetitionCoachAdminView } from "./views/CompetitionCoachAdminView";
 import { CompetitionSeasonStatsView } from "./views/CompetitionSeasonStatsView";
 import { ClubPortalView } from "./views/ClubPortalView";
 import { CommunicationView } from "./views/CommunicationView";
-import { CoachView } from "./views/CoachView";
 import { DashboardView, type DashboardMoreTarget, type DashboardQuickAction } from "./views/DashboardView";
 import { EquipmentView } from "./views/EquipmentView";
 import { GoalsView } from "./views/GoalsView";
-import { ImportExportView } from "./views/ImportExportView";
 import { PlanView } from "./views/PlanView";
 import { NotificationsView } from "./views/NotificationsView";
 import { ProfileView } from "./views/ProfileView";
 import { RecordsView } from "./views/RecordsView";
-import { ResultsReadinessView } from "./views/ResultsReadinessView";
 import { SeasonView } from "./views/SeasonView";
 import { SettingsView } from "./views/SettingsView";
 import { SmartCoachView } from "./views/SmartCoachView";
@@ -59,6 +55,11 @@ import { TrainingCalendarView } from "./views/TrainingCalendarView";
 import { TrainingJournalView } from "./views/TrainingJournalView";
 import { TrainingOverviewView } from "./views/TrainingOverviewView";
 import { TrainingView } from "./views/TrainingView";
+const AcademyView = lazy(() => import("./views/AcademyView").then((module) => ({ default: module.AcademyView })));
+const AnalyticsCenterView = lazy(() => import("./views/AnalyticsCenterView").then((module) => ({ default: module.AnalyticsCenterView })));
+const CoachView = lazy(() => import("./views/CoachView").then((module) => ({ default: module.CoachView })));
+const ImportExportView = lazy(() => import("./views/ImportExportView").then((module) => ({ default: module.ImportExportView })));
+const ResultsReadinessView = lazy(() => import("./views/ResultsReadinessView").then((module) => ({ default: module.ResultsReadinessView })));
 
 type TrainingSegment = "overview" | "calendar" | "plan" | "sessions" | "journal";
 type CompetitionSegment = "races" | "results" | "bests" | "stats" | "advanced" | "imports" | "coach" | "admin" | "videos";
@@ -1312,7 +1313,7 @@ function AppContent() {
         </header>
       ) : null}
 
-      <main className="page-content" id="main">{renderPage()}</main>
+      <main className="page-content" id="main"><Suspense fallback={<LoadingState />}>{renderPage()}</Suspense></main>
 
       <nav
         className={`bottom-nav bottom-navigation ${bottomNavVisible ? "is-visible" : "is-idle-hidden"}`}
