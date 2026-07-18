@@ -79,7 +79,7 @@ import {
   listCloudAcademyQuizzes,
 } from "../services/academyService";
 import { migrateLocalDataToCloud, syncDataSnapshotToCloud } from "../services/migrationService";
-import { subscribeToCoachClub, subscribeToNotifications, subscribeToTrainingFeedback, subscribeToUserTrainings, unsubscribeAll } from "../services/realtimeService";
+import { subscribeToCoachClub, subscribeToNotifications, subscribeToUserTrainings, unsubscribeAll } from "../services/realtimeService";
 
 export type CloudConnectionState = "connected" | "syncing" | "offline" | "pending" | "limited" | "disabled" | "error";
 
@@ -748,13 +748,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     const unsubscribers = [
       subscribeToUserTrainings(session.user.id, handleRealtimeChange),
-      subscribeToTrainingFeedback({ userId: session.user.id }, handleRealtimeChange),
       subscribeToNotifications(session.user.id, handleRealtimeChange),
     ];
 
     if (profile?.club_id && profile.roles.some((role) => role === "Coach" || role === "TeamAdmin" || role === "Admin")) {
       unsubscribers.push(subscribeToCoachClub(profile.club_id, handleRealtimeChange));
-      unsubscribers.push(subscribeToTrainingFeedback({ clubId: profile.club_id }, handleRealtimeChange));
     }
 
     return () => unsubscribers.forEach((unsubscribe) => unsubscribe());

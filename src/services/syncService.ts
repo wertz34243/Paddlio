@@ -1,5 +1,4 @@
 import { enqueueOfflineChange, flushOfflineQueue, getOfflineQueueCount } from "./offlineQueueService";
-import { subscribeToGeneralCloudChanges } from "./realtimeService";
 
 export type SyncQueueItem = {
   id: string;
@@ -21,6 +20,3 @@ export const enqueueSyncChange = (item: Omit<SyncQueueItem, "id" | "createdAt" |
 };
 
 export const flushSyncQueue = async (): Promise<number> => flushOfflineQueue();
-
-export const subscribeToCloudChanges = (onChange: () => void): (() => void) =>
-  subscribeToGeneralCloudChanges(onChange);
