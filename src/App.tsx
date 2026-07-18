@@ -1,5 +1,6 @@
 ﻿import { lazy, Suspense, useState, type TouchEvent } from "react";
 import { APP_NAME, APP_SLOGAN, APP_VERSION } from "./brand";
+import { useEffect } from "react";
 import { LoadingState } from "./components/AppSupport";
 import { Icon, type IconName } from "./components/Icon";
 import { BottomNavigation, DesktopSideNavigation, mainNavItems } from "./components/navigation/AppNavigation";
@@ -63,6 +64,7 @@ const AcademyView = lazy(() => import("./views/AcademyView").then((module) => ({
 const AnalyticsCenterView = lazy(() => import("./views/AnalyticsCenterView").then((module) => ({ default: module.AnalyticsCenterView })));
 const CoachView = lazy(() => import("./views/CoachView").then((module) => ({ default: module.CoachView })));
 const ImportExportView = lazy(() => import("./views/ImportExportView").then((module) => ({ default: module.ImportExportView })));
+const PolarIntegrationView = lazy(() => import("./views/PolarIntegrationView").then((module) => ({ default: module.PolarIntegrationView })));
 const ResultsReadinessView = lazy(() => import("./views/ResultsReadinessView").then((module) => ({ default: module.ResultsReadinessView })));
 
 type TrainingSegment = "overview" | "calendar" | "plan" | "sessions" | "journal";
@@ -264,6 +266,17 @@ function AppContent() {
   const [newTrainingSignal, setNewTrainingSignal] = useState(0);
   const [newCompetitionSignal, setNewCompetitionSignal] = useState(0);
   const [journalSignal, setJournalSignal] = useState(0);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has("polar")) return;
+
+    setActivePage("more");
+    setMoreSegment("integrations");
+    setMoreHubOpen(false);
+    window.history.replaceState(null, "", window.location.pathname);
+  }, []);
+
   const handleLogout = async () => {
     await signOut();
     setActivePage("dashboard");
@@ -1070,22 +1083,29 @@ function AppContent() {
       case "integrations":
         if (currentDeviceClass === "phone" && getCurrentFeatureMode("integrations") !== "full") {
           return (
-            <DeviceLimitedPanel
-              title="Import & Export kompakt"
-              description="Auf dem Smartphone bleiben Sync-Status und schnelle Integrationshinweise erreichbar. Große Excel-Importe, Spaltenmapping und Massenexporte sind auf Tablet oder Computer sicherer bedienbar."
-              mode={getCurrentFeatureMode("integrations")}
-              actions={[
-                {
-                  label: "Sync-Status öffnen",
-                  onClick: () => {
-                    setMoreSegment("settings");
-                    setMoreHubOpen(false);
-                    setActivePage("more");
+            <div className="stack">
+              <PolarIntegrationView
+                data={activeData}
+                user={activeUser}
+                sessionAccessToken={session?.access_token}
+                onDataChange={updateData}
+              />
+              <DeviceLimitedPanel
+                title="Excel-Import auf größerem Bildschirm"
+                description="Polar funktioniert auf dem Smartphone. Große Excel-Importe, Spaltenmapping und Massenexporte bleiben auf Tablet oder Computer übersichtlicher und sicherer."
+                mode={getCurrentFeatureMode("integrations")}
+                actions={[
+                  {
+                    label: "Sync-Status öffnen",
+                    onClick: () => {
+                      setMoreSegment("settings");
+                      setMoreHubOpen(false);
+                      setActivePage("more");
+                    },
                   },
-                },
-                { label: "Feedback senden", onClick: () => openMoreSegment("feedback") },
-              ]}
-            />
+                ]}
+              />
+            </div>
           );
         }
         return <ImportExportView data={activeData} user={activeUser} sessionAccessToken={session?.access_token} onDataChange={updateData} />;
