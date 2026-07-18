@@ -1000,25 +1000,25 @@ function AppContent() {
     betaTesters: "admin",
   };
   const morePrioritySegments = new Set<MoreSegment>(activeUser.role === "admin"
-    ? ["profile", "academy", "settings", "feedback", "beta", "coach"]
+    ? ["academy", "integrations", "settings", "coach"]
     : canUseCoachArea(activeUser.role)
-      ? ["profile", "academy", "settings", "coach", "feedback"]
-      : ["profile", "academy", "settings", "goals", "feedback"]);
+      ? ["academy", "integrations", "settings", "coach"]
+      : ["academy", "integrations", "settings", "profile"]);
   const moreGroupLabels: Record<MoreGroupKind, string> = {
-    account: "Mein Konto",
-    sport: "Sport",
-    team: "Team & Verein",
+    account: "Einstellungen & Hilfe",
+    sport: "Training & Lernen",
+    team: "Verein & Team",
     beta: "Beta & Hilfe",
     admin: "Admin",
-    system: "System",
+    system: "Daten & Integrationen",
   };
   const moreGroupSubtitles: Record<MoreGroupKind, string> = {
-    account: "Profil und App",
-    sport: "Training, Ziele und Wettkampf",
+    account: "Profil, App und Sitzung",
+    sport: "Akademie, Ziele und Wettkampf",
     team: canUseCoachArea(activeUser.role) ? "Organisation" : "Kontakt zum Team",
     beta: "Hilfe und Rückmeldung",
     admin: "Kontrolle und Freigabe",
-    system: "Verbindungen und Import",
+    system: "Import, Export und externe Quellen",
   };
   const smartMoreItems: SmartMoreItem[] = moreItems.map((item) => ({
     ...item,
