@@ -4,6 +4,21 @@ import { enqueueSyncChange } from "./syncService";
 import { sanitizeCloudPayload, toCloudUuid, toCloudUuidOrNull } from "./cloudIds";
 import { getWeekdayFromDate } from "../domain/trainingPlan";
 
+const isMissingColumnError = (error: unknown, columnName: string): boolean =>
+  Boolean(
+    error &&
+      typeof error === "object" &&
+      "code" in error &&
+      (error as { code?: string }).code === "42703" &&
+      "message" in error &&
+      String((error as { message?: string }).message ?? "").includes(columnName),
+  );
+
+const omitDeletedAt = <T extends Record<string, unknown>>(payload: T): Omit<T, "deleted_at"> => {
+  const { deleted_at: _deletedAt, ...nextPayload } = payload;
+  return nextPayload;
+};
+
 export const toCloudTraining = (entry: PlanEntry) => ({
   id: toCloudUuid(entry.id),
   owner_id: toCloudUuidOrNull(entry.ownerUserId),
@@ -77,7 +92,12 @@ export const fromCloudTraining = (row: any, athleteId: string): PlanEntry => ({
 export const listCloudTraining = async (athleteId: string): Promise<PlanEntry[]> => {
   const client = getSupabaseClient();
   if (!client) return [];
-  const { data, error } = await client.from("training_plan_items").select("*").is("deleted_at", null).order("date", { ascending: true });
+  let { data, error } = await client.from("training_plan_items").select("*").is("deleted_at", null).order("date", { ascending: true });
+  if (error && isMissingColumnError(error, "deleted_at")) {
+    const fallback = await client.from("training_plan_items").select("*").order("date", { ascending: true });
+    data = fallback.data;
+    error = fallback.error;
+  }
   if (error) throw error;
   return (data ?? []).map((row) => fromCloudTraining(row, athleteId));
 };
@@ -89,7 +109,11 @@ export const upsertCloudTraining = async (entry: PlanEntry): Promise<void> => {
     enqueueSyncChange({ tableName: "training_plan_items", action: "upsert", payload });
     return;
   }
-  const { error } = await (client.from("training_plan_items") as any).upsert(payload, { onConflict: "id" });
+  let { error } = await (client.from("training_plan_items") as any).upsert(payload, { onConflict: "id" });
+  if (error && isMissingColumnError(error, "deleted_at")) {
+    const fallback = await (client.from("training_plan_items") as any).upsert(omitDeletedAt(payload), { onConflict: "id" });
+    error = fallback.error;
+  }
   if (error) throw error;
 };
 
@@ -107,6 +131,11 @@ export const deleteCloudTraining = async (id: string, deletedAt = new Date().toI
   const { error } = await (client.from("training_plan_items") as any)
     .update({ deleted_at: deletedAt, updated_at: deletedAt })
     .eq("id", cloudId);
+  if (error && isMissingColumnError(error, "deleted_at")) {
+    const fallback = await client.from("training_plan_items").delete().eq("id", cloudId);
+    if (fallback.error) throw fallback.error;
+    return;
+  }
   if (error) throw error;
 };
 
