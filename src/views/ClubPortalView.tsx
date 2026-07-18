@@ -26,7 +26,7 @@ import {
   upsertCloudClubMessage,
   upsertCloudClubSettings,
 } from "../services/clubPortalService";
-import { todayDateKey } from "../lib/dateOnly";
+import { compareDateKeys, endOfWeekDateKey, startOfWeekDateKey, todayDateKey } from "../lib/dateOnly";
 
 type ClubPortalViewProps = {
   data: PaddleMotionData;
@@ -80,21 +80,10 @@ const audienceLabel: Record<ClubMessageAudience, string> = {
 
 const todayKey = todayDateKey;
 
-const getWeekStart = (): Date => {
-  const today = new Date();
-  const day = today.getDay() || 7;
-  const monday = new Date(today);
-  monday.setHours(0, 0, 0, 0);
-  monday.setDate(today.getDate() - day + 1);
-  return monday;
-};
-
 const isThisWeek = (date: string): boolean => {
-  const start = getWeekStart();
-  const end = new Date(start);
-  end.setDate(start.getDate() + 7);
-  const current = new Date(`${date}T00:00:00`);
-  return current >= start && current < end;
+  const start = startOfWeekDateKey(todayDateKey());
+  const end = endOfWeekDateKey(todayDateKey());
+  return compareDateKeys(date, start) >= 0 && compareDateKeys(date, end) < 0;
 };
 
 const numberValue = (value: FormDataEntryValue | null): number => Number(value || 0);

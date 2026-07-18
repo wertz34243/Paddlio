@@ -7,7 +7,7 @@ import {
 import { getLongestTrainingStreak } from "./records";
 import { isDoneStatus } from "./trainingPlan";
 import type { Competition, PlanEntry, TrainingJournalEntry, TrainingSession } from "./types";
-import { dateKeyFromLocalDate, dateKeyToLocalDate } from "../lib/dateOnly";
+import { addDaysToDateKey, dateKeyFromLocalDate, dateKeyToLocalDate } from "../lib/dateOnly";
 
 export type AthleteStatus = {
   title: string;
@@ -62,9 +62,7 @@ export const getCurrentTrainingStreak = (sessions: TrainingSession[], referenceD
 
   while (dates.has(cursor)) {
     streak += 1;
-    const next = new Date(`${cursor}T00:00:00`);
-    next.setDate(next.getDate() - 1);
-    cursor = dayKey(next);
+    cursor = addDaysToDateKey(cursor, -1);
   }
 
   return streak;
