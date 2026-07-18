@@ -208,6 +208,15 @@ function applyRow(importType: ImportType, row: ImportPreviewRow, data: PaddleMot
 
   if (importType === "training_plans") {
     const date = String(value.date ?? formatLocalDateOnly(new Date()));
+    const title = String(value.title ?? value.focus ?? "Importiertes Training");
+    const time = String(value.time ?? "");
+    const duplicate = data.plan.some((entry) =>
+      entry.date === date &&
+      (entry.time || entry.startTime || "") === time &&
+      (entry.title || entry.trainingType).trim().toLowerCase() === title.trim().toLowerCase() &&
+      entry.ownerUserId === user.userId,
+    );
+    if (duplicate) return { data, skipped: true };
     const entry: PlanEntry = {
       id: createId("plan-import"),
       ownerUserId: user.userId,
@@ -216,11 +225,11 @@ function applyRow(importType: ImportType, row: ImportPreviewRow, data: PaddleMot
       assignedType: "self",
       assignedAthleteIds: [],
       assignedGroupIds: [],
-      title: String(value.title ?? value.focus ?? "Importiertes Training"),
+      title,
       date,
       weekday: getWeekdayFromDate(date),
-      time: String(value.time ?? ""),
-      startTime: String(value.time ?? ""),
+      time,
+      startTime: time,
       endTime: "",
       durationMinutes: Number(value.durationMinutes ?? 60),
       area: inferTrainingArea(String(value.trainingType ?? value.focus ?? "")),
@@ -246,14 +255,23 @@ function applyRow(importType: ImportType, row: ImportPreviewRow, data: PaddleMot
   }
 
   if (importType === "training_sessions") {
+    const date = String(value.date ?? formatLocalDateOnly(new Date()));
+    const focus = String(value.focus ?? "");
+    const duplicate = data.training.some((session) =>
+      session.athleteId === user.userId &&
+      session.date === date &&
+      session.durationMinutes === Number(value.durationMinutes ?? 0) &&
+      session.focus.trim().toLowerCase() === focus.trim().toLowerCase(),
+    );
+    if (duplicate) return { data, skipped: true };
     const session: TrainingSession = {
       id: createId("training-import"),
       athleteId: user.userId,
-      date: String(value.date ?? formatLocalDateOnly(new Date())),
+      date,
       type: inferSessionType(String(value.trainingType ?? value.focus ?? "")),
       durationMinutes: Number(value.durationMinutes ?? 0),
       rpe: 5,
-      focus: String(value.focus ?? ""),
+      focus,
       note: String(value.description ?? ""),
       createdAt: timestamp,
       updatedAt: timestamp,
@@ -264,12 +282,22 @@ function applyRow(importType: ImportType, row: ImportPreviewRow, data: PaddleMot
   if (importType === "competition_results") {
     const rawTime = Number(value.rawTime ?? 0);
     const penalty = Math.max(0, Number(value.penaltySeconds ?? 0));
+    const date = String(value.date ?? formatLocalDateOnly(new Date()));
+    const title = String(value.title ?? "Importiertes Ergebnis");
+    const duplicate = data.competitions.some((competition) =>
+      competition.athleteId === user.userId &&
+      competition.date === date &&
+      competition.run1TimeSeconds === rawTime &&
+      competition.run1PenaltySeconds === penalty &&
+      (competition.name || "").trim().toLowerCase() === title.trim().toLowerCase(),
+    );
+    if (duplicate) return { data, skipped: true };
     const competition: Competition = {
       id: createId("competition-import"),
       athleteId: user.userId,
       clubId: user.profile.club,
-      name: String(value.title ?? "Importiertes Ergebnis"),
-      date: String(value.date ?? formatLocalDateOnly(new Date())),
+      name: title,
+      date,
       location: "",
       course: "",
       courseName: "",
@@ -296,7 +324,15 @@ function applyRow(importType: ImportType, row: ImportPreviewRow, data: PaddleMot
   }
 
   if (importType === "materials") {
-    return { data: { ...data, material: [{ id: createId("material-import"), athleteId: user.userId, category: inferMaterialCategory(String(value.materialType ?? "")), name: String(value.materialName ?? "Importiertes Material"), weightKg: 0, lengthCm: 0, imageDataUrl: "", status: "pruefen", rating: 3, note: String(value.condition ?? ""), createdAt: timestamp, updatedAt: timestamp }, ...data.material] }, created: true };
+    const category = inferMaterialCategory(String(value.materialType ?? ""));
+    const name = String(value.materialName ?? "Importiertes Material");
+    const duplicate = data.material.some((item) =>
+      item.athleteId === user.userId &&
+      item.category === category &&
+      item.name.trim().toLowerCase() === name.trim().toLowerCase(),
+    );
+    if (duplicate) return { data, skipped: true };
+    return { data: { ...data, material: [{ id: createId("material-import"), athleteId: user.userId, category, name, weightKg: 0, lengthCm: 0, imageDataUrl: "", status: "pruefen", rating: 3, note: String(value.condition ?? ""), createdAt: timestamp, updatedAt: timestamp }, ...data.material] }, created: true };
   }
 
   return { data, skipped: true };

@@ -2,6 +2,13 @@ import type { ImportFileFormat, ParsedSheet, ParsedWorkbook } from "./types";
 import { dateKeyFromLocalDate } from "../../lib/dateOnly";
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024;
+const allowedMimeTypes = new Set([
+  "",
+  "text/csv",
+  "application/csv",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+]);
 
 export function detectFileFormat(fileName: string): ImportFileFormat {
   const extension = fileName.split(".").pop()?.toLowerCase();
@@ -21,13 +28,18 @@ export async function parseImportFile(file: File): Promise<ParsedWorkbook> {
   if (fileFormat === "unknown" || fileFormat === "ods") {
     throw new Error("Dieses Dateiformat wird aktuell noch nicht unterstützt. Bitte XLSX, XLS oder CSV verwenden.");
   }
+  if (!allowedMimeTypes.has(file.type)) {
+    throw new Error("Der Dateityp passt nicht zu einem sicheren CSV- oder Excel-Import.");
+  }
 
   const warnings: string[] = [];
   if (fileFormat === "csv") {
+    const sheet = await parseCsvSheet(file, warnings);
+    ensureReadableSheet(sheet.rowCount);
     return {
       fileName: file.name,
       fileFormat,
-      sheets: [await parseCsvSheet(file, warnings)],
+      sheets: [sheet],
       warnings,
     };
   }
@@ -45,9 +57,17 @@ export async function parseImportFile(file: File): Promise<ParsedWorkbook> {
     });
     const rows = normalizeRows(raw.map((row) => row.map(formatCell)));
     return toParsedSheet(name, rows);
-  });
+  }).filter((sheet) => sheet.rowCount > 0);
+
+  if (sheets.length === 0) ensureReadableSheet(0);
 
   return { fileName: file.name, fileFormat, sheets, warnings };
+}
+
+function ensureReadableSheet(rowCount: number) {
+  if (rowCount === 0) {
+    throw new Error("Die Datei enthält keine lesbaren Datenzeilen.");
+  }
 }
 
 async function parseCsvSheet(file: File, warnings: string[]): Promise<ParsedSheet> {

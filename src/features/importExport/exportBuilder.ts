@@ -199,11 +199,11 @@ function rowsToCsv(rows: Record<string, unknown>[]): string {
   return `\uFEFF${lines.join("\r\n")}`;
 }
 
-function sanitizeRowForSpreadsheet(row: Record<string, unknown>): Record<string, unknown> {
+export function sanitizeRowForSpreadsheet(row: Record<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(Object.entries(row).map(([key, value]) => [key, protectSpreadsheetValue(value)]));
 }
 
-function protectSpreadsheetValue(value: unknown): unknown {
+export function protectSpreadsheetValue(value: unknown): unknown {
   if (typeof value !== "string") return value ?? "";
   const trimmed = value.trimStart();
   return /^[=+\-@]/.test(trimmed) ? `'${value}` : value;
