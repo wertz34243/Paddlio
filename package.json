@@ -9,8 +9,10 @@
     "check:encoding": "node scripts/check-encoding.mjs",
     "check:rls": "node scripts/check-rls.mjs",
     "check:beta": "node scripts/check-encoding.mjs && node scripts/check-rls.mjs && node scripts/beta-blocker-check.mjs",
-    "test": "vitest run",
-    "test:unit": "vitest run",
+    "test": "vitest run src",
+    "test:unit": "vitest run src",
+    "test:e2e": "playwright test",
+    "test:e2e:roles": "playwright test tests/e2e/roles-and-sync.spec.ts",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -20,6 +22,7 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
     "@vitejs/plugin-react": "^4.3.4",

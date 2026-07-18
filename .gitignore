@@ -12,3 +12,5 @@ pnpm-debug.log*
 .vite/
 .vercel/
 supabase/.temp/
+test-results/
+playwright-report/
