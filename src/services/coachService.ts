@@ -44,7 +44,8 @@ export const listCloudTrainingGroups = async (): Promise<CloudTrainingGroup[]> =
 
   const { data, error } = await client.from("training_groups").select("*").order("name", { ascending: true });
   if (error) throw error;
-  return data ?? [];
+  const groups = (data ?? []) as CloudTrainingGroup[];
+  return groups.filter((group) => group.status !== "inactive");
 };
 
 export const upsertCloudTrainingGroup = async (input: Database["public"]["Tables"]["training_groups"]["Insert"] & { id?: string }): Promise<CloudTrainingGroup | null> => {

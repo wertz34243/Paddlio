@@ -29,9 +29,9 @@ import { reviewCloudClubRequest, setCloudClubStatus, upsertCloudClub, type Cloud
 import {
   reviewCloudTrainerRequest,
   setCloudAthleteGroups,
+  setCloudGroupMembers,
   setCloudTrainingGroupStatus,
   upsertCloudTrainingGroup,
-  setCloudGroupMembers,
   type CloudTrainerRequest,
 } from "../services/coachService";
 import type {
@@ -429,16 +429,33 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
 
   const deleteGroup = (id: string) => {
     void runCloudAction("Trainingsgruppe deaktiviert", async () => {
-      await setCloudTrainingGroupStatus(id, "inactive");
-      onDataChange((current) => ({
-        ...current,
-        coachGroups: current.coachGroups.map((group) => group.id === id ? { ...group, status: "inactive", updatedAt: new Date().toISOString() } : group),
-        coachAthletes: current.coachAthletes.map((athlete) => ({
-          ...athlete,
-          groupIds: athlete.groupIds.filter((groupId) => groupId !== id),
-          groupId: athlete.groupId === id ? athlete.groupIds.filter((groupId) => groupId !== id)[0] ?? "" : athlete.groupId,
-        })),
-      }));
+      if (isUuid(id)) {
+        await setCloudGroupMembers(id, []);
+        await setCloudTrainingGroupStatus(id, "inactive");
+      }
+
+      onDataChange((current) => {
+        const deletedGroup = current.coachGroups.find((group) => group.id === id || group.groupId === id);
+        const deletedGroupIds = new Set([id, deletedGroup?.id, deletedGroup?.groupId].filter(Boolean));
+
+        return {
+          ...current,
+          coachGroups: current.coachGroups.filter((group) => !deletedGroupIds.has(group.id) && !deletedGroupIds.has(group.groupId)),
+          coachAthletes: current.coachAthletes.map((athlete) => {
+            const groupIds = athlete.groupIds.filter((groupId) => !deletedGroupIds.has(groupId));
+            return {
+              ...athlete,
+              groupIds,
+              groupId: deletedGroupIds.has(athlete.groupId) ? groupIds[0] ?? "" : athlete.groupId,
+            };
+          }),
+        };
+      });
+
+      if (editingGroup?.id === id || editingGroup?.groupId === id) {
+        setEditingGroup(null);
+        setGroupBoatClasses(["K1"]);
+      }
     });
   };
 

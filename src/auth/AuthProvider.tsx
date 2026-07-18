@@ -333,6 +333,9 @@ const mergeCloudData = (
   cacheCloudClubs(clubs);
 
   const cached = loadData(userId);
+  const activeGroups = groups.filter((group) => group.status !== "inactive");
+  const activeGroupIds = new Set(activeGroups.map((group) => group.id));
+  const activeMembers = members.filter((member) => activeGroupIds.has(member.group_id));
   const cloudBoatClasses = cloudTruthProfile.boat_classes.filter((boat): boat is "K1" | "C1" => boat === "K1" || boat === "C1");
   const cloudPaddleSide = cloudTruthProfile.paddle_side === "Links" ? "links" : "rechts";
   const localUser: User = {
@@ -364,8 +367,8 @@ const mergeCloudData = (
       name: cloudDisplayName,
       club: club?.name ?? localUser.profile.club,
     },
-    coachAthletes: profiles.filter((item) => item.roles.includes("Athlete")).map((item) => toCoachAthlete(item, clubs.find((clubItem) => clubItem.clubId === item.club_id)?.name ?? "", members)),
-    coachGroups: groups.map((group) => toCoachGroup(group, members)),
+    coachAthletes: profiles.filter((item) => item.roles.includes("Athlete")).map((item) => toCoachAthlete(item, clubs.find((clubItem) => clubItem.clubId === item.club_id)?.name ?? "", activeMembers)),
+    coachGroups: activeGroups.map((group) => toCoachGroup(group, activeMembers)),
     plan: cloudData?.plan && cloudData.plan.length > 0 ? cloudData.plan : cached.plan,
     trainingTemplates: cloudData?.trainingTemplates && cloudData.trainingTemplates.length > 0 ? cloudData.trainingTemplates : cached.trainingTemplates,
     trainingFeedback: cloudData?.trainingFeedback && cloudData.trainingFeedback.length > 0 ? cloudData.trainingFeedback : cached.trainingFeedback,

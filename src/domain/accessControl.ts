@@ -42,7 +42,7 @@ export const getAthletesForCurrentUser = (data: PaddleMotionData, user: User, ex
   data.coachAthletes.filter((athlete) => canAccessCoachAthlete(user, athlete, extraScopeValues));
 
 export const getGroupsForCurrentUser = (data: PaddleMotionData, user: User, extraScopeValues: string[] = []): CoachGroup[] =>
-  data.coachGroups.filter((group) => canAccessCoachGroup(user, group, extraScopeValues));
+  data.coachGroups.filter((group) => group.status !== "inactive").filter((group) => canAccessCoachGroup(user, group, extraScopeValues));
 
 export const canAccessPlanEntry = (data: PaddleMotionData, user: User, entry: PlanEntry, extraScopeValues: string[] = []): boolean => {
   if (isAdminRole(user.role)) return true;
