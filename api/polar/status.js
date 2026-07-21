@@ -24,6 +24,11 @@ export default async function handler(req, res) {
       requiredEnvironment: {
         polarClientConfigured: Boolean(process.env.POLAR_CLIENT_ID && process.env.POLAR_CLIENT_SECRET && process.env.POLAR_REDIRECT_URI),
         serverConfigured: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.POLAR_TOKEN_ENCRYPTION_KEY),
+        polarClientIdConfigured: Boolean(process.env.POLAR_CLIENT_ID),
+        polarClientSecretConfigured: Boolean(process.env.POLAR_CLIENT_SECRET),
+        polarRedirectUriConfigured: Boolean(process.env.POLAR_REDIRECT_URI),
+        supabaseServiceRoleConfigured: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+        polarTokenEncryptionConfigured: Boolean(process.env.POLAR_TOKEN_ENCRYPTION_KEY),
       },
     });
   } catch (error) {

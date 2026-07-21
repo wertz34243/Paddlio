@@ -126,6 +126,10 @@ export function PolarIntegrationView({ data, user, sessionAccessToken, onDataCha
       setMessage("Bitte zuerst mit deinem Paddlio Cloud-Konto anmelden.");
       return;
     }
+    if (!envReady) {
+      setMessage(getPolarSetupMessage(status));
+      return;
+    }
     setLoading(true);
     try {
       const url = await startPolarConnection(sessionAccessToken);
@@ -207,7 +211,7 @@ export function PolarIntegrationView({ data, user, sessionAccessToken, onDataCha
       {!envReady ? (
         <article className="polar-warning">
           <strong>Server-Konfiguration fehlt</strong>
-          <p>Für Live-OAuth müssen die Polar- und Supabase-Servervariablen vollständig in der geschützten Deployment-Umgebung gesetzt sein.</p>
+          <p>{getPolarSetupMessage(status)}</p>
         </article>
       ) : null}
 
@@ -321,4 +325,23 @@ function explainPolarError(error: unknown): string {
   if (message.includes("polar_not_connected")) return "Polar ist noch nicht verbunden.";
   if (message.includes("invalid_auth_token")) return "Bitte melde dich erneut an.";
   return "Polar-Aktion konnte nicht abgeschlossen werden. Details stehen in der Konsole.";
+}
+
+function getPolarSetupMessage(status: PolarConnectionStatus | null): string {
+  const env = status?.requiredEnvironment;
+  if (!env) return "Polar ist serverseitig noch nicht vollständig konfiguriert.";
+
+  const missing = [
+    !env.polarClientIdConfigured ? "Polar Client-ID" : "",
+    !env.polarClientSecretConfigured ? "Polar Client-Secret" : "",
+    !env.polarRedirectUriConfigured ? "Polar Redirect-URL" : "",
+    !env.supabaseServiceRoleConfigured ? "Supabase Service-Role" : "",
+    !env.polarTokenEncryptionConfigured ? "Token-Verschlüsselung" : "",
+  ].filter(Boolean);
+
+  if (missing.length === 0) {
+    return "Polar ist serverseitig noch nicht vollständig bereit. Bitte lade die Seite neu und versuche es erneut.";
+  }
+
+  return `Polar kann noch nicht starten. In Vercel fehlt: ${missing.join(", ")}.`;
 }

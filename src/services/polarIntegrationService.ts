@@ -14,6 +14,11 @@ export type PolarConnectionStatus = {
   requiredEnvironment: {
     polarClientConfigured: boolean;
     serverConfigured: boolean;
+    polarClientIdConfigured?: boolean;
+    polarClientSecretConfigured?: boolean;
+    polarRedirectUriConfigured?: boolean;
+    supabaseServiceRoleConfigured?: boolean;
+    polarTokenEncryptionConfigured?: boolean;
   };
 };
 
