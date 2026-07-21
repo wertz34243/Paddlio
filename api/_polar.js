@@ -224,6 +224,65 @@ const toNumberOrNull = (value) => {
   return Number.isFinite(number) ? number : null;
 };
 
+const toRoundedNumberOrNull = (value) => {
+  const number = toNumberOrNull(value);
+  return number === null ? null : Math.round(number);
+};
+
+const parsePolarDurationSeconds = (exercise) => {
+  const explicit = toNumberOrNull(firstDefined(
+    exercise.duration_seconds,
+    exercise.durationSeconds,
+    exercise["duration-seconds"],
+    exercise["duration-in-seconds"],
+  ));
+  if (explicit !== null) return Math.max(0, Math.round(explicit));
+
+  const iso = parseIsoDurationSeconds(exercise.duration);
+  if (iso > 0) return iso;
+
+  const startedAt = firstDefined(
+    exercise.start_time,
+    exercise["start-time"],
+    exercise.started_at,
+    exercise["started-at"],
+  );
+  const endedAt = firstDefined(
+    exercise.stop_time,
+    exercise["stop-time"],
+    exercise.end_time,
+    exercise["end-time"],
+    exercise.ended_at,
+    exercise["ended-at"],
+  );
+  const startMs = Date.parse(startedAt || "");
+  const endMs = Date.parse(endedAt || "");
+  if (Number.isFinite(startMs) && Number.isFinite(endMs) && endMs > startMs) {
+    return Math.round((endMs - startMs) / 1000);
+  }
+
+  return 0;
+};
+
+const readPolarHeartRateSamples = (samples) => {
+  if (!Array.isArray(samples)) return [];
+  return samples
+    .filter((sample) => {
+      const type = String(sample["sample-type"] ?? sample.sample_type ?? sample.type ?? "");
+      return type === "0" || type === "1" || type.toLowerCase().includes("heart");
+    })
+    .flatMap((sample) => {
+      const values = Array.isArray(sample.data) ? sample.data : String(sample.data || "").split(",");
+      return values.map((item) => Number(item)).filter((item) => Number.isFinite(item) && item > 0);
+    });
+};
+
+const normalizePolarTitle = (exercise) => {
+  const detailed = firstDefined(exercise["detailed-sport-info"], exercise.detailed_sport_info);
+  const sport = firstDefined(exercise.sport, exercise.sport_type);
+  return String(firstDefined(detailed, sport, "Polar Training")).replace(/_/g, " ");
+};
+
 export const mapPolarSport = (sport = "", detailed = "") => {
   const value = `${sport} ${detailed}`.toLowerCase();
   if (value.includes("kayak") || value.includes("padd") || value.includes("water")) return "kayak";
@@ -246,9 +305,24 @@ export const normalizePolarExercise = (exercise, userId, clubId = "") => {
   const trainingLoadPro = exercise.training_load_pro || exercise["training-load-pro"] || {};
   const heartRate = exercise.heart_rate || exercise["heart-rate"] || {};
   const samples = Array.isArray(exercise.samples) ? exercise.samples : [];
-  const heartRateSamples = samples
-    .filter((sample) => String(sample["sample-type"] ?? sample.sample_type ?? "") === "1")
-    .flatMap((sample) => String(sample.data || "").split(",").map((item) => Number(item)).filter((item) => Number.isFinite(item)));
+  const heartRateSamples = readPolarHeartRateSamples(samples);
+  const detailedSport = firstDefined(exercise["detailed-sport-info"], exercise.detailed_sport_info, "");
+  const title = normalizePolarTitle(exercise);
+  const durationSeconds = parsePolarDurationSeconds(exercise);
+  const distanceMeters = toRoundedNumberOrNull(firstDefined(
+    exercise.distance,
+    exercise.distance_meters,
+    exercise.distanceMeters,
+    exercise["distance-meters"],
+  )) || 0;
+  const heartRateZones = firstDefined(exercise.heart_rate_zones, exercise["heart-rate-zones"], exercise.zones, []);
+  const route = firstDefined(exercise.route, exercise.gps_route, exercise["gps-route"], []);
+  const cardioLoad = toNumberOrNull(firstDefined(
+    trainingLoadPro["cardio-load"],
+    trainingLoadPro.cardio_load,
+    exercise.cardio_load,
+    exercise["cardio-load"],
+  ));
 
   return {
     id: `polar-${userId}-${providerActivityId}`.replace(/[^a-zA-Z0-9-]/g, "-"),
@@ -257,27 +331,33 @@ export const normalizePolarExercise = (exercise, userId, clubId = "") => {
     club_id: clubId || null,
     provider: "polar",
     provider_activity_id: providerActivityId,
-    title: firstDefined(exercise.sport, exercise["detailed-sport-info"], exercise.detailed_sport_info, "Polar Training"),
-    sport_type: mapPolarSport(exercise.sport, firstDefined(exercise["detailed-sport-info"], exercise.detailed_sport_info, "")),
+    title,
+    sport_type: mapPolarSport(exercise.sport, detailedSport),
     started_at: firstDefined(exercise.start_time, exercise["start-time"])
       ? new Date(firstDefined(exercise.start_time, exercise["start-time"])).toISOString()
       : now,
-    duration_seconds: parseIsoDurationSeconds(exercise.duration),
-    distance_meters: Math.round(toNumberOrNull(exercise.distance) || 0),
-    avg_heart_rate: toNumberOrNull(firstDefined(heartRate.average, heartRate.avg, heartRate["average"])) || null,
-    max_heart_rate: toNumberOrNull(firstDefined(heartRate.maximum, heartRate.max, heartRate["maximum"])) || null,
-    calories: toNumberOrNull(exercise.calories),
-    training_load: toNumberOrNull(firstDefined(exercise.training_load, exercise["training-load"], trainingLoadPro["cardio-load"])),
+    duration_seconds: durationSeconds,
+    distance_meters: distanceMeters,
+    avg_heart_rate: toRoundedNumberOrNull(firstDefined(heartRate.average, heartRate.avg, heartRate["average"])) || null,
+    max_heart_rate: toRoundedNumberOrNull(firstDefined(heartRate.maximum, heartRate.max, heartRate["maximum"])) || null,
+    calories: toRoundedNumberOrNull(exercise.calories),
+    training_load: toNumberOrNull(firstDefined(exercise.training_load, exercise["training-load"], cardioLoad)),
     recovery_status: trainingLoadPro["cardio-load-interpretation"] || "",
+    cardio_load: cardioLoad,
+    running_index: toNumberOrNull(firstDefined(exercise["running-index"], exercise.running_index)),
+    training_benefit: firstDefined(exercise.training_benefit, exercise["training-benefit"], ""),
+    heart_rate_samples: heartRateSamples,
+    heart_rate_zones: heartRateZones,
+    gps_route: route,
     raw_data: {
       ...exercise,
       paddlio: {
         heartRateSamples,
-        heartRateZones: exercise.heart_rate_zones || [],
-        route: exercise.route || [],
-        cardioLoad: trainingLoadPro["cardio-load"] ?? null,
-        runningIndex: exercise["running-index"] ?? null,
-        trainingBenefit: exercise.training_benefit ?? null,
+        heartRateZones,
+        route,
+        cardioLoad,
+        runningIndex: exercise["running-index"] ?? exercise.running_index ?? null,
+        trainingBenefit: exercise.training_benefit ?? exercise["training-benefit"] ?? null,
       },
     },
     linked_training_id: null,
