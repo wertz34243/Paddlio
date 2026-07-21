@@ -23,6 +23,15 @@ describe("trainingPlan repeat expansion", () => {
     expect(expandTrainingRepeatDates("2026-07-14", "weekly")).toEqual(["2026-07-14"]);
   });
 
+  it("creates repeat dates from max count without requiring an end date", () => {
+    expect(expandTrainingRepeatDates("2026-07-14", "weekly", "", 4)).toEqual([
+      "2026-07-14",
+      "2026-07-21",
+      "2026-07-28",
+      "2026-08-04",
+    ]);
+  });
+
   it("creates biweekly repeat dates", () => {
     expect(expandTrainingRepeatDates("2026-07-14", "biweekly", "2026-08-11")).toEqual([
       "2026-07-14",

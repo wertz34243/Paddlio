@@ -893,7 +893,7 @@ export function PlanView({
     </>
   );
 
-  const repeatPreviewCount = draft && selectedRepeat !== "none" && selectedRepeatUntil
+  const repeatPreviewCount = draft && selectedRepeat !== "none" && (selectedRepeatUntil || selectedRepeatMaxCount)
     ? expandTrainingRepeatDates(selectedDate, selectedRepeat, selectedRepeatUntil, selectedRepeatMaxCount).length
     : 1;
 
@@ -1302,7 +1302,7 @@ export function PlanView({
               <label>Wiederholen bis<input name="repeatUntil" type="date" value={selectedRepeatUntil} onChange={(event) => setSelectedRepeatUntil(event.currentTarget.value)} disabled={selectedRepeat === "none"} /></label>
               <label>Max. Termine<input name="repeatMaxCount" type="number" min="1" max="90" value={selectedRepeatMaxCount ?? ""} onChange={(event) => setSelectedRepeatMaxCount(Number(event.currentTarget.value) || undefined)} placeholder="optional" disabled={selectedRepeat === "none"} /></label>
             </div>
-            {selectedRepeat !== "none" ? <p className="card-note">{selectedRepeatUntil ? `Vorschau: Es werden ${repeatPreviewCount} Trainingseinheiten erstellt.` : "Wähle ein Enddatum, damit mehrere Termine erstellt werden."}</p> : null}
+            {selectedRepeat !== "none" ? <p className="card-note">{selectedRepeatUntil || selectedRepeatMaxCount ? `Vorschau: Es werden ${repeatPreviewCount} Trainingseinheiten erstellt.` : "Wähle ein Enddatum oder eine maximale Terminanzahl, damit mehrere Termine erstellt werden."}</p> : null}
             {isCoach ? <div className="choice-group"><span>Sportler für Einzeltraining</span><div className="tag-row">{visibleAthletes.map((athlete) => <label className="toggle-row" key={athlete.id}><span>{getAthleteName(athlete)}</span><input name="assignedAthleteIds" type="checkbox" value={athlete.id} defaultChecked={draft.assignedAthleteIds.includes(athlete.id)} /></label>)}</div></div> : null}
             {isCoach ? <div className="choice-group"><span>Trainingsgruppen</span><div className="tag-row">{visibleGroups.map((group) => <label className="toggle-row" key={group.id}><span>{group.name}</span><input name="assignedGroupIds" type="checkbox" value={group.id} defaultChecked={draft.assignedGroupIds.includes(group.id)} /></label>)}</div></div> : null}
             <label>Ziel/Fokus<input name="focus" defaultValue={draft.focus || draft.goal} placeholder="z. B. Tor 6 sauber anfahren" /></label>

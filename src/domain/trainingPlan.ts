@@ -122,19 +122,20 @@ export const expandTrainingRepeatDates = (
   maxCount?: number,
 ): string[] => {
   const cursor = parseLocalDateOnly(startDate);
-  const end = repeatUntil ? parseLocalDateOnly(repeatUntil) : cursor;
+  const hasEndDate = Boolean(repeatUntil);
+  const end = hasEndDate ? parseLocalDateOnly(repeatUntil) : null;
   const limit = maxCount && maxCount > 0 ? Math.min(maxCount, 90) : 90;
   const dates: string[] = [];
 
-  if (repeat === "none" || !repeatUntil) {
+  if (repeat === "none" || (!hasEndDate && (!maxCount || maxCount <= 0))) {
     return [formatLocalDateOnly(cursor)];
   }
 
-  if (repeatUntil && end < cursor) {
+  if (end && end < cursor) {
     return [formatLocalDateOnly(cursor)];
   }
 
-  while (dates.length === 0 || (cursor <= end && dates.length < limit)) {
+  while (dates.length < limit && (!end || cursor <= end)) {
     dates.push(formatLocalDateOnly(cursor));
 
     if (repeat === "daily") cursor.setDate(cursor.getDate() + 1);
