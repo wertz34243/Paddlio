@@ -2,7 +2,7 @@ import { isDevelopmentEnvironment } from "./appEnvironment";
 
 const normalizeEnvValue = (value: unknown): string | undefined => {
   if (typeof value !== "string") return undefined;
-  const trimmed = value.trim();
+  const trimmed = value.trim().replace(/^["']|["']$/g, "").trim();
   return trimmed.length > 0 ? trimmed : undefined;
 };
 
@@ -41,5 +41,5 @@ export const isSupabaseConfigured = supabaseConfigIssues.length === 0;
 
 export const getSupabaseConfigMessage = (): string => {
   if (isSupabaseConfigured) return "Supabase ist konfiguriert.";
-  return `Supabase ist noch nicht vollständig konfiguriert: ${supabaseConfigIssues.join(", ")}. Bitte VITE_SUPABASE_ANON_KEY in Vercel oder .env.local eintragen.`;
+  return `Supabase ist noch nicht vollständig konfiguriert: ${supabaseConfigIssues.join(", ")}. Bitte VITE_SUPABASE_URL und VITE_SUPABASE_ANON_KEY in Vercel oder .env.local eintragen.`;
 };
