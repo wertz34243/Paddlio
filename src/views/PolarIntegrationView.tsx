@@ -151,7 +151,7 @@ export function PolarIntegrationView({ data, user, sessionAccessToken, onDataCha
       applySyncedSessions(result.sessions);
       setMessage(result.imported || result.updated
         ? `${result.imported} neu, ${result.updated} aktualisiert, ${result.skipped} übersprungen.`
-        : "Keine neuen Polar-Trainings gefunden.");
+        : explainPolarSyncResult(result.message));
     } catch (error) {
       setMessage(explainPolarError(error));
     } finally {
@@ -322,9 +322,17 @@ function explainPolarError(error: unknown): string {
   if (message.includes("polar_token_refresh_failed")) return "Die Polar-Verbindung konnte nicht erneuert werden. Bitte verbinde Polar erneut.";
   if (message.includes("polar_request_failed:401")) return "Polar hat die Verbindung abgelehnt. Bitte verbinde Polar erneut.";
   if (message.includes("polar_request_failed:429")) return "Polar begrenzt gerade die Anfragen. Bitte versuche es später erneut.";
+  if (message.includes("polar_request_failed:403")) return "Polar verweigert den Zugriff. Bitte prüfe in Polar, ob alle Pflichtzustimmungen akzeptiert sind.";
   if (message.includes("polar_not_connected")) return "Polar ist noch nicht verbunden.";
   if (message.includes("invalid_auth_token")) return "Bitte melde dich erneut an.";
   return "Polar-Aktion konnte nicht abgeschlossen werden. Details stehen in der Konsole.";
+}
+
+function explainPolarSyncResult(message?: string): string {
+  if (message === "polar_no_new_trainings_after_registration") {
+    return "Keine neuen Polar-Trainings gefunden. Polar liefert nur Trainings, die nach der Verbindung mit Paddlio in Polar Flow hochgeladen wurden und maximal etwa 30 Tage verfügbar sind.";
+  }
+  return "Keine neuen Polar-Trainings gefunden.";
 }
 
 function getPolarSetupMessage(status: PolarConnectionStatus | null): string {

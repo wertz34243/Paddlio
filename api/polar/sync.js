@@ -2,14 +2,16 @@ import { getValidPolarAccessToken, normalizePolarExercise, polarFetch, requirePo
 
 const tryRegisterPolarUser = async (accessToken, userId) => {
   try {
-    await polarFetch("/v3/users", accessToken, {
+    const registered = await polarFetch("/v3/users", accessToken, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ "member-id": userId }),
     });
+    return String(registered?.["polar-user-id"] || registered?.polar_user_id || registered?.id || "");
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
     if (!message.includes("409") && !message.includes("400")) throw error;
+    return "";
   }
 };
 
@@ -86,6 +88,28 @@ const listExercisesFromTransaction = async (polarUserId, accessToken) => {
   return { exercises, commit };
 };
 
+const listExercisesFromCurrentEndpoint = async (accessToken) => {
+  const exercises = await polarFetch("/v3/exercises?samples=true&zones=true&route=true", accessToken).catch((error) => {
+    const message = error instanceof Error ? error.message : "";
+    if (message.includes("polar_request_failed:204") || message.includes("polar_request_failed:404")) return [];
+    throw error;
+  });
+
+  if (Array.isArray(exercises)) return exercises;
+  if (Array.isArray(exercises?.exercises)) return exercises.exercises;
+  return [];
+};
+
+const dedupeExercises = (exercises) => {
+  const byId = new Map();
+  for (const exercise of exercises) {
+    const id = String(exercise?.id || exercise?.["exercise-id"] || exercise?.exercise_id || "");
+    if (!id) continue;
+    byId.set(id, { ...(byId.get(id) || {}), ...exercise });
+  }
+  return Array.from(byId.values());
+};
+
 export default async function handler(req, res) {
   let jobId = null;
   try {
@@ -117,11 +141,19 @@ export default async function handler(req, res) {
     jobId = job.id;
 
     const accessToken = await getValidPolarAccessToken(supabase, account);
-    await tryRegisterPolarUser(accessToken, user.id);
+    const registeredPolarUserId = await tryRegisterPolarUser(accessToken, user.id);
+    if (registeredPolarUserId && registeredPolarUserId !== account.polar_user_id) {
+      await supabase.from("polar_accounts").update({
+        polar_user_id: registeredPolarUserId,
+        updated_at: now,
+      }).eq("id", account.id);
+      account.polar_user_id = registeredPolarUserId;
+    }
 
     const polarUserId = account.polar_user_id || user.id;
+    const currentExercises = await listExercisesFromCurrentEndpoint(accessToken);
     const transactionResult = await listExercisesFromTransaction(polarUserId, accessToken);
-    const exercises = transactionResult.exercises;
+    const exercises = dedupeExercises([...currentExercises, ...transactionResult.exercises]);
     const enriched = [];
     for (const exercise of exercises.slice(0, 25)) {
       enriched.push(await enrichExercise(exercise, accessToken));
@@ -186,7 +218,7 @@ export default async function handler(req, res) {
       updated,
       skipped: Math.max(0, exercises.length - rows.length),
       sessions: rows,
-      message: rows.length ? "polar_sync_completed" : "polar_no_new_trainings",
+      message: rows.length ? "polar_sync_completed" : "polar_no_new_trainings_after_registration",
     });
   } catch (error) {
     try {

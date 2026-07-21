@@ -46,6 +46,7 @@ export type PolarSyncResult = {
   updated: number;
   skipped: number;
   sessions: Array<Record<string, unknown>>;
+  message?: string;
 };
 
 const authHeaders = (accessToken: string): HeadersInit => ({
