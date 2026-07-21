@@ -23,6 +23,7 @@ function loadLocalEnv(path: string) {
 export default defineConfig({
   testDir: "./tests/e2e",
   timeout: 30_000,
+  workers: process.env.PADDLIO_E2E_COACH_EMAIL ? 1 : undefined,
   expect: {
     timeout: 5_000,
   },

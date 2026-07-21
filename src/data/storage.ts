@@ -1,6 +1,7 @@
 import { seedData } from "./seed";
 import { academyInitialData } from "../features/academy/academyContent";
 import { getWeekdayFromDate } from "../domain/trainingPlan";
+import { writeLocalFirstCache } from "../services/localFirstCacheService";
 import type {
   AgeClass,
   Athlete,
@@ -2194,5 +2195,9 @@ export const loadData = (userId: string): PaddleMotionData => {
 };
 
 export const saveData = (userId: string, data: PaddleMotionData): void => {
-  writeStorage(dataKey(userId), JSON.stringify(bindDataToUser(data, getAuthUser(userId))));
+  const normalized = bindDataToUser(data, getAuthUser(userId));
+  writeStorage(dataKey(userId), JSON.stringify(normalized));
+  void writeLocalFirstCache(userId, normalized).catch(() => {
+    // IndexedDB is an optimization. LocalStorage remains the synchronous startup cache.
+  });
 };

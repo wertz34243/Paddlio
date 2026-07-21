@@ -1,4 +1,5 @@
 import { enqueueOfflineChange, flushOfflineQueue, getOfflineQueueCount } from "./offlineQueueService";
+import type { SyncPriority } from "./syncEntityConfig";
 
 export type SyncQueueItem = {
   id: string;
@@ -19,4 +20,4 @@ export const enqueueSyncChange = (item: Omit<SyncQueueItem, "id" | "createdAt" |
   });
 };
 
-export const flushSyncQueue = async (): Promise<number> => flushOfflineQueue();
+export const flushSyncQueue = async (priority?: SyncPriority): Promise<number> => flushOfflineQueue(priority);

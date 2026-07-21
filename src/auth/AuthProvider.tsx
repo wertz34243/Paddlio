@@ -44,7 +44,8 @@ import {
 } from "../services/resultsReadinessService";
 import { listCloudBetaFeedback, listCloudBetaTesters } from "../services/betaService";
 import { listCloudMaterials } from "../services/materialService";
-import { flushSyncQueue, getPendingSyncCount } from "../services/syncService";
+import { getPendingSyncCount } from "../services/syncService";
+import { backgroundSyncEngine } from "../services/backgroundSyncService";
 import { listCloudNotifications } from "../services/notificationService";
 import { listCloudSmartCoachRecommendations } from "../services/smartCoachService";
 import {
@@ -352,6 +353,7 @@ const mergeCloudData = (
     id: userId,
     userId,
     role: getPrimaryRole(cloudTruthProfile.roles),
+    roles: cloudTruthProfile.roles.map(toLocalRole),
     profile: {
       ...cached.users[0].profile,
       ...cloudProfileData,
@@ -729,7 +731,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const handleOnline = () => {
       setCloudStatus("syncing");
-      void flushSyncQueue().then((synced) => {
+      void backgroundSyncEngine.run("online", ["A", "B"]).then((synced) => {
         setPendingSyncCount(getPendingSyncCount());
         setCloudMessage(synced > 0 ? `${synced} wartende Änderungen wurden synchronisiert.` : "Synchronisiert.");
         void refreshCloudData();
@@ -740,6 +742,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const pending = getPendingSyncCount();
       setPendingSyncCount(pending);
       if (pending > 0) {
+        backgroundSyncEngine.markLocalChange();
         setCloudStatus(navigator.onLine ? "pending" : "offline");
         setCloudMessage(`${pending} Änderungen warten auf Synchronisation.`);
       }
@@ -747,10 +750,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
     window.addEventListener("paddlio-sync-queue-changed", handleQueueChange);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible" || getPendingSyncCount() === 0) return;
+      setCloudStatus("syncing");
+      void backgroundSyncEngine.run("foreground", ["A", "B"]).then((synced) => {
+        setPendingSyncCount(getPendingSyncCount());
+        setCloudMessage(synced > 0 ? `${synced} Änderungen wurden nachgeholt.` : "Synchronisiert.");
+      });
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
       window.removeEventListener("paddlio-sync-queue-changed", handleQueueChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 

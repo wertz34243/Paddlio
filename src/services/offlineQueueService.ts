@@ -1,5 +1,6 @@
 import { getSupabaseClient } from "../lib/supabase";
 import { sanitizeCloudPayload } from "./cloudIds";
+import { getSyncEntityConfig, toSoftDeletePayload, type SyncPriority } from "./syncEntityConfig";
 
 export type OfflineQueueOperation = "insert" | "update" | "upsert" | "delete";
 export type OfflineQueueStatus = "pending" | "failed";
@@ -12,9 +13,13 @@ export type OfflineQueueItem = {
   createdAt: string;
   retryCount: number;
   status: OfflineQueueStatus;
+  lastError?: string;
 };
 
 const SYNC_QUEUE_KEY = "paddlio_sync_queue";
+const MAX_RETRY_COUNT = 5;
+
+const isOnline = (): boolean => typeof navigator === "undefined" || navigator.onLine;
 
 const normalizeQueueItem = (item: any): OfflineQueueItem => ({
   id: item.id ?? `sync-${crypto.randomUUID()}`,
@@ -24,6 +29,7 @@ const normalizeQueueItem = (item: any): OfflineQueueItem => ({
   createdAt: item.createdAt ?? new Date().toISOString(),
   retryCount: item.retryCount ?? item.attempts ?? 0,
   status: item.status === "failed" ? "failed" : "pending",
+  lastError: item.lastError,
 });
 
 export const readOfflineQueue = (): OfflineQueueItem[] => {
@@ -48,50 +54,97 @@ export const writeOfflineQueue = (items: OfflineQueueItem[]): void => {
 export const getOfflineQueueCount = (): number => readOfflineQueue().length;
 
 export const enqueueOfflineChange = (item: Omit<OfflineQueueItem, "id" | "createdAt" | "retryCount" | "status">): void => {
-  writeOfflineQueue([
-    ...readOfflineQueue(),
-    {
-      ...item,
-      id: `sync-${crypto.randomUUID()}`,
-      createdAt: new Date().toISOString(),
-      retryCount: 0,
-      status: "pending",
-    },
-  ]);
-};
-
-export const flushOfflineQueue = async (): Promise<number> => {
-  const client = getSupabaseClient();
-  if (!client || !navigator.onLine) return 0;
+  const config = getSyncEntityConfig(item.table);
+  const payload = item.operation === "delete" ? toSoftDeletePayload(item.table, item.payload) : item.payload;
+  const operation = item.operation === "delete" && config.supportsSoftDelete ? "update" : item.operation;
+  const entityId = payload[config.primaryKey] ?? payload.id;
+  const nextItem: OfflineQueueItem = {
+    ...item,
+    operation,
+    payload,
+    id: `sync-${crypto.randomUUID()}`,
+    createdAt: new Date().toISOString(),
+    retryCount: 0,
+    status: "pending",
+  };
 
   const queue = readOfflineQueue();
+  if (!entityId) {
+    writeOfflineQueue([...queue, nextItem]);
+    return;
+  }
+
+  const nextQueue = queue.filter((queued) => {
+    const queuedConfig = getSyncEntityConfig(queued.table);
+    const queuedId = queued.payload[queuedConfig.primaryKey] ?? queued.payload.id;
+    return !(queued.table === item.table && queuedId === entityId);
+  });
+
+  writeOfflineQueue([...nextQueue, nextItem]);
+};
+
+const flushQueueItem = async (item: OfflineQueueItem): Promise<void> => {
+  const client = getSupabaseClient();
+  if (!client) return;
+
+  const config = getSyncEntityConfig(item.table);
+  const table = client.from(item.table) as any;
+
+  if (item.operation === "delete") {
+    const { error } = await table.delete().eq(config.primaryKey, item.payload[config.primaryKey]);
+    if (error) throw error;
+    return;
+  }
+
+  if (item.operation === "upsert") {
+    const { error } = await table.upsert(item.payload, { onConflict: config.conflictKey });
+    if (error) throw error;
+    return;
+  }
+
+  if (item.operation === "update") {
+    const payload = config.supportsSoftDelete ? toSoftDeletePayload(item.table, item.payload) : item.payload;
+    const primaryValue = payload[config.primaryKey] ?? payload.id;
+    const query = table.update(payload);
+    const { error } = primaryValue
+      ? await query.eq(config.primaryKey, primaryValue)
+      : config.ownerField && payload[config.ownerField]
+        ? await query.eq(config.ownerField, payload[config.ownerField])
+        : await query.eq("user_id", payload.user_id);
+    if (error) throw error;
+    return;
+  }
+
+  const { error } = await table.insert(item.payload);
+  if (error) throw error;
+};
+
+export const flushOfflineQueue = async (priority?: SyncPriority): Promise<number> => {
+  const client = getSupabaseClient();
+  if (!client || !isOnline()) return 0;
+
+  const queue = readOfflineQueue();
+  const selected = priority ? queue.filter((item) => getSyncEntityConfig(item.table).priority === priority) : queue;
+  const untouched = priority ? queue.filter((item) => getSyncEntityConfig(item.table).priority !== priority) : [];
   const failed: OfflineQueueItem[] = [];
   let synced = 0;
 
-  for (const item of queue) {
+  for (const item of selected) {
+    if (item.retryCount >= MAX_RETRY_COUNT) {
+      failed.push({ ...item, status: "failed", lastError: item.lastError ?? "Maximale Anzahl an Sync-Versuchen erreicht." });
+      continue;
+    }
+
     try {
-      if (item.operation === "delete") {
-        const { error } = await (client.from(item.table) as any).delete().eq("id", item.payload.id);
-        if (error) throw error;
-      } else if (item.operation === "upsert") {
-        const { error } = await (client.from(item.table) as any).upsert(item.payload, { onConflict: item.table === "club_settings" ? "club_id" : "id" });
-        if (error) throw error;
-      } else if (item.operation === "update") {
-        const { id, ...payload } = item.payload;
-        const query = (client.from(item.table) as any).update(payload);
-        const { error } = id ? await query.eq("id", id) : await query.eq("user_id", item.payload.user_id);
-        if (error) throw error;
-      } else {
-        const { error } = await (client.from(item.table) as any).insert(item.payload);
-        if (error) throw error;
-      }
+      await flushQueueItem(item);
       synced += 1;
     } catch (error) {
+      const message = error instanceof Error ? error.message : "Unbekannter Sync-Fehler.";
       console.error(`[Paddlio Sync] Offline-Queue für ${item.table} konnte nicht synchronisiert werden.`, error);
-      failed.push({ ...item, retryCount: item.retryCount + 1, status: "failed" });
+      failed.push({ ...item, retryCount: item.retryCount + 1, status: "failed", lastError: message });
     }
   }
 
-  writeOfflineQueue(failed);
+  writeOfflineQueue([...untouched, ...failed]);
   return synced;
 };

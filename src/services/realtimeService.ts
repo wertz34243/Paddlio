@@ -107,27 +107,14 @@ export const subscribeToUserTrainings = (userId: string, onChange: RealtimeHandl
       { table: "profiles", filter: `id=eq.${userId}` },
       { table: "training_plan_items", filter: `owner_id=eq.${userId}` },
       { table: "training_plan_items", filter: `assigned_athlete_id=eq.${userId}` },
-      { table: "training_templates", filter: `owner_id=eq.${userId}` },
       { table: "training_feedback", filter: `athlete_id=eq.${userId}` },
       { table: "training_journal_entries", filter: `athlete_id=eq.${userId}` },
       { table: "training_attendance", filter: `athlete_id=eq.${userId}` },
-      { table: "competition_results", filter: `athlete_id=eq.${userId}` },
-      { table: "personal_bests", filter: `athlete_id=eq.${userId}` },
-      { table: "materials", filter: `athlete_id=eq.${userId}` },
-      { table: "external_connections", filter: `user_id=eq.${userId}` },
-      { table: "external_training_sessions", filter: `user_id=eq.${userId}` },
-      { table: "season_goals", filter: `athlete_id=eq.${userId}` },
-      { table: "smart_coach_recommendations", filter: `created_for_user_id=eq.${userId}` },
       { table: "group_members", filter: `athlete_id=eq.${userId}` },
       { table: "group_memberships", filter: `user_id=eq.${userId}` },
       { table: "direct_messages", filter: `sender_id=eq.${userId}` },
       { table: "direct_messages", filter: `receiver_id=eq.${userId}` },
       { table: "task_assignments", filter: `assigned_to=eq.${userId}` },
-      { table: "beta_feedback", filter: `user_id=eq.${userId}` },
-      { table: "beta_testers", filter: `user_id=eq.${userId}` },
-      { table: "academy_progress", filter: `user_id=eq.${userId}` },
-      { table: "academy_favorites", filter: `user_id=eq.${userId}` },
-      { table: "academy_assignments", filter: `assigned_to=eq.${userId}` },
     ],
     onChange,
   );
@@ -141,25 +128,55 @@ export const subscribeToCoachClub = (clubId: string, onChange: RealtimeHandler):
     [
       { table: "training_plan_items", filter: `club_id=eq.${clubId}` },
       { table: "training_feedback", filter: `club_id=eq.${clubId}` },
-      { table: "competitions", filter: `club_id=eq.${clubId}` },
-      { table: "competition_results", filter: `club_id=eq.${clubId}` },
-      { table: "personal_bests", filter: `club_id=eq.${clubId}` },
-      { table: "external_training_sessions", filter: `club_id=eq.${clubId}` },
       { table: "training_groups", filter: `club_id=eq.${clubId}` },
-      { table: "smart_coach_recommendations", filter: `club_id=eq.${clubId}` },
-      { table: "club_material", filter: `club_id=eq.${clubId}` },
-      { table: "boats", filter: `club_id=eq.${clubId}` },
-      { table: "club_events", filter: `club_id=eq.${clubId}` },
       { table: "club_messages", filter: `club_id=eq.${clubId}` },
       { table: "group_messages", filter: `club_id=eq.${clubId}` },
-      { table: "club_posts", filter: `club_id=eq.${clubId}` },
       { table: "tasks", filter: `club_id=eq.${clubId}` },
       { table: "training_attendance", filter: `club_id=eq.${clubId}` },
       { table: "profiles", filter: `club_id=eq.${clubId}` },
       { table: "trainer_requests", filter: `club_id=eq.${clubId}` },
-      { table: "academy_courses", filter: `club_id=eq.${clubId}` },
-      { table: "academy_lessons", filter: `club_id=eq.${clubId}` },
-      { table: "academy_media", filter: `club_id=eq.${clubId}` },
+    ],
+    onChange,
+  );
+};
+
+export const subscribeToAcademyUser = (userId: string, onChange: RealtimeHandler): (() => void) => {
+  if (!userId) return () => undefined;
+
+  return subscribeToTables(
+    `academy-user-${userId}`,
+    [
+      { table: "academy_progress", filter: `user_id=eq.${userId}` },
+      { table: "academy_favorites", filter: `user_id=eq.${userId}` },
+      { table: "academy_assignments", filter: `assigned_to=eq.${userId}` },
+    ],
+    onChange,
+  );
+};
+
+export const subscribeToPolarUser = (userId: string, onChange: RealtimeHandler): (() => void) => {
+  if (!userId) return () => undefined;
+
+  return subscribeToTables(
+    `polar-user-${userId}`,
+    [
+      { table: "external_connections", filter: `user_id=eq.${userId}` },
+      { table: "external_training_sessions", filter: `user_id=eq.${userId}` },
+    ],
+    onChange,
+  );
+};
+
+export const subscribeToAnalysisUser = (userId: string, onChange: RealtimeHandler): (() => void) => {
+  if (!userId) return () => undefined;
+
+  return subscribeToTables(
+    `analysis-user-${userId}`,
+    [
+      { table: "competition_results", filter: `athlete_id=eq.${userId}` },
+      { table: "personal_bests", filter: `athlete_id=eq.${userId}` },
+      { table: "season_goals", filter: `athlete_id=eq.${userId}` },
+      { table: "smart_coach_recommendations", filter: `created_for_user_id=eq.${userId}` },
     ],
     onChange,
   );

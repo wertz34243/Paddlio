@@ -134,6 +134,7 @@ export type User = {
   id: string;
   userId: string;
   role: UserRole;
+  roles?: UserRole[];
   profile: UserProfile;
   createdAt: string;
   updatedAt: string;

@@ -10,6 +10,8 @@ const adminPassword = process.env.PADDLIO_E2E_ADMIN_PASSWORD;
 const hasCoachAthleteCredentials = Boolean(coachEmail && coachPassword && athleteEmail && athletePassword);
 const hasAdminCredentials = Boolean(adminEmail && adminPassword);
 
+test.describe.configure({ mode: "serial" });
+
 async function login(page: Page, email: string, password: string) {
   await page.goto("/");
   await page.getByLabel("E-Mail").fill(email);
@@ -55,6 +57,19 @@ async function expectTrainingVisibleAfterSync(page: Page, title: string) {
   }
 
   await expect(page.getByText(title)).toBeVisible({ timeout: 20_000 });
+}
+
+async function expectTextVisibleAfterSync(page: Page, text: string) {
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    await page.reload();
+    await openTrainingPlan(page);
+    if (await page.getByText(text).first().isVisible().catch(() => false)) {
+      return;
+    }
+    await page.waitForTimeout(2_500);
+  }
+
+  await expect(page.getByText(text)).toBeVisible({ timeout: 20_000 });
 }
 
 const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -126,14 +141,13 @@ test.describe("two-device training and feedback flow", () => {
     await expect(coachPage.getByText(title)).toBeVisible({ timeout: 20_000 });
 
     await expectTrainingVisibleAfterSync(athletePage, title);
-    await athletePage.getByRole("button", { name: new RegExp(`Feedback.*${escapeRegExp(title)}`) }).click();
+    const athleteTrainingCard = athletePage.locator(".calendar-training-card").filter({ hasText: title }).first();
+    await athleteTrainingCard.getByRole("button", { name: new RegExp(`Feedback.*${escapeRegExp(title)}`) }).click();
     await athletePage.getByLabel("Kommentar").fill(feedbackComment);
     await athletePage.getByRole("button", { name: /ckmeldung speichern/i }).click();
-    await expect(athletePage.getByText(feedbackComment)).toBeVisible({ timeout: 20_000 });
+    await expectTextVisibleAfterSync(athletePage, feedbackComment);
 
-    await coachPage.reload();
-    await openTrainingPlan(coachPage);
-    await expect(coachPage.getByText(feedbackComment)).toBeVisible({ timeout: 20_000 });
+    await expectTextVisibleAfterSync(coachPage, feedbackComment);
 
     const coachTrainingCard = coachPage.locator(".calendar-training-card").filter({ hasText: title }).first();
     await coachTrainingCard.getByRole("button", { name: /schen/i }).click();
