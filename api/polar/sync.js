@@ -27,6 +27,65 @@ const enrichExercise = async (exercise, accessToken) => {
   };
 };
 
+const extractExerciseIdFromResource = (resource) => {
+  if (!resource) return "";
+  if (typeof resource === "string") {
+    const clean = resource.split("?")[0].replace(/\/$/, "");
+    return clean.slice(clean.lastIndexOf("/") + 1);
+  }
+  return String(resource.id || resource["exercise-id"] || resource["exercise_id"] || "");
+};
+
+const listExercisesFromTransaction = async (polarUserId, accessToken) => {
+  const transaction = await polarFetch(`/v3/users/${encodeURIComponent(polarUserId)}/exercise-transactions`, accessToken, {
+    method: "POST",
+  }).catch((error) => {
+    const message = error instanceof Error ? error.message : "";
+    if (message.includes("polar_request_failed:204") || message.includes("polar_request_failed:404")) return null;
+    throw error;
+  });
+
+  if (!transaction) return { exercises: [], commit: async () => {} };
+
+  const transactionId = transaction["transaction-id"] || transaction.transaction_id || transaction.id;
+  const resourceUri = transaction["resource-uri"] || transaction.resource_uri
+    || (transactionId ? `/v3/users/${encodeURIComponent(polarUserId)}/exercise-transactions/${encodeURIComponent(transactionId)}` : "");
+
+  const transactionList = resourceUri ? await polarFetch(resourceUri, accessToken).catch(() => transaction) : transaction;
+  const exerciseRefs = Array.isArray(transactionList?.exercises)
+    ? transactionList.exercises
+    : Array.isArray(transactionList)
+      ? transactionList
+      : [];
+
+  const exercises = [];
+  for (const ref of exerciseRefs.slice(0, 50)) {
+    const resource = typeof ref === "string" ? ref : (ref["resource-uri"] || ref.resource_uri || "");
+    const id = extractExerciseIdFromResource(ref) || extractExerciseIdFromResource(resource);
+    const detail = resource
+      ? await polarFetch(resource, accessToken).catch(() => (typeof ref === "object" ? ref : {}))
+      : await polarFetch(`/v3/exercises/${encodeURIComponent(id)}`, accessToken).catch(() => (typeof ref === "object" ? ref : {}));
+    exercises.push({
+      ...(typeof ref === "object" ? ref : {}),
+      ...(detail || {}),
+      id: detail?.id || detail?.["exercise-id"] || id,
+      "exercise-id": detail?.["exercise-id"] || detail?.id || id,
+    });
+  }
+
+  const commit = async () => {
+    if (!transactionId) return;
+    await polarFetch(`/v3/users/${encodeURIComponent(polarUserId)}/exercise-transactions/${encodeURIComponent(transactionId)}`, accessToken, {
+      method: "PUT",
+    }).catch((error) => {
+      const message = error instanceof Error ? error.message : "";
+      if (!message.includes("polar_request_failed:404")) throw error;
+    });
+  };
+
+  return { exercises, commit };
+};
+
 export default async function handler(req, res) {
   let jobId = null;
   try {
@@ -60,8 +119,9 @@ export default async function handler(req, res) {
     const accessToken = await getValidPolarAccessToken(supabase, account);
     await tryRegisterPolarUser(accessToken, user.id);
 
-    const list = await polarFetch("/v3/exercises", accessToken);
-    const exercises = Array.isArray(list?.exercises) ? list.exercises : Array.isArray(list) ? list : [];
+    const polarUserId = account.polar_user_id || user.id;
+    const transactionResult = await listExercisesFromTransaction(polarUserId, accessToken);
+    const exercises = transactionResult.exercises;
     const enriched = [];
     for (const exercise of exercises.slice(0, 25)) {
       enriched.push(await enrichExercise(exercise, accessToken));
@@ -90,6 +150,7 @@ export default async function handler(req, res) {
       if (existing) updated += 1;
       else imported += 1;
     }
+    await transactionResult.commit();
 
     await supabase.from("device_connections").upsert({
       user_id: user.id,
@@ -119,7 +180,14 @@ export default async function handler(req, res) {
       skipped_count: Math.max(0, exercises.length - rows.length),
     }).eq("id", jobId);
 
-    sendJson(res, 200, { ok: true, imported, updated, skipped: Math.max(0, exercises.length - rows.length), sessions: rows });
+    sendJson(res, 200, {
+      ok: true,
+      imported,
+      updated,
+      skipped: Math.max(0, exercises.length - rows.length),
+      sessions: rows,
+      message: rows.length ? "polar_sync_completed" : "polar_no_new_trainings",
+    });
   } catch (error) {
     try {
       const { supabase, user } = await requireUser(req);

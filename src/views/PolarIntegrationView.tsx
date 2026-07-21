@@ -28,6 +28,9 @@ export function PolarIntegrationView({ data, user, sessionAccessToken, onDataCha
   const [status, setStatus] = useState<PolarConnectionStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [autoSyncAfterConnect, setAutoSyncAfterConnect] = useState(() =>
+    typeof window !== "undefined" && window.sessionStorage.getItem("paddlio-polar-return") === "connected",
+  );
   const polarLocalConnection = data.externalConnections.find((connection) => connection.provider === "polar");
   const polarSessions = data.externalTrainingSessions.filter((session) => session.provider === "polar");
   const latestSession = polarSessions[0];
@@ -39,77 +42,6 @@ export function PolarIntegrationView({ data, user, sessionAccessToken, onDataCha
       : [];
     return calculatePaddlioZones(samples, latestSession?.maxHeartRate || 190);
   }, [latestSession]);
-
-  const loadStatus = async () => {
-    if (!sessionAccessToken) {
-      setMessage("Polar benötigt eine bestätigte Cloud-Anmeldung.");
-      return;
-    }
-    setLoading(true);
-    try {
-      const nextStatus = await getPolarStatus(sessionAccessToken);
-      setStatus(nextStatus);
-      applyStatusToLocalData(nextStatus);
-      setMessage(nextStatus.connected ? "Polar ist verbunden." : "Polar ist noch nicht verbunden.");
-    } catch (error) {
-      setMessage(explainPolarError(error));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void loadStatus();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionAccessToken]);
-
-  const connect = async () => {
-    if (!sessionAccessToken) {
-      setMessage("Bitte zuerst mit deinem Paddlio Cloud-Konto anmelden.");
-      return;
-    }
-    setLoading(true);
-    try {
-      const url = await startPolarConnection(sessionAccessToken);
-      window.location.assign(url);
-    } catch (error) {
-      setMessage(explainPolarError(error));
-      setLoading(false);
-    }
-  };
-
-  const sync = async () => {
-    if (!sessionAccessToken) return;
-    setLoading(true);
-    try {
-      const result = await syncPolarTrainings(sessionAccessToken);
-      const nextStatus = await getPolarStatus(sessionAccessToken);
-      setStatus(nextStatus);
-      applyStatusToLocalData(nextStatus);
-      applySyncedSessions(result.sessions);
-      setMessage(`${result.imported} neu, ${result.updated} aktualisiert, ${result.skipped} übersprungen.`);
-    } catch (error) {
-      setMessage(explainPolarError(error));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const disconnect = async () => {
-    if (!sessionAccessToken) return;
-    setLoading(true);
-    try {
-      await disconnectPolar(sessionAccessToken);
-      const nextStatus = await getPolarStatus(sessionAccessToken);
-      setStatus(nextStatus);
-      applyStatusToLocalData(nextStatus);
-      setMessage("Polar wurde getrennt. Bereits importierte Trainings bleiben erhalten.");
-    } catch (error) {
-      setMessage(explainPolarError(error));
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const applyStatusToLocalData = (nextStatus: PolarConnectionStatus) => {
     const timestamp = new Date().toISOString();
@@ -171,10 +103,92 @@ export function PolarIntegrationView({ data, user, sessionAccessToken, onDataCha
     }));
   };
 
+  const loadStatus = async () => {
+    if (!sessionAccessToken) {
+      setMessage("Polar benötigt eine bestätigte Cloud-Anmeldung.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const nextStatus = await getPolarStatus(sessionAccessToken);
+      setStatus(nextStatus);
+      applyStatusToLocalData(nextStatus);
+      setMessage(nextStatus.connected ? "Polar ist verbunden." : "Polar ist noch nicht verbunden.");
+    } catch (error) {
+      setMessage(explainPolarError(error));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const connect = async () => {
+    if (!sessionAccessToken) {
+      setMessage("Bitte zuerst mit deinem Paddlio Cloud-Konto anmelden.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const url = await startPolarConnection(sessionAccessToken);
+      window.location.assign(url);
+    } catch (error) {
+      setMessage(explainPolarError(error));
+      setLoading(false);
+    }
+  };
+
+  const sync = async () => {
+    if (!sessionAccessToken) return;
+    setLoading(true);
+    try {
+      const result = await syncPolarTrainings(sessionAccessToken);
+      const nextStatus = await getPolarStatus(sessionAccessToken);
+      setStatus(nextStatus);
+      applyStatusToLocalData(nextStatus);
+      applySyncedSessions(result.sessions);
+      setMessage(result.imported || result.updated
+        ? `${result.imported} neu, ${result.updated} aktualisiert, ${result.skipped} übersprungen.`
+        : "Keine neuen Polar-Trainings gefunden.");
+    } catch (error) {
+      setMessage(explainPolarError(error));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const disconnect = async () => {
+    if (!sessionAccessToken) return;
+    setLoading(true);
+    try {
+      await disconnectPolar(sessionAccessToken);
+      const nextStatus = await getPolarStatus(sessionAccessToken);
+      setStatus(nextStatus);
+      applyStatusToLocalData(nextStatus);
+      setMessage("Polar wurde getrennt. Bereits importierte Trainings bleiben erhalten.");
+    } catch (error) {
+      setMessage(explainPolarError(error));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionAccessToken]);
+
   const connected = status?.connected || polarLocalConnection?.status === "connected";
   const envReady = status?.requiredEnvironment
     ? status.requiredEnvironment.polarClientConfigured && status.requiredEnvironment.serverConfigured
     : true;
+
+  useEffect(() => {
+    if (!autoSyncAfterConnect || !sessionAccessToken || !connected || loading) return;
+    setAutoSyncAfterConnect(false);
+    window.sessionStorage.removeItem("paddlio-polar-return");
+    setMessage("Polar ist verbunden. Synchronisierung startet...");
+    void sync();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoSyncAfterConnect, connected, sessionAccessToken]);
 
   return (
     <section className="polar-view stack">

@@ -270,6 +270,10 @@ function AppContent() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (!params.has("polar")) return;
+    const polarResult = params.get("polar");
+    if (polarResult) {
+      window.sessionStorage.setItem("paddlio-polar-return", polarResult);
+    }
 
     setActivePage("more");
     setMoreSegment("integrations");

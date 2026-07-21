@@ -172,7 +172,8 @@ export const getValidPolarAccessToken = async (supabase, account) => {
 };
 
 export const polarFetch = async (path, accessToken, init = {}) => {
-  const response = await fetch(`${POLAR_API_URL}${path}`, {
+  const url = /^https?:\/\//i.test(path) ? path : `${POLAR_API_URL}${path}`;
+  const response = await fetch(url, {
     ...init,
     headers: {
       Accept: "application/json",
@@ -182,7 +183,10 @@ export const polarFetch = async (path, accessToken, init = {}) => {
   });
   if (response.status === 204) return null;
   const json = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(`polar_request_failed:${response.status}`);
+  if (!response.ok) {
+    const polarError = json?.error || json?.message || response.statusText || "";
+    throw new Error(`polar_request_failed:${response.status}${polarError ? `:${polarError}` : ""}`);
+  }
   return json;
 };
 
@@ -193,11 +197,19 @@ export const safeReturnUrl = (path = "/?polar=connected") => {
 };
 
 export const parseIsoDurationSeconds = (value) => {
+  if (typeof value === "number" && Number.isFinite(value)) return Math.max(0, Math.round(value));
   if (!value || typeof value !== "string") return 0;
   const match = /^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?$/i.exec(value);
   if (!match) return 0;
   const [, days, hours, minutes, seconds] = match;
   return Math.round((Number(days || 0) * 86400) + (Number(hours || 0) * 3600) + (Number(minutes || 0) * 60) + Number(seconds || 0));
+};
+
+const firstDefined = (...values) => values.find((value) => value !== undefined && value !== null && value !== "");
+
+const toNumberOrNull = (value) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
 };
 
 export const mapPolarSport = (sport = "", detailed = "") => {
@@ -212,9 +224,15 @@ export const mapPolarSport = (sport = "", detailed = "") => {
 
 export const normalizePolarExercise = (exercise, userId, clubId = "") => {
   const now = new Date().toISOString();
-  const providerActivityId = String(exercise.id || exercise["exercise-id"] || "");
-  const trainingLoadPro = exercise.training_load_pro || {};
-  const heartRate = exercise.heart_rate || {};
+  const providerActivityId = String(firstDefined(
+    exercise.id,
+    exercise["exercise-id"],
+    exercise["exercise_id"],
+    exercise["transaction-id"],
+    exercise.provider_activity_id,
+  ) || "");
+  const trainingLoadPro = exercise.training_load_pro || exercise["training-load-pro"] || {};
+  const heartRate = exercise.heart_rate || exercise["heart-rate"] || {};
   const samples = Array.isArray(exercise.samples) ? exercise.samples : [];
   const heartRateSamples = samples
     .filter((sample) => String(sample["sample-type"] ?? sample.sample_type ?? "") === "1")
@@ -227,15 +245,17 @@ export const normalizePolarExercise = (exercise, userId, clubId = "") => {
     club_id: clubId || null,
     provider: "polar",
     provider_activity_id: providerActivityId,
-    title: exercise.sport || exercise.detailed_sport_info || "Polar Training",
-    sport_type: mapPolarSport(exercise.sport, exercise.detailed_sport_info),
-    started_at: exercise.start_time ? new Date(exercise.start_time).toISOString() : now,
+    title: firstDefined(exercise.sport, exercise["detailed-sport-info"], exercise.detailed_sport_info, "Polar Training"),
+    sport_type: mapPolarSport(exercise.sport, firstDefined(exercise["detailed-sport-info"], exercise.detailed_sport_info, "")),
+    started_at: firstDefined(exercise.start_time, exercise["start-time"])
+      ? new Date(firstDefined(exercise.start_time, exercise["start-time"])).toISOString()
+      : now,
     duration_seconds: parseIsoDurationSeconds(exercise.duration),
-    distance_meters: Math.round(Number(exercise.distance || 0)),
-    avg_heart_rate: Number(heartRate.average || 0) || null,
-    max_heart_rate: Number(heartRate.maximum || 0) || null,
-    calories: Number(exercise.calories || 0) || null,
-    training_load: Number(exercise.training_load || trainingLoadPro["cardio-load"] || 0) || null,
+    distance_meters: Math.round(toNumberOrNull(exercise.distance) || 0),
+    avg_heart_rate: toNumberOrNull(firstDefined(heartRate.average, heartRate.avg, heartRate["average"])) || null,
+    max_heart_rate: toNumberOrNull(firstDefined(heartRate.maximum, heartRate.max, heartRate["maximum"])) || null,
+    calories: toNumberOrNull(exercise.calories),
+    training_load: toNumberOrNull(firstDefined(exercise.training_load, exercise["training-load"], trainingLoadPro["cardio-load"])),
     recovery_status: trainingLoadPro["cardio-load-interpretation"] || "",
     raw_data: {
       ...exercise,
