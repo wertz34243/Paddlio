@@ -58,6 +58,10 @@ import type {
   TrainingTemplate,
   TrainingTemplateCategory,
   TrainingTemplateVisibility,
+  TeamTask,
+  TeamTaskAssignment,
+  TeamTaskPriority,
+  TeamTaskType,
   User,
 } from "../domain/types";
 import type { DeviceClass } from "../lib/deviceCapabilities";
@@ -96,6 +100,24 @@ const coachWorkflowTabs: WorkflowTabConfig[] = [
   { id: "groups", label: "Gruppen" },
   { id: "feedback", label: "Rückmeldungen" },
 ];
+
+const trainingTaskTypes: TeamTaskType[] = ["training", "technique", "material", "video", "competition", "mental", "recovery", "general"];
+const trainingTaskPriorities: TeamTaskPriority[] = ["normal", "important", "urgent"];
+const trainingTaskTypeLabels: Record<TeamTaskType, string> = {
+  general: "Allgemein",
+  technique: "Technik",
+  material: "Material",
+  video: "Video",
+  competition: "Wettkampf",
+  training: "Training",
+  mental: "Mental",
+  recovery: "Regeneration",
+};
+const trainingTaskPriorityLabels: Record<TeamTaskPriority, string> = {
+  normal: "Normal",
+  important: "Wichtig",
+  urgent: "Dringend",
+};
 
 const athleteWorkflowTabs: WorkflowTabConfig[] = [
   { id: "today", label: "Heute", calendarView: "day" },
@@ -242,6 +264,7 @@ export function PlanView({
   const [selectedRepeatMaxCount, setSelectedRepeatMaxCount] = useState<number | undefined>(undefined);
   const [feedbackEntry, setFeedbackEntry] = useState<PlanEntry | null>(null);
   const [copyEntry, setCopyEntry] = useState<PlanEntry | null>(null);
+  const [taskEntry, setTaskEntry] = useState<PlanEntry | null>(null);
   const [showWeekCopy, setShowWeekCopy] = useState(false);
   const [showBlockCopy, setShowBlockCopy] = useState(false);
   const [areaFilter, setAreaFilter] = useState<"all" | TrainingArea>("all");
@@ -291,6 +314,11 @@ export function PlanView({
 
   const visibleAthletes = useMemo(() => getAthletesForCurrentUser(data, user), [data, user]);
   const visibleGroups = useMemo(() => getGroupsForCurrentUser(data, user), [data, user]);
+  const trainerTaskAssignees = useMemo(() => {
+    const clubUsers = data.users.filter((item) => item.profile.club === user.profile.club && canUseCoachArea(item.role));
+    const merged = [...clubUsers, user].filter((item, index, list) => list.findIndex((candidate) => candidate.userId === item.userId) === index);
+    return merged.length > 0 ? merged : [user];
+  }, [data.users, user]);
   const periodizationTemplates = useMemo(
     () => [...createSystemTrainingTemplates(user.profile.club), ...createCalendarQuickTemplates(user.profile.club)],
     [user.profile.club],
@@ -998,11 +1026,93 @@ export function PlanView({
     setFeedbackEntry(null);
   };
 
+  const createTrainingTask = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!taskEntry || !isCoach) return;
+
+    const formData = new FormData(event.currentTarget);
+    const title = String(formData.get("title") ?? "").trim();
+    const assignedTo = String(formData.get("assignedTo") ?? user.userId);
+    if (!title) {
+      setFormMessage("Bitte gib einen Titel für die Traineraufgabe ein.");
+      return;
+    }
+    if (!trainerTaskAssignees.some((item) => item.userId === assignedTo)) {
+      setFormMessage("Diese Traineraufgabe kann nur einem Trainer oder Admin im Verein zugewiesen werden.");
+      return;
+    }
+
+    const timestamp = new Date().toISOString();
+    const taskId = `task-${crypto.randomUUID()}`;
+    const task: TeamTask = {
+      id: taskId,
+      clubId: user.profile.club,
+      createdBy: user.userId,
+      title,
+      description: String(formData.get("description") ?? "").trim(),
+      taskType: String(formData.get("taskType") ?? "training") as TeamTaskType,
+      priority: String(formData.get("priority") ?? "normal") as TeamTaskPriority,
+      dueDate: String(formData.get("dueDate") ?? taskEntry.date),
+      relatedTrainingId: taskEntry.id,
+      relatedCompetitionId: "",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      deletedAt: "",
+    };
+    const assignment: TeamTaskAssignment = {
+      id: `task-assignment-${crypto.randomUUID()}`,
+      taskId,
+      assignedTo,
+      status: "open",
+      completedAt: "",
+      responseNote: "",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+
+    onDataChange((current) => ({
+      ...current,
+      tasks: [task, ...current.tasks],
+      taskAssignments: [assignment, ...current.taskAssignments],
+    }));
+    setTaskEntry(null);
+    setFormMessage("");
+    setCopyMessage("Traineraufgabe wurde erstellt.");
+  };
+
+  const updateTrainingTaskAssignment = (assignment: TeamTaskAssignment, status: TeamTaskAssignment["status"]) => {
+    const timestamp = new Date().toISOString();
+    const nextAssignment: TeamTaskAssignment = {
+      ...assignment,
+      status,
+      completedAt: status === "done" ? timestamp : assignment.completedAt,
+      updatedAt: timestamp,
+    };
+    onDataChange((current) => ({
+      ...current,
+      taskAssignments: current.taskAssignments.map((item) => (item.id === nextAssignment.id ? nextAssignment : item)),
+    }));
+  };
+
+  const deleteTrainingTask = (taskId: string) => {
+    const timestamp = new Date().toISOString();
+    onDataChange((current) => ({
+      ...current,
+      tasks: current.tasks.map((task) => (task.id === taskId ? { ...task, deletedAt: timestamp, updatedAt: timestamp } : task)),
+    }));
+  };
+
   const renderEntryCard = (entry: PlanEntry) => {
     const entryFeedback = data.trainingFeedback.filter((feedback) => feedback.trainingId === entry.id);
     const assignedAthleteIds = Array.from(new Set([...entry.assignedAthleteIds, entry.assignedAthleteId].filter(Boolean)));
     const assignedAthleteNames = assignedAthleteIds.map(getAssignedAthleteName).filter(Boolean);
     const assignedGroups = visibleGroups.filter((group) => entry.assignedGroupIds.includes(group.id) || entry.assignedGroupId === group.id);
+    const trainingTasks = data.tasks
+      .filter((task) => task.relatedTrainingId === entry.id && !task.deletedAt)
+      .filter((task) => {
+        if (task.createdBy === user.userId) return true;
+        return data.taskAssignments.some((assignment) => assignment.taskId === task.id && assignment.assignedTo === user.userId);
+      });
     const canDeleteEntry = entry.createdByUserId === user.userId || user.role === "admin";
     const repeatSeriesEntries = canDeleteEntry ? getTrainingRepeatSeriesEntries(entries, entry) : [];
     const canDeleteSeries = repeatSeriesEntries.length > 1;
@@ -1048,6 +1158,30 @@ export function PlanView({
             ))}
           </div>
         ) : null}
+        {isCoach && trainingTasks.length > 0 ? (
+          <div className="training-task-list" aria-label="Private Traineraufgaben">
+            {trainingTasks.map((task) => {
+              const assignment = data.taskAssignments.find((item) => item.taskId === task.id);
+              const assignee = data.users.find((item) => item.userId === assignment?.assignedTo);
+              const canUpdateTask = assignment?.assignedTo === user.userId || task.createdBy === user.userId;
+              return (
+                <div className="training-task-row" key={task.id}>
+                  <div>
+                    <span>{trainingTaskTypeLabels[task.taskType]} · {trainingTaskPriorityLabels[task.priority]} · {assignee ? getUserProfileName(assignee) : "Trainer"}</span>
+                    <strong>{task.title}</strong>
+                    {task.description ? <small>{task.description}</small> : null}
+                  </div>
+                  <div className="inline-actions">
+                    <b className={`status-pill ${assignment?.status === "done" ? "done" : "planned"}`}>{assignment?.status ?? "open"}</b>
+                    {canUpdateTask && assignment ? <button type="button" onClick={() => updateTrainingTaskAssignment(assignment, "in_progress")}>In Arbeit</button> : null}
+                    {canUpdateTask && assignment ? <button type="button" onClick={() => updateTrainingTaskAssignment(assignment, "done")}>Erledigt</button> : null}
+                    {task.createdBy === user.userId ? <button className="delete-button" type="button" onClick={() => deleteTrainingTask(task.id)}>Löschen</button> : null}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
         <div className="card-actions">
           <button className="save-button" type="button" onClick={() => onToggleDone(entry.id)} aria-label={`Training ${entry.title || entry.trainingType} am ${entry.date} ${isDoneStatus(entry.status) ? "wieder planen" : "als erledigt markieren"}`}>
             {isDoneStatus(entry.status) ? "Wieder planen" : "Erledigt"}
@@ -1056,6 +1190,7 @@ export function PlanView({
           <button className="edit-button" type="button" onClick={() => setFeedbackEntry({ ...entry, status: "done" })} aria-label={`Feedback für Training ${entry.title || entry.trainingType} am ${entry.date} geben`}>Feedback</button>
           <button className="edit-button" type="button" onClick={() => setCopyEntry(entry)} aria-label={`Training ${entry.title || entry.trainingType} am ${entry.date} kopieren`}>Kopieren</button>
           {isCoach && entry.assignedType === "group" ? <button className="edit-button" type="button" onClick={() => { setCopyEntry(entry); setFormMessage("Kopiere die Gruppeneinheit auf einen einzelnen Sportler und ergänze danach die individuelle Anpassung."); }} aria-label={`Training ${entry.title || entry.trainingType} individuell anpassen`}>Individuell</button> : null}
+          {isCoach ? <button className="edit-button" type="button" onClick={() => setTaskEntry(entry)} aria-label={`Traineraufgabe für ${entry.title || entry.trainingType} erstellen`}>Traineraufgabe</button> : null}
           {canDeleteEntry && canAccessPlanEntry(data, user, entry) ? <button className="edit-button" type="button" onClick={() => startEdit(entry)} aria-label={`Training ${entry.title || entry.trainingType} am ${entry.date} bearbeiten`}>Bearbeiten</button> : null}
           {canDeleteEntry ? <button className="delete-button" type="button" onClick={() => onDelete(entry.id)} aria-label={`Training ${entry.title || entry.trainingType} am ${entry.date} löschen`}>Löschen</button> : null}
           {canDeleteSeries ? <button className="delete-button" type="button" onClick={deleteSeries} aria-label={`Alle Wiederholungen von ${entry.title || entry.trainingType} löschen`}>Serie löschen</button> : null}
@@ -1160,7 +1295,7 @@ export function PlanView({
 
         <div className="template-dock-section">
           <strong>Traineraufgaben</strong>
-          <p className="card-note">Aufgaben wie Strecke aufbauen, Video aufnehmen oder Zeiten nehmen werden aktuell über die Trainingsnotiz und vorhandene Team-Aufgaben weitergeführt.</p>
+          <p className="card-note">Öffne eine Trainingseinheit und nutze „Traineraufgabe“, um Aufgaben wie Strecke aufbauen, Video aufnehmen oder Zeiten nehmen direkt einem Trainer zuzuweisen.</p>
         </div>
       </aside>
     );
@@ -1599,6 +1734,33 @@ export function PlanView({
             </div>
             {renderTargetControls(copyEntry.assignedType, copyEntry.assignedAthleteIds, copyEntry.assignedGroupIds)}
             <div className="form-actions"><button className="save-button" type="submit">Training kopieren</button><button className="ghost-button wide" type="button" onClick={() => setCopyEntry(null)}>Abbrechen</button></div>
+          </form>
+        </section>
+      ) : null}
+
+      {taskEntry ? (
+        <section className="section-block">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Traineraufgabe</p>
+              <h3>{taskEntry.title || taskEntry.trainingType}</h3>
+              <p className="card-note">Diese Aufgabe ist mit dem Training verknüpft und nur für berechtigte Trainer/Admins sichtbar.</p>
+            </div>
+          </div>
+          {formMessage ? <p className="auth-message">{formMessage}</p> : null}
+          <form className="entry-form" onSubmit={createTrainingTask}>
+            <div className="form-grid">
+              <label>Titel<input name="title" required placeholder="z. B. Video aufnehmen" /></label>
+              <label>Typ<select name="taskType" defaultValue="training">{trainingTaskTypes.map((taskType) => <option key={taskType} value={taskType}>{trainingTaskTypeLabels[taskType]}</option>)}</select></label>
+              <label>Priorität<select name="priority" defaultValue="normal">{trainingTaskPriorities.map((priority) => <option key={priority} value={priority}>{trainingTaskPriorityLabels[priority]}</option>)}</select></label>
+              <label>Fällig<input name="dueDate" type="date" defaultValue={taskEntry.date} /></label>
+              <label>Trainer<select name="assignedTo" defaultValue={user.userId}>{trainerTaskAssignees.map((assignee) => <option key={assignee.userId} value={assignee.userId}>{getUserProfileName(assignee)}</option>)}</select></label>
+            </div>
+            <label>Beschreibung<textarea name="description" rows={3} placeholder="z. B. Athlet A beobachten, Zeiten nehmen, Tore umhängen" /></label>
+            <div className="form-actions">
+              <button className="save-button" type="submit">Traineraufgabe erstellen</button>
+              <button className="ghost-button wide" type="button" onClick={() => setTaskEntry(null)}>Abbrechen</button>
+            </div>
           </form>
         </section>
       ) : null}

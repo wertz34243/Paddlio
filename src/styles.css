@@ -7523,6 +7523,39 @@ body {
   min-height: 160px;
 }
 
+.training-task-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.training-task-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid color-mix(in srgb, var(--border-color) 72%, transparent);
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--surface-muted) 82%, transparent);
+  padding: 10px 12px;
+}
+
+.training-task-row > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.training-task-row span,
+.training-task-row small {
+  color: var(--text-secondary);
+}
+
+@media (max-width: 767px) {
+  .training-task-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (min-width: 1180px) {
   .planning-shell {
     display: grid;
