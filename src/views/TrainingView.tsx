@@ -151,8 +151,8 @@ export function TrainingView({
   };
 
   return (
-    <div className="stack">
-      <section className="summary-strip">
+    <div className="stack training-sessions-view">
+      <section className="summary-strip training-summary-strip">
         <div>
           <span>Einheiten</span>
           <strong>{sessions.length}</strong>
@@ -167,7 +167,7 @@ export function TrainingView({
         </div>
       </section>
 
-      <section className="section-block">
+      <section className="section-block training-sessions-panel">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Trainingstagebuch</p>

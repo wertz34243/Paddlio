@@ -7361,3 +7361,97 @@ body {
     padding: 8px 10px;
   }
 }
+
+/* Desktop training workbench: avoid stretched mobile rows on wide screens. */
+@media (min-width: 900px) {
+  .training-sessions-view,
+  .training-journal-panel {
+    width: min(100%, 1120px);
+    margin-inline: auto;
+  }
+
+  .training-summary-strip {
+    max-width: 760px;
+  }
+
+  .training-summary-strip div {
+    min-height: 58px;
+    justify-items: start;
+    text-align: left;
+  }
+
+  .training-sessions-panel .section-heading {
+    margin-bottom: 10px;
+  }
+
+  .training-sessions-panel .primary-button {
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+    font-size: 22px;
+  }
+
+  .training-journal-actions {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .training-journal-actions .secondary-button,
+  .training-journal-actions .primary-action {
+    width: auto;
+    min-height: 38px;
+    padding-inline: 14px;
+    white-space: nowrap;
+  }
+
+  .training-sessions-panel .filter-tabs {
+    width: min(100%, 720px);
+    margin: 0 auto 12px;
+  }
+
+  .training-sessions-panel .filter-tabs button {
+    min-height: 38px;
+  }
+
+  .training-sessions-panel .fitness-list {
+    gap: 10px;
+  }
+
+  .training-sessions-panel .fitness-card-main {
+    grid-template-columns: 42px minmax(0, 1fr) minmax(96px, auto);
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .training-sessions-panel .activity-ring {
+    width: 42px;
+    height: 42px;
+    font-size: 13px;
+  }
+
+  .training-sessions-panel .fitness-card-main p {
+    margin-top: 2px;
+  }
+
+  .training-sessions-panel .fitness-details {
+    padding: 0 12px 12px;
+  }
+
+  .training-journal-panel .result-list {
+    gap: 10px;
+  }
+
+  .training-journal-panel .result-row {
+    padding: 11px 12px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .training-sessions-panel .fitness-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .training-sessions-panel .fitness-card:has(.fitness-details) {
+    grid-column: 1 / -1;
+  }
+}

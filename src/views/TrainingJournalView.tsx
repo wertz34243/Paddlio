@@ -23,7 +23,7 @@ export function TrainingJournalView({
   const sortedJournal = [...journal].sort((a, b) => b.date.localeCompare(a.date));
 
   return (
-    <section className="section-block segment-panel">
+    <section className="section-block segment-panel training-journal-panel">
       <div className="section-heading">
         <div>
           <p className="eyebrow">Reflexion</p>
