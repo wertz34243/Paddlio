@@ -12,7 +12,7 @@ Die Development-Instanz soll realistisch testbar sein, ohne Production-Daten zu 
 - ein Test-Coach
 - drei Test-Sportler
 - eine Trainingsgruppe
-- Trainings für Heute und diese Woche
+- Trainings für heute und diese Woche
 - Feedback
 - Traineraufgaben
 - Trainingsvorlagen
@@ -35,19 +35,32 @@ Development:
 
 Der Seed-Script blockiert, wenn die Supabase-URL nicht zum Development-Projekt passt.
 
-## Benötigte Umgebungsvariablen
+## Schnellstart in PowerShell
 
-Diese Werte werden nicht ins Repository geschrieben.
+Wichtig: Die Project URL muss so aussehen:
 
-PowerShell-Beispiel:
+```text
+https://DEIN-PROJEKT-REF.supabase.co
+```
+
+Falls du aus Supabase versehentlich diese REST-URL kopierst, ist das ab jetzt auch ok:
+
+```text
+https://DEIN-PROJEKT-REF.supabase.co/rest/v1/
+```
+
+Der Script bereinigt sie automatisch.
+
+PowerShell:
 
 ```powershell
+cd C:\Users\horst.DESKTOP-7IMUPAD\Documents\PaddeleMotion
 $env:VITE_APP_ENV="development"
 $env:PADDLIO_SEED_ALLOW_DEVELOPMENT="true"
-$env:PADDLIO_DEV_SUPABASE_PROJECT_REF="nlllqsfdhfiwticrcnrp"
-$env:SUPABASE_URL="https://nlllqsfdhfiwticrcnrp.supabase.co"
+$env:PADDLIO_DEV_SUPABASE_PROJECT_REF="DEIN-PROJEKT-REF"
+$env:SUPABASE_URL="https://DEIN-PROJEKT-REF.supabase.co"
 $env:SUPABASE_SERVICE_ROLE_KEY="DEIN_DEV_SERVICE_ROLE_KEY"
-$env:PADDLIO_DEV_TEST_PASSWORD="EIN_SICHERES_TEST_PASSWORT"
+$env:PADDLIO_DEV_TEST_PASSWORD="CDxe4yhvOAZWAtifXc!9"
 npm.cmd run seed:development
 ```
 
@@ -69,7 +82,34 @@ Der Script legt diese E-Mail-Adressen an oder aktualisiert ihre Profile:
 - `dev.athlete2@paddlio.test`
 - `dev.athlete3@paddlio.test`
 
-Das Passwort kommt ausschließlich aus `PADDLIO_DEV_TEST_PASSWORD`.
+Passwort:
+
+```text
+CDxe4yhvOAZWAtifXc!9
+```
+
+## Wenn DNS/Fetch fehlschlägt
+
+Wenn PowerShell meldet:
+
+```text
+ENOTFOUND ...supabase.co
+```
+
+dann ist die Supabase-Projektadresse nicht erreichbar. Dann ist nicht das Passwort falsch, sondern eine dieser Sachen:
+
+- Projekt-Ref ist falsch kopiert.
+- Supabase-Projekt ist pausiert oder nicht fertig bereitgestellt.
+- Supabase zeigt eine andere Project URL als erwartet.
+- DNS/Netzwerk blockiert die Domain.
+
+Prüfung:
+
+```powershell
+nslookup DEIN-PROJEKT-REF.supabase.co
+```
+
+Wenn `Non-existent domain` kommt, kann der Seed nicht funktionieren.
 
 ## Enthaltene Testszenarien
 
@@ -97,14 +137,6 @@ Polar:
 
 - ein Mock-Datensatz in `external_training_sessions`
 - keine echten Polar-Tokens
-
-## Ausführen
-
-```powershell
-npm.cmd run seed:development
-```
-
-Wenn eine Sperre greift, bricht der Script mit einer klaren Fehlermeldung ab.
 
 ## Nicht enthalten
 

@@ -25,7 +25,7 @@ const appEnv = process.env.VITE_APP_ENV || process.env.APP_ENV || "";
 const allowSeed = process.env.PADDLIO_SEED_ALLOW_DEVELOPMENT === "true";
 const expectedDevelopmentRef =
   process.env.PADDLIO_DEV_SUPABASE_PROJECT_REF || DEFAULT_DEVELOPMENT_PROJECT_REF;
-const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
+const rawSupabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const testPassword = process.env.PADDLIO_DEV_TEST_PASSWORD || "";
 
@@ -33,6 +33,21 @@ function fail(message) {
   console.error(`\n[seed:development] ${message}\n`);
   process.exit(1);
 }
+
+function normalizeSupabaseUrl(value) {
+  const trimmed = value.trim().replace(/^['"]|['"]$/g, "");
+  if (!trimmed) return "";
+
+  try {
+    const url = new URL(trimmed);
+    if (!url.hostname.endsWith(".supabase.co")) return trimmed;
+    return `https://${url.hostname}`;
+  } catch {
+    return trimmed;
+  }
+}
+
+const supabaseUrl = normalizeSupabaseUrl(rawSupabaseUrl);
 
 function assertDevelopmentTarget() {
   if (!allowSeed) {
@@ -44,7 +59,10 @@ function assertDevelopmentTarget() {
   }
 
   if (!supabaseUrl.startsWith("https://") || !supabaseUrl.includes(".supabase.co")) {
-    fail("SUPABASE_URL/VITE_SUPABASE_URL ist keine gueltige Supabase-Projekt-URL.");
+    fail(
+      "SUPABASE_URL/VITE_SUPABASE_URL ist keine gueltige Supabase-Projekt-URL. " +
+        "Nutze die Project URL ohne /rest/v1/, z. B. https://projekt-ref.supabase.co.",
+    );
   }
 
   if (supabaseUrl.includes(PRODUCTION_PROJECT_REF)) {
@@ -68,6 +86,8 @@ function assertDevelopmentTarget() {
 }
 
 assertDevelopmentTarget();
+
+console.log(`[seed:development] Ziel: ${supabaseUrl}`);
 
 const supabase = createClient(supabaseUrl, serviceRoleKey, {
   auth: {
