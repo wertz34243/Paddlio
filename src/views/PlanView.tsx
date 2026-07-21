@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type DragEvent, type FormEvent } from "react";
 import {
   canAccessPlanEntry,
   canEditTrainingTemplate,
@@ -35,6 +35,13 @@ import {
   isSystemTemplate as isSystemTrainingTemplate,
   type TrainingTemplateExercise,
 } from "../features/training/templates/trainingTemplates";
+import {
+  createCalendarQuickTemplates,
+  seasonPlanningBlocks,
+  weeklyPlanningTemplates,
+  type WeeklyPlanningTemplate,
+  type WeeklyPlanningTemplateItem,
+} from "../features/training/templates/planningBlocks";
 import type {
   BoatClass,
   CoachAthlete,
@@ -254,6 +261,7 @@ export function PlanView({
   const [pendingTemplateId, setPendingTemplateId] = useState("");
   const [athleteFilter, setAthleteFilter] = useState("all");
   const [groupFilter, setGroupFilter] = useState("all");
+  const [dragTemplateId, setDragTemplateId] = useState("");
   const [formMessage, setFormMessage] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
   const isCoach = canUseCoachArea(user.role);
@@ -283,7 +291,10 @@ export function PlanView({
 
   const visibleAthletes = useMemo(() => getAthletesForCurrentUser(data, user), [data, user]);
   const visibleGroups = useMemo(() => getGroupsForCurrentUser(data, user), [data, user]);
-  const periodizationTemplates = useMemo(() => createSystemTrainingTemplates(user.profile.club), [user.profile.club]);
+  const periodizationTemplates = useMemo(
+    () => [...createSystemTrainingTemplates(user.profile.club), ...createCalendarQuickTemplates(user.profile.club)],
+    [user.profile.club],
+  );
   const visibleTemplates = useMemo(() => {
     const query = templateSearch.trim().toLowerCase();
     return [...periodizationTemplates, ...getTrainingTemplatesForCurrentUser(data, user, [user.profile.club])]
@@ -328,6 +339,18 @@ export function PlanView({
   );
   const upcomingEntries = visibleEntries.filter((entry) => entry.date >= today && isPlannedStatus(entry.status));
   const doneEntries = visibleEntries.filter((entry) => isDoneStatus(entry.status));
+  const favoriteTemplates = visibleTemplates.filter((template) => template.isFavorite).slice(0, 6);
+  const recentlyUsedTemplates = Array.from(
+    new Set(
+      visibleEntries
+        .filter((entry) => entry.templateId)
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .map((entry) => entry.templateId),
+    ),
+  )
+    .map((templateId) => visibleTemplates.find((template) => template.id === templateId))
+    .filter((template): template is TrainingTemplate => Boolean(template))
+    .slice(0, 5);
   const selectedTemplate = useMemo(
     () => visibleTemplates.find((template) => template.id === selectedTemplateId),
     [selectedTemplateId, visibleTemplates],
@@ -678,6 +701,164 @@ export function PlanView({
     setFormMessage("Training aus Vorlage geplant.");
   };
 
+  const getDefaultPlanningTarget = () => {
+    if (isCoach && groupFilter !== "all") {
+      return { assignedType: "group" as const, assignedAthleteIds: [], assignedGroupIds: [groupFilter] };
+    }
+    if (isCoach && athleteFilter !== "all") {
+      return { assignedType: "athlete" as const, assignedAthleteIds: [athleteFilter], assignedGroupIds: [] };
+    }
+    return { assignedType: "self" as const, assignedAthleteIds: [data.athlete.id], assignedGroupIds: [] };
+  };
+
+  const saveTemplateAsPlanEntry = (template: TrainingTemplate, date: string, time = "17:30") => {
+    const target = getDefaultPlanningTarget();
+    if (!validateTargetSelection(target.assignedType, target.assignedAthleteIds, target.assignedGroupIds)) {
+      setFormMessage("Wähle zuerst eine gültige Gruppe oder einen Sportler aus.");
+      return false;
+    }
+
+    onSave({
+      ownerUserId: user.userId,
+      clubId: user.profile.club,
+      assignedType: target.assignedType,
+      assignedAthleteIds: target.assignedAthleteIds,
+      assignedGroupIds: target.assignedGroupIds,
+      title: template.title,
+      date,
+      weekday: getWeekdayFromDate(date),
+      time,
+      startTime: time,
+      endTime: "",
+      durationMinutes: template.defaultDurationMinutes ?? 75,
+      area: template.trainingArea,
+      trainingType: template.trainingType,
+      boatClass: template.boatClass ?? "none",
+      goal: template.focus,
+      focus: template.focus,
+      description: template.description ?? "",
+      intensity: template.defaultIntensity,
+      note: template.notes ?? "",
+      notes: template.notes ?? "",
+      status: "planned",
+      repeat: "none",
+      repeatUntil: "",
+      assignedAthleteId: target.assignedAthleteIds[0] ?? "",
+      assignedGroupId: target.assignedGroupIds[0] ?? "",
+      feedbackNote: "",
+      templateId: template.id,
+    });
+    return true;
+  };
+
+  const saveWeeklyItemAsPlanEntry = (item: WeeklyPlanningTemplateItem, date: string) => {
+    const sourceTemplate = item.templateId ? visibleTemplates.find((template) => template.id === item.templateId) : undefined;
+    if (sourceTemplate) return saveTemplateAsPlanEntry(sourceTemplate, date, item.time);
+
+    const target = getDefaultPlanningTarget();
+    if (!validateTargetSelection(target.assignedType, target.assignedAthleteIds, target.assignedGroupIds)) {
+      setFormMessage("Wähle zuerst eine gültige Gruppe oder einen Sportler aus.");
+      return false;
+    }
+
+    onSave({
+      ownerUserId: user.userId,
+      clubId: user.profile.club,
+      assignedType: target.assignedType,
+      assignedAthleteIds: target.assignedAthleteIds,
+      assignedGroupIds: target.assignedGroupIds,
+      title: item.title,
+      date,
+      weekday: getWeekdayFromDate(date),
+      time: item.time,
+      startTime: item.time,
+      endTime: "",
+      durationMinutes: item.durationMinutes,
+      area: item.area,
+      trainingType: item.trainingType,
+      boatClass: item.boatClass,
+      goal: item.focus,
+      focus: item.focus,
+      description: item.description,
+      intensity: item.intensity,
+      note: "",
+      notes: "",
+      status: "planned",
+      repeat: "none",
+      repeatUntil: "",
+      assignedAthleteId: target.assignedAthleteIds[0] ?? "",
+      assignedGroupId: target.assignedGroupIds[0] ?? "",
+      feedbackNote: "",
+      templateId: item.templateId ?? "",
+    });
+    return true;
+  };
+
+  const quickInsertTemplate = (templateId: string, date = selectedDate) => {
+    const template = visibleTemplates.find((item) => item.id === templateId);
+    if (!template) {
+      setFormMessage("Vorlage nicht gefunden.");
+      return;
+    }
+    if (saveTemplateAsPlanEntry(template, date)) {
+      setCopyMessage(`${template.title} wurde am ${date} eingefügt.`);
+      setSelectedDate(date);
+    }
+  };
+
+  const applyWeeklyTemplate = (weeklyTemplate: WeeklyPlanningTemplate, targetDate = selectedDate) => {
+    const targetWeekStart = getWeekDates(targetDate)[0];
+    let inserted = 0;
+    weeklyTemplate.items.forEach((item) => {
+      if (saveWeeklyItemAsPlanEntry(item, addDays(targetWeekStart, item.dayOffset))) inserted += 1;
+    });
+    if (inserted > 0) {
+      setCopyMessage(`${weeklyTemplate.title}: ${inserted} Einheiten wurden eingefügt.`);
+      setWorkflowTab("week");
+      setCalendarView("week");
+    }
+  };
+
+  const applySeasonBlock = (seasonBlockId: string) => {
+    const seasonBlock = seasonPlanningBlocks.find((block) => block.id === seasonBlockId);
+    if (!seasonBlock) return;
+    const firstWeekStart = getWeekDates(selectedDate)[0];
+    let inserted = 0;
+    seasonBlock.weeklyTemplateIds.forEach((weeklyTemplateId, weekIndex) => {
+      const weeklyTemplate = weeklyPlanningTemplates.find((template) => template.id === weeklyTemplateId);
+      if (!weeklyTemplate) return;
+      weeklyTemplate.items.forEach((item) => {
+        if (saveWeeklyItemAsPlanEntry(item, addDays(firstWeekStart, weekIndex * 7 + item.dayOffset))) inserted += 1;
+      });
+    });
+    if (inserted > 0) {
+      setCopyMessage(`${seasonBlock.title}: ${inserted} Einheiten wurden eingefügt.`);
+      setWorkflowTab("month");
+      setCalendarView("month");
+    }
+  };
+
+  const handleTemplateDragStart = (event: DragEvent<HTMLElement>, templateId: string) => {
+    if (isPhone) return;
+    event.dataTransfer.setData("text/plain", templateId);
+    event.dataTransfer.effectAllowed = "copy";
+    setDragTemplateId(templateId);
+  };
+
+  const handleTemplateDragOver = (event: DragEvent<HTMLElement>) => {
+    if (!isPhone) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "copy";
+    }
+  };
+
+  const handleTemplateDrop = (event: DragEvent<HTMLElement>, date: string) => {
+    event.preventDefault();
+    const templateId = event.dataTransfer.getData("text/plain") || dragTemplateId;
+    setDragTemplateId("");
+    if (templateId) quickInsertTemplate(templateId, date);
+  };
+
   const handleCopyEntrySubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!copyEntry) return;
@@ -790,7 +971,7 @@ export function PlanView({
       repeatSeriesId: draft?.repeatSeriesId ?? "",
       assignedAthleteId: assignedAthleteIds[0] ?? "",
       assignedGroupId: assignedGroupIds[0] ?? "",
-      feedbackNote: draft?.feedbackNote ?? "",
+      feedbackNote: String(formData.get("feedbackNote") ?? draft?.feedbackNote ?? "").trim(),
     });
 
     setFormMessage("");
@@ -848,6 +1029,7 @@ export function PlanView({
           <span>{entry.boatClass}</span>
         </div>
         <p>{entry.focus || entry.description || entry.notes || "Noch kein Fokus eingetragen."}</p>
+        {entry.feedbackNote ? <small className="card-note">Individuelle Anpassung: {entry.feedbackNote}</small> : null}
         <small className="card-note">
           {entry.assignedType === "group"
             ? `Gruppe: ${assignedGroups.map(getGroupName).join(", ") || "nicht gefunden"}`
@@ -873,6 +1055,7 @@ export function PlanView({
           <button className="delete-button" type="button" onClick={() => setFeedbackEntry({ ...entry, status: "skipped" })} aria-label={`Training ${entry.title || entry.trainingType} am ${entry.date} als ausgelassen markieren`}>Ausgelassen</button>
           <button className="edit-button" type="button" onClick={() => setFeedbackEntry({ ...entry, status: "done" })} aria-label={`Feedback für Training ${entry.title || entry.trainingType} am ${entry.date} geben`}>Feedback</button>
           <button className="edit-button" type="button" onClick={() => setCopyEntry(entry)} aria-label={`Training ${entry.title || entry.trainingType} am ${entry.date} kopieren`}>Kopieren</button>
+          {isCoach && entry.assignedType === "group" ? <button className="edit-button" type="button" onClick={() => { setCopyEntry(entry); setFormMessage("Kopiere die Gruppeneinheit auf einen einzelnen Sportler und ergänze danach die individuelle Anpassung."); }} aria-label={`Training ${entry.title || entry.trainingType} individuell anpassen`}>Individuell</button> : null}
           {canDeleteEntry && canAccessPlanEntry(data, user, entry) ? <button className="edit-button" type="button" onClick={() => startEdit(entry)} aria-label={`Training ${entry.title || entry.trainingType} am ${entry.date} bearbeiten`}>Bearbeiten</button> : null}
           {canDeleteEntry ? <button className="delete-button" type="button" onClick={() => onDelete(entry.id)} aria-label={`Training ${entry.title || entry.trainingType} am ${entry.date} löschen`}>Löschen</button> : null}
           {canDeleteSeries ? <button className="delete-button" type="button" onClick={deleteSeries} aria-label={`Alle Wiederholungen von ${entry.title || entry.trainingType} löschen`}>Serie löschen</button> : null}
@@ -893,12 +1076,102 @@ export function PlanView({
     </>
   );
 
+  const renderPlanningTemplateDock = () => {
+    if (!isCoach) return null;
+    const templateList = (favoriteTemplates.length > 0 ? favoriteTemplates : visibleTemplates).slice(0, 8);
+
+    return (
+      <aside className="planning-template-dock section-block" aria-label="Vorlagenkasten">
+        <div className="section-heading compact">
+          <div>
+            <p className="eyebrow">Vorlagenkasten</p>
+            <h3>Schnell planen</h3>
+            <p className="card-note">Drag & Drop auf einen Tag oder direkt in die aktuelle Woche einfügen.</p>
+          </div>
+        </div>
+
+        <div className="template-dock-section">
+          <strong>{favoriteTemplates.length > 0 ? "Favoriten" : "Trainingsvorlagen"}</strong>
+          <div className="template-dock-list">
+            {templateList.map((template) => (
+              <button
+                className="template-dock-item"
+                draggable={!isPhone}
+                key={template.id}
+                type="button"
+                onClick={() => quickInsertTemplate(template.id)}
+                onDragStart={(event) => handleTemplateDragStart(event, template.id)}
+              >
+                <span>{template.category} · {template.defaultDurationMinutes ?? 0} min</span>
+                <strong>{template.title}</strong>
+                <small>{template.focus}</small>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {recentlyUsedTemplates.length > 0 ? (
+          <div className="template-dock-section">
+            <strong>Zuletzt verwendet</strong>
+            <div className="suggestion-chip-row compact">
+              {recentlyUsedTemplates.map((template) => (
+                <button key={template.id} type="button" onClick={() => quickInsertTemplate(template.id)}>{template.title}</button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="template-dock-section">
+          <strong>Wochenvorlagen</strong>
+          <div className="template-dock-list">
+            {weeklyPlanningTemplates.map((weeklyTemplate) => (
+              <article className="template-dock-card" key={weeklyTemplate.id}>
+                <div>
+                  <span>{weeklyTemplate.category} · {weeklyTemplate.items.length} Einheiten</span>
+                  <strong>{weeklyTemplate.title}</strong>
+                  <small>{weeklyTemplate.description}</small>
+                </div>
+                <div className="template-week-preview">
+                  {weeklyTemplate.items.map((item) => (
+                    <span key={`${weeklyTemplate.id}-${item.dayOffset}-${item.title}`}>{weekdays[item.dayOffset]} {item.time} · {item.title}</span>
+                  ))}
+                </div>
+                <button type="button" onClick={() => applyWeeklyTemplate(weeklyTemplate)}>In diese Woche einfügen</button>
+              </article>
+            ))}
+          </div>
+        </div>
+
+        <div className="template-dock-section">
+          <strong>Saisonbausteine</strong>
+          <div className="template-dock-list">
+            {seasonPlanningBlocks.map((seasonBlock) => (
+              <article className="template-dock-card" key={seasonBlock.id}>
+                <div>
+                  <span>{seasonBlock.weeklyTemplateIds.length} Wochen</span>
+                  <strong>{seasonBlock.title}</strong>
+                  <small>{seasonBlock.description}</small>
+                </div>
+                <button type="button" onClick={() => applySeasonBlock(seasonBlock.id)}>Ab aktueller Woche einfügen</button>
+              </article>
+            ))}
+          </div>
+        </div>
+
+        <div className="template-dock-section">
+          <strong>Traineraufgaben</strong>
+          <p className="card-note">Aufgaben wie Strecke aufbauen, Video aufnehmen oder Zeiten nehmen werden aktuell über die Trainingsnotiz und vorhandene Team-Aufgaben weitergeführt.</p>
+        </div>
+      </aside>
+    );
+  };
+
   const repeatPreviewCount = draft && selectedRepeat !== "none" && (selectedRepeatUntil || selectedRepeatMaxCount)
     ? expandTrainingRepeatDates(selectedDate, selectedRepeat, selectedRepeatUntil, selectedRepeatMaxCount).length
     : 1;
 
   return (
-    <div className="stack calendar-shell">
+    <div className="stack calendar-shell planning-shell">
       <section className="summary-strip">
         <div><span>Diese Woche</span><strong>{plannedThisWeek.length}</strong></div>
         <div><span>Erledigt</span><strong>{completedThisWeek.length}</strong></div>
@@ -942,6 +1215,8 @@ export function PlanView({
           </button>
         ))}
       </nav>
+
+      {(workflowTab === "today" || workflowTab === "week" || workflowTab === "month" || workflowTab === "templates") ? renderPlanningTemplateDock() : null}
 
       {workflowTab === "today" || workflowTab === "week" || workflowTab === "month" ? <section className="section-block">
         <div className="section-heading">
@@ -1307,6 +1582,7 @@ export function PlanView({
             {isCoach ? <div className="choice-group"><span>Trainingsgruppen</span><div className="tag-row">{visibleGroups.map((group) => <label className="toggle-row" key={group.id}><span>{group.name}</span><input name="assignedGroupIds" type="checkbox" value={group.id} defaultChecked={draft.assignedGroupIds.includes(group.id)} /></label>)}</div></div> : null}
             <label>Ziel/Fokus<input name="focus" defaultValue={draft.focus || draft.goal} placeholder="z. B. Tor 6 sauber anfahren" /></label>
             <label>Beschreibung<textarea name="description" defaultValue={draft.description} rows={3} /></label>
+            <label>Individuelle Anpassung / Sportlerhinweis<textarea name="feedbackNote" defaultValue={draft.feedbackNote} rows={2} placeholder="z. B. 45 min statt 60 min, Fokus Übergriff, geringere Intensität" /></label>
             <label>Notiz<textarea name="notes" defaultValue={draft.notes || draft.note} rows={3} /></label>
             <div className="form-actions"><button className="save-button" type="submit">Speichern</button><button className="ghost-button wide" type="button" onClick={() => setDraft(null)}>Abbrechen</button></div>
           </form>
@@ -1378,7 +1654,16 @@ export function PlanView({
           </div>
         </section>
       ) : workflowTab === "week" && calendarView === "week" ? (
-        <section className="calendar-week-grid">{weekDates.map((date, index) => <article className="calendar-day-column" key={date}><div className="plan-day-heading"><strong>{weekdays[index]}</strong><span>{parseLocalDateOnly(date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}</span></div>{visibleEntries.filter((entry) => entry.date === date).map(renderEntryCard)}{visibleEntries.filter((entry) => entry.date === date).length === 0 ? <p className="empty-state compact">Noch kein Training geplant.</p> : null}</article>)}</section>
+        <section className="calendar-week-grid">{weekDates.map((date, index) => {
+          const dayEntries = visibleEntries.filter((entry) => entry.date === date);
+          return (
+            <article className="calendar-day-column" key={date} onDragOver={handleTemplateDragOver} onDrop={(event) => handleTemplateDrop(event, date)}>
+              <div className="plan-day-heading"><strong>{weekdays[index]}</strong><span>{parseLocalDateOnly(date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}</span></div>
+              {dayEntries.map(renderEntryCard)}
+              {dayEntries.length === 0 ? <p className="empty-state compact">Vorlage hier ablegen oder Training planen.</p> : null}
+            </article>
+          );
+        })}</section>
       ) : workflowTab === "today" && calendarView === "day" ? (
         <section className="calendar-list">{visibleEntries.filter((entry) => entry.date === selectedDate).map(renderEntryCard)}{visibleEntries.filter((entry) => entry.date === selectedDate).length === 0 ? <p className="empty-state">Für diesen Tag ist noch kein Training geplant.</p> : null}</section>
       ) : workflowTab === "month" && calendarView === "month" ? (
