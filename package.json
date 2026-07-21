@@ -15,7 +15,8 @@
     "test:unit": "vitest run src",
     "test:e2e": "playwright test",
     "test:e2e:roles": "playwright test tests/e2e/roles-and-sync.spec.ts",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "seed:development": "node scripts/seed-development-testprofile.mjs"
   },
   "dependencies": {
     "@e965/xlsx": "^0.20.3",

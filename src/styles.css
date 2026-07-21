@@ -7599,3 +7599,122 @@ body {
     grid-column: 1 / -1;
   }
 }
+
+/* Paddlio design-system refinement: keep phone generous, make work surfaces denser. */
+:root {
+  --paddlio-density-phone: 1;
+  --paddlio-density-tablet: 0.88;
+  --paddlio-density-desktop: 0.78;
+  --paddlio-touch-target-phone: 52px;
+  --paddlio-touch-target-tablet: 44px;
+  --paddlio-control-target-desktop: 38px;
+  --paddlio-line-compact: 1.25;
+  --paddlio-line-readable: 1.45;
+}
+
+@media (min-width: 768px) {
+  .section-heading,
+  .card-header,
+  .polar-hero,
+  .import-export-hero,
+  .academy-hero,
+  .training-calendar-hero {
+    gap: 8px;
+  }
+
+  .section-heading p,
+  .card-header p,
+  .polar-hero p,
+  .import-export-hero p,
+  .academy-hero p,
+  .training-calendar-hero p {
+    line-height: var(--paddlio-line-readable);
+  }
+
+  .template-dock-item,
+  .template-dock-card,
+  .training-task-row,
+  .academy-list-button,
+  .calendar-training-card,
+  .plan-card,
+  .training-plan-card {
+    padding: calc(var(--density-card-padding) - 2px) var(--density-card-padding);
+  }
+
+  .calendar-training-card,
+  .training-plan-card,
+  .template-dock-item {
+    gap: 6px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .home-v5-section,
+  .section-block,
+  .chart-panel,
+  .polar-panel,
+  .import-export-panel,
+  .academy-panel,
+  .planning-template-dock,
+  .training-calendar-controls,
+  .training-calendar-month {
+    box-shadow: 0 14px 44px rgba(2, 8, 23, 0.24);
+  }
+
+  .dashboard-card-grid,
+  .metric-grid,
+  .polar-grid,
+  .academy-category-grid,
+  .feature-card-grid,
+  .more-grid {
+    gap: var(--density-card-gap);
+  }
+
+  .save-button,
+  .edit-button,
+  .delete-button,
+  .ghost-button,
+  .secondary-button,
+  .primary-action,
+  .segment-button,
+  .template-dock-item,
+  .template-dock-card,
+  .training-task-row {
+    line-height: var(--paddlio-line-compact);
+  }
+
+  .template-dock-item,
+  .template-dock-card {
+    padding: 10px 12px;
+  }
+
+  .training-task-row {
+    border-radius: 12px;
+    padding: 8px 10px;
+  }
+
+  .planning-template-dock {
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .template-dock-section,
+  .template-dock-list {
+    gap: 8px;
+  }
+
+  .calendar-day-column:has(.empty-state.compact) {
+    min-height: 118px;
+  }
+
+  .entry-form textarea,
+  .profile-form textarea {
+    min-height: 84px;
+  }
+
+  .modal-card,
+  .sheet-card,
+  .dialog-card {
+    max-width: min(860px, calc(100vw - 48px));
+  }
+}
