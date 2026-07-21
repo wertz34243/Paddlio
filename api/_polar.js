@@ -5,15 +5,27 @@ export const POLAR_AUTH_URL = "https://flow.polar.com/oauth2/authorization";
 export const POLAR_TOKEN_URL = "https://polarremote.com/v2/oauth2/token";
 export const POLAR_API_URL = "https://www.polaraccesslink.com";
 
-const requiredEnv = (key) => {
-  const value = process.env[key];
-  if (!value) throw new Error(`Missing environment variable ${key}`);
+const envValue = (...keys) => {
+  for (const key of keys) {
+    const value = process.env[key];
+    if (value) return value;
+  }
+  return "";
+};
+
+const requiredEnv = (...keys) => {
+  const value = envValue(...keys);
+  if (!value) throw new Error(`Missing environment variable ${keys.join(" or ")}`);
   return value;
 };
 
-export const getServerConfig = () => ({
-  supabaseUrl: requiredEnv("SUPABASE_URL"),
+export const getSupabaseServerConfig = () => ({
+  supabaseUrl: requiredEnv("SUPABASE_URL", "VITE_SUPABASE_URL"),
   supabaseServiceRoleKey: requiredEnv("SUPABASE_SERVICE_ROLE_KEY"),
+});
+
+export const getServerConfig = () => ({
+  ...getSupabaseServerConfig(),
   polarClientId: requiredEnv("POLAR_CLIENT_ID"),
   polarClientSecret: requiredEnv("POLAR_CLIENT_SECRET"),
   polarRedirectUri: requiredEnv("POLAR_REDIRECT_URI"),
@@ -22,7 +34,7 @@ export const getServerConfig = () => ({
 });
 
 export const getAdminClient = () => {
-  const config = getServerConfig();
+  const config = getSupabaseServerConfig();
   return createClient(config.supabaseUrl, config.supabaseServiceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });

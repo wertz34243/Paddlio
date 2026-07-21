@@ -179,6 +179,10 @@ export const updateCloudProfile = async (profile: CloudProfileUpdate): Promise<C
   const errorCode = typeof (error as { code?: unknown } | null)?.code === "string" ? (error as { code: string }).code : "";
   const errorMessage = typeof (error as { message?: unknown } | null)?.message === "string" ? (error as { message: string }).message : "";
 
+  if (error && "profile_data" in profile && (errorCode === "PGRST204" || errorCode === "42703" || errorMessage.includes("profile_data"))) {
+    throw new Error("profile_data_schema_missing");
+  }
+
   if (error && (errorCode === "PGRST204" || errorCode === "42703" || errorMessage.includes("profile_data"))) {
     const retry = await runUpdate(false);
     data = retry.data;

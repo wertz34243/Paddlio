@@ -1,5 +1,7 @@
 import { requireUser, sendJson } from "../_polar.js";
 
+const hasEnv = (...keys) => keys.some((key) => Boolean(process.env[key]));
+
 export default async function handler(req, res) {
   try {
     if (req.method !== "GET") return sendJson(res, 405, { error: "method_not_allowed" });
@@ -23,7 +25,7 @@ export default async function handler(req, res) {
       jobs: jobs || [],
       requiredEnvironment: {
         polarClientConfigured: Boolean(process.env.POLAR_CLIENT_ID && process.env.POLAR_CLIENT_SECRET && process.env.POLAR_REDIRECT_URI),
-        serverConfigured: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.POLAR_TOKEN_ENCRYPTION_KEY),
+        serverConfigured: Boolean(hasEnv("SUPABASE_URL", "VITE_SUPABASE_URL") && process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.POLAR_TOKEN_ENCRYPTION_KEY),
         polarClientIdConfigured: Boolean(process.env.POLAR_CLIENT_ID),
         polarClientSecretConfigured: Boolean(process.env.POLAR_CLIENT_SECRET),
         polarRedirectUriConfigured: Boolean(process.env.POLAR_REDIRECT_URI),
