@@ -16,6 +16,7 @@ import {
   getTodayKey,
   getWeekdayFromDate,
   expandTrainingRepeatDates,
+  getTrainingRepeatSeriesEntries,
   isDoneStatus,
   isPlannedStatus,
   isSkippedStatus,
@@ -62,6 +63,7 @@ type PlanViewProps = {
   user: User;
   onSave: (entry: Omit<PlanEntry, "id" | "athleteId" | "createdAt" | "updatedAt" | "createdByUserId"> & { id?: string }) => void;
   onDelete: (id: string) => void;
+  onDeleteSeries: (id: string) => void;
   onToggleDone: (id: string) => void;
   onFeedbackSave: (feedback: Omit<TrainingFeedback, "id" | "completedAt"> & { id?: string }) => void;
   onDataChange: (updater: (current: PaddleMotionData) => PaddleMotionData) => void;
@@ -212,6 +214,7 @@ export function PlanView({
   user,
   onSave,
   onDelete,
+  onDeleteSeries,
   onToggleDone,
   onFeedbackSave,
   onDataChange,
@@ -784,6 +787,7 @@ export function PlanView({
       repeat: String(formData.get("repeat") ?? "none") as TrainingRepeat,
       repeatUntil: String(formData.get("repeatUntil") ?? ""),
       repeatMaxCount: Number(formData.get("repeatMaxCount") ?? 0) || undefined,
+      repeatSeriesId: draft?.repeatSeriesId ?? "",
       assignedAthleteId: assignedAthleteIds[0] ?? "",
       assignedGroupId: assignedGroupIds[0] ?? "",
       feedbackNote: draft?.feedbackNote ?? "",
@@ -818,6 +822,15 @@ export function PlanView({
     const assignedAthleteIds = Array.from(new Set([...entry.assignedAthleteIds, entry.assignedAthleteId].filter(Boolean)));
     const assignedAthleteNames = assignedAthleteIds.map(getAssignedAthleteName).filter(Boolean);
     const assignedGroups = visibleGroups.filter((group) => entry.assignedGroupIds.includes(group.id) || entry.assignedGroupId === group.id);
+    const canDeleteEntry = entry.createdByUserId === user.userId || user.role === "admin";
+    const repeatSeriesEntries = canDeleteEntry ? getTrainingRepeatSeriesEntries(entries, entry) : [];
+    const canDeleteSeries = repeatSeriesEntries.length > 1;
+    const deleteSeries = () => {
+      const confirmed = window.confirm(
+        `Diese Wiederholungsserie enthält ${repeatSeriesEntries.length} Trainingseinheiten. Wirklich alle löschen?`,
+      );
+      if (confirmed) onDeleteSeries(entry.id);
+    };
 
     return (
       <article className={`calendar-training-card status-${getEntryStatusClass(entry.status)}`} key={entry.id}>
@@ -860,8 +873,9 @@ export function PlanView({
           <button className="delete-button" type="button" onClick={() => setFeedbackEntry({ ...entry, status: "skipped" })} aria-label={`Training ${entry.title || entry.trainingType} am ${entry.date} als ausgelassen markieren`}>Ausgelassen</button>
           <button className="edit-button" type="button" onClick={() => setFeedbackEntry({ ...entry, status: "done" })} aria-label={`Feedback für Training ${entry.title || entry.trainingType} am ${entry.date} geben`}>Feedback</button>
           <button className="edit-button" type="button" onClick={() => setCopyEntry(entry)} aria-label={`Training ${entry.title || entry.trainingType} am ${entry.date} kopieren`}>Kopieren</button>
-          {(entry.createdByUserId === user.userId || user.role === "admin") && canAccessPlanEntry(data, user, entry) ? <button className="edit-button" type="button" onClick={() => startEdit(entry)} aria-label={`Training ${entry.title || entry.trainingType} am ${entry.date} bearbeiten`}>Bearbeiten</button> : null}
-          {(entry.createdByUserId === user.userId || user.role === "admin") ? <button className="delete-button" type="button" onClick={() => onDelete(entry.id)} aria-label={`Training ${entry.title || entry.trainingType} am ${entry.date} löschen`}>Löschen</button> : null}
+          {canDeleteEntry && canAccessPlanEntry(data, user, entry) ? <button className="edit-button" type="button" onClick={() => startEdit(entry)} aria-label={`Training ${entry.title || entry.trainingType} am ${entry.date} bearbeiten`}>Bearbeiten</button> : null}
+          {canDeleteEntry ? <button className="delete-button" type="button" onClick={() => onDelete(entry.id)} aria-label={`Training ${entry.title || entry.trainingType} am ${entry.date} löschen`}>Löschen</button> : null}
+          {canDeleteSeries ? <button className="delete-button" type="button" onClick={deleteSeries} aria-label={`Alle Wiederholungen von ${entry.title || entry.trainingType} löschen`}>Serie löschen</button> : null}
         </div>
       </article>
     );

@@ -147,6 +147,38 @@ export const expandTrainingRepeatDates = (
   return dates;
 };
 
+export const getTrainingRepeatSeriesKey = (entry: PlanEntry): string => {
+  if (entry.repeatSeriesId) return `id:${entry.repeatSeriesId}`;
+  if (entry.repeat === "none" || !entry.repeatUntil) return `single:${entry.id}`;
+
+  return [
+    "legacy",
+    entry.createdByUserId,
+    entry.ownerUserId,
+    entry.clubId,
+    entry.assignedType,
+    [...entry.assignedAthleteIds, entry.assignedAthleteId].filter(Boolean).sort().join(","),
+    [...entry.assignedGroupIds, entry.assignedGroupId].filter(Boolean).sort().join(","),
+    entry.title,
+    entry.startTime || entry.time,
+    entry.endTime,
+    entry.durationMinutes,
+    entry.area,
+    entry.trainingType,
+    entry.boatClass,
+    entry.repeat,
+    entry.repeatUntil,
+    entry.repeatMaxCount ?? "",
+  ].join("|");
+};
+
+export const getTrainingRepeatSeriesEntries = (entries: PlanEntry[], target: PlanEntry): PlanEntry[] => {
+  const key = getTrainingRepeatSeriesKey(target);
+  if (key.startsWith("single:")) return [target];
+
+  return entries.filter((entry) => !entry.deletedAt && getTrainingRepeatSeriesKey(entry) === key);
+};
+
 export const isPlannedStatus = (status: PlanStatus): boolean => status === "planned" || status === "geplant" || status === "in_progress";
 
 export const isDoneStatus = (status: PlanStatus): boolean => status === "done" || status === "erledigt" || status === "completed" || status === "partially_completed";

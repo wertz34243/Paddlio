@@ -33,7 +33,10 @@ assert(trainingService.includes("deleteCloudTraining"), "Trainingsplan-Löschung
 
 assert(app.includes("upsertCloudFeedback(nextFeedback)"), "Feedback wird nicht direkt in Supabase gespeichert.");
 assert(app.includes("upsertCloudTraining(nextPlanEntry)"), "Planstatus nach Feedback wird nicht direkt in Supabase gespeichert.");
-assert(app.includes("deleteCloudTraining(id, timestamp)"), "Plan-Löschung nutzt keinen Cloud-Soft-Delete.");
+assert(
+  app.includes("deleteCloudTraining(id, timestamp)") || app.includes("deleteCloudTraining(entryId, timestamp)"),
+  "Plan-Löschung nutzt keinen Cloud-Soft-Delete.",
+);
 assert(trainingService.includes('.is("deleted_at", null)'), "Gelöschte Trainings werden beim Cloud-Load nicht gefiltert.");
 assert(trainingService.includes("deleted_at: deletedAt"), "Cloud-Training-Delete setzt keinen Soft-Delete-Zeitstempel.");
 assert(app.includes("Rückmeldung gespeichert"), "Feedback ohne Kommentar wird nicht als gespeicherte Rückmeldung markiert.");

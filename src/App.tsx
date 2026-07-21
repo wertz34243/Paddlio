@@ -9,7 +9,7 @@ import { createId } from "./data/storage";
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import { canUseCoachArea } from "./domain/accessControl";
 import { getActiveUser, getDisplayName, getInitials } from "./domain/profile";
-import { expandTrainingRepeatDates, getWeekdayFromDate, isDoneStatus } from "./domain/trainingPlan";
+import { expandTrainingRepeatDates, getTrainingRepeatSeriesEntries, getWeekdayFromDate, isDoneStatus } from "./domain/trainingPlan";
 import { useAppChromeVisibility } from "./hooks/useAutoHideOnScroll";
 import { useResponsiveCapabilities } from "./hooks/useResponsiveCapabilities";
 import { getFeatureMode, isFeatureAvailable, pageFeatureMap, type FeatureId, type FeatureMode } from "./lib/deviceCapabilities";
@@ -524,6 +524,7 @@ function AppContent() {
     const dates = existing
       ? [entry.date]
       : expandTrainingRepeatDates(entry.date, entry.repeat, entry.repeatUntil, entry.repeatMaxCount);
+    const repeatSeriesId = existing?.repeatSeriesId || entry.repeatSeriesId || (dates.length > 1 ? createId("repeat-series") : "");
 
     const createdEntries = dates.map((date, index): PlanEntry => ({
         ...entry,
@@ -535,6 +536,7 @@ function AppContent() {
         weekday: getWeekdayFromDate(date),
         time: entry.startTime || entry.time,
         startTime: entry.startTime || entry.time,
+        repeatSeriesId,
         createdByUserId: activeUser.userId,
         createdAt: index === 0 ? existing?.createdAt ?? timestamp : timestamp,
         updatedAt: timestamp,
@@ -576,16 +578,31 @@ function AppContent() {
   };
 
   const deletePlanEntry = (id: string) => {
+    deletePlanEntries([id]);
+  };
+
+  const deletePlanEntrySeries = (id: string) => {
+    const target = data.plan.find((entry) => entry.id === id && !entry.deletedAt);
+    if (!target) return;
+    deletePlanEntries(getTrainingRepeatSeriesEntries(data.plan, target).map((entry) => entry.id));
+  };
+
+  const deletePlanEntries = (ids: string[]) => {
+    const uniqueIds = Array.from(new Set(ids.filter(Boolean)));
+    if (uniqueIds.length === 0) return;
     const timestamp = getTimestamp();
+    const idSet = new Set(uniqueIds);
     updateData((current) => ({
       ...current,
-      plan: current.plan.map((entry) => entry.id === id ? { ...entry, deletedAt: timestamp, updatedAt: timestamp } : entry),
-      trainingFeedback: current.trainingFeedback.filter((feedback) => feedback.trainingId !== id),
+      plan: current.plan.map((entry) => idSet.has(entry.id) ? { ...entry, deletedAt: timestamp, updatedAt: timestamp } : entry),
+      trainingFeedback: current.trainingFeedback.filter((feedback) => !idSet.has(feedback.trainingId)),
     }));
 
-    void deleteCloudTraining(id, timestamp).catch((error) =>
-      console.error("Training konnte nicht direkt aus Supabase gelöscht werden", error),
-    );
+    uniqueIds.forEach((entryId) => {
+      void deleteCloudTraining(entryId, timestamp).catch((error) =>
+        console.error("Training konnte nicht direkt aus Supabase gelöscht werden", error),
+      );
+    });
   };
 
   const saveTrainingFeedback = (feedback: Omit<TrainingFeedback, "id" | "completedAt"> & { id?: string }) => {
@@ -767,6 +784,7 @@ function AppContent() {
             user={activeUser}
             onSave={upsertPlanEntry}
             onDelete={deletePlanEntry}
+            onDeleteSeries={deletePlanEntrySeries}
             onToggleDone={togglePlanEntryDone}
             onFeedbackSave={saveTrainingFeedback}
             onDataChange={updateData}

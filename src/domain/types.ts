@@ -475,6 +475,7 @@ export type PlanEntry = {
   repeat: TrainingRepeat;
   repeatUntil: string;
   repeatMaxCount?: number;
+  repeatSeriesId?: string;
   templateId?: string;
   createdByUserId: string;
   assignedAthleteId: string;

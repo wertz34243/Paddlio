@@ -19,6 +19,12 @@ const omitDeletedAt = <T extends Record<string, unknown>>(payload: T): Omit<T, "
   return nextPayload;
 };
 
+const omitColumn = <T extends Record<string, unknown>>(payload: T, columnName: string): T => {
+  const nextPayload: Record<string, unknown> = { ...payload };
+  delete nextPayload[columnName];
+  return nextPayload as T;
+};
+
 export const toCloudTraining = (entry: PlanEntry) => ({
   id: toCloudUuid(entry.id),
   owner_id: toCloudUuidOrNull(entry.ownerUserId),
@@ -49,6 +55,7 @@ export const toCloudTraining = (entry: PlanEntry) => ({
               ? "cancelled"
               : "planned",
   repeat_rule: entry.repeat === "none" ? null : entry.repeat,
+  repeat_series_id: entry.repeatSeriesId || null,
   notes: entry.notes || entry.note,
   deleted_at: entry.deletedAt || null,
 });
@@ -80,6 +87,7 @@ export const fromCloudTraining = (row: any, athleteId: string): PlanEntry => ({
   status: row.status ?? "planned",
   repeat: row.repeat_rule ?? "none",
   repeatUntil: "",
+  repeatSeriesId: row.repeat_series_id ?? "",
   createdByUserId: row.coach_id ?? row.owner_id,
   assignedAthleteId: row.assigned_athlete_id ?? "",
   assignedGroupId: row.assigned_group_id ?? "",
@@ -109,9 +117,15 @@ export const upsertCloudTraining = async (entry: PlanEntry): Promise<void> => {
     enqueueSyncChange({ tableName: "training_plan_items", action: "upsert", payload });
     return;
   }
-  let { error } = await (client.from("training_plan_items") as any).upsert(payload, { onConflict: "id" });
+  let cloudPayload = payload;
+  let { error } = await (client.from("training_plan_items") as any).upsert(cloudPayload, { onConflict: "id" });
+  if (error && isMissingColumnError(error, "repeat_series_id")) {
+    cloudPayload = omitColumn(cloudPayload, "repeat_series_id");
+    const fallback = await (client.from("training_plan_items") as any).upsert(cloudPayload, { onConflict: "id" });
+    error = fallback.error;
+  }
   if (error && isMissingColumnError(error, "deleted_at")) {
-    const fallback = await (client.from("training_plan_items") as any).upsert(omitDeletedAt(payload), { onConflict: "id" });
+    const fallback = await (client.from("training_plan_items") as any).upsert(omitDeletedAt(cloudPayload), { onConflict: "id" });
     error = fallback.error;
   }
   if (error) throw error;

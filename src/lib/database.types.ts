@@ -165,6 +165,7 @@ export type Database = {
           intensity: string | null;
           status: PlanStatus;
           repeat_rule: string | null;
+          repeat_series_id: string | null;
           notes: string | null;
           created_at: string;
           updated_at: string;

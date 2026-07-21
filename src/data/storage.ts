@@ -1933,6 +1933,7 @@ const normalizePlanEntries = (entries: LegacyPlanEntry[], athleteId: string, use
       status: entry.status ?? "planned",
       repeat: entry.repeat ?? "none",
       repeatUntil: entry.repeatUntil ?? "",
+      repeatSeriesId: entry.repeatSeriesId ?? "",
       createdByUserId: entry.createdByUserId ?? userId,
       assignedAthleteId: entry.assignedAthleteId ?? entry.athleteId ?? athleteId,
       assignedGroupId: entry.assignedGroupId ?? "",
