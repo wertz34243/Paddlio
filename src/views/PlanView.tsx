@@ -15,6 +15,7 @@ import {
   getLocalDateKey,
   getTodayKey,
   getWeekdayFromDate,
+  expandTrainingRepeatDates,
   isDoneStatus,
   isPlannedStatus,
   isSkippedStatus,
@@ -226,6 +227,9 @@ export function PlanView({
   const [selectedArea, setSelectedArea] = useState<TrainingArea>("Wassertraining");
   const [templateArea, setTemplateArea] = useState<TrainingArea>("Wassertraining");
   const [selectedDate, setSelectedDate] = useState(today);
+  const [selectedRepeat, setSelectedRepeat] = useState<TrainingRepeat>("none");
+  const [selectedRepeatUntil, setSelectedRepeatUntil] = useState("");
+  const [selectedRepeatMaxCount, setSelectedRepeatMaxCount] = useState<number | undefined>(undefined);
   const [feedbackEntry, setFeedbackEntry] = useState<PlanEntry | null>(null);
   const [copyEntry, setCopyEntry] = useState<PlanEntry | null>(null);
   const [showWeekCopy, setShowWeekCopy] = useState(false);
@@ -438,6 +442,9 @@ export function PlanView({
     const nextDraft = emptyDraft(user, data.athlete.id);
     setSelectedArea(nextDraft.area);
     setSelectedDate(nextDraft.date);
+    setSelectedRepeat(nextDraft.repeat);
+    setSelectedRepeatUntil(nextDraft.repeatUntil);
+    setSelectedRepeatMaxCount(nextDraft.repeatMaxCount);
     setDraft(nextDraft);
   };
 
@@ -470,6 +477,9 @@ export function PlanView({
   const startEdit = (entry: PlanEntry) => {
     setSelectedArea(entry.area);
     setSelectedDate(entry.date);
+    setSelectedRepeat(entry.repeat);
+    setSelectedRepeatUntil(entry.repeatUntil);
+    setSelectedRepeatMaxCount(entry.repeatMaxCount);
     setDraft({
       ...entry,
       focus: entry.focus || entry.goal,
@@ -869,21 +879,9 @@ export function PlanView({
     </>
   );
 
-  const getRepeatPreview = (repeat: TrainingRepeat, repeatUntil: string, maxCount?: number): number => {
-    if (!draft || repeat === "none" || !repeatUntil) return 1;
-    const cursor = parseLocalDateOnly(draft.date);
-    const end = parseLocalDateOnly(repeatUntil);
-    let count = 0;
-    while (cursor <= end && count < (maxCount || 90)) {
-      count += 1;
-      if (repeat === "daily") cursor.setDate(cursor.getDate() + 1);
-      else if (repeat === "weekly") cursor.setDate(cursor.getDate() + 7);
-      else if (repeat === "biweekly") cursor.setDate(cursor.getDate() + 14);
-      else if (repeat === "monthly") cursor.setMonth(cursor.getMonth() + 1);
-      else break;
-    }
-    return Math.max(1, count);
-  };
+  const repeatPreviewCount = draft && selectedRepeat !== "none" && selectedRepeatUntil
+    ? expandTrainingRepeatDates(selectedDate, selectedRepeat, selectedRepeatUntil, selectedRepeatMaxCount).length
+    : 1;
 
   return (
     <div className="stack calendar-shell">
@@ -1275,7 +1273,7 @@ export function PlanView({
           <form className="entry-form" onSubmit={handleSubmit}>
             <div className="form-grid">
               <label>Titel<input name="title" defaultValue={draft.title} required /></label>
-              <label>Datum<input name="date" type="date" defaultValue={draft.date} onChange={(event) => setSelectedDate(event.currentTarget.value)} required /></label>
+              <label>Datum<input name="date" type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.currentTarget.value)} required /></label>
               <label>Wochentag<input value={getWeekdayFromDate(selectedDate)} readOnly /></label>
               <label>Startzeit<input name="startTime" type="time" defaultValue={draft.startTime || draft.time} /></label>
               <label>Endzeit<input name="endTime" type="time" defaultValue={draft.endTime} /></label>
@@ -1286,11 +1284,11 @@ export function PlanView({
               <label>Bootsklasse<select name="boatClass" defaultValue={draft.boatClass}><option value="K1">K1</option><option value="C1">C1</option><option value="K1+C1">K1+C1</option><option value="none">ohne Boot</option></select></label>
               <label>Intensität<select name="intensity" defaultValue={draft.intensity}>{trainingIntensities.map((intensity) => <option key={intensity} value={intensity}>{intensityLabel[intensity]}</option>)}</select></label>
               <label>Status<select name="status" defaultValue={draft.status}>{planStatuses.map((status) => <option key={status} value={status}>{statusLabel[status]}</option>)}</select></label>
-              <label>Wiederholung<select name="repeat" defaultValue={draft.repeat}><option value="none">keine</option><option value="daily">taeglich</option><option value="weekly">woechentlich</option><option value="biweekly">alle 2 Wochen</option><option value="monthly">monatlich</option></select></label>
-              <label>Wiederholen bis<input name="repeatUntil" type="date" defaultValue={draft.repeatUntil} /></label>
-              <label>Max. Termine<input name="repeatMaxCount" type="number" min="1" max="90" defaultValue={draft.repeatMaxCount ?? ""} placeholder="optional" /></label>
+              <label>Wiederholung<select name="repeat" value={selectedRepeat} onChange={(event) => setSelectedRepeat(event.currentTarget.value as TrainingRepeat)}><option value="none">keine</option><option value="daily">täglich</option><option value="weekly">wöchentlich</option><option value="biweekly">alle 2 Wochen</option><option value="monthly">monatlich</option></select></label>
+              <label>Wiederholen bis<input name="repeatUntil" type="date" value={selectedRepeatUntil} onChange={(event) => setSelectedRepeatUntil(event.currentTarget.value)} disabled={selectedRepeat === "none"} /></label>
+              <label>Max. Termine<input name="repeatMaxCount" type="number" min="1" max="90" value={selectedRepeatMaxCount ?? ""} onChange={(event) => setSelectedRepeatMaxCount(Number(event.currentTarget.value) || undefined)} placeholder="optional" disabled={selectedRepeat === "none"} /></label>
             </div>
-            {draft.repeat !== "none" && draft.repeatUntil ? <p className="card-note">Vorschau: Es werden {getRepeatPreview(draft.repeat, draft.repeatUntil, draft.repeatMaxCount)} Trainingseinheiten erstellt.</p> : null}
+            {selectedRepeat !== "none" ? <p className="card-note">{selectedRepeatUntil ? `Vorschau: Es werden ${repeatPreviewCount} Trainingseinheiten erstellt.` : "Wähle ein Enddatum, damit mehrere Termine erstellt werden."}</p> : null}
             {isCoach ? <div className="choice-group"><span>Sportler für Einzeltraining</span><div className="tag-row">{visibleAthletes.map((athlete) => <label className="toggle-row" key={athlete.id}><span>{getAthleteName(athlete)}</span><input name="assignedAthleteIds" type="checkbox" value={athlete.id} defaultChecked={draft.assignedAthleteIds.includes(athlete.id)} /></label>)}</div></div> : null}
             {isCoach ? <div className="choice-group"><span>Trainingsgruppen</span><div className="tag-row">{visibleGroups.map((group) => <label className="toggle-row" key={group.id}><span>{group.name}</span><input name="assignedGroupIds" type="checkbox" value={group.id} defaultChecked={draft.assignedGroupIds.includes(group.id)} /></label>)}</div></div> : null}
             <label>Ziel/Fokus<input name="focus" defaultValue={draft.focus || draft.goal} placeholder="z. B. Tor 6 sauber anfahren" /></label>

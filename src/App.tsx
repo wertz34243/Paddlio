@@ -9,7 +9,7 @@ import { createId } from "./data/storage";
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import { canUseCoachArea } from "./domain/accessControl";
 import { getActiveUser, getDisplayName, getInitials } from "./domain/profile";
-import { formatLocalDateOnly, getWeekdayFromDate, isDoneStatus, parseLocalDateOnly } from "./domain/trainingPlan";
+import { expandTrainingRepeatDates, getWeekdayFromDate, isDoneStatus } from "./domain/trainingPlan";
 import { useAppChromeVisibility } from "./hooks/useAutoHideOnScroll";
 import { useResponsiveCapabilities } from "./hooks/useResponsiveCapabilities";
 import { getFeatureMode, isFeatureAvailable, pageFeatureMap, type FeatureId, type FeatureMode } from "./lib/deviceCapabilities";
@@ -521,21 +521,9 @@ function AppContent() {
   ) => {
     const timestamp = getTimestamp();
     const existing = entry.id ? data.plan.find((item) => item.id === entry.id && !item.deletedAt) : undefined;
-    const repeat = entry.repeat ?? "none";
-    const startDate = parseLocalDateOnly(entry.date);
-    const repeatUntil = entry.repeatUntil ? parseLocalDateOnly(entry.repeatUntil) : startDate;
-    const repeatLimit = entry.repeatMaxCount && entry.repeatMaxCount > 0 ? Math.min(entry.repeatMaxCount, 90) : 90;
-    const dates: string[] = [];
-    const cursor = parseLocalDateOnly(entry.date);
-
-    while (dates.length === 0 || (repeat !== "none" && cursor <= repeatUntil && dates.length < repeatLimit)) {
-      dates.push(formatLocalDateOnly(cursor));
-      if (repeat === "daily") cursor.setDate(cursor.getDate() + 1);
-      else if (repeat === "weekly") cursor.setDate(cursor.getDate() + 7);
-      else if (repeat === "biweekly") cursor.setDate(cursor.getDate() + 14);
-      else if (repeat === "monthly") cursor.setMonth(cursor.getMonth() + 1);
-      else break;
-    }
+    const dates = existing
+      ? [entry.date]
+      : expandTrainingRepeatDates(entry.date, entry.repeat, entry.repeatUntil, entry.repeatMaxCount);
 
     const createdEntries = dates.map((date, index): PlanEntry => ({
         ...entry,

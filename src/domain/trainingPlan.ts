@@ -115,6 +115,38 @@ export const getCalendarDayOffset = (from: string, to: string): number => {
   return Math.round((toTime - fromTime) / 86400000);
 };
 
+export const expandTrainingRepeatDates = (
+  startDate: string,
+  repeat: PlanEntry["repeat"] = "none",
+  repeatUntil = "",
+  maxCount?: number,
+): string[] => {
+  const cursor = parseLocalDateOnly(startDate);
+  const end = repeatUntil ? parseLocalDateOnly(repeatUntil) : cursor;
+  const limit = maxCount && maxCount > 0 ? Math.min(maxCount, 90) : 90;
+  const dates: string[] = [];
+
+  if (repeat === "none" || !repeatUntil) {
+    return [formatLocalDateOnly(cursor)];
+  }
+
+  if (repeatUntil && end < cursor) {
+    return [formatLocalDateOnly(cursor)];
+  }
+
+  while (dates.length === 0 || (cursor <= end && dates.length < limit)) {
+    dates.push(formatLocalDateOnly(cursor));
+
+    if (repeat === "daily") cursor.setDate(cursor.getDate() + 1);
+    else if (repeat === "weekly") cursor.setDate(cursor.getDate() + 7);
+    else if (repeat === "biweekly") cursor.setDate(cursor.getDate() + 14);
+    else if (repeat === "monthly") cursor.setMonth(cursor.getMonth() + 1);
+    else break;
+  }
+
+  return dates;
+};
+
 export const isPlannedStatus = (status: PlanStatus): boolean => status === "planned" || status === "geplant" || status === "in_progress";
 
 export const isDoneStatus = (status: PlanStatus): boolean => status === "done" || status === "erledigt" || status === "completed" || status === "partially_completed";
