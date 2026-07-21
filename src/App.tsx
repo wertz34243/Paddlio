@@ -13,6 +13,7 @@ import { expandTrainingRepeatDates, getTrainingRepeatSeriesEntries, getWeekdayFr
 import { useAppChromeVisibility } from "./hooks/useAutoHideOnScroll";
 import { useResponsiveCapabilities } from "./hooks/useResponsiveCapabilities";
 import { getFeatureMode, isFeatureAvailable, pageFeatureMap, type FeatureId, type FeatureMode } from "./lib/deviceCapabilities";
+import { APP_ENVIRONMENT_LABEL, isProductionEnvironment } from "./lib/appEnvironment";
 import type { Json } from "./lib/database.types";
 import { updateCloudProfile } from "./services/profileService";
 import { createCloudNotification, markAllCloudNotificationsRead, markCloudNotificationRead } from "./services/notificationService";
@@ -1503,9 +1504,10 @@ function AppContent() {
             <p className="brand-slogan">{APP_SLOGAN}</p>
           </div>
           <div className="page-title-lockup">
-            <span>Version {APP_VERSION} · Paddlio Beta</span>
+            <span>Version {APP_VERSION} · Paddlio Beta{isProductionEnvironment ? "" : ` · ${APP_ENVIRONMENT_LABEL}`}</span>
             <h1>{pageTitles[activePage]}</h1>
           </div>
+          {!isProductionEnvironment ? <b className="environment-badge">DEV</b> : null}
         </header>
       ) : null}
 

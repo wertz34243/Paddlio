@@ -1,3 +1,5 @@
+import { isDevelopmentEnvironment } from "./appEnvironment";
+
 const normalizeEnvValue = (value: unknown): string | undefined => {
   if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
@@ -7,7 +9,7 @@ const normalizeEnvValue = (value: unknown): string | undefined => {
 export const SUPABASE_PROJECT_ID = "twlkhfbrrwjwppxinmpn";
 export const SUPABASE_PROJECT_URL = "https://twlkhfbrrwjwppxinmpn.supabase.co";
 
-const rawSupabaseUrl = normalizeEnvValue(import.meta.env.VITE_SUPABASE_URL) ?? SUPABASE_PROJECT_URL;
+const rawSupabaseUrl = normalizeEnvValue(import.meta.env.VITE_SUPABASE_URL);
 const rawSupabaseAnonKey = normalizeEnvValue(import.meta.env.VITE_SUPABASE_ANON_KEY);
 
 const isValidSupabaseUrl = (value: string | undefined): value is string => {
@@ -21,11 +23,16 @@ const isValidSupabaseUrl = (value: string | undefined): value is string => {
   }
 };
 
-export const supabaseUrl = isValidSupabaseUrl(rawSupabaseUrl) ? rawSupabaseUrl : SUPABASE_PROJECT_URL;
+export const supabaseUrl = isValidSupabaseUrl(rawSupabaseUrl)
+  ? rawSupabaseUrl
+  : isDevelopmentEnvironment
+    ? ""
+    : SUPABASE_PROJECT_URL;
 
 export const supabaseAnonKey = rawSupabaseAnonKey;
 
 export const supabaseConfigIssues = [
+  isDevelopmentEnvironment && !rawSupabaseUrl ? "VITE_SUPABASE_URL fehlt in Development" : undefined,
   rawSupabaseUrl && !supabaseUrl ? "VITE_SUPABASE_URL ist keine gueltige Supabase-URL" : undefined,
   !rawSupabaseAnonKey ? "VITE_SUPABASE_ANON_KEY fehlt" : undefined,
 ].filter((issue): issue is string => Boolean(issue));
