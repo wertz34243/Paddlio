@@ -9,7 +9,7 @@ const isMissingColumnError = (error: unknown, columnName: string): boolean =>
     error &&
       typeof error === "object" &&
       "code" in error &&
-      (error as { code?: string }).code === "42703" &&
+      ["42703", "PGRST204"].includes((error as { code?: string }).code ?? "") &&
       "message" in error &&
       String((error as { message?: string }).message ?? "").includes(columnName),
   );
