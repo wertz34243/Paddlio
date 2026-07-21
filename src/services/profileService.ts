@@ -1,8 +1,9 @@
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { getSupabaseClient } from "../lib/supabase";
-import type { Database, UserRole } from "../lib/database.types";
+import type { Database, Json, UserRole } from "../lib/database.types";
 
 export type CloudProfile = Database["public"]["Tables"]["profiles"]["Row"];
+type CloudProfileUpdate = Partial<CloudProfile> & { id: string; profile_data?: Json };
 
 const ADMIN_EMAIL = "t.kanu@outlook.com";
 
@@ -143,12 +144,12 @@ export const ensureCloudProfile = async (user: SupabaseUser): Promise<CloudProfi
   return data ? normalizeCloudProfile(data) : null;
 };
 
-export const updateCloudProfile = async (profile: Partial<CloudProfile> & { id: string }): Promise<CloudProfile | null> => {
+export const updateCloudProfile = async (profile: CloudProfileUpdate): Promise<CloudProfile | null> => {
   const client = getSupabaseClient();
   if (!client) return null;
 
-  const { data, error } = await (client.from("profiles") as any)
-    .update({
+  const buildPayload = (includeProfileData: boolean) => {
+    const payload: Record<string, unknown> = {
       first_name: profile.first_name,
       last_name: profile.last_name,
       display_name: profile.display_name,
@@ -157,10 +158,32 @@ export const updateCloudProfile = async (profile: Partial<CloudProfile> & { id: 
       age_category: profile.age_category,
       boat_classes: profile.boat_classes,
       paddle_side: profile.paddle_side,
-    })
-    .eq("id", profile.id)
-    .select("*")
-    .maybeSingle();
+      updated_at: new Date().toISOString(),
+    };
+
+    if (includeProfileData && "profile_data" in profile) {
+      payload.profile_data = (profile as CloudProfileUpdate).profile_data ?? {};
+    }
+
+    return Object.fromEntries(Object.entries(payload).filter(([, value]) => value !== undefined));
+  };
+
+  const runUpdate = async (includeProfileData: boolean) =>
+    (client.from("profiles") as any)
+      .update(buildPayload(includeProfileData))
+      .eq("id", profile.id)
+      .select("*")
+      .maybeSingle();
+
+  let { data, error } = await runUpdate(true);
+  const errorCode = typeof (error as { code?: unknown } | null)?.code === "string" ? (error as { code: string }).code : "";
+  const errorMessage = typeof (error as { message?: unknown } | null)?.message === "string" ? (error as { message: string }).message : "";
+
+  if (error && (errorCode === "PGRST204" || errorCode === "42703" || errorMessage.includes("profile_data"))) {
+    const retry = await runUpdate(false);
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) throw error;
   return data;
@@ -253,3 +276,4 @@ export const listCloudProfiles = async (viewer: CloudProfile): Promise<CloudProf
   if (error) throw error;
   return data ?? [];
 };
+

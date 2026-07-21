@@ -13,6 +13,7 @@ import { formatLocalDateOnly, getWeekdayFromDate, isDoneStatus, parseLocalDateOn
 import { useAppChromeVisibility } from "./hooks/useAutoHideOnScroll";
 import { useResponsiveCapabilities } from "./hooks/useResponsiveCapabilities";
 import { getFeatureMode, isFeatureAvailable, pageFeatureMap, type FeatureId, type FeatureMode } from "./lib/deviceCapabilities";
+import type { Json } from "./lib/database.types";
 import { updateCloudProfile } from "./services/profileService";
 import { createCloudNotification, markAllCloudNotificationsRead, markCloudNotificationRead } from "./services/notificationService";
 import { upsertCloudJournalEntry } from "./services/journalService";
@@ -723,7 +724,7 @@ function AppContent() {
     }
   };
 
-  const updateProfile = (userProfile: UserProfile) => {
+  const updateProfile = async (userProfile: UserProfile) => {
     const timestamp = getTimestamp();
 
     updateData((current) => ({
@@ -745,7 +746,7 @@ function AppContent() {
     }));
 
     if (cloudProfile) {
-      void updateCloudProfile({
+      await updateCloudProfile({
         id: cloudProfile.id,
         first_name: userProfile.firstName,
         last_name: userProfile.lastName,
@@ -754,7 +755,8 @@ function AppContent() {
         age_category: userProfile.ageClass || null,
         boat_classes: userProfile.boatClasses.map((boat) => boat),
         paddle_side: userProfile.boatClasses.includes("C1") ? (userProfile.paddleSide === "links" ? "Links" : "Rechts") : null,
-      }).catch((error) => console.error("Profil konnte nicht in die Cloud synchronisiert werden", error));
+        profile_data: userProfile as unknown as Json,
+      });
     }
   };
 

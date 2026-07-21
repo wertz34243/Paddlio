@@ -24,6 +24,7 @@ import type {
   PaddleMotionData,
   TrainerRequest,
   User,
+  UserProfile,
   UserRole,
 } from "../domain/types";
 import { ensureCloudProfile, getCloudProfile, listCloudProfiles, normalizeCloudRolesForEmail, type CloudProfile } from "../services/profileService";
@@ -192,6 +193,7 @@ const createFallbackProfile = (user: SupabaseUser): CloudProfile => {
     age_category: null,
     boat_classes: ["K1"],
     paddle_side: null,
+    profile_data: {},
     created_at: now,
     updated_at: now,
   };
@@ -313,6 +315,12 @@ const toCoachAthlete = (profile: CloudProfile, clubName = "", members: CloudGrou
   };
 };
 
+const getCloudProfileData = (profile: CloudProfile): Partial<UserProfile> => {
+  const value = profile.profile_data;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return value as Partial<UserProfile>;
+};
+
 const mergeCloudData = (
   userId: string,
   profile: CloudProfile,
@@ -337,7 +345,8 @@ const mergeCloudData = (
   const activeGroupIds = new Set(activeGroups.map((group) => group.id));
   const activeMembers = members.filter((member) => activeGroupIds.has(member.group_id));
   const cloudBoatClasses = cloudTruthProfile.boat_classes.filter((boat): boat is "K1" | "C1" => boat === "K1" || boat === "C1");
-  const cloudPaddleSide = cloudTruthProfile.paddle_side === "Links" ? "links" : "rechts";
+  const cloudPaddleSide = cloudTruthProfile.paddle_side === "Links" ? "links" : cloudTruthProfile.paddle_side === "Rechts" ? "rechts" : undefined;
+  const cloudProfileData = getCloudProfileData(cloudTruthProfile);
   const localUser: User = {
     ...cached.users[0],
     id: userId,
@@ -345,14 +354,15 @@ const mergeCloudData = (
     role: getPrimaryRole(cloudTruthProfile.roles),
     profile: {
       ...cached.users[0].profile,
-      firstName: cloudTruthProfile.first_name ?? "",
-      lastName: cloudTruthProfile.last_name ?? "",
-      nickname: cloudTruthProfile.display_name ?? "",
-      club: club?.name ?? "",
-      ageClass: (cloudTruthProfile.age_category ?? "") as User["profile"]["ageClass"],
-      boatClasses: cloudBoatClasses,
-      paddleSide: cloudPaddleSide,
-      profileImageDataUrl: cloudTruthProfile.avatar_url ?? cached.users[0].profile.profileImageDataUrl,
+      ...cloudProfileData,
+      firstName: cloudTruthProfile.first_name ?? cloudProfileData.firstName ?? "",
+      lastName: cloudTruthProfile.last_name ?? cloudProfileData.lastName ?? "",
+      nickname: cloudTruthProfile.display_name ?? cloudProfileData.nickname ?? "",
+      club: club?.name ?? cloudProfileData.club ?? "",
+      ageClass: (cloudTruthProfile.age_category ?? cloudProfileData.ageClass ?? "") as User["profile"]["ageClass"],
+      boatClasses: cloudBoatClasses.length > 0 ? cloudBoatClasses : cloudProfileData.boatClasses ?? cached.users[0].profile.boatClasses,
+      paddleSide: cloudPaddleSide ?? cloudProfileData.paddleSide ?? cached.users[0].profile.paddleSide,
+      profileImageDataUrl: cloudTruthProfile.avatar_url ?? cloudProfileData.profileImageDataUrl ?? cached.users[0].profile.profileImageDataUrl,
     },
     updatedAt: cloudTruthProfile.updated_at,
   };

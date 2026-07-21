@@ -1,4 +1,5 @@
 import type { PaddleMotionData } from "../domain/types";
+import type { Json } from "../lib/database.types";
 import { updateCloudProfile, type CloudProfile } from "./profileService";
 import { upsertCloudTraining, upsertCloudFeedback } from "./trainingService";
 import { upsertCloudJournalEntry } from "./journalService";
@@ -67,6 +68,7 @@ export const syncDataSnapshotToCloud = async (data: PaddleMotionData, profile: C
     age_category: profile.age_category || localProfile?.ageClass || null,
     boat_classes: profile.boat_classes.length > 0 ? profile.boat_classes : localProfile?.boatClasses ?? ["K1"],
     paddle_side: profile.paddle_side || (localProfile?.paddleSide === "links" ? "Links" : localProfile?.paddleSide === "rechts" ? "Rechts" : null),
+    profile_data: (localProfile ?? {}) as unknown as Json,
   });
   migrated += 1;
 

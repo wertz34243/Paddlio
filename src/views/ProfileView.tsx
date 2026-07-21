@@ -14,7 +14,7 @@ import type {
 
 type ProfileViewProps = {
   user: User;
-  onSave: (profile: UserProfile) => void;
+  onSave: (profile: UserProfile) => void | Promise<void>;
 };
 
 const profileBoatClasses: BoatClass[] = ["K1", "C1"];
@@ -47,6 +47,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
   const [boatClasses, setBoatClasses] = useState<BoatClass[]>(user.profile.boatClasses.length > 0 ? user.profile.boatClasses : ["K1"]);
   const [paddleSide, setPaddleSide] = useState<PaddleSide | "">(user.profile.boatClasses.includes("C1") ? user.profile.paddleSide : "");
   const [savedMessage, setSavedMessage] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const [trainerRequestMessage, setTrainerRequestMessage] = useState("");
   const [trainerRequestDraft, setTrainerRequestDraft] = useState({
@@ -87,7 +88,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
     setBoatClasses((current) => {
       if (current.includes(boatClass)) {
         if (current.length === 1) {
-          setFormError("Mindestens eine Bootsklasse muss ausgewaehlt sein.");
+          setFormError("Mindestens eine Bootsklasse muss ausgewählt sein.");
           return current;
         }
 
@@ -103,51 +104,61 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
     });
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
 
     if (boatClasses.length === 0) {
-      setFormError("Mindestens eine Bootsklasse muss ausgewaehlt sein.");
+      setFormError("Mindestens eine Bootsklasse muss ausgewählt sein.");
       return;
     }
 
     if (boatClasses.includes("C1") && paddleSide !== "links" && paddleSide !== "rechts") {
-      setFormError("Bitte waehle für C1 eine Paddelseite aus.");
+      setFormError("Bitte wähle für C1 eine Paddelseite aus.");
       return;
     }
 
     const savedPaddleSide: PaddleSide = boatClasses.includes("C1") ? (paddleSide as PaddleSide) : "rechts";
 
-    onSave({
-      firstName: getString(formData, "firstName"),
-      lastName: getString(formData, "lastName"),
-      nickname: getString(formData, "nickname"),
-      birthDate: getString(formData, "birthDate"),
-      gender: String(formData.get("gender")) as Gender,
-      heightCm: toNumber(formData.get("heightCm")),
-      weightKg: toNumber(formData.get("weightKg")),
-      club: getString(formData, "club"),
-      federation: getString(formData, "federation"),
-      coach: getString(formData, "coach"),
-      licenseNumber: getString(formData, "licenseNumber"),
-      boatClasses,
-      ageClass: String(formData.get("ageClass") ?? "") as AgeClass | "",
-      paddleSide: savedPaddleSide,
-      trainingYears: toNumber(formData.get("trainingYears")),
-      competitionExperience: getString(formData, "competitionExperience"),
-      longTermGoal: getString(formData, "longTermGoal"),
-      seasonGoal: getString(formData, "seasonGoal"),
-      personalNotes: getString(formData, "personalNotes"),
-      profileImageDataUrl,
-      darkMode: formData.get("darkMode") === "on",
-      measurementUnit: String(formData.get("measurementUnit")) as MeasurementUnit,
-      language: String(formData.get("language")) as AppLanguage,
-    });
-
+    setIsSaving(true);
     setFormError("");
-    setSavedMessage("Profil gespeichert");
-    window.setTimeout(() => setSavedMessage(""), 2200);
+    setSavedMessage("");
+
+    try {
+      await onSave({
+        firstName: getString(formData, "firstName"),
+        lastName: getString(formData, "lastName"),
+        nickname: getString(formData, "nickname"),
+        birthDate: getString(formData, "birthDate"),
+        gender: String(formData.get("gender")) as Gender,
+        heightCm: toNumber(formData.get("heightCm")),
+        weightKg: toNumber(formData.get("weightKg")),
+        club: getString(formData, "club"),
+        federation: getString(formData, "federation"),
+        coach: getString(formData, "coach"),
+        licenseNumber: getString(formData, "licenseNumber"),
+        boatClasses,
+        ageClass: String(formData.get("ageClass") ?? "") as AgeClass | "",
+        paddleSide: savedPaddleSide,
+        trainingYears: toNumber(formData.get("trainingYears")),
+        competitionExperience: getString(formData, "competitionExperience"),
+        longTermGoal: getString(formData, "longTermGoal"),
+        seasonGoal: getString(formData, "seasonGoal"),
+        personalNotes: getString(formData, "personalNotes"),
+        profileImageDataUrl,
+        darkMode: formData.get("darkMode") === "on",
+        measurementUnit: String(formData.get("measurementUnit")) as MeasurementUnit,
+        language: String(formData.get("language")) as AppLanguage,
+      });
+
+      setSavedMessage("Profil gespeichert und synchronisiert");
+      window.setTimeout(() => setSavedMessage(""), 2600);
+    } catch (error) {
+      console.error("Profil konnte nicht gespeichert werden", error);
+      setFormError("Das Profil konnte nicht synchronisiert werden. Bitte prüfe die Verbindung und versuche es erneut.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const submitTrainerRequest = () => {
@@ -157,7 +168,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
     }
 
     if (!trainerRequestDraft.message.trim()) {
-      setTrainerRequestMessage("Bitte schreibe kurz, warum du Trainer werden moechtest.");
+      setTrainerRequestMessage("Bitte schreibe kurz, warum du Trainer werden möchtest.");
       return;
     }
 
@@ -384,7 +395,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
                   rows={3}
                   value={trainerRequestDraft.message}
                   onChange={(event) => updateTrainerDraft("message", event.target.value)}
-                  placeholder="Warum moechtest du Trainerrechte in Paddlio?"
+                  placeholder="Warum möchtest du Trainerrechte in Paddlio?"
                 />
               </label>
               <label>
@@ -465,11 +476,13 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
       </section>
 
       <div className="sticky-save">
-        <button className="save-button" type="submit">
-          Profil speichern
+        <button className="save-button" type="submit" disabled={isSaving}>
+          {isSaving ? "Profil wird gespeichert..." : "Profil speichern"}
         </button>
+        {formError ? <span className="form-error">{formError}</span> : null}
         {savedMessage ? <span>{savedMessage}</span> : null}
       </div>
     </form>
   );
 }
+

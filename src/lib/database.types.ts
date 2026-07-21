@@ -25,6 +25,7 @@ export type Database = {
           age_category: string | null;
           boat_classes: string[];
           paddle_side: string | null;
+          profile_data: Json;
           created_at: string;
           updated_at: string;
         };
