@@ -6984,3 +6984,380 @@ body {
     grid-template-columns: 4.5rem 4.5rem 1fr;
   }
 }
+
+/* Responsive density layer: phone stays generous, tablet and desktop become denser. */
+:root {
+  --density-page-padding: 18px;
+  --density-section-gap: 24px;
+  --density-card-gap: 16px;
+  --density-card-padding: 20px;
+  --density-control-height: 52px;
+  --density-input-height: 46px;
+  --density-card-radius: 22px;
+  --density-shell-top: 18px;
+  --density-shell-bottom: 98px;
+  --density-shell-gap: 18px;
+  --density-title-xl: clamp(2.25rem, 8vw, 3.6rem);
+  --density-title-lg: clamp(2rem, 8vw, 3rem);
+  --density-title-md: 24px;
+  --density-metric: clamp(1.9rem, 7vw, 3rem);
+  --density-body: 16px;
+  --density-caption: 0.82rem;
+  --space-page: var(--density-page-padding);
+  --space-section: var(--density-section-gap);
+  --space-card: var(--density-card-padding);
+  --radius-card: var(--density-card-radius);
+}
+
+@media (min-width: 768px) {
+  :root {
+    --density-page-padding: 20px;
+    --density-section-gap: 20px;
+    --density-card-gap: 14px;
+    --density-card-padding: 18px;
+    --density-control-height: 46px;
+    --density-input-height: 42px;
+    --density-card-radius: 18px;
+    --density-shell-top: 16px;
+    --density-shell-bottom: 28px;
+    --density-shell-gap: 16px;
+    --density-title-xl: clamp(1.95rem, 4vw, 3rem);
+    --density-title-lg: clamp(1.7rem, 3vw, 2.35rem);
+    --density-title-md: 21px;
+    --density-metric: clamp(1.65rem, 4vw, 2.45rem);
+    --density-body: 15px;
+    --density-caption: 0.78rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  :root {
+    --density-page-padding: 18px;
+    --density-section-gap: 16px;
+    --density-card-gap: 12px;
+    --density-card-padding: 15px;
+    --density-control-height: 40px;
+    --density-input-height: 38px;
+    --density-card-radius: 14px;
+    --density-shell-top: 14px;
+    --density-shell-bottom: 18px;
+    --density-shell-gap: 14px;
+    --density-title-xl: clamp(1.7rem, 2.2vw, 2.45rem);
+    --density-title-lg: clamp(1.45rem, 1.8vw, 2rem);
+    --density-title-md: 19px;
+    --density-metric: clamp(1.45rem, 2.2vw, 2.15rem);
+    --density-body: 14px;
+    --density-caption: 0.74rem;
+  }
+}
+
+.app-shell {
+  gap: var(--density-section-gap);
+  padding: calc(var(--density-shell-top) + env(safe-area-inset-top)) var(--density-page-padding) calc(var(--density-shell-bottom) + env(safe-area-inset-bottom));
+}
+
+.page-content,
+.stack,
+.segment-content,
+.calendar-list,
+.plan-week,
+.plan-entry-list,
+.import-export-view,
+.polar-view,
+.academy-shell {
+  gap: var(--density-section-gap);
+}
+
+.home-v5-hero h1,
+.home-profile-card h1,
+.premium-hero h1,
+.academy-hero h1 {
+  font-size: var(--density-title-xl);
+}
+
+.home-v5-training h2,
+.training-calendar-hero h2,
+.polar-hero h3,
+.polar-panel h3 {
+  font-size: var(--density-title-lg);
+}
+
+.section-heading h2,
+.section-heading h3,
+.import-card h3 {
+  font-size: var(--density-title-md);
+}
+
+.home-welcome-line,
+.hero-slogan,
+.home-v5-training p,
+.home-v5-training span,
+.muted,
+.card-note,
+.empty-state,
+.polar-message {
+  font-size: var(--density-body);
+}
+
+.eyebrow,
+.calendar-weekday,
+.preview-table th {
+  font-size: var(--density-caption);
+}
+
+.home-v5-training,
+.home-v5-section,
+.home-profile-card,
+.profile-hero-card,
+.section-block,
+.metric-card,
+.summary-strip,
+.motivation-card,
+.app-card,
+.chart-panel,
+.competition-timeline-item,
+.wallet-card,
+.plan-day,
+.plan-card,
+.training-plan-card,
+.calendar-training-card,
+.training-calendar-hero,
+.training-calendar-controls,
+.training-calendar-month,
+.polar-hero,
+.polar-panel,
+.polar-warning,
+.polar-card,
+.import-export-hero,
+.import-export-panel,
+.import-card,
+.academy-hero,
+.academy-panel,
+.academy-category-card,
+.academy-list-button {
+  border-radius: var(--density-card-radius);
+}
+
+.section-block,
+.chart-panel,
+.home-v5-section,
+.polar-panel,
+.polar-hero,
+.import-card,
+.import-export-panel,
+.academy-panel,
+.academy-hero {
+  padding: var(--density-card-padding);
+}
+
+.home-v5-training {
+  gap: var(--density-card-gap);
+  padding: calc(var(--density-card-padding) + 4px);
+}
+
+.app-card {
+  gap: var(--density-card-gap);
+  min-height: calc(128px + var(--density-card-padding));
+  padding: var(--density-card-padding);
+}
+
+.metric-card {
+  min-height: calc(82px + var(--density-card-padding));
+  padding: calc(var(--density-card-padding) - 2px);
+}
+
+.metric-card strong,
+.app-card-value,
+.polar-card strong,
+.periodization-summary strong {
+  font-size: var(--density-metric);
+}
+
+.summary-strip div,
+.training-calendar-day,
+.training-calendar-weekday {
+  min-height: calc(62px + var(--density-card-padding));
+  padding: calc(var(--density-card-padding) - 4px);
+  border-radius: calc(var(--density-card-radius) - 4px);
+}
+
+.dashboard-card-grid,
+.metric-grid,
+.polar-grid,
+.training-calendar-agenda,
+.mapping-list,
+.history-list,
+.help-list {
+  gap: var(--density-card-gap);
+}
+
+.save-button,
+.edit-button,
+.delete-button,
+.ghost-button,
+.secondary-button,
+.primary-action,
+.import-card button,
+.import-export-tabs button,
+.calendar-mode-control button,
+.training-calendar-controls button,
+.filter-tabs button {
+  min-height: var(--density-control-height);
+}
+
+.entry-form input,
+.entry-form select,
+.entry-form textarea,
+.profile-form input,
+.profile-form select,
+.profile-form textarea,
+.import-card select,
+.import-card input:not([type="checkbox"]) {
+  min-height: var(--density-input-height);
+}
+
+.entry-form,
+.journal-form {
+  gap: var(--density-card-gap);
+  padding: var(--density-card-padding);
+}
+
+@media (min-width: 768px) {
+  .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .form-actions,
+  .card-actions {
+    gap: 8px;
+  }
+
+  .calendar-mode-control button,
+  .segment-button {
+    padding-inline: 14px;
+  }
+
+  .training-calendar-month {
+    gap: 6px;
+  }
+
+  .training-calendar-day {
+    min-height: 78px;
+  }
+}
+
+@media (min-width: 900px) {
+  .app-shell {
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: var(--density-shell-gap);
+    max-width: 1480px;
+    padding: calc(var(--density-shell-top) + env(safe-area-inset-top)) var(--density-page-padding) var(--density-shell-bottom);
+  }
+
+  .desktop-side-nav {
+    width: 72px;
+    gap: 12px;
+    padding: 10px;
+  }
+
+  .desktop-user-card {
+    padding: 7px;
+  }
+
+  .desktop-brand > span,
+  .desktop-user-card > span {
+    width: 38px;
+    height: 38px;
+  }
+
+  .desktop-nav-list {
+    gap: 6px;
+  }
+
+  .desktop-nav-item {
+    min-height: 46px;
+    border-radius: 14px;
+  }
+
+  .desktop-nav-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 12px;
+  }
+
+  .dashboard-card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .metric-grid.three-columns,
+  .home-v5-metrics,
+  .polar-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .calendar-week-grid {
+    gap: 8px;
+  }
+
+  .calendar-day-column {
+    min-height: 150px;
+    padding: 10px;
+  }
+
+  .calendar-training-card {
+    gap: 8px;
+    padding: 11px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .app-shell {
+    grid-template-columns: 68px minmax(0, 1fr);
+    max-width: 1560px;
+  }
+
+  .desktop-side-nav {
+    width: 68px;
+  }
+
+  .home-v5 {
+    max-width: 1180px;
+  }
+
+  .training-calendar-day {
+    min-height: 68px;
+  }
+
+  .training-calendar-weekday {
+    min-height: 66px;
+  }
+
+  .training-calendar-weekday strong {
+    font-size: 1.25rem;
+  }
+
+  .calendar-month-grid button {
+    min-height: 58px;
+    padding: 7px;
+  }
+
+  .summary-strip div {
+    min-height: 64px;
+  }
+
+  .more-menu-card,
+  .smart-grid .smart-tile {
+    min-height: 92px;
+    padding: 12px;
+  }
+
+  .mapping-row {
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .preview-table th,
+  .preview-table td {
+    padding: 8px 10px;
+  }
+}
