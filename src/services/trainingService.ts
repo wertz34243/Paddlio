@@ -25,6 +25,52 @@ const omitColumn = <T extends Record<string, unknown>>(payload: T, columnName: s
   return nextPayload as T;
 };
 
+const trainingPlanMetaPrefix = "\n\n[PaddlioTrainingMeta]";
+
+type TrainingPlanCloudMeta = {
+  assignedType?: PlanEntry["assignedType"];
+  assignedAthleteIds?: string[];
+  assignedGroupIds?: string[];
+  description?: string;
+  feedbackNote?: string;
+  repeatUntil?: string;
+  repeatMaxCount?: number;
+  templateId?: string;
+};
+
+const stripTrainingPlanMeta = (notes: string): string => {
+  const markerIndex = notes.indexOf(trainingPlanMetaPrefix);
+  return markerIndex >= 0 ? notes.slice(0, markerIndex).trim() : notes;
+};
+
+const parseTrainingPlanMeta = (notes: string): TrainingPlanCloudMeta => {
+  const markerIndex = notes.indexOf(trainingPlanMetaPrefix);
+  if (markerIndex < 0) return {};
+  try {
+    return JSON.parse(notes.slice(markerIndex + trainingPlanMetaPrefix.length).trim()) as TrainingPlanCloudMeta;
+  } catch {
+    return {};
+  }
+};
+
+const buildTrainingPlanNotes = (entry: PlanEntry): string => {
+  const baseNotes = stripTrainingPlanMeta(entry.notes || entry.note || "");
+  const meta: TrainingPlanCloudMeta = {
+    assignedType: entry.assignedType,
+    assignedAthleteIds: entry.assignedAthleteIds,
+    assignedGroupIds: entry.assignedGroupIds,
+    description: entry.description,
+    feedbackNote: entry.feedbackNote,
+    repeatUntil: entry.repeatUntil,
+    repeatMaxCount: entry.repeatMaxCount,
+    templateId: entry.templateId,
+  };
+  const compactMeta = Object.fromEntries(
+    Object.entries(meta).filter(([, value]) => Array.isArray(value) ? value.length > 0 : value !== undefined && value !== ""),
+  );
+  return Object.keys(compactMeta).length > 0 ? `${baseNotes}${trainingPlanMetaPrefix}${JSON.stringify(compactMeta)}` : baseNotes;
+};
+
 export const toCloudTraining = (entry: PlanEntry) => ({
   id: toCloudUuid(entry.id),
   owner_id: toCloudUuidOrNull(entry.ownerUserId),
@@ -56,46 +102,61 @@ export const toCloudTraining = (entry: PlanEntry) => ({
               : "planned",
   repeat_rule: entry.repeat === "none" ? null : entry.repeat,
   repeat_series_id: entry.repeatSeriesId || null,
-  notes: entry.notes || entry.note,
+  notes: buildTrainingPlanNotes(entry),
   deleted_at: entry.deletedAt || null,
 });
 
-export const fromCloudTraining = (row: any, athleteId: string): PlanEntry => ({
-  id: row.id,
-  ownerUserId: row.owner_id,
-  athleteId,
-  clubId: row.club_id ?? "",
-  assignedType: row.assigned_group_id ? "group" : row.assigned_athlete_id ? "athlete" : "self",
-  assignedAthleteIds: row.assigned_athlete_id ? [row.assigned_athlete_id] : [athleteId],
-  assignedGroupIds: row.assigned_group_id ? [row.assigned_group_id] : [],
-  title: row.title,
-  date: row.date,
-  weekday: getWeekdayFromDate(row.date),
-  time: row.start_time ?? "",
-  startTime: row.start_time ?? "",
-  endTime: row.end_time ?? "",
-  durationMinutes: row.duration_minutes ?? 0,
-  area: row.area ?? "Wassertraining",
-  trainingType: row.training_type ?? "K1 Technik",
-  boatClass: row.boat_class ?? "none",
-  goal: row.goal ?? "",
-  focus: row.goal ?? "",
-  description: "",
-  intensity: row.intensity ?? "mittel",
-  note: row.notes ?? "",
-  notes: row.notes ?? "",
-  status: row.status ?? "planned",
-  repeat: row.repeat_rule ?? "none",
-  repeatUntil: "",
-  repeatSeriesId: row.repeat_series_id ?? "",
-  createdByUserId: row.coach_id ?? row.owner_id,
-  assignedAthleteId: row.assigned_athlete_id ?? "",
-  assignedGroupId: row.assigned_group_id ?? "",
-  feedbackNote: "",
-  deletedAt: row.deleted_at ?? "",
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
-});
+export const fromCloudTraining = (row: any, athleteId: string): PlanEntry => {
+  const rawNotes = row.notes ?? "";
+  const meta = parseTrainingPlanMeta(rawNotes);
+  const assignedAthleteIds = meta.assignedAthleteIds?.length
+    ? meta.assignedAthleteIds
+    : row.assigned_athlete_id
+      ? [row.assigned_athlete_id]
+      : [athleteId];
+  const assignedGroupIds = meta.assignedGroupIds?.length ? meta.assignedGroupIds : row.assigned_group_id ? [row.assigned_group_id] : [];
+  const assignedType = meta.assignedType ?? (row.assigned_group_id ? "group" : row.assigned_athlete_id ? "athlete" : "self");
+  const notes = stripTrainingPlanMeta(rawNotes);
+
+  return {
+    id: row.id,
+    ownerUserId: row.owner_id,
+    athleteId,
+    clubId: row.club_id ?? "",
+    assignedType,
+    assignedAthleteIds,
+    assignedGroupIds,
+    title: row.title,
+    date: row.date,
+    weekday: getWeekdayFromDate(row.date),
+    time: row.start_time ?? "",
+    startTime: row.start_time ?? "",
+    endTime: row.end_time ?? "",
+    durationMinutes: row.duration_minutes ?? 0,
+    area: row.area ?? "Wassertraining",
+    trainingType: row.training_type ?? "K1 Technik",
+    boatClass: row.boat_class ?? "none",
+    goal: row.goal ?? "",
+    focus: row.goal ?? "",
+    description: meta.description ?? "",
+    intensity: row.intensity ?? "mittel",
+    note: notes,
+    notes,
+    status: row.status ?? "planned",
+    repeat: row.repeat_rule ?? "none",
+    repeatUntil: meta.repeatUntil ?? "",
+    repeatMaxCount: meta.repeatMaxCount,
+    repeatSeriesId: row.repeat_series_id ?? "",
+    createdByUserId: row.coach_id ?? row.owner_id,
+    assignedAthleteId: row.assigned_athlete_id ?? assignedAthleteIds[0] ?? "",
+    assignedGroupId: row.assigned_group_id ?? assignedGroupIds[0] ?? "",
+    feedbackNote: meta.feedbackNote ?? "",
+    templateId: meta.templateId ?? "",
+    deletedAt: row.deleted_at ?? "",
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+};
 
 export const listCloudTraining = async (athleteId: string): Promise<PlanEntry[]> => {
   const client = getSupabaseClient();

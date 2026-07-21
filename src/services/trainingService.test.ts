@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fromCloudFeedback, toCloudFeedback } from "./trainingService";
+import { fromCloudFeedback, fromCloudTraining, toCloudFeedback, toCloudTraining } from "./trainingService";
 
 describe("training feedback cloud mapping", () => {
   it("reads canonical and legacy feedback training ids", () => {
@@ -51,5 +51,69 @@ describe("training feedback cloud mapping", () => {
     });
     expect(payload).not.toHaveProperty("training_id");
     expect(payload).not.toHaveProperty("athlete_user_id");
+  });
+});
+
+describe("training plan cloud mapping", () => {
+  it("keeps editable planning fields after cloud reload", () => {
+    const payload = toCloudTraining({
+      id: "3fa81f64-5717-4562-b3fc-2c963f66afa6",
+      ownerUserId: "c4137bc4-bc05-4206-9cf5-95cf2221c01c",
+      athleteId: "athlete-local",
+      clubId: "11111111-1111-4111-8111-111111111111",
+      assignedType: "group",
+      assignedAthleteIds: ["f2d0a338-0ed3-4ab6-93b8-3da2f710a991"],
+      assignedGroupIds: ["9ef53751-c428-40a8-a06e-bfd879a28911"],
+      title: "Technikblock",
+      date: "2026-07-14",
+      weekday: "Dienstag",
+      time: "17:30",
+      startTime: "17:30",
+      endTime: "18:30",
+      durationMinutes: 60,
+      area: "Wassertraining",
+      trainingType: "K1 Technik",
+      boatClass: "K1",
+      goal: "Aufwärtstor",
+      focus: "Aufwärtstor",
+      description: "Kurze Technikstrecke mit Videoanalyse.",
+      intensity: "mittel",
+      note: "Strecke 2",
+      notes: "Strecke 2",
+      status: "planned",
+      repeat: "weekly",
+      repeatUntil: "2026-08-11",
+      repeatMaxCount: 5,
+      repeatSeriesId: "series-1",
+      createdByUserId: "c4137bc4-bc05-4206-9cf5-95cf2221c01c",
+      assignedAthleteId: "f2d0a338-0ed3-4ab6-93b8-3da2f710a991",
+      assignedGroupId: "9ef53751-c428-40a8-a06e-bfd879a28911",
+      feedbackNote: "Sportler A 45 Minuten",
+      templateId: "system-periodization-technik",
+      deletedAt: "",
+      createdAt: "2026-07-14T10:00:00.000Z",
+      updatedAt: "2026-07-14T10:00:00.000Z",
+    });
+
+    const restored = fromCloudTraining(
+      {
+        ...payload,
+        created_at: "2026-07-14T10:00:00.000Z",
+        updated_at: "2026-07-14T10:00:00.000Z",
+      },
+      "athlete-local",
+    );
+
+    expect(restored).toMatchObject({
+      assignedType: "group",
+      assignedAthleteIds: ["f2d0a338-0ed3-4ab6-93b8-3da2f710a991"],
+      assignedGroupIds: ["9ef53751-c428-40a8-a06e-bfd879a28911"],
+      description: "Kurze Technikstrecke mit Videoanalyse.",
+      notes: "Strecke 2",
+      repeatUntil: "2026-08-11",
+      repeatMaxCount: 5,
+      feedbackNote: "Sportler A 45 Minuten",
+      templateId: "system-periodization-technik",
+    });
   });
 });
