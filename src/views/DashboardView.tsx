@@ -5,7 +5,7 @@ import { getTrainingIntelligence } from "../domain/intelligence";
 import { getLastTrainingSession, getNextPlannedEntry, getWeeklyPlanSummary } from "../domain/metrics";
 import { getDisplayName, getGreeting, getInitials } from "../domain/profile";
 import type { PaddleMotionData, PageId, SmartCoachRecommendation, User } from "../domain/types";
-import { dateKeyToLocalDate } from "../lib/dateOnly";
+import { dateKeyToLocalDate, todayDateKey } from "../lib/dateOnly";
 
 type DashboardViewProps = {
   data: PaddleMotionData;
@@ -44,6 +44,8 @@ const formatEntryTime = (time?: string): string => time || "ohne Uhrzeit";
 const formatMinutes = (minutes: number): string =>
   minutes > 0 ? `${Math.round(minutes)} min` : "--";
 
+const weekDayLabels = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+
 export function DashboardView({
   data,
   user,
@@ -61,6 +63,8 @@ export function DashboardView({
   const weeklyPlan = getWeeklyPlanSummary(scopedPlan);
   const lastTraining = getLastTrainingSession(data.training);
   const currentWeekEntries = weeklyPlan.entries.slice(0, 7);
+  const todayKey = todayDateKey();
+  const todayEntries = scopedPlan.filter((entry) => entry.date === todayKey);
   const unreadDirect = data.directMessages.filter((item) => item.receiverId === user.userId && !item.isRead && !item.deletedAt).length;
   const openFeedback = scopedPlan.filter((entry) =>
     (entry.status === "done" || entry.status === "erledigt" || entry.status === "completed") &&
@@ -84,6 +88,15 @@ export function DashboardView({
   const polarAvgHr = polarAvgHrValues.length > 0
     ? Math.round(polarAvgHrValues.reduce((sum, value) => sum + value, 0) / polarAvgHrValues.length)
     : 0;
+  const weeklyMinutesByDay = weekDayLabels.map((_, index) =>
+    weeklyPlan.entries
+      .filter((entry) => {
+        const day = dateKeyToLocalDate(entry.date).getDay();
+        return (day === 0 ? 6 : day - 1) === index;
+      })
+      .reduce((sum, entry) => sum + entry.durationMinutes, 0),
+  );
+  const maxWeekMinutes = Math.max(60, ...weeklyMinutesByDay);
   const nextTitle = intelligence.todayTraining?.trainingType || nextTraining?.trainingType || nextTraining?.title || "Regeneration";
   const nextMeta = intelligence.todayTraining
     ? `${intelligence.todayTraining.time || "ohne Uhrzeit"} · ${intelligence.todayTraining.area}`
@@ -190,6 +203,37 @@ export function DashboardView({
       </section>
 
       <section className="dashboard-work-grid" aria-label="Arbeitsübersicht">
+        <article className="section-block dashboard-work-panel dashboard-today-panel">
+          <div className="section-heading compact">
+            <div>
+              <p className="eyebrow">Übersicht</p>
+              <h2>Heute</h2>
+            </div>
+            <strong>{formatEntryTime(nextTraining?.startTime || nextTraining?.time)}</strong>
+          </div>
+          <div className="dashboard-kpi-strip">
+            <div>
+              <span>Trainings</span>
+              <strong>{todayEntries.length}</strong>
+            </div>
+            <div>
+              <span>Feedback</span>
+              <strong>{openFeedback}</strong>
+            </div>
+            <div>
+              <span>Aufgaben</span>
+              <strong>{openTasks}</strong>
+            </div>
+          </div>
+          <button className="dashboard-next-card" type="button" onClick={() => onNavigate("training")}>
+            <span>
+              <strong>{nextTitle}</strong>
+              <small>{nextMeta}</small>
+            </span>
+            <em>{nextTraining?.status || "geplant"}</em>
+          </button>
+        </article>
+
         <article className="section-block dashboard-work-panel dashboard-work-panel-wide">
           <div className="section-heading compact">
             <div>
@@ -216,6 +260,24 @@ export function DashboardView({
             )) : (
               <p className="empty-state compact">Noch keine Einheiten für diese Woche geplant.</p>
             )}
+          </div>
+        </article>
+
+        <article className="section-block dashboard-work-panel dashboard-load-panel">
+          <div className="section-heading compact">
+            <div>
+              <p className="eyebrow">Belastung</p>
+              <h2>Diese Woche</h2>
+            </div>
+            <strong>{weeklyPlan.minutes} min</strong>
+          </div>
+          <div className="dashboard-load-chart" aria-label="Trainingsminuten pro Wochentag">
+            {weeklyMinutesByDay.map((minutes, index) => (
+              <span key={weekDayLabels[index]}>
+                <i style={{ height: `${Math.max(12, Math.round((minutes / maxWeekMinutes) * 100))}%` }} />
+                <small>{weekDayLabels[index]}</small>
+              </span>
+            ))}
           </div>
         </article>
 
