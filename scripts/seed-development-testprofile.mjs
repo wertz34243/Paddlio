@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const PRODUCTION_PROJECT_REF = "twlkhfbrrwjwppxinmpn";
-const DEFAULT_DEVELOPMENT_PROJECT_REF = "nlllqsfdhfiwticrcnrp";
+const DEFAULT_DEVELOPMENT_PROJECT_REF = "nlllqsfdhfiwticrcrnp";
 
 function loadEnvFile(fileName) {
   const filePath = path.resolve(process.cwd(), fileName);

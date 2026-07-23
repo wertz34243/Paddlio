@@ -57,8 +57,8 @@ PowerShell:
 cd C:\Users\horst.DESKTOP-7IMUPAD\Documents\PaddeleMotion
 $env:VITE_APP_ENV="development"
 $env:PADDLIO_SEED_ALLOW_DEVELOPMENT="true"
-$env:PADDLIO_DEV_SUPABASE_PROJECT_REF="DEIN-PROJEKT-REF"
-$env:SUPABASE_URL="https://DEIN-PROJEKT-REF.supabase.co"
+$env:PADDLIO_DEV_SUPABASE_PROJECT_REF="nlllqsfdhfiwticrcrnp"
+$env:SUPABASE_URL="https://nlllqsfdhfiwticrcrnp.supabase.co"
 $env:SUPABASE_SERVICE_ROLE_KEY="DEIN_DEV_SERVICE_ROLE_KEY"
 $env:PADDLIO_DEV_TEST_PASSWORD="CDxe4yhvOAZWAtifXc!9"
 npm.cmd run seed:development
