@@ -7470,6 +7470,30 @@ body {
   gap: 10px;
 }
 
+.template-dock-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid color-mix(in srgb, var(--border-color) 72%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-muted) 80%, transparent);
+}
+
+.template-dock-tabs span {
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  font-weight: 850;
+  padding: 7px 8px;
+  text-align: center;
+}
+
+.template-dock-tabs span.active {
+  background: color-mix(in srgb, var(--accent-cyan) 18%, transparent);
+  color: var(--accent-cyan);
+}
+
 .template-dock-list {
   display: grid;
   gap: 10px;
@@ -7490,6 +7514,52 @@ body {
   display: grid;
   gap: 4px;
   cursor: copy;
+}
+
+.template-dock-item-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+}
+
+.template-dock-item-head b {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.template-dock-icon {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--accent-cyan);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-cyan) 16%, transparent);
+}
+
+.template-dock-icon.endurance {
+  background: #60a5fa;
+  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.16);
+}
+
+.template-dock-icon.strength {
+  background: #f59e0b;
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.16);
+}
+
+.template-dock-icon.regeneration {
+  background: #a78bfa;
+  box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.16);
+}
+
+.template-dock-icon.competition {
+  background: #fb7185;
+  box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.16);
+}
+
+.template-dock-icon.coach {
+  background: #34d399;
+  box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.16);
 }
 
 .template-dock-item:hover,
@@ -7521,6 +7591,45 @@ body {
 
 .calendar-day-column:has(.empty-state.compact) {
   min-height: 160px;
+}
+
+.planning-calendar-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.planning-calendar-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.planning-date-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.planning-date-controls button {
+  min-height: var(--density-control-height);
+  border: 1px solid color-mix(in srgb, var(--border-color) 72%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-strong) 86%, transparent);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-weight: 850;
+  padding: 0 12px;
+}
+
+.planning-date-controls span {
+  border: 1px solid color-mix(in srgb, var(--accent-cyan) 38%, transparent);
+  border-radius: 999px;
+  color: var(--accent-cyan);
+  font-size: 0.78rem;
+  font-weight: 850;
+  padding: 7px 10px;
 }
 
 .training-task-list {
@@ -7582,11 +7691,30 @@ body {
 
   .planning-shell > .planning-template-dock {
     grid-column: 2;
-    grid-row: 2 / span 8;
+    grid-row: 6 / span 8;
     position: sticky;
     top: 88px;
     max-height: calc(100vh - 112px);
     overflow: auto;
+  }
+
+  .planning-shell > .planning-calendar-panel {
+    grid-column: 1;
+    grid-row: 6;
+  }
+
+  .planning-week-board {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    overflow: visible;
+    gap: 8px;
+    padding-bottom: 0;
+  }
+
+  .planning-week-board .calendar-day-column {
+    min-width: 0;
+    flex: initial;
+    scroll-snap-align: none;
   }
 }
 
@@ -7597,6 +7725,18 @@ body {
 
   .planning-template-dock .section-heading {
     grid-column: 1 / -1;
+  }
+
+  .planning-week-board {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(180px, 1fr));
+    overflow-x: auto;
+    gap: 8px;
+  }
+
+  .planning-week-board .calendar-day-column {
+    min-width: 180px;
+    flex: initial;
   }
 }
 
@@ -8081,8 +8221,18 @@ body {
   }
 
   .calendar-day-column {
-    min-height: 118px;
+    min-height: 220px;
     padding: 8px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .planning-week-board .calendar-day-column {
+    min-height: min(44vh, 340px);
+  }
+
+  .planning-calendar-panel .form-grid.compact-form {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 

@@ -213,6 +213,14 @@ const getWeekDates = (date: string): string[] => {
   });
 };
 
+const getIsoWeekNumber = (date: string): number => {
+  const current = parseLocalDateOnly(date);
+  const thursday = new Date(current);
+  thursday.setDate(current.getDate() + 3 - ((current.getDay() + 6) % 7));
+  const weekOne = new Date(thursday.getFullYear(), 0, 4);
+  return 1 + Math.round(((thursday.getTime() - weekOne.getTime()) / 86400000 - 3 + ((weekOne.getDay() + 6) % 7)) / 7);
+};
+
 const getMonthDates = (date: string): string[] => {
   const [year, month] = getDateParts(date);
   const cursor = new Date(year, month - 1, 1);
@@ -362,6 +370,12 @@ export function PlanView({
   const openFeedbackCount = openFeedbackEntries.length;
   const nextWeekDates = getWeekDates(addDays(selectedDate, 7));
   const nextWeekCount = visibleEntries.filter((entry) => nextWeekDates.includes(entry.date)).length;
+  const selectedWeekNumber = getIsoWeekNumber(selectedDate);
+  const selectedWeekLabel = `${weekDates[0]} - ${weekDates[6]}`;
+  const navigateCalendar = (direction: -1 | 1) => {
+    const step = calendarView === "month" ? 28 : calendarView === "week" ? 7 : 1;
+    setSelectedDate(addDays(selectedDate, step * direction));
+  };
   const unplannedAthletes = visibleAthletes.filter((athlete) =>
     !plannedThisWeek.some((entry) => entry.assignedAthleteIds.includes(athlete.id) || entry.assignedAthleteId === athlete.id),
   );
@@ -1226,6 +1240,11 @@ export function PlanView({
         </div>
 
         <div className="template-dock-section">
+          <div className="template-dock-tabs" aria-label="Vorlagenbereiche">
+            <span className={favoriteTemplates.length > 0 ? "active" : ""}>Favoriten</span>
+            <span>Meine</span>
+            <span>Verein</span>
+          </div>
           <strong>{favoriteTemplates.length > 0 ? "Favoriten" : "Trainingsvorlagen"}</strong>
           <div className="template-dock-list">
             {templateList.map((template) => (
@@ -1237,7 +1256,11 @@ export function PlanView({
                 onClick={() => quickInsertTemplate(template.id)}
                 onDragStart={(event) => handleTemplateDragStart(event, template.id)}
               >
-                <span>{template.category} · {template.defaultDurationMinutes ?? 0} min</span>
+                <span className="template-dock-item-head">
+                  <span className={`template-dock-icon ${areaLabel[template.trainingArea]}`} aria-hidden="true" />
+                  <span>{template.category}</span>
+                  <b>{template.defaultDurationMinutes ?? 0} min</b>
+                </span>
                 <strong>{template.title}</strong>
                 <small>{template.focus}</small>
               </button>
@@ -1353,11 +1376,12 @@ export function PlanView({
 
       {(workflowTab === "today" || workflowTab === "week" || workflowTab === "month" || workflowTab === "templates") ? renderPlanningTemplateDock() : null}
 
-      {workflowTab === "today" || workflowTab === "week" || workflowTab === "month" ? <section className="section-block">
+      {workflowTab === "today" || workflowTab === "week" || workflowTab === "month" ? <section className="section-block planning-calendar-panel">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Kalender</p>
             <h3>Trainingsplanung</h3>
+            <p className="card-note">KW {selectedWeekNumber} · {selectedWeekLabel}</p>
           </div>
           <div className="card-actions">
             <button className="primary-button" type="button" onClick={startCreate} aria-label="Training aus Kalenderansicht planen">Training planen</button>
@@ -1366,12 +1390,20 @@ export function PlanView({
           </div>
         </div>
         {copyMessage ? <p className="auth-message">{copyMessage} <button type="button" onClick={() => setCalendarView("list")}>Trainings anzeigen</button></p> : null}
-        <div className="calendar-view-tabs">
-          {calendarViews.map((view) => (
-            <button className={calendarView === view ? "active" : ""} key={view} type="button" onClick={() => setCalendarView(view)}>
-              {view === "day" ? "Tag" : view === "week" ? "Woche" : view === "month" ? "Monat" : "Liste"}
-            </button>
-          ))}
+        <div className="planning-calendar-toolbar">
+          <div className="calendar-mode-control" aria-label="Kalenderansicht">
+            {calendarViews.map((view) => (
+              <button className={calendarView === view ? "active" : ""} key={view} type="button" onClick={() => setCalendarView(view)}>
+                {view === "day" ? "Tag" : view === "week" ? "Woche" : view === "month" ? "Monat" : "Liste"}
+              </button>
+            ))}
+          </div>
+          <div className="planning-date-controls" aria-label="Kalenderdatum steuern">
+            <button type="button" onClick={() => navigateCalendar(-1)} aria-label="Vorheriger Zeitraum">‹</button>
+            <button type="button" onClick={() => setSelectedDate(today)}>Heute</button>
+            <button type="button" onClick={() => navigateCalendar(1)} aria-label="Nächster Zeitraum">›</button>
+            <span>KW {selectedWeekNumber}</span>
+          </div>
         </div>
         <div className="form-grid compact-form">
           <label>Datum<input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} /></label>
@@ -1816,7 +1848,7 @@ export function PlanView({
           </div>
         </section>
       ) : workflowTab === "week" && calendarView === "week" ? (
-        <section className="calendar-week-grid">{weekDates.map((date, index) => {
+        <section className="calendar-week-grid planning-week-board">{weekDates.map((date, index) => {
           const dayEntries = visibleEntries.filter((entry) => entry.date === date);
           return (
             <article className="calendar-day-column" key={date} onDragOver={handleTemplateDragOver} onDrop={(event) => handleTemplateDrop(event, date)}>
