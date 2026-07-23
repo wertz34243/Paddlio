@@ -7,9 +7,14 @@ export type MainNavItem = { id: PageId; label: string; icon: IconName };
 
 export const mainNavItems: MainNavItem[] = [
   { id: "dashboard", label: "Heute", icon: "home" },
+  { id: "plan", label: "Kalender", icon: "calendar" },
   { id: "training", label: "Training", icon: "training" },
-  { id: "analysis", label: "Analyse", icon: "chart" },
   { id: "communication", label: "Team", icon: "message" },
+  { id: "analysis", label: "Analyse", icon: "chart" },
+  { id: "competitions", label: "Wettkampf", icon: "trophy" },
+  { id: "academy", label: "Akademie", icon: "target" },
+  { id: "equipment", label: "Material", icon: "boat" },
+  { id: "club", label: "Verein", icon: "club" },
   { id: "more", label: "Mehr", icon: "more" },
 ];
 
@@ -21,7 +26,18 @@ const roleLabelMap: Record<string, string> = {
   admin: "Admin",
 };
 
+const readablePageLabels: Partial<Record<PageId, string>> = {
+  dashboard: "Heute-Übersicht",
+  plan: "Kalender",
+  training: "Training-Bereich",
+  analysis: "Analyse-Bereich",
+  communication: "Team-Bereich",
+  more: "Mehr-Bereich",
+};
+
 const bottomNavAriaLabel = (pageId: PageId): string => {
+  const label = readablePageLabels[pageId];
+  if (label) return `${label} öffnen`;
   if (pageId === "dashboard") return "Zur Heute-Übersicht wechseln";
   if (pageId === "training") return "Training-Bereich öffnen";
   if (pageId === "analysis") return "Analyse-Bereich öffnen";

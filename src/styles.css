@@ -7718,3 +7718,271 @@ body {
     max-width: min(860px, calc(100vw - 48px));
   }
 }
+
+/* Develop target design: compact tablet/desktop workspace without shrinking phone UX. */
+.paddlio-work-dashboard {
+  width: 100%;
+}
+
+.dashboard-work-grid {
+  display: none;
+}
+
+.dashboard-work-panel {
+  min-width: 0;
+  gap: 12px;
+}
+
+.dashboard-work-panel .section-heading.compact {
+  margin-bottom: 0;
+}
+
+.dashboard-week-list,
+.dashboard-task-list,
+.dashboard-message-list,
+.dashboard-quick-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.dashboard-week-row,
+.dashboard-task-row,
+.dashboard-message-row,
+.dashboard-quick-actions button {
+  width: 100%;
+  border: 1px solid color-mix(in srgb, var(--border-color) 74%, transparent);
+  border-radius: calc(var(--density-card-radius) - 4px);
+  background: color-mix(in srgb, var(--surface-muted) 76%, transparent);
+  color: var(--text-primary);
+  text-align: left;
+}
+
+.dashboard-week-row,
+.dashboard-task-row,
+.dashboard-message-row {
+  display: grid;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.dashboard-week-row {
+  grid-template-columns: minmax(96px, 0.35fr) minmax(0, 1fr) auto;
+}
+
+.dashboard-task-row,
+.dashboard-message-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.dashboard-week-row span,
+.dashboard-task-row span,
+.dashboard-message-row span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.dashboard-week-row strong,
+.dashboard-task-row strong,
+.dashboard-message-row strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-week-row small,
+.dashboard-task-row small,
+.dashboard-message-row small {
+  overflow: hidden;
+  color: var(--text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-week-row em,
+.dashboard-task-row em,
+.dashboard-message-row em {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-cyan) 16%, transparent);
+  color: var(--accent-cyan);
+  font-size: 0.72rem;
+  font-style: normal;
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+
+.dashboard-mini-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.dashboard-mini-metrics div {
+  border: 1px solid color-mix(in srgb, var(--border-color) 72%, transparent);
+  border-radius: calc(var(--density-card-radius) - 5px);
+  background: color-mix(in srgb, var(--surface-muted) 74%, transparent);
+  padding: 10px;
+}
+
+.dashboard-mini-metrics span {
+  display: block;
+  color: var(--text-secondary);
+  font-size: var(--density-caption);
+}
+
+.dashboard-mini-metrics strong {
+  display: block;
+  margin-top: 2px;
+  font-size: clamp(1.25rem, 2vw, 1.75rem);
+}
+
+.dashboard-quick-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashboard-quick-actions button {
+  min-height: var(--density-control-height);
+  padding: 9px 11px;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .paddlio-work-dashboard {
+    max-width: min(100%, 1180px);
+  }
+
+  .dashboard-work-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--density-card-gap);
+  }
+
+  .dashboard-work-panel-wide {
+    grid-column: 1 / -1;
+  }
+
+  .home-v5-training {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+}
+
+@media (min-width: 1200px) {
+  .app-shell {
+    grid-template-columns: 184px minmax(0, 1fr);
+    max-width: 1680px;
+  }
+
+  .desktop-side-nav {
+    width: 184px;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .desktop-brand,
+  .desktop-user-card {
+    justify-content: flex-start;
+    gap: 10px;
+  }
+
+  .desktop-brand > div,
+  .desktop-user-card > div {
+    display: block;
+    min-width: 0;
+  }
+
+  .desktop-nav-list {
+    gap: 4px;
+  }
+
+  .desktop-nav-item {
+    min-height: 38px;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 5px 8px;
+  }
+
+  .desktop-nav-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 10px;
+  }
+
+  .desktop-nav-item > span:last-child {
+    position: static;
+    transform: none;
+    width: auto;
+    max-width: 108px;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    opacity: 1;
+    overflow: hidden;
+    padding: 0;
+    pointer-events: auto;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .paddlio-work-dashboard {
+    max-width: min(100%, 1380px);
+  }
+
+  .dashboard-work-grid {
+    grid-template-columns: minmax(0, 1.35fr) minmax(230px, 0.75fr) minmax(230px, 0.75fr);
+  }
+
+  .dashboard-work-panel-wide {
+    grid-column: auto;
+    grid-row: span 2;
+  }
+
+  .home-v5-hero {
+    min-height: 0;
+    padding-block: 10px;
+  }
+
+  .home-v5-training {
+    min-height: 0;
+  }
+
+  .home-v5-metrics .app-card {
+    min-height: 112px;
+  }
+
+  .dashboard-week-row,
+  .dashboard-task-row,
+  .dashboard-message-row {
+    padding: 8px 10px;
+  }
+
+  .planning-shell {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 318px);
+  }
+
+  .planning-shell > .planning-template-dock {
+    top: 72px;
+    max-height: calc(100vh - 92px);
+  }
+
+  .calendar-week-grid {
+    gap: 7px;
+  }
+
+  .calendar-day-column {
+    min-height: 118px;
+    padding: 8px;
+  }
+}
+
+@media (min-width: 1360px) {
+  .dashboard-work-grid {
+    grid-template-columns: minmax(0, 1.45fr) minmax(240px, 0.78fr) minmax(240px, 0.78fr) minmax(210px, 0.65fr);
+  }
+
+  .dashboard-quick-panel {
+    grid-column: 4;
+    grid-row: 1 / span 2;
+  }
+}

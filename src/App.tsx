@@ -86,7 +86,7 @@ const roleLabelMap: Record<string, string> = {
 };
 
 const navPageByPage: Partial<Record<PageId, PageId>> = {
-  plan: "training",
+  plan: "plan",
   season: "analysis",
   profile: "more",
   academy: "more",
@@ -302,8 +302,13 @@ function AppContent() {
   const activeData = { ...data, plan: activePlanEntries };
   const activeNavPage = navPageByPage[activePage] ?? activePage;
   const visibleMainNavItems = mainNavItems
-    .filter((item) => isFeatureAvailable(pageFeatureMap[item.id] ?? "today", activeUser.role, responsiveCapabilities.deviceClass))
-    .slice(0, 5);
+    .filter((item) => isFeatureAvailable(pageFeatureMap[item.id] ?? "today", activeUser.role, responsiveCapabilities.deviceClass));
+  const phoneNavigationIds: PageId[] = ["dashboard", "plan", "training", "communication", "more"];
+  const navigationItems = currentDeviceClass === "phone"
+    ? phoneNavigationIds
+      .map((id) => visibleMainNavItems.find((item) => item.id === id))
+      .filter((item): item is typeof visibleMainNavItems[number] => Boolean(item))
+    : visibleMainNavItems;
   const baseRoleMoreSegments = canUseCoachArea(activeUser.role)
     ? [
         ...baseMoreSegments.filter((segment) => segment.id !== "settings"),
@@ -1496,7 +1501,7 @@ function AppContent() {
       <a className="skip-link" href="#main">
         Zum Inhalt springen
       </a>
-      <DesktopSideNavigation appName={APP_NAME} activePage={activeNavPage} user={activeUser} items={visibleMainNavItems} onNavigate={openMainNavPage} />
+      <DesktopSideNavigation appName={APP_NAME} activePage={activeNavPage} user={activeUser} items={navigationItems} onNavigate={openMainNavPage} />
       {!isHome ? (
         <header className={`app-header app-header-compact ${topChromeVisible ? "" : "is-hidden"}`} data-testid="app-header">
           <div className="brand-lockup">
@@ -1513,7 +1518,7 @@ function AppContent() {
 
       <main className="page-content" id="main"><Suspense fallback={<LoadingState />}>{renderPage()}</Suspense></main>
 
-      <BottomNavigation activePage={activeNavPage} visible={bottomNavVisible} items={visibleMainNavItems} onNavigate={openMainNavPage} />
+      <BottomNavigation activePage={activeNavPage} visible={bottomNavVisible} items={navigationItems} onNavigate={openMainNavPage} />
     </div>
   );
 }

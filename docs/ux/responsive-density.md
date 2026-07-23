@@ -1,14 +1,14 @@
 # Responsive Density
 
-Paddlio nutzt drei Dichte-Stufen. Die Rolle entscheidet weiterhin über Berechtigungen, die Dichte entscheidet nur über Darstellung und Informationsmenge.
+Paddlio nutzt drei Dichte-Stufen. Rollen und Berechtigungen bleiben fachlich getrennt von der Darstellung: Die Rolle entscheidet, was ein Nutzer darf; die Geräteklasse entscheidet, wie viel Oberfläche gleichzeitig gezeigt wird.
 
 ## Phone
 
 - großzügige Sport-App-Darstellung
-- große Karten und Buttons
-- einspaltige Formulare
-- Bottom Navigation bleibt groß und touchfreundlich
-- primär für Training, Feedback, Nachrichten und schnelle Aktionen
+- Bottom Navigation mit maximal fünf Punkten: Heute, Kalender, Training, Team, Mehr
+- einspaltige Tages- und Trainingsansicht
+- große Touchflächen für Starten, Abschließen, Feedback und Nachrichten
+- keine komplexe Jahresplanung oder große Tabellen
 
 Zentrale Werte:
 
@@ -22,9 +22,10 @@ Zentrale Werte:
 ## Tablet
 
 - kompakter als Phone, aber weiterhin touchfreundlich
-- mehr Inhalt pro Bildschirm
+- Sidebar und Kalender/Vorlagen-Arbeitsfläche
+- Kalender, Wochenplanung, Vorlagen und Feedback können nebeneinander liegen
 - Formulare und Übersichten häufiger zweispaltig
-- Kalender, Team und Training bleiben ohne kleine Desktop-Controls bedienbar
+- Drag & Drop bleibt vorbereitet und sichtbar unterstützt
 
 Zentrale Werte ab 768 px:
 
@@ -38,11 +39,10 @@ Zentrale Werte ab 768 px:
 ## Desktop
 
 - professionelle Arbeitsoberfläche mit höherer Informationsdichte
-- flachere Karten
-- kompaktere Buttons und Inputs
-- kleinere Überschriften
-- schmalere Sidebar
-- Kalender und Trainingslisten zeigen mehr Inhalt ohne Scrollen
+- kompakte Sidebar mit Labels
+- Dashboard zeigt Heute, Wochenplan, Polar, Aufgaben, Nachrichten und Schnellzugriff gleichzeitig
+- flachere Karten, kleinere Buttons und kürzere Listenzeilen
+- Kalender und Trainingslisten zeigen mehr Inhalt ohne unnötiges Scrollen
 
 Zentrale Werte ab 1200 px:
 
@@ -55,7 +55,7 @@ Zentrale Werte ab 1200 px:
 
 ## Umsetzung
 
-Die zentrale Schicht liegt am Ende von `src/styles.css` im Block `Responsive density layer`.
+Die zentrale Schicht liegt am Ende von `src/styles.css` in den Blöcken `Responsive density layer` und `Develop target design`.
 
 Wichtige Tokens:
 
@@ -73,25 +73,25 @@ Wichtige Tokens:
 - `--density-body`
 - `--density-caption`
 
-Die vorhandenen Paddlio-5.0-Tokens `--space-page`, `--space-section`, `--space-card` und `--radius-card` werden an diese Density-Tokens angebunden. Dadurch bleiben bestehende Komponenten kompatibel.
+Die vorhandenen Paddlio-5.0-Tokens `--space-page`, `--space-section`, `--space-card` und `--radius-card` bleiben angebunden. Bestehende Komponenten müssen deshalb nicht parallel neu gestylt werden.
 
 ## Bereiche
 
+Heute:
+Phone bleibt fokussiert. Tablet und Desktop erhalten zusätzlich eine Arbeitsübersicht mit Wochenplan, Polar-Kurzstatus, Aufgaben, Nachrichten und Schnellzugriff.
+
+Kalender und Plan:
+Vorlagen bleiben in der bestehenden Planungslogik. Auf Tablet/Desktop ist die Vorlagenleiste als Arbeitsbereich sichtbar und kompakter.
+
 Training:
-Karten, Kennzahlen, Aktionsleisten und Kalender werden auf Tablet/Desktop flacher. Phone bleibt unverändert groß.
-
-Kalender:
-Monats- und Wochenzellen werden auf Desktop niedriger, Toolbar und Tabs kompakter.
-
-Formulare:
-Inputs werden auf Tablet/Desktop niedriger. Zweispaltige Formulare bleiben erhalten, Phone bleibt einspaltig.
+Training Cards, Kennzahlen und Aktionsleisten werden auf Tablet/Desktop flacher. Phone bleibt großzügig.
 
 Mehr, Akademie, Import und Polar:
-Karten und Panels verwenden dieselben Density-Tokens. Desktop wirkt dadurch nicht mehr wie eine vergrößerte Phone-Ansicht.
+Panels verwenden dieselben Density-Tokens. Desktop soll nicht wie eine vergrößerte Phone-Ansicht wirken.
 
 Navigation:
-Die Desktop-Sidebar wird schmaler, Icons und Navigationszeilen werden reduziert. Die Phone-Bottom-Navigation bleibt groß.
+Phone nutzt Bottom Navigation. Tablet nutzt eine kompakte Sidebar. Desktop nutzt eine schmale Sidebar mit Labels und klaren aktiven Zuständen.
 
 ## Barrierefreiheit
 
-Die Phone-Touchflächen bleiben groß. Tablet bleibt touchfähig. Desktop-Controls sind kleiner, aber nicht miniaturisiert. Die vorhandenen Fokus- und Kontrastregeln bleiben unverändert.
+Phone-Touchflächen bleiben groß. Tablet bleibt touchfähig. Desktop-Controls sind kleiner, aber nicht miniaturisiert. Fokus- und Kontrastregeln bleiben erhalten und werden im Beta-Check geprüft.
