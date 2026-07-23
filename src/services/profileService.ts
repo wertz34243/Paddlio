@@ -5,14 +5,14 @@ import type { Database, Json, UserRole } from "../lib/database.types";
 export type CloudProfile = Database["public"]["Tables"]["profiles"]["Row"];
 type CloudProfileUpdate = Partial<CloudProfile> & { id: string; profile_data?: Json };
 
-const ADMIN_EMAIL = "t.kanu@outlook.com";
+const ADMIN_EMAILS = new Set(["t.kanu@outlook.com", "dev.admin@paddlio.test"]);
 
 const normalizeEmail = (email: string): string => email.trim().toLowerCase();
 
 export const normalizeCloudRolesForEmail = (email: string, roles: UserRole[] = ["Athlete"]): UserRole[] => {
   const normalized = normalizeEmail(email);
   const safeRoles = roles.length > 0 ? roles : ["Athlete"];
-  const nextRoles = normalized === ADMIN_EMAIL
+  const nextRoles = ADMIN_EMAILS.has(normalized)
     ? ([...safeRoles, "Athlete", "Coach", "Admin"] as UserRole[])
     : ([...safeRoles, "Athlete"] as UserRole[]);
 
