@@ -109,6 +109,14 @@ const users = [
   { key: "athlete3", email: "dev.athlete3@paddlio.test", firstName: "Lea", lastName: "Test", roles: ["Athlete"], ageCategory: "U12", boatClasses: ["K1"] },
 ];
 
+const profileRolesFor = (user) => {
+  if (user.key === "clubAdmin") {
+    return ["TeamAdmin"];
+  }
+
+  return user.roles;
+};
+
 const today = new Date();
 const isoDate = (offsetDays) => {
   const value = new Date(today.getFullYear(), today.getMonth(), today.getDate() + offsetDays);
@@ -265,8 +273,8 @@ await upsertAdaptive(
     display_name: `${user.firstName} ${user.lastName}`,
     club_id: clubId,
     active_club_id: clubId,
-    roles: user.roles,
-    primary_role: user.roles[0],
+    roles: profileRolesFor(user),
+    primary_role: profileRolesFor(user)[0],
     status: "active",
     age_category: user.ageCategory,
     boat_classes: user.boatClasses,
