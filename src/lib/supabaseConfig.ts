@@ -23,8 +23,14 @@ const isValidSupabaseUrl = (value: string | undefined): value is string => {
   }
 };
 
+const normalizeSupabaseProjectUrl = (value: string | undefined): string => {
+  if (!isValidSupabaseUrl(value)) return "";
+  const url = new URL(value);
+  return `https://${url.hostname}`;
+};
+
 export const supabaseUrl = isValidSupabaseUrl(rawSupabaseUrl)
-  ? rawSupabaseUrl
+  ? normalizeSupabaseProjectUrl(rawSupabaseUrl)
   : isDevelopmentEnvironment
     ? ""
     : SUPABASE_PROJECT_URL;
@@ -43,3 +49,4 @@ export const getSupabaseConfigMessage = (): string => {
   if (isSupabaseConfigured) return "Supabase ist konfiguriert.";
   return `Supabase ist noch nicht vollständig konfiguriert: ${supabaseConfigIssues.join(", ")}. Bitte VITE_SUPABASE_URL und VITE_SUPABASE_ANON_KEY in Vercel oder .env.local eintragen.`;
 };
+
