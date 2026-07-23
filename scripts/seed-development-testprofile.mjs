@@ -125,6 +125,56 @@ async function requireOk(label, promise) {
   return data;
 }
 
+function removeColumnFromPayload(payload, column) {
+  const cleanRow = (row) => {
+    const { [column]: _removed, ...rest } = row;
+    return rest;
+  };
+
+  return Array.isArray(payload) ? payload.map(cleanRow) : cleanRow(payload);
+}
+
+function getMissingColumn(error) {
+  return error?.message?.match(/Could not find the '([^']+)' column/)?.[1] ?? null;
+}
+
+function isMissingTable(error) {
+  const message = error?.message ?? "";
+  return message.includes("Could not find the table") || message.includes("does not exist");
+}
+
+async function upsertAdaptive(label, table, payload, options, { optional = false } = {}) {
+  let nextPayload = payload;
+  const removedColumns = [];
+
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const { error } = await supabase.from(table).upsert(nextPayload, options);
+
+    if (!error) {
+      if (removedColumns.length) {
+        console.log(`[seed:development] ${label}: optionale Spalten ausgelassen: ${removedColumns.join(", ")}`);
+      }
+      return;
+    }
+
+    const missingColumn = getMissingColumn(error);
+    if (missingColumn) {
+      removedColumns.push(missingColumn);
+      nextPayload = removeColumnFromPayload(nextPayload, missingColumn);
+      continue;
+    }
+
+    if (optional && isMissingTable(error)) {
+      console.log(`[seed:development] ${label}: optionale Tabelle fehlt, Schritt uebersprungen.`);
+      return;
+    }
+
+    fail(`${label} fehlgeschlagen: ${error.message}`);
+  }
+
+  fail(`${label} fehlgeschlagen: zu viele Schema-Anpassungen noetig.`);
+}
+
 async function listAllAuthUsers() {
   const result = [];
   let page = 1;
@@ -186,95 +236,93 @@ async function ensureAuthUsers() {
 const ids = await ensureAuthUsers();
 const now = new Date().toISOString();
 
-await requireOk(
+await upsertAdaptive(
   "Club upsert",
-  supabase.from("clubs").upsert(
-    {
-      id: clubId,
-      name: "Paddlio Development Verein",
-      short_name: "PAD-DEV",
-      city: "Development",
-      contact_name: "Dev ClubAdmin",
-      contact_email: "dev.clubadmin@paddlio.test",
-      primary_color: "#00b4d8",
-      secondary_color: "#22c55e",
-      status: "active",
-      updated_at: now,
-    },
-    { onConflict: "id" },
-  ),
+  "clubs",
+  {
+    id: clubId,
+    name: "Paddlio Development Verein",
+    short_name: "PAD-DEV",
+    city: "Development",
+    contact_name: "Dev ClubAdmin",
+    contact_email: "dev.clubadmin@paddlio.test",
+    primary_color: "#00b4d8",
+    secondary_color: "#22c55e",
+    status: "active",
+    updated_at: now,
+  },
+  { onConflict: "id" },
 );
 
-await requireOk(
+await upsertAdaptive(
   "Profile upsert",
-  supabase.from("profiles").upsert(
-    users.map((user) => ({
-      id: ids[user.key],
-      email: user.email,
-      first_name: user.firstName,
-      last_name: user.lastName,
-      display_name: `${user.firstName} ${user.lastName}`,
-      club_id: clubId,
-      active_club_id: clubId,
-      roles: user.roles,
-      primary_role: user.roles[0],
-      status: "active",
-      age_category: user.ageCategory,
-      boat_classes: user.boatClasses,
-      updated_at: now,
-    })),
-    { onConflict: "id" },
-  ),
+  "profiles",
+  users.map((user) => ({
+    id: ids[user.key],
+    email: user.email,
+    first_name: user.firstName,
+    last_name: user.lastName,
+    display_name: `${user.firstName} ${user.lastName}`,
+    club_id: clubId,
+    active_club_id: clubId,
+    roles: user.roles,
+    primary_role: user.roles[0],
+    status: "active",
+    age_category: user.ageCategory,
+    boat_classes: user.boatClasses,
+    updated_at: now,
+  })),
+  { onConflict: "id" },
 );
 
-await requireOk(
+await upsertAdaptive(
   "Club-Mitgliedschaften upsert",
-  supabase.from("club_memberships").upsert(
-    users.map((user) => ({
-      club_id: clubId,
-      user_id: ids[user.key],
-      role: user.roles[0],
-      status: "active",
-      updated_at: now,
-    })),
-    { onConflict: "club_id,user_id" },
-  ),
+  "club_memberships",
+  users.map((user) => ({
+    club_id: clubId,
+    user_id: ids[user.key],
+    role: user.roles[0],
+    status: "active",
+    updated_at: now,
+  })),
+  { onConflict: "club_id,user_id" },
+  { optional: true },
 );
 
-await requireOk(
+await upsertAdaptive(
   "Trainingsgruppe upsert",
-  supabase.from("training_groups").upsert(
-    {
-      id: groupId,
-      club_id: clubId,
-      coach_id: ids.coach,
-      name: "U14 Development Gruppe",
-      description: "Testgruppe fuer Planung, Anwesenheit, Feedback und Traineraufgaben.",
-      age_category: "U14",
-      boat_classes: ["K1", "C1"],
-      training_focus: "Technik und Grundlagen",
-      color: "#00b4d8",
-      status: "active",
-      updated_at: now,
-    },
-    { onConflict: "id" },
-  ),
+  "training_groups",
+  {
+    id: groupId,
+    club_id: clubId,
+    coach_id: ids.coach,
+    name: "U14 Development Gruppe",
+    description: "Testgruppe fuer Planung, Anwesenheit, Feedback und Traineraufgaben.",
+    age_category: "U14",
+    boat_classes: ["K1", "C1"],
+    training_focus: "Technik und Grundlagen",
+    color: "#00b4d8",
+    status: "active",
+    updated_at: now,
+  },
+  { onConflict: "id" },
+  { optional: true },
 );
 
-await requireOk(
+await upsertAdaptive(
   "Gruppenmitglieder upsert",
-  supabase.from("group_members").upsert(
-    ["athlete1", "athlete2", "athlete3"].map((key, index) => ({
-      id: `22222222-2222-4222-8222-22222222223${index + 1}`,
-      group_id: groupId,
-      athlete_id: ids[key],
-      user_id: ids[key],
-      role: "Athlete",
-      status: "active",
-      updated_at: now,
-    })),
-    { onConflict: "id" },
-  ),
+  "group_members",
+  ["athlete1", "athlete2", "athlete3"].map((key, index) => ({
+    id: `22222222-2222-4222-8222-22222222223${index + 1}`,
+    group_id: groupId,
+    athlete_id: ids[key],
+    user_id: ids[key],
+    role: "Athlete",
+    status: "active",
+    updated_at: now,
+  })),
+  { onConflict: "id" },
+  { optional: true },
 );
 
 const trainingItems = [
@@ -340,42 +388,42 @@ const trainingItems = [
   },
 ];
 
-await requireOk(
+await upsertAdaptive(
   "Trainingsplan upsert",
-  supabase.from("training_plan_items").upsert(
-    trainingItems.map((item) => ({
-      ...item,
-      owner_id: ids.coach,
-      coach_id: ids.coach,
-      club_id: clubId,
-      assigned_group_id: groupId,
-      status: "planned",
-      updated_at: now,
-      deleted_at: null,
-    })),
-    { onConflict: "id" },
-  ),
+  "training_plan_items",
+  trainingItems.map((item) => ({
+    ...item,
+    owner_id: ids.coach,
+    coach_id: ids.coach,
+    club_id: clubId,
+    assigned_group_id: groupId,
+    status: "planned",
+    updated_at: now,
+    deleted_at: null,
+  })),
+  { onConflict: "id" },
+  { optional: true },
 );
 
-await requireOk(
+await upsertAdaptive(
   "Feedback upsert",
-  supabase.from("training_feedback").upsert(
-    {
-      id: "44444444-4444-4444-8444-444444444441",
-      training_plan_item_id: trainingItems[0].id,
-      athlete_id: ids.athlete1,
-      coach_id: ids.coach,
-      status: "done",
-      feeling: 8,
-      difficulty: 6,
-      fatigue: 4,
-      motivation: 9,
-      sleep: 7,
-      comment: "Aufwaertstor sicherer getroffen, Blickwechsel noch ueben.",
-      updated_at: now,
-    },
-    { onConflict: "training_plan_item_id,athlete_id" },
-  ),
+  "training_feedback",
+  {
+    id: "44444444-4444-4444-8444-444444444441",
+    training_plan_item_id: trainingItems[0].id,
+    athlete_id: ids.athlete1,
+    coach_id: ids.coach,
+    status: "done",
+    feeling: 8,
+    difficulty: 6,
+    fatigue: 4,
+    motivation: 9,
+    sleep: 7,
+    comment: "Aufwaertstor sicherer getroffen, Blickwechsel noch ueben.",
+    updated_at: now,
+  },
+  { onConflict: "training_plan_item_id,athlete_id" },
+  { optional: true },
 );
 
 const trainerTasks = [
@@ -411,110 +459,110 @@ const trainerTasks = [
   },
 ];
 
-await requireOk(
+await upsertAdaptive(
   "Traineraufgaben upsert",
-  supabase.from("tasks").upsert(
-    trainerTasks.map(({ assigned_to, ...task }) => ({
-      ...task,
-      club_id: clubId,
-      user_id: assigned_to,
-      owner_id: ids.coach,
-      created_by: ids.coach,
-      updated_at: now,
-      deleted_at: null,
-    })),
-    { onConflict: "id" },
-  ),
+  "tasks",
+  trainerTasks.map(({ assigned_to, ...task }) => ({
+    ...task,
+    club_id: clubId,
+    user_id: assigned_to,
+    owner_id: ids.coach,
+    created_by: ids.coach,
+    updated_at: now,
+    deleted_at: null,
+  })),
+  { onConflict: "id" },
+  { optional: true },
 );
 
-await requireOk(
+await upsertAdaptive(
   "Traineraufgaben-Zuweisungen upsert",
-  supabase.from("task_assignments").upsert(
-    trainerTasks.map((task, index) => ({
-      id: `55555555-5555-4555-8555-55555555556${index + 1}`,
-      task_id: task.id,
-      assigned_to: task.assigned_to,
-      user_id: task.assigned_to,
-      status: "open",
-      updated_at: now,
-      deleted_at: null,
-    })),
-    { onConflict: "id" },
-  ),
+  "task_assignments",
+  trainerTasks.map((task, index) => ({
+    id: `55555555-5555-4555-8555-55555555556${index + 1}`,
+    task_id: task.id,
+    assigned_to: task.assigned_to,
+    user_id: task.assigned_to,
+    status: "open",
+    updated_at: now,
+    deleted_at: null,
+  })),
+  { onConflict: "id" },
+  { optional: true },
 );
 
-await requireOk(
+await upsertAdaptive(
   "Trainingsvorlagen upsert",
-  supabase.from("training_templates").upsert(
-    [
-      {
-        id: "66666666-6666-4666-8666-666666666661",
-        owner_id: ids.coach,
-        club_id: clubId,
-        created_by: ids.coach,
-        title: "GA1 Grundlagenfahrt",
-        category: "Ausdauer",
-        training_area: "Wasser",
-        training_type: "Ausdauer",
-        boat_class: "K1+C1",
-        default_duration_minutes: 60,
-        default_intensity: "locker",
-        focus: "aerobe Grundlagenausdauer, gleichmaessiger Rhythmus, saubere Paddeltechnik",
-        description: "Ruhige Fahrt mit gleichmaessigem Rhythmus und kontrollierter Paddeltechnik.",
-        tags: ["GA1", "Grundlage", "Wasser"],
-        is_favorite: true,
-        visibility: "club",
-      },
-      {
-        id: "66666666-6666-4666-8666-666666666662",
-        owner_id: ids.coach,
-        club_id: clubId,
-        created_by: ids.coach,
-        title: "Technik Aufwaertstore",
-        category: "Technik",
-        training_area: "Wasser",
-        training_type: "Technik",
-        boat_class: "K1+C1",
-        default_duration_minutes: 75,
-        default_intensity: "mittel",
-        focus: "Linienwahl, Blickfuehrung, Innenstab",
-        description: "Aufwaertstore mit hoechstens drei Knotenpunkten trainieren.",
-        tags: ["Technik", "Tor", "U14"],
-        is_favorite: true,
-        visibility: "club",
-      },
-    ],
-    { onConflict: "id" },
-  ),
+  "training_templates",
+  [
+    {
+      id: "66666666-6666-4666-8666-666666666661",
+      owner_id: ids.coach,
+      club_id: clubId,
+      created_by: ids.coach,
+      title: "GA1 Grundlagenfahrt",
+      category: "Ausdauer",
+      training_area: "Wasser",
+      training_type: "Ausdauer",
+      boat_class: "K1+C1",
+      default_duration_minutes: 60,
+      default_intensity: "locker",
+      focus: "aerobe Grundlagenausdauer, gleichmaessiger Rhythmus, saubere Paddeltechnik",
+      description: "Ruhige Fahrt mit gleichmaessigem Rhythmus und kontrollierter Paddeltechnik.",
+      tags: ["GA1", "Grundlage", "Wasser"],
+      is_favorite: true,
+      visibility: "club",
+    },
+    {
+      id: "66666666-6666-4666-8666-666666666662",
+      owner_id: ids.coach,
+      club_id: clubId,
+      created_by: ids.coach,
+      title: "Technik Aufwaertstore",
+      category: "Technik",
+      training_area: "Wasser",
+      training_type: "Technik",
+      boat_class: "K1+C1",
+      default_duration_minutes: 75,
+      default_intensity: "mittel",
+      focus: "Linienwahl, Blickfuehrung, Innenstab",
+      description: "Aufwaertstore mit hoechstens drei Knotenpunkten trainieren.",
+      tags: ["Technik", "Tor", "U14"],
+      is_favorite: true,
+      visibility: "club",
+    },
+  ],
+  { onConflict: "id" },
+  { optional: true },
 );
 
-await requireOk(
+await upsertAdaptive(
   "Polar-Mock upsert",
-  supabase.from("external_training_sessions").upsert(
-    {
-      id: "77777777-7777-4777-8777-777777777771",
-      club_id: clubId,
-      user_id: ids.athlete1,
-      owner_id: ids.athlete1,
-      source: "polar",
-      external_id: "dev-polar-activity-001",
-      title: "Polar GA1 Mock",
-      activity_date: isoDate(1),
-      duration_minutes: 58,
-      distance_meters: 6200,
-      load_score: 42,
-      payload: {
-        sport: "canoeing",
-        average_heart_rate: 142,
-        max_heart_rate: 171,
-        planned_training_id: trainingItems[1].id,
-        note: "Development-Mock ohne echte Polar-Tokens.",
-      },
-      updated_at: now,
-      deleted_at: null,
+  "external_training_sessions",
+  {
+    id: "77777777-7777-4777-8777-777777777771",
+    club_id: clubId,
+    user_id: ids.athlete1,
+    owner_id: ids.athlete1,
+    source: "polar",
+    external_id: "dev-polar-activity-001",
+    title: "Polar GA1 Mock",
+    activity_date: isoDate(1),
+    duration_minutes: 58,
+    distance_meters: 6200,
+    load_score: 42,
+    payload: {
+      sport: "canoeing",
+      average_heart_rate: 142,
+      max_heart_rate: 171,
+      planned_training_id: trainingItems[1].id,
+      note: "Development-Mock ohne echte Polar-Tokens.",
     },
-    { onConflict: "id" },
-  ),
+    updated_at: now,
+    deleted_at: null,
+  },
+  { onConflict: "id" },
+  { optional: true },
 );
 
 console.log("\nDevelopment-Testprofil wurde angelegt/aktualisiert.");
