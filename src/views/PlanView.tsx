@@ -84,7 +84,7 @@ type PlanViewProps = {
   deviceClass?: DeviceClass;
 };
 
-type CalendarView = "day" | "week" | "month" | "list";
+type CalendarView = "day" | "week" | "month" | "year" | "list";
 type WorkflowTab = "today" | "week" | "month" | "templates" | "groups" | "feedback" | "upcoming" | "done";
 type WorkflowTabConfig = {
   id: WorkflowTab;
@@ -232,6 +232,11 @@ const getMonthDates = (date: string): string[] => {
   return dates;
 };
 
+const getYearMonths = (date: string): string[] => {
+  const [year] = getDateParts(date);
+  return Array.from({ length: 12 }, (_, index) => getLocalDateKey(new Date(year, index, 1)));
+};
+
 const getEntryStatusClass = (status: PlanStatus): string =>
   isDoneStatus(status) ? "done" : isSkippedStatus(status) ? "skipped" : status === "cancelled" ? "cancelled" : "planned";
 
@@ -308,7 +313,7 @@ export function PlanView({
     return baseTabs.filter((tab) => phoneTabs.includes(tab.id));
   }, [isPhone, isCoach]);
   const calendarViews = useMemo<CalendarView[]>(
-    () => (isPhone ? ["day", "list"] : ["day", "week", "month", "list"]),
+    () => (isPhone ? ["day", "list"] : ["day", "week", "month", "year", "list"]),
     [isPhone],
   );
 
@@ -361,6 +366,8 @@ export function PlanView({
 
   const todayEntries = visibleEntries.filter((entry) => entry.date === today);
   const weekDates = getWeekDates(selectedDate);
+  const yearMonths = getYearMonths(selectedDate);
+  const selectedYear = getDateParts(selectedDate)[0];
   const completedThisWeek = visibleEntries.filter((entry) => weekDates.includes(entry.date) && isDoneStatus(entry.status));
   const skippedThisWeek = visibleEntries.filter((entry) => weekDates.includes(entry.date) && isSkippedStatus(entry.status));
   const plannedThisWeek = visibleEntries.filter((entry) => weekDates.includes(entry.date));
@@ -373,6 +380,10 @@ export function PlanView({
   const selectedWeekNumber = getIsoWeekNumber(selectedDate);
   const selectedWeekLabel = `${weekDates[0]} - ${weekDates[6]}`;
   const navigateCalendar = (direction: -1 | 1) => {
+    if (calendarView === "year") {
+      setSelectedDate(getLocalDateKey(new Date(selectedYear + direction, 0, 1)));
+      return;
+    }
     const step = calendarView === "month" ? 28 : calendarView === "week" ? 7 : 1;
     setSelectedDate(addDays(selectedDate, step * direction));
   };
@@ -1394,7 +1405,7 @@ export function PlanView({
           <div className="calendar-mode-control" aria-label="Kalenderansicht">
             {calendarViews.map((view) => (
               <button className={calendarView === view ? "active" : ""} key={view} type="button" onClick={() => setCalendarView(view)}>
-                {view === "day" ? "Tag" : view === "week" ? "Woche" : view === "month" ? "Monat" : "Liste"}
+                {view === "day" ? "Tag" : view === "week" ? "Woche" : view === "month" ? "Monat" : view === "year" ? "Jahr" : "Liste"}
               </button>
             ))}
           </div>
@@ -1455,7 +1466,7 @@ export function PlanView({
       </section> : null}
 
       {templateDraft ? (
-        <section className="section-block">
+        <section className="section-block planning-side-editor planning-template-editor">
           <div className="section-heading"><div><p className="eyebrow">Vorlage</p><h3>{templateDraft.id ? "Vorlage bearbeiten" : "Vorlage erstellen"}</h3></div></div>
           <form className="entry-form" onSubmit={saveTemplate}>
             <div className="form-grid">
@@ -1478,7 +1489,7 @@ export function PlanView({
         </section>
       ) : null}
 
-      {workflowTab === "templates" || workflowTab === "week" ? <section className="section-block">
+      {workflowTab === "templates" || workflowTab === "week" ? <section className="section-block planning-side-editor planning-template-plan-panel">
         <div className="section-heading"><div><p className="eyebrow">Schnell planen</p><h3>Aus Vorlage planen</h3></div></div>
         {formMessage ? <p className="auth-message">{formMessage}</p> : null}
         {pendingTemplateId ? (
@@ -1723,7 +1734,7 @@ export function PlanView({
       ) : null}
 
       {draft ? (
-        <section className="section-block">
+        <section className="section-block planning-side-editor planning-draft-editor">
           <div className="section-heading"><div><p className="eyebrow">Planung</p><h3>{draft.id ? "Training bearbeiten" : "Training planen"}</h3></div></div>
           {formMessage ? <p className="auth-message">{formMessage}</p> : null}
           <form className="entry-form" onSubmit={handleSubmit}>
@@ -1846,6 +1857,26 @@ export function PlanView({
           <div className="calendar-list">
             {plannedThisWeek.length > 0 ? plannedThisWeek.map(renderEntryCard) : <p className="empty-state">Für diese Woche ist noch kein Training geplant.</p>}
           </div>
+        </section>
+      ) : calendarView === "year" ? (
+        <section className="calendar-year-grid" aria-label={`Jahresplan ${selectedYear}`}>
+          {yearMonths.map((monthDate) => {
+            const monthDates = getMonthDates(monthDate);
+            const monthEntries = visibleEntries.filter((entry) => monthDates.includes(entry.date));
+            const loadMinutes = monthEntries.reduce((sum, entry) => sum + entry.durationMinutes, 0);
+            return (
+              <button
+                className={monthEntries.length > 0 ? "calendar-year-month has-training" : "calendar-year-month"}
+                key={monthDate}
+                type="button"
+                onClick={() => { setSelectedDate(monthDate); setCalendarView("month"); setWorkflowTab("month"); }}
+              >
+                <span>{parseLocalDateOnly(monthDate).toLocaleDateString("de-DE", { month: "short" })}</span>
+                <strong>{monthEntries.length}</strong>
+                <small>{loadMinutes} min geplant</small>
+              </button>
+            );
+          })}
         </section>
       ) : workflowTab === "week" && calendarView === "week" ? (
         <section className="calendar-week-grid planning-week-board">{weekDates.map((date, index) => {

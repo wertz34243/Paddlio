@@ -7632,6 +7632,56 @@ body {
   padding: 7px 10px;
 }
 
+.calendar-year-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.calendar-year-month {
+  min-height: 92px;
+  border: 1px solid color-mix(in srgb, var(--border-color) 74%, transparent);
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--surface-muted) 82%, transparent);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  text-align: left;
+}
+
+.calendar-year-month span,
+.calendar-year-month small {
+  color: var(--text-secondary);
+}
+
+.calendar-year-month strong {
+  font-size: clamp(1.25rem, 2vw, 1.9rem);
+}
+
+.calendar-year-month.has-training {
+  border-color: color-mix(in srgb, var(--accent-cyan) 42%, var(--border-color));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-cyan) 16%, transparent), color-mix(in srgb, var(--surface-muted) 88%, transparent));
+}
+
+.planning-side-editor .section-heading h3 {
+  font-size: clamp(1rem, 1.4vw, 1.2rem);
+}
+
+.planning-side-editor .entry-form {
+  gap: 10px;
+}
+
+.planning-side-editor .form-grid {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.planning-side-editor textarea {
+  min-height: 72px;
+}
+
 .training-task-list {
   display: grid;
   gap: 8px;
@@ -7691,7 +7741,7 @@ body {
 
   .planning-shell > .planning-template-dock {
     grid-column: 2;
-    grid-row: 6 / span 8;
+    grid-row: 6;
     position: sticky;
     top: 88px;
     max-height: calc(100vh - 112px);
@@ -7701,6 +7751,23 @@ body {
   .planning-shell > .planning-calendar-panel {
     grid-column: 1;
     grid-row: 6;
+  }
+
+  .planning-shell > .planning-side-editor {
+    grid-column: 2;
+    align-self: start;
+  }
+
+  .planning-shell > .planning-template-plan-panel {
+    grid-row: 7;
+  }
+
+  .planning-shell > .planning-template-editor {
+    grid-row: 8;
+  }
+
+  .planning-shell > .planning-draft-editor {
+    grid-row: 9;
   }
 
   .planning-week-board {
@@ -7715,6 +7782,10 @@ body {
     min-width: 0;
     flex: initial;
     scroll-snap-align: none;
+  }
+
+  .calendar-year-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -7737,6 +7808,10 @@ body {
   .planning-week-board .calendar-day-column {
     min-width: 180px;
     flex: initial;
+  }
+
+  .calendar-year-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
