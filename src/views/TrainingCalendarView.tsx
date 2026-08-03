@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type DragEvent } from "react";
 import {
   addCalendarDays,
   formatLocalDateOnly,
@@ -11,7 +11,9 @@ import {
   sortPlanEntries,
   weekdays,
 } from "../domain/trainingPlan";
-import type { PlanEntry, PlanStatus, TrainingJournalEntry } from "../domain/types";
+import { createCalendarQuickTemplates, seasonPlanningBlocks, weeklyPlanningTemplates } from "../features/training/templates/planningBlocks";
+import { createPeriodizationTemplates } from "../features/training/templates/trainingTemplates";
+import type { PlanEntry, PlanStatus, TrainingJournalEntry, TrainingTemplate } from "../domain/types";
 import type { DeviceClass } from "../lib/deviceCapabilities";
 
 type CalendarMode = "month" | "week" | "day" | "periodization";
@@ -111,9 +113,12 @@ const trainingPrinciples: TrainingPrinciple[] = [
 type TrainingCalendarViewProps = {
   entries: PlanEntry[];
   journal: TrainingJournalEntry[];
+  templates?: TrainingTemplate[];
+  clubId?: string;
   onOpenPlan: () => void;
   onOpenJournal: () => void;
   onStatusChange: (id: string, status: PlanStatus) => void;
+  onTemplateInsert?: (template: TrainingTemplate, date: string) => void;
   deviceClass?: DeviceClass;
 };
 
@@ -228,14 +233,18 @@ const buildPeriodizationMonths = (entries: PlanEntry[], selectedDate: string): P
 export function TrainingCalendarView({
   entries,
   journal,
+  templates = [],
+  clubId = "paddlio",
   onOpenPlan,
   onOpenJournal,
   onStatusChange,
+  onTemplateInsert,
   deviceClass = "desktop",
 }: TrainingCalendarViewProps) {
   const today = getTodayKey();
   const [selectedDate, setSelectedDate] = useState(today);
   const [mode, setMode] = useState<CalendarMode>(deviceClass === "phone" ? "day" : "month");
+  const [templateMessage, setTemplateMessage] = useState("");
   const isPhone = deviceClass === "phone";
   const availableModes = useMemo<CalendarMode[]>(
     () => (isPhone ? ["day", "week"] : ["month", "week", "day", "periodization"]),
@@ -262,6 +271,20 @@ export function TrainingCalendarView({
   const weekDays = useMemo(() => getWeekGrid(selectedDate), [selectedDate]);
   const periodizationMonths = useMemo(() => buildPeriodizationMonths(sortedEntries, selectedDate), [sortedEntries, selectedDate]);
   const selectedMonth = parseLocalDateOnly(selectedDate).getMonth();
+  const templateLibrary = useMemo(() => {
+    const existingIds = new Set(templates.map((template) => template.id));
+    const systemTemplates = [...createPeriodizationTemplates(clubId), ...createCalendarQuickTemplates(clubId)].filter(
+      (template) => !existingIds.has(template.id),
+    );
+    const allTemplates = [...templates, ...systemTemplates];
+    const favorites = allTemplates.filter((template) => template.isFavorite).slice(0, 6);
+    return {
+      favorites: favorites.length ? favorites : allTemplates.slice(0, 6),
+      all: allTemplates.slice(0, 12),
+      weekly: weeklyPlanningTemplates.slice(0, 4),
+      season: seasonPlanningBlocks.slice(0, 4),
+    };
+  }, [clubId, templates]);
 
   const moveMonth = (direction: -1 | 1) => {
     const date = parseLocalDateOnly(selectedDate);
@@ -290,8 +313,25 @@ export function TrainingCalendarView({
     }
   }, [availableModes, mode]);
 
+  const insertTemplate = (template: TrainingTemplate) => {
+    onTemplateInsert?.(template, selectedDate);
+    setTemplateMessage(`${template.title} wurde für ${shortDateLabel(selectedDate)} eingefügt.`);
+  };
+  const findTemplate = (templateId: string) =>
+    [...templateLibrary.favorites, ...templateLibrary.all].find((template) => template.id === templateId);
+  const dropTemplateOnDate = (event: DragEvent<HTMLElement>, dateKey: string) => {
+    event.preventDefault();
+    const templateId = event.dataTransfer.getData("text/plain");
+    const template = findTemplate(templateId);
+    if (!template) return;
+    onTemplateInsert?.(template, dateKey);
+    setSelectedDate(dateKey);
+    setTemplateMessage(`${template.title} wurde für ${shortDateLabel(dateKey)} eingefügt.`);
+  };
+
   return (
-    <div className="stack training-calendar-page">
+    <div className="training-calendar-workspace">
+    <div className="stack training-calendar-page training-calendar-main">
       <section className="section-block training-calendar-hero">
         <div>
           <p className="eyebrow">Trainingskalender</p>
@@ -348,6 +388,8 @@ export function TrainingCalendarView({
                   dayEntries.length > 0 ? "has-entry" : "",
                 ].filter(Boolean).join(" ")}
                 onClick={() => setSelectedDate(dateKey)}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={(event) => dropTemplateOnDate(event, dateKey)}
                 aria-label={`${getLocalWeekdayLabel(dateKey)}, ${shortDateLabel(dateKey)} mit ${dayEntries.length} Trainingseinheiten öffnen`}
               >
                 <strong>{dayNumber(dateKey)}</strong>
@@ -367,6 +409,8 @@ export function TrainingCalendarView({
               key={dateKey}
               className={dateKey === selectedDate ? "training-calendar-weekday selected" : "training-calendar-weekday"}
               onClick={() => setSelectedDate(dateKey)}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={(event) => dropTemplateOnDate(event, dateKey)}
             >
               <span>{getLocalWeekdayLabel(dateKey).slice(0, 2)}</span>
               <strong>{dayNumber(dateKey)}</strong>
@@ -447,7 +491,125 @@ export function TrainingCalendarView({
         </div>
       </section>
       ) : null}
+      {templateMessage ? <p className="auth-message success-message">{templateMessage}</p> : null}
     </div>
+    {!isPhone ? (
+      <CalendarTemplateLibrary
+        templates={templateLibrary}
+        selectedDate={selectedDate}
+        onInsertTemplate={insertTemplate}
+        onOpenPlan={onOpenPlan}
+      />
+    ) : null}
+    </div>
+  );
+}
+
+function getTemplateTone(template: TrainingTemplate): string {
+  if (template.category === "Ausdauer" || template.trainingType === "GA1" || template.trainingType === "GA2") return "endurance";
+  if (template.category === "Kraft" || template.trainingArea === "Krafttraining") return "strength";
+  if (template.category === "Regeneration" || template.trainingArea === "Regeneration") return "regeneration";
+  if (template.category === "Wettkampf" || template.trainingArea === "Wettkampf") return "competition";
+  return "technique";
+}
+
+function CalendarTemplateLibrary({
+  templates,
+  selectedDate,
+  onInsertTemplate,
+  onOpenPlan,
+}: {
+  templates: {
+    favorites: TrainingTemplate[];
+    all: TrainingTemplate[];
+    weekly: typeof weeklyPlanningTemplates;
+    season: typeof seasonPlanningBlocks;
+  };
+  selectedDate: string;
+  onInsertTemplate: (template: TrainingTemplate) => void;
+  onOpenPlan: () => void;
+}) {
+  const [activeTab, setActiveTab] = useState<"favorites" | "templates" | "weeks">("favorites");
+  const visibleTemplates = activeTab === "favorites" ? templates.favorites : templates.all;
+
+  return (
+    <aside className="planning-template-dock calendar-template-library" aria-label="Vorlagenbibliothek">
+      <div className="section-heading compact">
+        <div>
+          <p className="eyebrow">Vorlagen</p>
+          <h3>{shortDateLabel(selectedDate)}</h3>
+        </div>
+        <button type="button" className="icon-button" onClick={onOpenPlan} aria-label="Vollständigen Plan öffnen">
+          +
+        </button>
+      </div>
+
+      <div className="template-dock-tabs" role="tablist" aria-label="Vorlagenbereiche">
+        {[
+          ["favorites", "Favoriten"],
+          ["templates", "Vorlagen"],
+          ["weeks", "Wochen"],
+        ].map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            className={activeTab === key ? "active" : ""}
+            onClick={() => setActiveTab(key as "favorites" | "templates" | "weeks")}
+            role="tab"
+            aria-selected={activeTab === key}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab !== "weeks" ? (
+        <div className="template-dock-list">
+          {visibleTemplates.map((template) => (
+            <button
+              key={template.id}
+              type="button"
+              className="template-dock-item"
+              draggable
+              onClick={() => onInsertTemplate(template)}
+              onDragStart={(event) => event.dataTransfer.setData("text/plain", template.id)}
+              aria-label={`${template.title} am ausgewählten Tag einfügen`}
+            >
+              <span className={`template-dock-icon ${getTemplateTone(template)}`}>{template.title.slice(0, 1)}</span>
+              <span>
+                <b>{template.title}</b>
+                <small>
+                  {template.category} · {template.defaultDurationMinutes ?? 60} min · {template.defaultIntensity}
+                </small>
+              </span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="template-dock-section">
+          <div className="template-dock-list">
+            {templates.weekly.map((template) => (
+              <article className="template-dock-card" key={template.id}>
+                <b>{template.title}</b>
+                <span>{template.description}</span>
+                <small>{template.items.length} Einheiten</small>
+              </article>
+            ))}
+          </div>
+          <div className="template-dock-list">
+            {templates.season.map((block) => (
+              <article className="template-dock-card" key={block.id}>
+                <b>{block.title}</b>
+                <span>{block.description}</span>
+                <small>{block.weeklyTemplateIds.length} Wochen</small>
+              </article>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <p className="card-note">Auf Tablet und Desktop: Vorlage wählen oder ziehen. Für Konflikte und Serien den vollständigen Plan öffnen.</p>
+    </aside>
   );
 }
 

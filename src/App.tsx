@@ -33,6 +33,7 @@ import type {
   SmartCoachRecommendation,
   TrainingJournalEntry,
   TrainingSession,
+  TrainingTemplate,
   UserProfile,
 } from "./domain/types";
 import { AnalysisView } from "./views/AnalysisView";
@@ -583,6 +584,42 @@ function AppContent() {
     });
   };
 
+  const insertCalendarTemplate = (template: TrainingTemplate, date: string) => {
+    const fallbackTime = "17:30";
+    const durationMinutes = template.defaultDurationMinutes ?? 60;
+
+    upsertPlanEntry({
+      ownerUserId: activeUser.userId,
+      clubId: cloudProfile?.club_id || activeUser.profile.club,
+      assignedType: "self",
+      assignedAthleteIds: [activeUser.userId],
+      assignedGroupIds: [],
+      title: template.title,
+      date,
+      weekday: getWeekdayFromDate(date),
+      time: fallbackTime,
+      startTime: fallbackTime,
+      endTime: "",
+      durationMinutes,
+      area: template.trainingArea,
+      trainingType: template.trainingType,
+      boatClass: template.boatClass ?? "none",
+      goal: template.focus,
+      focus: template.focus,
+      description: template.description ?? "",
+      intensity: template.defaultIntensity,
+      note: template.notes ?? "",
+      notes: template.notes ?? "",
+      status: "planned",
+      repeat: "none",
+      repeatUntil: "",
+      assignedAthleteId: activeUser.userId,
+      assignedGroupId: "",
+      feedbackNote: "",
+      templateId: template.id,
+    });
+  };
+
   const deletePlanEntry = (id: string) => {
     deletePlanEntries([id]);
   };
@@ -822,9 +859,12 @@ function AppContent() {
           <TrainingCalendarView
             entries={activePlanEntries}
             journal={data.journal}
+            templates={activeData.trainingTemplates}
+            clubId={cloudProfile?.club_id || activeUser.profile.club}
             onOpenPlan={() => setTrainingSegment("plan")}
             onOpenJournal={() => setTrainingSegment("journal")}
             onStatusChange={updatePlanEntryStatus}
+            onTemplateInsert={insertCalendarTemplate}
             deviceClass={currentDeviceClass}
           />
         );

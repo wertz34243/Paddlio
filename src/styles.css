@@ -5153,6 +5153,20 @@ body {
   max-width: 100%;
 }
 
+.training-calendar-workspace {
+  display: grid;
+  gap: var(--density-card-gap, 14px);
+  align-items: start;
+}
+
+.training-calendar-main {
+  min-width: 0;
+}
+
+.calendar-template-library {
+  display: none;
+}
+
 .training-calendar-hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -7480,15 +7494,20 @@ body {
   background: color-mix(in srgb, var(--surface-muted) 80%, transparent);
 }
 
+.template-dock-tabs button,
 .template-dock-tabs span {
+  border: 0;
   border-radius: 999px;
+  background: transparent;
   color: var(--text-secondary);
+  cursor: pointer;
   font-size: 0.76rem;
   font-weight: 850;
   padding: 7px 8px;
   text-align: center;
 }
 
+.template-dock-tabs button.active,
 .template-dock-tabs span.active {
   background: color-mix(in srgb, var(--accent-cyan) 18%, transparent);
   color: var(--accent-cyan);
@@ -7512,7 +7531,9 @@ body {
 
 .template-dock-item {
   display: grid;
-  gap: 4px;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
   cursor: copy;
 }
 
@@ -7530,10 +7551,15 @@ body {
 }
 
 .template-dock-icon {
-  width: 10px;
-  height: 10px;
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
   border-radius: 999px;
   background: var(--accent-cyan);
+  color: #031016;
+  font-size: 0.78rem;
+  font-weight: 950;
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-cyan) 16%, transparent);
 }
 
@@ -7828,6 +7854,18 @@ body {
 }
 
 @media (min-width: 768px) {
+  .training-calendar-workspace {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  }
+
+  .calendar-template-library {
+    display: grid;
+    position: sticky;
+    top: calc(var(--app-safe-top, 0px) + 76px);
+    max-height: calc(100vh - var(--app-safe-top, 0px) - 96px);
+    overflow: auto;
+  }
+
   .section-heading,
   .card-header,
   .polar-hero,
@@ -7864,6 +7902,35 @@ body {
 }
 
 @media (min-width: 1200px) {
+  .training-calendar-workspace {
+    grid-template-columns: minmax(0, 1fr) minmax(270px, 316px);
+    gap: 14px;
+  }
+
+  .training-calendar-hero {
+    padding: 16px;
+  }
+
+  .training-calendar-hero h2 {
+    font-size: clamp(1.8rem, 3vw, 2.65rem);
+  }
+
+  .training-calendar-day {
+    min-height: 72px;
+    border-radius: 14px;
+    gap: 5px;
+    padding: 9px;
+  }
+
+  .training-calendar-weekday {
+    min-height: 66px;
+    padding: 9px 8px;
+  }
+
+  .training-calendar-weekday strong {
+    font-size: 1.35rem;
+  }
+
   .home-v5-section,
   .section-block,
   .chart-panel,
