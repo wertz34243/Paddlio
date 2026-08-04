@@ -13,7 +13,7 @@ import { expandTrainingRepeatDates, getTrainingRepeatSeriesEntries, getWeekdayFr
 import { useAppChromeVisibility } from "./hooks/useAutoHideOnScroll";
 import { useResponsiveCapabilities } from "./hooks/useResponsiveCapabilities";
 import { getFeatureMode, isFeatureAvailable, pageFeatureMap, type FeatureId, type FeatureMode } from "./lib/deviceCapabilities";
-import { APP_ENVIRONMENT_LABEL, isProductionEnvironment } from "./lib/appEnvironment";
+import { APP_ENVIRONMENT_LABEL, isDevelopmentEnvironment, isProductionEnvironment } from "./lib/appEnvironment";
 import type { Json } from "./lib/database.types";
 import { updateCloudProfile } from "./services/profileService";
 import { createCloudNotification, markAllCloudNotificationsRead, markCloudNotificationRead } from "./services/notificationService";
@@ -68,6 +68,8 @@ const AnalyticsCenterView = lazy(() => import("./views/AnalyticsCenterView").the
 const CoachView = lazy(() => import("./views/CoachView").then((module) => ({ default: module.CoachView })));
 const ImportExportView = lazy(() => import("./views/ImportExportView").then((module) => ({ default: module.ImportExportView })));
 const PolarIntegrationView = lazy(() => import("./views/PolarIntegrationView").then((module) => ({ default: module.PolarIntegrationView })));
+const PaddlioOneComponentsPreview = lazy(() => import("./views/PaddlioOneComponentsPreview").then((module) => ({ default: module.PaddlioOneComponentsPreview })));
+const PaddlioOneDesignPreview = lazy(() => import("./views/PaddlioOneDesignPreview").then((module) => ({ default: module.PaddlioOneDesignPreview })));
 const ResultsReadinessView = lazy(() => import("./views/ResultsReadinessView").then((module) => ({ default: module.ResultsReadinessView })));
 
 type TrainingSegment = "overview" | "calendar" | "plan" | "sessions" | "journal";
@@ -1564,6 +1566,17 @@ function AppContent() {
 }
 
 function App() {
+  const pathname = typeof window === "undefined" ? "" : window.location.pathname;
+  const isPreviewRoute = isDevelopmentEnvironment && (pathname === "/components-preview" || pathname === "/design-preview");
+
+  if (isPreviewRoute) {
+    return (
+      <Suspense fallback={<LoadingState />}>
+        {pathname === "/components-preview" ? <PaddlioOneComponentsPreview /> : <PaddlioOneDesignPreview />}
+      </Suspense>
+    );
+  }
+
   return (
     <AuthProvider>
       <AppContent />
