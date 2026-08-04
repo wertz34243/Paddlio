@@ -7212,6 +7212,209 @@ body {
   gap: 18px;
 }
 
+/* Phase 2.7: calendar, training and templates are separated by device.
+   These overrides stay late in the file to neutralize older mobile-sized calendar rules. */
+.calendar-category-shell {
+  min-width: 0;
+}
+
+.calendar-category-shell .segment-content {
+  min-width: 0;
+}
+
+.master-calendar-workspace {
+  min-width: 0;
+  width: 100%;
+}
+
+.master-calendar-main,
+.master-calendar-card,
+.master-calendar-week-day,
+.master-calendar-entry-stack,
+.master-training-block-main {
+  min-width: 0;
+}
+
+.master-calendar-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.master-calendar-toolbar {
+  align-items: center;
+  gap: 10px;
+  overflow: visible;
+}
+
+.master-segmented-control {
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.master-segmented-control button {
+  white-space: nowrap;
+}
+
+.master-training-block {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.master-training-block-main strong,
+.master-training-block-main small,
+.master-training-block-main span,
+.master-training-pill span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.master-training-block-main strong {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.master-training-block-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.master-template-card,
+.calendar-training-card,
+.po-training-session-card {
+  min-width: 0;
+}
+
+.app-shell-phone .calendar-category-shell {
+  padding-bottom: calc(104px + env(safe-area-inset-bottom));
+}
+
+.app-shell-phone .calendar-category-shell .master-calendar-main {
+  gap: 12px;
+}
+
+.app-shell-phone .calendar-category-shell .po-page-header,
+.app-shell-phone .calendar-category-shell .master-calendar-toolbar,
+.app-shell-phone .calendar-category-shell .master-calendar-card {
+  border-radius: 18px;
+}
+
+.app-shell-phone .calendar-category-shell .po-page-header {
+  padding: 16px;
+}
+
+.app-shell-phone .calendar-category-shell .po-page-header p {
+  max-width: 100%;
+}
+
+.app-shell-phone .master-calendar-header-actions {
+  justify-content: stretch;
+}
+
+.app-shell-phone .master-calendar-header-actions > * {
+  flex: 1 1 100%;
+}
+
+.app-shell-phone .master-calendar-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding: 10px;
+}
+
+.app-shell-phone .master-calendar-toolbar-group {
+  justify-content: space-between;
+}
+
+.app-shell-phone .master-segmented-control {
+  display: flex;
+  gap: 6px;
+  padding-bottom: 2px;
+}
+
+.app-shell-phone .master-segmented-control button {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 7px 12px;
+}
+
+.app-shell-phone .master-calendar-week-grid,
+.app-shell-phone .master-week-calendar-card.is-compact .master-calendar-week-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+.app-shell-phone .master-calendar-week-day {
+  min-height: auto;
+  padding: 10px;
+}
+
+.app-shell-phone .master-calendar-week-day header {
+  min-height: 0;
+  padding-bottom: 8px;
+}
+
+.app-shell-phone .master-calendar-empty-drop {
+  border-style: solid;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.app-shell-phone .master-training-block {
+  padding: 10px;
+}
+
+.app-shell-phone .master-training-block-actions button {
+  min-height: 34px;
+  padding: 6px 9px;
+}
+
+.app-shell-phone .master-template-panel,
+.app-shell-phone .master-calendar-stats,
+.app-shell-phone .master-calendar-controls {
+  display: none;
+}
+
+.app-shell-phone .planning-template-dock .calendar-training-card,
+.app-shell-phone .template-library-section .calendar-training-card {
+  padding: 10px 12px;
+}
+
+.app-shell-phone .planning-template-dock .calendar-training-card p,
+.app-shell-phone .template-library-section .calendar-training-card p {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .master-calendar-workspace.master-calendar-tablet {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 0.34fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .master-calendar-workspace.master-calendar-desktop {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 0.26fr);
+  }
+
+  .master-calendar-week-grid {
+    gap: 10px;
+  }
+
+  .master-calendar-week-day {
+    padding: 10px;
+  }
+
+  .master-training-block {
+    padding: 10px;
+  }
+}
+
 .import-export-hero,
 .import-export-panel,
 .import-card {

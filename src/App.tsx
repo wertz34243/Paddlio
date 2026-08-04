@@ -1,4 +1,4 @@
-﻿import { lazy, Suspense, useState, type TouchEvent } from "react";
+import { lazy, Suspense, useState, type TouchEvent } from "react";
 import { APP_NAME, APP_SLOGAN, APP_VERSION } from "./brand";
 import { useEffect } from "react";
 import { LoadingState } from "./components/AppSupport";
@@ -72,7 +72,7 @@ const PaddlioOneDesignPreview = lazy(() => import("./views/PaddlioOneDesignPrevi
 const ResultsReadinessView = lazy(() => import("./views/ResultsReadinessView").then((module) => ({ default: module.ResultsReadinessView })));
 const TrainingCalendarView = lazy(() => import("./views/TrainingCalendarView").then((module) => ({ default: module.TrainingCalendarView })));
 
-type TrainingSegment = "overview" | "calendar" | "plan" | "sessions" | "journal";
+type TrainingSegment = "overview" | "plan" | "sessions" | "journal";
 type CompetitionSegment = "races" | "results" | "bests" | "stats" | "advanced" | "imports" | "coach" | "admin" | "videos";
 type AnalysisSegment = "overview" | "smartCoach" | "training" | "competition" | "goals" | "load" | "boats" | "season" | "coach" | "admin";
 type MoreSegment = "profile" | "academy" | "club" | "competitions" | "equipment" | "goals" | "records" | "notifications" | "integrations" | "feedback" | "betaGuide" | "limitations" | "beta" | "betaTesters" | "coach" | "settings";
@@ -100,9 +100,8 @@ const navPageByPage: Partial<Record<PageId, PageId>> = {
 
 const trainingSegments: SegmentItem<TrainingSegment>[] = [
   { id: "overview", label: "Übersicht" },
-  { id: "calendar", label: "Kalender" },
-  { id: "plan", label: "Plan" },
-  { id: "sessions", label: "Einheiten" },
+  { id: "sessions", label: "Erstellen" },
+  { id: "plan", label: "Vorlagen" },
   { id: "journal", label: "Journal" },
 ];
 
@@ -182,7 +181,6 @@ const getTimestamp = (): string => new Date().toISOString();
 
 const trainingFeatureBySegment: Record<TrainingSegment, FeatureId> = {
   overview: "trainingOverview",
-  calendar: "trainingCalendar",
   plan: "trainingPlan",
   sessions: "trainingSessions",
   journal: "trainingJournal",
@@ -856,27 +854,6 @@ function AppContent() {
             }}
           />
         );
-      case "calendar":
-        return (
-          <TrainingCalendarView
-            entries={activePlanEntries}
-            journal={data.journal}
-            templates={activeData.trainingTemplates}
-            clubId={cloudProfile?.club_id || activeUser.profile.club}
-            data={activeData}
-            user={activeUser}
-            onOpenPlan={() => setTrainingSegment("plan")}
-            onOpenJournal={() => setTrainingSegment("journal")}
-            onStatusChange={updatePlanEntryStatus}
-            onTemplateInsert={insertCalendarTemplate}
-            onSave={upsertPlanEntry}
-            onDelete={deletePlanEntry}
-            onDeleteSeries={deletePlanEntrySeries}
-            onFeedbackSave={saveTrainingFeedback}
-            onSaveJournal={upsertJournalEntry}
-            deviceClass={currentDeviceClass}
-          />
-        );
       case "overview":
         return (
           <TrainingOverviewView
@@ -911,6 +888,35 @@ function AppContent() {
         );
     }
   };
+
+  const renderCalendarArea = () => (
+    <div className={`category-shell calendar-category-shell device-${currentDeviceClass}`}>
+      <TrainingCalendarView
+        entries={activePlanEntries}
+        journal={data.journal}
+        templates={activeData.trainingTemplates}
+        clubId={cloudProfile?.club_id || activeUser.profile.club}
+        data={activeData}
+        user={activeUser}
+        onOpenPlan={() => {
+          setTrainingSegment("plan");
+          setActivePage("training");
+        }}
+        onOpenJournal={() => {
+          setTrainingSegment("journal");
+          setActivePage("training");
+        }}
+        onStatusChange={updatePlanEntryStatus}
+        onTemplateInsert={insertCalendarTemplate}
+        onSave={upsertPlanEntry}
+        onDelete={deletePlanEntry}
+        onDeleteSeries={deletePlanEntrySeries}
+        onFeedbackSave={saveTrainingFeedback}
+        onSaveJournal={upsertJournalEntry}
+        deviceClass={currentDeviceClass}
+      />
+    </div>
+  );
 
   const moveTrainingSegment = (direction: 1 | -1) => {
     const order = visibleTrainingSegments.map((segment) => segment.id);
@@ -958,11 +964,11 @@ function AppContent() {
         </div>
         {showCompactTrainingNotice ? (
           <DeviceLimitedPanel
-            title={segment === "calendar" ? "Kalender kompakt" : "Trainingsplanung kompakt"}
+            title={segment === "plan" ? "Vorlagen kompakt" : "Training kompakt"}
             description={
-              segment === "calendar"
-                ? "Auf dem Smartphone sind Tag, Liste und schnelle Statuswechsel im Fokus. Wochenmatrix und Detailarbeit sind auf Tablet und Desktop übersichtlicher."
-                : "Auf dem Smartphone bleiben schnelle Planung, Status und Feedback erreichbar. Umfangreiche Wochenplanung nutzt du besser auf Tablet oder Computer."
+              segment === "plan"
+                ? "Auf dem Smartphone nutzt du Vorlagen als kompakte Liste. Wochen- und Saisonbearbeitung bleibt auf Tablet und Computer übersichtlicher."
+                : "Auf dem Smartphone bleiben schnelle Erstellung, Status und Feedback im Fokus. Umfangreiche Wochenplanung nutzt du besser auf Tablet oder Computer."
             }
             mode={featureMode}
           />
@@ -1483,7 +1489,7 @@ function AppContent() {
   const openDirectPage = (page: PageId) => {
     switch (page) {
       case "plan":
-        return renderTrainingArea("plan");
+        return renderCalendarArea();
       case "season":
         return renderAnalysisArea("season");
       case "equipment":

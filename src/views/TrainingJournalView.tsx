@@ -54,7 +54,7 @@ export function TrainingJournalView({
         action={
           <div className="po-action-row">
             <PaddlioOneButton variant="secondary" icon="training" onClick={onOpenOverview}>Training</PaddlioOneButton>
-            <PaddlioOneButton variant="secondary" icon="calendar" onClick={onOpenPlan}>Plan</PaddlioOneButton>
+            <PaddlioOneButton variant="secondary" icon="calendar" onClick={onOpenPlan}>Vorlagen</PaddlioOneButton>
             <PaddlioOneButton variant="primary" icon="message" onClick={onOpenSessions}>Freies Training</PaddlioOneButton>
           </div>
         }

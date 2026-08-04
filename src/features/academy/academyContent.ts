@@ -294,8 +294,8 @@ export const academyContentBlocks: AcademyContentBlock[] = academyLessons.flatMa
 });
 
 const learningPathTitles = [
-  "Anfänger – erstes Halbjahr",
-  "Anfänger – zweites Halbjahr",
+  "Anfänger - erstes Halbjahr",
+  "Anfänger - zweites Halbjahr",
   "U10",
   "U11",
   "U12",

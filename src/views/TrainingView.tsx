@@ -182,8 +182,8 @@ export function TrainingView({
           <button type="button" className="secondary-button" onClick={onOpenOverview} aria-label="Zur Training-Übersicht zurückkehren">
             Zur Übersicht
           </button>
-          <button type="button" className="primary-action compact-action" onClick={onOpenPlan} aria-label="Von freiem Training zum Trainingsplan wechseln">
-            Trainingsplan öffnen
+          <button type="button" className="primary-action compact-action" onClick={onOpenPlan} aria-label="Von freiem Training zu den Vorlagen wechseln">
+            Vorlagen öffnen
           </button>
           <button type="button" className="secondary-button" onClick={onOpenJournal} aria-label="Trainingstagebuch-Einträge anzeigen">
             Tagebuch anzeigen

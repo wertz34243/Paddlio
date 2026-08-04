@@ -509,14 +509,14 @@ export function TrainingCalendarView({
     <div className={`master-calendar-workspace master-calendar-${deviceClass}`}>
       <main className="master-calendar-main">
         <PaddlioOnePageHeader
-          eyebrow="Kalender & Training"
+          eyebrow="Kalender"
           title={visibleModeTitle}
           description="Vorlagen planen, Einheiten durchführen, Feedback sichern und Soll/Ist direkt nachvollziehen."
           action={
             <div className="master-calendar-header-actions">
-              <PaddlioOneButton variant="secondary" onClick={() => setShowTemplates((value) => !value)}>
+              {!isPhone ? <PaddlioOneButton variant="secondary" onClick={() => setShowTemplates((value) => !value)}>
                 {showTemplates ? "Vorlagen ausblenden" : "Vorlagen"}
-              </PaddlioOneButton>
+              </PaddlioOneButton> : null}
               <PaddlioOneButton variant="primary" icon="training" onClick={onOpenPlan}>
                 Training hinzufügen
               </PaddlioOneButton>
@@ -537,15 +537,15 @@ export function TrainingCalendarView({
               </button>
             ))}
           </div>
-          <div className="master-calendar-toolbar-group">
+          {!isPhone ? <div className="master-calendar-toolbar-group">
             <PaddlioOneButton variant="secondary" onClick={() => setWeekCopyOpen(true)}>Woche kopieren</PaddlioOneButton>
             <PaddlioOneButton variant={selectionMode ? "primary" : "secondary"} onClick={() => setSelectionMode((value) => !value)}>
               Mehrfach
             </PaddlioOneButton>
-          </div>
+          </div> : null}
         </PaddlioOneToolbar>
 
-        <section className="master-calendar-controls" aria-label="Kalenderfilter">
+        {!isPhone ? <section className="master-calendar-controls" aria-label="Kalenderfilter">
           <label>
             Suche
             <input value={query} onChange={(event) => setQuery(event.currentTarget.value)} placeholder="Training, Fokus, Gruppe ..." />
@@ -564,14 +564,14 @@ export function TrainingCalendarView({
               {Object.entries(planStatusLabels).slice(0, 6).map(([status, label]) => <option key={status} value={status}>{label}</option>)}
             </select>
           </label>
-        </section>
+        </section> : null}
 
-        <section className="master-calendar-stats">
+        {!isPhone ? <section className="master-calendar-stats">
           <PaddlioOneMetricCard label="Diese Woche" value={weekEntries.length} detail="Einheiten" icon="calendar" tone="primary" />
           <PaddlioOneMetricCard label="Belastung" value={`${weekLoad} min`} detail="geplante Zeit" icon="timer" tone="info" />
           <PaddlioOneMetricCard label="Durchgeführt" value={`${completedThisWeek}/${weekEntries.length}`} detail="Soll/Ist" icon="target" tone="success" />
           <PaddlioOneMetricCard label="Journal" value={journal.length} detail="Einträge" icon="message" tone="muted" />
-        </section>
+        </section> : null}
 
         {selectionMode && selectedIds.length > 0 ? (
           <PaddlioOneCard className="master-selection-bar">
@@ -588,15 +588,15 @@ export function TrainingCalendarView({
         ) : null}
 
         {mode === "week" ? (
-          <WeekCalendar days={weekDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={setSelectedEntryId} onStartLive={(entry) => setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 })} onFeedback={setFeedbackEntry} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} />
+          <WeekCalendar days={weekDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={setSelectedEntryId} onStartLive={(entry) => setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 })} onFeedback={setFeedbackEntry} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={!isPhone} />
         ) : null}
 
         {mode === "day" ? (
-          <DayCalendar date={focusDate} entries={dayEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={setSelectedEntryId} onStartLive={(entry) => setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 })} onFeedback={setFeedbackEntry} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} />
+          <DayCalendar date={focusDate} entries={dayEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={setSelectedEntryId} onStartLive={(entry) => setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 })} onFeedback={setFeedbackEntry} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={false} />
         ) : null}
 
         {mode === "threeDays" ? (
-          <WeekCalendar days={threeDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={setSelectedEntryId} onStartLive={(entry) => setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 })} onFeedback={setFeedbackEntry} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} compact />
+          <WeekCalendar days={threeDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={setSelectedEntryId} onStartLive={(entry) => setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 })} onFeedback={setFeedbackEntry} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} compact showDropHint={false} />
         ) : null}
 
         {mode === "list" ? (
@@ -611,7 +611,7 @@ export function TrainingCalendarView({
           <PeriodizationCalendar months={periodizationMonths} templates={periodizationTemplates} />
         ) : null}
 
-        <WeekPlanStrip entries={weekEntries} onOpenPlan={onOpenPlan} onOpenEntry={setSelectedEntryId} />
+        {!isPhone ? <WeekPlanStrip entries={weekEntries} onOpenPlan={onOpenPlan} onOpenEntry={setSelectedEntryId} /> : null}
       </main>
 
       {showTemplates ? (
@@ -737,6 +737,7 @@ function WeekCalendar({
   athletes,
   users,
   compact = false,
+  showDropHint = true,
 }: {
   days: string[];
   groupedEntries: Map<string, PlanEntry[]>;
@@ -755,6 +756,7 @@ function WeekCalendar({
   athletes: CoachAthlete[];
   users: User[];
   compact?: boolean;
+  showDropHint?: boolean;
 }) {
   return (
     <PaddlioOneCard className={`master-calendar-card master-week-calendar-card ${compact ? "is-compact" : ""}`.trim()}>
@@ -770,7 +772,7 @@ function WeekCalendar({
               <div className="master-calendar-entry-stack">
                 {entries.length > 0 ? entries.map((entry) => (
                   <TrainingBlock entry={entry} key={entry.id} onStatusChange={onStatusChange} onOpenEntry={onOpenEntry} onStartLive={onStartLive} onFeedback={onFeedback} onDuplicate={onDuplicate} onDelete={onDelete} selectionMode={selectionMode} selected={selectedIds.includes(entry.id)} onSelect={onSelect} assignedLabel={getAssignedLabel(entry, groups, athletes, users)} />
-                )) : <p className="master-calendar-empty-drop">Vorlage hier ablegen</p>}
+                )) : <p className="master-calendar-empty-drop">{showDropHint ? "Vorlage hier ablegen" : "Keine Einträge"}</p>}
               </div>
             </section>
           );
@@ -953,7 +955,7 @@ function TemplateCard({ template, onDragStart, onQuickInsert }: { template: Trai
         <small>{template.trainingArea} · {template.trainingType}</small>
         <span>{template.defaultDurationMinutes ?? 60} min · Intensität {template.defaultIntensity}</span>
       </button>
-      <em>{template.isFavorite ? "★" : "↗"}</em>
+      <em>{template.isFavorite ? "â˜…" : "â†—"}</em>
     </article>
   );
 }
@@ -1256,7 +1258,7 @@ function WeekCopyDialog({ sourceWeek, entries, onCancel, onCopy }: { sourceWeek:
         <div className="master-week-copy-preview">
           {entries.map((entry) => {
             const offset = Math.round((parseLocalDateOnly(targetMonday).getTime() - parseLocalDateOnly(sourceWeek[0]).getTime()) / 86400000);
-            return <span key={entry.id}>{entry.title || entry.trainingType} → {shortDateLabel(addCalendarDays(entry.date, offset))}</span>;
+            return <span key={entry.id}>{entry.title || entry.trainingType} â†’ {shortDateLabel(addCalendarDays(entry.date, offset))}</span>;
           })}
         </div>
         <p className="master-hint">Die Zielwoche wird ergänzt. Bestehende Trainings werden nicht überschrieben.</p>

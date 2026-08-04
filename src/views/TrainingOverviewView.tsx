@@ -96,7 +96,7 @@ export function TrainingOverviewView({
         description="Vom geplanten Training direkt in Feedback und Trainingstagebuch."
         action={
           <div className="po-action-row">
-            <PaddlioOneButton variant="secondary" icon="calendar" onClick={onOpenPlan}>Plan</PaddlioOneButton>
+            <PaddlioOneButton variant="secondary" icon="calendar" onClick={onOpenPlan}>Vorlagen</PaddlioOneButton>
             <PaddlioOneButton variant="primary" icon="training" onClick={onOpenSessions}>Freies Training</PaddlioOneButton>
           </div>
         }
@@ -104,7 +104,7 @@ export function TrainingOverviewView({
 
       <section className="po-kpi-strip">
         <PaddlioOneMetricCard label="Heute" value={todayPlan.length + todaySessions.length} detail="Einheiten" icon="training" tone="primary" />
-        <PaddlioOneMetricCard label="Plan" value={upcomingPlan.length} detail="kommend" icon="calendar" />
+        <PaddlioOneMetricCard label="Geplant" value={upcomingPlan.length} detail="kommend" icon="calendar" />
         <PaddlioOneMetricCard label="Journal" value={journal.length} detail="Einträge" icon="message" tone="success" />
       </section>
 
@@ -161,7 +161,7 @@ export function TrainingOverviewView({
             <p>Du kannst ein freies Training eintragen oder direkt eine Einheit planen.</p>
             <div className="po-action-row">
               <PaddlioOneButton variant="primary" icon="training" onClick={onOpenSessions}>Freies Training</PaddlioOneButton>
-              <PaddlioOneButton variant="secondary" icon="calendar" onClick={onOpenPlan}>Einheit planen</PaddlioOneButton>
+              <PaddlioOneButton variant="secondary" icon="calendar" onClick={onOpenPlan}>Vorlage nutzen</PaddlioOneButton>
             </div>
           </PaddlioOneCard>
         )}
