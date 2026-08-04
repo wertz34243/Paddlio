@@ -15,100 +15,16 @@ import { createCalendarQuickTemplates, seasonPlanningBlocks, weeklyPlanningTempl
 import { createPeriodizationTemplates } from "../features/training/templates/trainingTemplates";
 import type { PlanEntry, PlanStatus, TrainingJournalEntry, TrainingTemplate } from "../domain/types";
 import type { DeviceClass } from "../lib/deviceCapabilities";
+import {
+  PaddlioOneButton,
+  PaddlioOneCard,
+  PaddlioOneMetricCard,
+  PaddlioOnePageHeader,
+  PaddlioOneStatusChip,
+  PaddlioOneToolbar,
+} from "../components/paddlio-one/PaddlioOneComponents";
 
 type CalendarMode = "month" | "week" | "day" | "periodization";
-
-type PeriodizationMonth = {
-  key: string;
-  label: string;
-  phase: string;
-  focus: string;
-  minutes: number;
-  hardUnits: number;
-  entries: number;
-  loadPercent: number;
-};
-
-type TrainingPrinciple = {
-  code: string;
-  title: string;
-  target: string;
-  use: string;
-  weeks: string;
-};
-
-const trainingPrinciples: TrainingPrinciple[] = [
-  {
-    code: "KB",
-    title: "Koordination & Beweglichkeit",
-    target: "Regeneration, Beweglichkeit, Techniksauberkeit",
-    use: "Sehr lockere Einheiten, Mobility, Technik ohne Druck.",
-    weeks: "< 2",
-  },
-  {
-    code: "GA1",
-    title: "Grundlagenausdauer",
-    target: "Aerobe Basis und ruhige Belastbarkeit",
-    use: "Längere lockere Einheiten, saubere Technik, niedrige Intensität.",
-    weeks: "6-8",
-  },
-  {
-    code: "GA2",
-    title: "Aerobe Kapazität",
-    target: "Tempoausdauer und kontrollierte Belastung",
-    use: "Intensivere Intervalle, längere Serien, Technik unter Last.",
-    weeks: "6",
-  },
-  {
-    code: "WA",
-    title: "Wettkampfausdauer",
-    target: "Rennhärte, Taktik, Ermüdungsresistenz",
-    use: "Wettkampfähnliche Serien, Pausen, Simulationen.",
-    weeks: "4",
-  },
-  {
-    code: "SA",
-    title: "Schnelligkeitsausdauer",
-    target: "Belastungsspitzen und Starts unter Druck",
-    use: "15-45 Sekunden hochintensiv, klare Erholungspausen.",
-    weeks: "4",
-  },
-  {
-    code: "S",
-    title: "Schnelligkeit",
-    target: "Maximale Geschwindigkeit und Reaktion",
-    use: "Kurze Sprints, Startimpulse, viel Erholung.",
-    weeks: "4",
-  },
-  {
-    code: "Kaus",
-    title: "Kraftausdauer",
-    target: "Druck halten, Wiederholungen stabil fahren",
-    use: "Zirkel, Wiederholungen, längere Serien.",
-    weeks: "6",
-  },
-  {
-    code: "HT",
-    title: "Hypertrophie / Basis-Kraft",
-    target: "Kraftbasis und Belastbarkeit",
-    use: "8-12 Wiederholungen, 70-90 Sekunden Serien.",
-    weeks: "6-12",
-  },
-  {
-    code: "IK",
-    title: "Maximalkraft",
-    target: "Hohe Kraftspitzen und Ansteuerung",
-    use: "Hohe Lasten, wenige Wiederholungen, lange Pausen.",
-    weeks: "3-6",
-  },
-  {
-    code: "Fs",
-    title: "Explosivkraft",
-    target: "Startkraft und dynamische Impulse",
-    use: "Explosive Übungen, Sprünge, Starts, kurze Serien.",
-    weeks: "2-4",
-  },
-];
 
 type TrainingCalendarViewProps = {
   entries: PlanEntry[];
@@ -120,6 +36,22 @@ type TrainingCalendarViewProps = {
   onStatusChange: (id: string, status: PlanStatus) => void;
   onTemplateInsert?: (template: TrainingTemplate, date: string) => void;
   deviceClass?: DeviceClass;
+};
+
+const modeLabels: Record<CalendarMode, string> = {
+  day: "Tag",
+  week: "Woche",
+  month: "Monat",
+  periodization: "Jahr",
+};
+
+const categoryTone = (value?: string): "primary" | "success" | "warning" | "danger" | "info" | "muted" => {
+  const normalized = (value || "").toLowerCase();
+  if (normalized.includes("wett")) return "danger";
+  if (normalized.includes("kraft")) return "warning";
+  if (normalized.includes("technik") || normalized.includes("slalom")) return "info";
+  if (normalized.includes("regen") || normalized.includes("mobility")) return "muted";
+  return "success";
 };
 
 const monthLabel = (dateKey: string): string =>
@@ -138,555 +70,506 @@ const dayNumber = (dateKey: string): string => String(parseLocalDateOnly(dateKey
 
 const getMonthGrid = (dateKey: string): string[] => {
   const base = parseLocalDateOnly(dateKey);
-  const first = new Date(base.getFullYear(), base.getMonth(), 1);
-  const firstWeekday = first.getDay() || 7;
-  const cursor = new Date(first);
-  cursor.setDate(first.getDate() - firstWeekday + 1);
-
-  return Array.from({ length: 42 }, (_, index) => {
-    const next = new Date(cursor);
-    next.setDate(cursor.getDate() + index);
-    return formatLocalDateOnly(next);
-  });
+  const firstOfMonth = new Date(base.getFullYear(), base.getMonth(), 1);
+  const offset = firstOfMonth.getDay() === 0 ? 6 : firstOfMonth.getDay() - 1;
+  const start = new Date(firstOfMonth);
+  start.setDate(firstOfMonth.getDate() - offset);
+  return Array.from({ length: 42 }, (_, index) => addCalendarDays(formatLocalDateOnly(start), index));
 };
 
-const getWeekGrid = (dateKey: string): string[] => {
-  const current = parseLocalDateOnly(dateKey);
-  const weekday = current.getDay() || 7;
-  current.setDate(current.getDate() - weekday + 1);
-  return weekdays.map((_, index) => addCalendarDays(formatLocalDateOnly(current), index));
+const getWeekDays = (dateKey: string): string[] => {
+  const base = parseLocalDateOnly(dateKey);
+  const mondayOffset = base.getDay() === 0 ? -6 : 1 - base.getDay();
+  const monday = addCalendarDays(formatLocalDateOnly(base), mondayOffset);
+  return Array.from({ length: 7 }, (_, index) => addCalendarDays(monday, index));
 };
 
-const statusClass = (entry: PlanEntry): string =>
-  isSkippedStatus(entry.status) ? "skipped" : isDoneStatus(entry.status) ? "done" : entry.status === "cancelled" ? "cancelled" : "planned";
+const getPeriodizationMonths = (entries: PlanEntry[]): Array<{
+  key: string;
+  label: string;
+  phase: string;
+  focus: string;
+  minutes: number;
+  entries: number;
+  loadPercent: number;
+}> => {
+  const currentYear = new Date().getFullYear();
+  const phaseNames = [
+    "Grundlagen",
+    "Aufbau",
+    "Technik",
+    "Wettkampfvorbereitung",
+    "Wettkampf",
+    "Regeneration",
+  ];
 
-const monthShortLabel = (monthIndex: number): string =>
-  new Date(2026, monthIndex, 1).toLocaleDateString("de-DE", { month: "short" });
-
-const phaseForMonth = (monthIndex: number): Pick<PeriodizationMonth, "phase" | "focus"> => {
-  if ([10, 11, 0].includes(monthIndex)) {
-    return { phase: "Grundlage", focus: "GA1, Technik, Kraftbasis" };
-  }
-  if ([1, 2].includes(monthIndex)) {
-    return { phase: "Aufbau", focus: "GA2, Kraft, Technik unter Last" };
-  }
-  if ([3, 4].includes(monthIndex)) {
-    return { phase: "Vorbereitung", focus: "WA, SA, Wettkampfsimulation" };
-  }
-  if ([5, 6, 7].includes(monthIndex)) {
-    return { phase: "Wettkampf", focus: "Rennen, Tapering, Erholung" };
-  }
-  if (monthIndex === 8) {
-    return { phase: "Saisonfinale", focus: "Form halten, Belastung dosieren" };
-  }
-  return { phase: "Übergang", focus: "Regeneration, Technik, Material" };
-};
-
-const intensityFactor = (entry: PlanEntry): number => {
-  if (entry.intensity === "maximal") return 1.3;
-  if (entry.intensity === "hart") return 1.15;
-  if (entry.intensity === "mittel") return 1;
-  return 0.75;
-};
-
-const buildPeriodizationMonths = (entries: PlanEntry[], selectedDate: string): PeriodizationMonth[] => {
-  const year = parseLocalDateOnly(selectedDate).getFullYear();
-  const months = Array.from({ length: 12 }, (_, monthIndex) => {
-    const { phase, focus } = phaseForMonth(monthIndex);
+  const months = Array.from({ length: 12 }, (_, month) => {
     const monthEntries = entries.filter((entry) => {
       const date = parseLocalDateOnly(entry.date);
-      return date.getFullYear() === year && date.getMonth() === monthIndex;
+      return date.getFullYear() === currentYear && date.getMonth() === month;
     });
-    const minutes = monthEntries.reduce((sum, entry) => sum + Math.max(0, entry.durationMinutes || 0), 0);
-    const hardUnits = monthEntries.filter((entry) => entry.intensity === "hart" || entry.intensity === "maximal").length;
+    const minutes = monthEntries.reduce((sum, entry) => sum + entry.durationMinutes, 0);
+    const phase = phaseNames[Math.min(phaseNames.length - 1, Math.floor(month / 2))];
     return {
-      key: `${year}-${String(monthIndex + 1).padStart(2, "0")}`,
-      label: monthShortLabel(monthIndex),
+      key: `${currentYear}-${String(month + 1).padStart(2, "0")}`,
+      label: new Date(currentYear, month, 1).toLocaleDateString("de-DE", { month: "short" }),
       phase,
-      focus,
+      focus: monthEntries[0]?.area || phase,
       minutes,
-      hardUnits,
       entries: monthEntries.length,
-      loadPercent: 0,
+      loadPercent: Math.min(100, Math.round((minutes / 900) * 100)),
     };
   });
 
-  const maxLoad = Math.max(
-    1,
-    ...months.map((month) => {
-      const matchingEntries = entries.filter((entry) => entry.date.startsWith(month.key));
-      return matchingEntries.reduce((sum, entry) => sum + (entry.durationMinutes || 0) * intensityFactor(entry), 0);
-    }),
-  );
-
-  return months.map((month) => {
-    const matchingEntries = entries.filter((entry) => entry.date.startsWith(month.key));
-    const weightedLoad = matchingEntries.reduce((sum, entry) => sum + (entry.durationMinutes || 0) * intensityFactor(entry), 0);
-    const suggestedLoad = [45, 55, 65, 72, 78, 82, 75, 70, 58, 36, 48, 52][Number(month.key.slice(5, 7)) - 1];
-    return {
-      ...month,
-      loadPercent: Math.round(weightedLoad > 0 ? (weightedLoad / maxLoad) * 100 : suggestedLoad),
-    };
-  });
+  return months;
 };
+
+function groupByDate(entries: PlanEntry[]): Map<string, PlanEntry[]> {
+  const grouped = new Map<string, PlanEntry[]>();
+  sortPlanEntries(entries).forEach((entry) => {
+    const items = grouped.get(entry.date) ?? [];
+    items.push(entry);
+    grouped.set(entry.date, items);
+  });
+  return grouped;
+}
 
 export function TrainingCalendarView({
   entries,
   journal,
-  templates = [],
-  clubId = "paddlio",
+  templates,
+  clubId,
   onOpenPlan,
   onOpenJournal,
   onStatusChange,
   onTemplateInsert,
   deviceClass = "desktop",
 }: TrainingCalendarViewProps) {
-  const today = getTodayKey();
-  const [selectedDate, setSelectedDate] = useState(today);
-  const [mode, setMode] = useState<CalendarMode>(deviceClass === "phone" ? "day" : "month");
-  const [templateMessage, setTemplateMessage] = useState("");
   const isPhone = deviceClass === "phone";
-  const availableModes = useMemo<CalendarMode[]>(
-    () => (isPhone ? ["day", "week"] : ["month", "week", "day", "periodization"]),
-    [isPhone],
-  );
+  const templateClubId = clubId ?? "paddlio-system";
+  const [mode, setMode] = useState<CalendarMode>(isPhone ? "day" : "week");
+  const [focusDate, setFocusDate] = useState(getTodayKey());
+  const [dragTemplateId, setDragTemplateId] = useState<string | null>(null);
 
-  const sortedEntries = useMemo(() => sortPlanEntries(entries), [entries]);
-  const journalByPlan = useMemo(
-    () => new Map(journal.filter((entry) => entry.trainingPlanEntryId).map((entry) => [entry.trainingPlanEntryId, entry])),
-    [journal],
-  );
-  const entriesByDate = useMemo(() => {
-    const grouped = new Map<string, PlanEntry[]>();
-    sortedEntries.forEach((entry) => {
-      const list = grouped.get(entry.date) ?? [];
-      list.push(entry);
-      grouped.set(entry.date, list);
-    });
-    return grouped;
-  }, [sortedEntries]);
-
-  const selectedEntries = entriesByDate.get(selectedDate) ?? [];
-  const monthDays = useMemo(() => getMonthGrid(selectedDate), [selectedDate]);
-  const weekDays = useMemo(() => getWeekGrid(selectedDate), [selectedDate]);
-  const periodizationMonths = useMemo(() => buildPeriodizationMonths(sortedEntries, selectedDate), [sortedEntries, selectedDate]);
-  const selectedMonth = parseLocalDateOnly(selectedDate).getMonth();
-  const templateLibrary = useMemo(() => {
-    const existingIds = new Set(templates.map((template) => template.id));
-    const systemTemplates = [...createPeriodizationTemplates(clubId), ...createCalendarQuickTemplates(clubId)].filter(
-      (template) => !existingIds.has(template.id),
-    );
-    const allTemplates = [...templates, ...systemTemplates];
-    const favorites = allTemplates.filter((template) => template.isFavorite).slice(0, 6);
-    return {
-      favorites: favorites.length ? favorites : allTemplates.slice(0, 6),
-      all: allTemplates.slice(0, 12),
-      weekly: weeklyPlanningTemplates.slice(0, 4),
-      season: seasonPlanningBlocks.slice(0, 4),
-    };
-  }, [clubId, templates]);
-
-  const moveMonth = (direction: -1 | 1) => {
-    const date = parseLocalDateOnly(selectedDate);
-    date.setMonth(date.getMonth() + direction);
-    setSelectedDate(formatLocalDateOnly(date));
-  };
-
-  const moveDay = (direction: -1 | 1) => setSelectedDate(addCalendarDays(selectedDate, direction));
-  const moveWeek = (direction: -1 | 1) => setSelectedDate(addCalendarDays(selectedDate, direction * 7));
-  const moveVisibleRange = (direction: -1 | 1) => {
-    if (mode === "day") {
-      moveDay(direction);
-      return;
-    }
-    if (mode === "week") {
-      moveWeek(direction);
-      return;
-    }
-    moveMonth(direction);
-  };
-  const rangeLabel = mode === "day" ? "Tag" : mode === "week" ? "Woche" : "Monat";
+  const availableModes: CalendarMode[] = isPhone ? ["day", "week", "month"] : ["day", "week", "month", "periodization"];
 
   useEffect(() => {
     if (!availableModes.includes(mode)) {
-      setMode(availableModes[0] ?? "day");
+      setMode(availableModes[0]);
     }
   }, [availableModes, mode]);
 
-  const insertTemplate = (template: TrainingTemplate) => {
-    onTemplateInsert?.(template, selectedDate);
-    setTemplateMessage(`${template.title} wurde für ${shortDateLabel(selectedDate)} eingefügt.`);
+  const groupedEntries = useMemo(() => groupByDate(entries), [entries]);
+  const calendarTemplates = useMemo(
+    () => [...(templates ?? []), ...createCalendarQuickTemplates(templateClubId)].slice(0, 18),
+    [templates, templateClubId],
+  );
+  const periodizationTemplates = useMemo(() => createPeriodizationTemplates(templateClubId), [templateClubId]);
+  const monthDays = useMemo(() => getMonthGrid(focusDate), [focusDate]);
+  const weekDays = useMemo(() => getWeekDays(focusDate), [focusDate]);
+  const dayEntries = groupedEntries.get(focusDate) ?? [];
+  const weekEntries = weekDays.flatMap((day) => groupedEntries.get(day) ?? []);
+  const periodizationMonths = useMemo(() => getPeriodizationMonths(entries), [entries]);
+  const completedJournal = journal.length;
+
+  const move = (direction: -1 | 1) => {
+    const amount = mode === "month" ? direction * 30 : mode === "week" ? direction * 7 : direction;
+    setFocusDate(addCalendarDays(focusDate, amount));
   };
-  const findTemplate = (templateId: string) =>
-    [...templateLibrary.favorites, ...templateLibrary.all].find((template) => template.id === templateId);
-  const dropTemplateOnDate = (event: DragEvent<HTMLElement>, dateKey: string) => {
-    event.preventDefault();
-    const templateId = event.dataTransfer.getData("text/plain");
-    const template = findTemplate(templateId);
-    if (!template) return;
-    onTemplateInsert?.(template, dateKey);
-    setSelectedDate(dateKey);
-    setTemplateMessage(`${template.title} wurde für ${shortDateLabel(dateKey)} eingefügt.`);
+
+  const handleTemplateDrop = (date: string) => {
+    if (!dragTemplateId || !onTemplateInsert) return;
+    const template = calendarTemplates.find((item) => item.id === dragTemplateId);
+    if (template) {
+      onTemplateInsert(template, date);
+    }
+    setDragTemplateId(null);
+  };
+
+  const handleDragOver = (event: DragEvent) => {
+    if (dragTemplateId) {
+      event.preventDefault();
+    }
   };
 
   return (
-    <div className="training-calendar-workspace">
-    <div className="stack training-calendar-page training-calendar-main">
-      <section className="section-block training-calendar-hero">
-        <div>
-          <p className="eyebrow">Trainingskalender</p>
-          <h2>{monthLabel(selectedDate)}</h2>
-          <p className="card-note">
-            Plane, öffne und prüfe Einheiten in einer eigenen Kalenderansicht. Datum bleibt lokal und wird nicht per UTC verschoben.
-          </p>
-        </div>
-        <div className="calendar-mode-control" role="tablist" aria-label="Kalenderansicht">
-          {availableModes.map((item) => (
-            <button
-              key={item}
-              type="button"
-              className={mode === item ? "active" : ""}
-              onClick={() => setMode(item)}
-              aria-selected={mode === item}
-              role="tab"
-            >
-              {item === "month" ? "Monat" : item === "week" ? "Woche" : item === "day" ? "Tag" : "Periodisierung"}
-            </button>
-          ))}
-        </div>
-      </section>
+    <div className={`po-calendar-workspace po-calendar-${deviceClass}`}>
+      <main className="po-calendar-main">
+        <PaddlioOnePageHeader
+          eyebrow="Kalender"
+          title={mode === "periodization" ? "Saisonplanung" : monthLabel(focusDate)}
+          description="Planen, verschieben und Vorlagen direkt in den Trainingskalender legen."
+          action={
+            <PaddlioOneButton variant="primary" icon="training" onClick={onOpenPlan}>
+              Training hinzufügen
+            </PaddlioOneButton>
+          }
+        />
 
-      <section className="section-block training-calendar-controls">
-        <button type="button" className="ghost-button" onClick={() => moveVisibleRange(-1)} aria-label={`Vorherige ${rangeLabel} anzeigen`}>
-          Zurück
-        </button>
-        <button type="button" className="secondary-button" onClick={() => setSelectedDate(today)} aria-label="Heute im Kalender anzeigen">
-          Heute
-        </button>
-        <button type="button" className="ghost-button" onClick={() => moveVisibleRange(1)} aria-label={`Nächste ${rangeLabel} anzeigen`}>
-          Weiter
-        </button>
-      </section>
-
-      {mode === "month" ? (
-        <section className="training-calendar-month" aria-label="Monatskalender">
-          {weekdays.map((day) => (
-            <span className="calendar-weekday" key={day}>{day.slice(0, 2)}</span>
-          ))}
-          {monthDays.map((dateKey) => {
-            const dayEntries = entriesByDate.get(dateKey) ?? [];
-            const isCurrentMonth = parseLocalDateOnly(dateKey).getMonth() === selectedMonth;
-            return (
-              <button
-                type="button"
-                key={dateKey}
-                className={[
-                  "training-calendar-day",
-                  dateKey === selectedDate ? "selected" : "",
-                  dateKey === today ? "today" : "",
-                  !isCurrentMonth ? "muted" : "",
-                  dayEntries.length > 0 ? "has-entry" : "",
-                ].filter(Boolean).join(" ")}
-                onClick={() => setSelectedDate(dateKey)}
-                onDragOver={(event) => event.preventDefault()}
-                onDrop={(event) => dropTemplateOnDate(event, dateKey)}
-                aria-label={`${getLocalWeekdayLabel(dateKey)}, ${shortDateLabel(dateKey)} mit ${dayEntries.length} Trainingseinheiten öffnen`}
-              >
-                <strong>{dayNumber(dateKey)}</strong>
-                <span>{dayEntries.length ? `${dayEntries.length} Einh.` : ""}</span>
-                <small>{dayEntries.slice(0, 3).map((entry) => <i key={entry.id} className={`dot ${statusClass(entry)}`} />)}</small>
-              </button>
-            );
-          })}
-        </section>
-      ) : null}
-
-      {mode === "week" ? (
-        <section className="training-calendar-week" aria-label="Wochenkalender">
-          {weekDays.map((dateKey) => (
-            <button
-              type="button"
-              key={dateKey}
-              className={dateKey === selectedDate ? "training-calendar-weekday selected" : "training-calendar-weekday"}
-              onClick={() => setSelectedDate(dateKey)}
-              onDragOver={(event) => event.preventDefault()}
-              onDrop={(event) => dropTemplateOnDate(event, dateKey)}
-            >
-              <span>{getLocalWeekdayLabel(dateKey).slice(0, 2)}</span>
-              <strong>{dayNumber(dateKey)}</strong>
-              <small>{entriesByDate.get(dateKey)?.length ?? 0}</small>
-            </button>
-          ))}
-        </section>
-      ) : null}
-
-      {mode === "day" ? (
-        <section className="section-block training-calendar-controls">
-          <button type="button" className="ghost-button" onClick={() => moveDay(-1)} aria-label="Vorherigen Tag anzeigen">Vorheriger Tag</button>
-          <strong>{getLocalWeekdayLabel(selectedDate)}, {shortDateLabel(selectedDate)}</strong>
-          <button type="button" className="ghost-button" onClick={() => moveDay(1)} aria-label="Nächsten Tag anzeigen">Nächster Tag</button>
-        </section>
-      ) : null}
-
-      {mode === "periodization" ? (
-        <PeriodizationPanel months={periodizationMonths} entryCount={sortedEntries.length} />
-      ) : null}
-
-      {mode !== "periodization" ? (
-      <section className="section-block">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">{getLocalWeekdayLabel(selectedDate)}, {shortDateLabel(selectedDate)}</p>
-            <h3>{selectedEntries.length ? `${selectedEntries.length} Einheiten` : "Keine Einheit geplant"}</h3>
+        <PaddlioOneToolbar className="po-calendar-toolbar">
+          <div className="po-calendar-toolbar-group">
+            <PaddlioOneButton variant="ghost" onClick={() => move(-1)} aria-label="Vorheriger Zeitraum">Zurück</PaddlioOneButton>
+            <PaddlioOneButton variant="secondary" icon="calendar" onClick={() => setFocusDate(getTodayKey())}>Heute</PaddlioOneButton>
+            <PaddlioOneButton variant="ghost" onClick={() => move(1)} aria-label="Nächster Zeitraum">Weiter</PaddlioOneButton>
           </div>
-          <button type="button" className="primary-button" onClick={onOpenPlan} aria-label="Neue Trainingseinheit im Plan erstellen">
-            Planen
-          </button>
-        </div>
+          <div className="po-segmented-control" aria-label="Kalenderansicht">
+            {availableModes.map((item) => (
+              <button className={mode === item ? "is-active" : ""} key={item} type="button" onClick={() => setMode(item)}>
+                {modeLabels[item]}
+              </button>
+            ))}
+          </div>
+          <PaddlioOneButton variant="secondary" icon="message" onClick={onOpenJournal}>
+            Journal
+          </PaddlioOneButton>
+        </PaddlioOneToolbar>
 
-        <div className="training-calendar-agenda">
-          {selectedEntries.length ? selectedEntries.map((entry) => {
-            const linkedJournal = journalByPlan.get(entry.id);
-            return (
-              <article className={`calendar-training-card status-${statusClass(entry)}`} key={entry.id}>
-                <div className="calendar-training-card-head">
-                  <div>
-                    <strong>{entry.title || entry.trainingType}</strong>
-                    <span>{entry.startTime || entry.time || "Uhrzeit offen"} · {entry.durationMinutes} min · {entry.boatClass}</span>
-                  </div>
-                  <b>{linkedJournal ? "Journal" : planStatusLabels[entry.status] ?? "Geplant"}</b>
-                </div>
-                <p>{entry.goal || entry.focus || entry.description || "Kein Trainingsziel hinterlegt."}</p>
-                <div className="card-actions">
-                  <button type="button" className="edit-button" onClick={onOpenPlan} aria-label={`Training ${entry.title || entry.trainingType} im Plan öffnen`}>
-                    Plan öffnen
-                  </button>
-                  {linkedJournal ? (
-                    <button type="button" onClick={onOpenJournal} aria-label={`Journal zu ${entry.title || entry.trainingType} öffnen`}>
-                      Journal öffnen
-                    </button>
-                  ) : (
-                    <>
-                      <button type="button" className="save-button" onClick={() => onStatusChange(entry.id, "completed")} aria-label={`${entry.title || entry.trainingType} als durchgeführt markieren`}>
-                        Durchgeführt
-                      </button>
-                      <button type="button" onClick={() => onStatusChange(entry.id, "skipped")} aria-label={`${entry.title || entry.trainingType} als übersprungen markieren`}>
-                        Übersprungen
-                      </button>
-                    </>
-                  )}
-                </div>
-              </article>
-            );
-          }) : (
-            <article className="empty-state action-empty">
-              <strong>Für diesen Tag ist nichts geplant.</strong>
-              <span>Erstelle eine neue Einheit oder dokumentiere später ein freies Training im Journal.</span>
-              <div className="inline-actions">
-                <button type="button" className="save-button" onClick={onOpenPlan}>Einheit planen</button>
-                <button type="button" onClick={onOpenJournal}>Journal öffnen</button>
-              </div>
-            </article>
-          )}
-        </div>
-      </section>
-      ) : null}
-      {templateMessage ? <p className="auth-message success-message">{templateMessage}</p> : null}
-    </div>
-    {!isPhone ? (
-      <CalendarTemplateLibrary
-        templates={templateLibrary}
-        selectedDate={selectedDate}
-        onInsertTemplate={insertTemplate}
-        onOpenPlan={onOpenPlan}
-      />
-    ) : null}
+        <section className="po-calendar-stats">
+          <PaddlioOneMetricCard label="Woche" value={weekEntries.length} detail="Einheiten" icon="calendar" tone="primary" />
+          <PaddlioOneMetricCard
+            label="Minuten"
+            value={weekEntries.reduce((sum, entry) => sum + entry.durationMinutes, 0)}
+            detail="geplant"
+            icon="timer"
+          />
+          <PaddlioOneMetricCard label="Journal" value={completedJournal} detail="Einträge" icon="message" tone="success" />
+        </section>
+
+        {mode === "month" ? (
+          <MonthCalendar days={monthDays} groupedEntries={groupedEntries} focusDate={focusDate} onSelectDate={setFocusDate} onDrop={handleTemplateDrop} onDragOver={handleDragOver} />
+        ) : null}
+
+        {mode === "week" ? (
+          <WeekCalendar days={weekDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} />
+        ) : null}
+
+        {mode === "day" ? (
+          <DayCalendar date={focusDate} entries={dayEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} />
+        ) : null}
+
+        {mode === "periodization" ? (
+          <PeriodizationCalendar months={periodizationMonths} templates={periodizationTemplates} />
+        ) : null}
+
+        <PaddlioOneCard className="po-week-plan-strip">
+          <div className="po-card-heading-row">
+            <div>
+              <p className="po-eyebrow">Wochenplan</p>
+              <h2>Planbare Einheiten</h2>
+            </div>
+            <PaddlioOneStatusChip tone="info">{weekEntries.length} Einheiten</PaddlioOneStatusChip>
+          </div>
+          <div className="po-week-plan-list">
+            {weekEntries.slice(0, 8).map((entry) => (
+              <button className="po-week-row" key={entry.id} type="button" onClick={onOpenPlan}>
+                <strong>{getLocalWeekdayLabel(entry.date).slice(0, 2)}</strong>
+                <span>{entry.title || entry.trainingType}</span>
+                <em>{entry.startTime || entry.time || "--"}</em>
+              </button>
+            ))}
+            {weekEntries.length === 0 ? <p className="po-muted">Diese Woche ist noch frei. Ziehe eine Vorlage in den Kalender.</p> : null}
+          </div>
+        </PaddlioOneCard>
+      </main>
+
+      {!isPhone ? (
+        <CalendarTemplateRail templates={calendarTemplates} onDragStart={setDragTemplateId} onOpenPlan={onOpenPlan} />
+      ) : (
+        <PaddlioOneCard className="po-phone-template-picker">
+          <div className="po-card-heading-row">
+            <div>
+              <p className="po-eyebrow">Vorlagen</p>
+              <h2>Schnell einfügen</h2>
+            </div>
+          </div>
+          <div className="po-template-compact-list">
+            {calendarTemplates.slice(0, 5).map((template) => (
+              <button key={template.id} type="button" onClick={() => onTemplateInsert?.(template, focusDate)}>
+                <span>{template.title}</span>
+                <em>{template.defaultDurationMinutes ?? 60} min</em>
+              </button>
+            ))}
+          </div>
+        </PaddlioOneCard>
+      )}
     </div>
   );
 }
 
-function getTemplateTone(template: TrainingTemplate): string {
-  if (template.category === "Ausdauer" || template.trainingType === "GA1" || template.trainingType === "GA2") return "endurance";
-  if (template.category === "Kraft" || template.trainingArea === "Krafttraining") return "strength";
-  if (template.category === "Regeneration" || template.trainingArea === "Regeneration") return "regeneration";
-  if (template.category === "Wettkampf" || template.trainingArea === "Wettkampf") return "competition";
-  return "technique";
-}
-
-function CalendarTemplateLibrary({
-  templates,
-  selectedDate,
-  onInsertTemplate,
-  onOpenPlan,
+function MonthCalendar({
+  days,
+  groupedEntries,
+  focusDate,
+  onSelectDate,
+  onDrop,
+  onDragOver,
 }: {
-  templates: {
-    favorites: TrainingTemplate[];
-    all: TrainingTemplate[];
-    weekly: typeof weeklyPlanningTemplates;
-    season: typeof seasonPlanningBlocks;
-  };
-  selectedDate: string;
-  onInsertTemplate: (template: TrainingTemplate) => void;
-  onOpenPlan: () => void;
+  days: string[];
+  groupedEntries: Map<string, PlanEntry[]>;
+  focusDate: string;
+  onSelectDate: (date: string) => void;
+  onDrop: (date: string) => void;
+  onDragOver: (event: DragEvent) => void;
 }) {
-  const [activeTab, setActiveTab] = useState<"favorites" | "templates" | "weeks">("favorites");
-  const visibleTemplates = activeTab === "favorites" ? templates.favorites : templates.all;
+  const focusMonth = parseLocalDateOnly(focusDate).getMonth();
 
   return (
-    <aside className="planning-template-dock calendar-template-library" aria-label="Vorlagenbibliothek">
-      <div className="section-heading compact">
-        <div>
-          <p className="eyebrow">Vorlagen</p>
-          <h3>{shortDateLabel(selectedDate)}</h3>
-        </div>
-        <button type="button" className="icon-button" onClick={onOpenPlan} aria-label="Vollständigen Plan öffnen">
-          +
-        </button>
+    <PaddlioOneCard className="po-calendar-card">
+      <div className="po-calendar-grid-head">
+        {weekdays.map((day) => <span key={day}>{day.slice(0, 2)}</span>)}
       </div>
-
-      <div className="template-dock-tabs" role="tablist" aria-label="Vorlagenbereiche">
-        {[
-          ["favorites", "Favoriten"],
-          ["templates", "Vorlagen"],
-          ["weeks", "Wochen"],
-        ].map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            className={activeTab === key ? "active" : ""}
-            onClick={() => setActiveTab(key as "favorites" | "templates" | "weeks")}
-            role="tab"
-            aria-selected={activeTab === key}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {activeTab !== "weeks" ? (
-        <div className="template-dock-list">
-          {visibleTemplates.map((template) => (
+      <div className="po-calendar-month-grid">
+        {days.map((day) => {
+          const entries = groupedEntries.get(day) ?? [];
+          const isOtherMonth = parseLocalDateOnly(day).getMonth() !== focusMonth;
+          return (
             <button
-              key={template.id}
+              className={`po-calendar-day ${isOtherMonth ? "is-muted" : ""} ${day === focusDate ? "is-selected" : ""}`}
+              key={day}
               type="button"
-              className="template-dock-item"
-              draggable
-              onClick={() => onInsertTemplate(template)}
-              onDragStart={(event) => event.dataTransfer.setData("text/plain", template.id)}
-              aria-label={`${template.title} am ausgewählten Tag einfügen`}
+              onClick={() => onSelectDate(day)}
+              onDragOver={onDragOver}
+              onDrop={() => onDrop(day)}
             >
-              <span className={`template-dock-icon ${getTemplateTone(template)}`}>{template.title.slice(0, 1)}</span>
-              <span>
-                <b>{template.title}</b>
-                <small>
-                  {template.category} · {template.defaultDurationMinutes ?? 60} min · {template.defaultIntensity}
-                </small>
-              </span>
+              <strong>{dayNumber(day)}</strong>
+              {entries.slice(0, 3).map((entry) => <TrainingPill entry={entry} key={entry.id} compact />)}
+              {entries.length > 3 ? <small>+{entries.length - 3} weitere</small> : null}
             </button>
+          );
+        })}
+      </div>
+    </PaddlioOneCard>
+  );
+}
+
+function WeekCalendar({
+  days,
+  groupedEntries,
+  onStatusChange,
+  onDrop,
+  onDragOver,
+}: {
+  days: string[];
+  groupedEntries: Map<string, PlanEntry[]>;
+  onStatusChange: (id: string, status: PlanStatus) => void;
+  onDrop: (date: string) => void;
+  onDragOver: (event: DragEvent) => void;
+}) {
+  return (
+    <PaddlioOneCard className="po-calendar-card po-week-calendar-card">
+      <div className="po-calendar-week-grid">
+        {days.map((day) => {
+          const entries = groupedEntries.get(day) ?? [];
+          return (
+            <section className="po-calendar-week-day" key={day} onDragOver={onDragOver} onDrop={() => onDrop(day)}>
+              <header>
+                <span>{getLocalWeekdayLabel(day).slice(0, 2)}</span>
+                <strong>{shortDateLabel(day)}</strong>
+              </header>
+              <div className="po-calendar-entry-stack">
+                {entries.length > 0 ? entries.map((entry) => (
+                  <TrainingBlock entry={entry} key={entry.id} onStatusChange={onStatusChange} />
+                )) : <p className="po-calendar-empty-drop">Vorlage hier ablegen</p>}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    </PaddlioOneCard>
+  );
+}
+
+function DayCalendar({
+  date,
+  entries,
+  onStatusChange,
+  onDrop,
+  onDragOver,
+}: {
+  date: string;
+  entries: PlanEntry[];
+  onStatusChange: (id: string, status: PlanStatus) => void;
+  onDrop: (date: string) => void;
+  onDragOver: (event: DragEvent) => void;
+}) {
+  return (
+    <PaddlioOneCard className="po-calendar-card po-day-calendar-card">
+      <div className="po-card-heading-row">
+        <div>
+          <p className="po-eyebrow">{getLocalWeekdayLabel(date)}</p>
+          <h2>{shortDateLabel(date)}</h2>
+        </div>
+      </div>
+      <div className="po-day-timeline" onDragOver={onDragOver} onDrop={() => onDrop(date)}>
+        {entries.length > 0 ? entries.map((entry) => (
+          <TrainingBlock entry={entry} key={entry.id} onStatusChange={onStatusChange} />
+        )) : <p className="po-calendar-empty-drop">Noch frei. Vorlage auswählen oder Training hinzufügen.</p>}
+      </div>
+    </PaddlioOneCard>
+  );
+}
+
+function TrainingBlock({
+  entry,
+  onStatusChange,
+}: {
+  entry: PlanEntry;
+  onStatusChange: (id: string, status: PlanStatus) => void;
+}) {
+  const done = isDoneStatus(entry.status);
+  const skipped = isSkippedStatus(entry.status);
+  const tone = skipped ? "danger" : done ? "success" : categoryTone(entry.area || entry.trainingType);
+  return (
+    <article className={`po-training-block po-tone-${tone}`}>
+      <div>
+        <strong>{entry.title || entry.trainingType}</strong>
+        <small>{entry.startTime || entry.time || "--"} · {entry.durationMinutes} min · {entry.area}</small>
+        <span>{entry.goal || entry.focus || "Fokus offen"}</span>
+      </div>
+      <div className="po-training-block-actions">
+        <PaddlioOneStatusChip tone={done ? "success" : skipped ? "danger" : "info"}>
+          {planStatusLabels[entry.status] ?? entry.status}
+        </PaddlioOneStatusChip>
+        {!done ? (
+          <button type="button" onClick={() => onStatusChange(entry.id, "completed" as PlanStatus)}>
+            erledigt
+          </button>
+        ) : null}
+      </div>
+    </article>
+  );
+}
+
+function TrainingPill({ entry, compact = false }: { entry: PlanEntry; compact?: boolean }) {
+  return (
+    <span className={`po-training-pill po-tone-${categoryTone(entry.area || entry.trainingType)} ${compact ? "is-compact" : ""}`.trim()}>
+      {entry.startTime || entry.time ? `${entry.startTime || entry.time} · ` : ""}{entry.title || entry.trainingType}
+    </span>
+  );
+}
+
+function CalendarTemplateRail({
+  templates,
+  onDragStart,
+  onOpenPlan,
+}: {
+  templates: TrainingTemplate[];
+  onDragStart: (id: string) => void;
+  onOpenPlan: () => void;
+}) {
+  const favoriteTemplates = templates.filter((template) => template.isFavorite).slice(0, 6);
+  const shownFavorites = favoriteTemplates.length > 0 ? favoriteTemplates : templates.slice(0, 6);
+
+  return (
+    <aside className="po-calendar-template-rail" aria-label="Vorlagenbibliothek">
+      <PaddlioOneCard>
+        <div className="po-card-heading-row">
+          <div>
+            <p className="po-eyebrow">Vorlagen</p>
+            <h2>Bibliothek</h2>
+          </div>
+          <PaddlioOneButton variant="ghost" icon="more" onClick={onOpenPlan}>Alle</PaddlioOneButton>
+        </div>
+        <div className="po-template-tabs" aria-label="Vorlagenbereiche">
+          <span>Favoriten</span>
+          <span>Meine</span>
+          <span>Verein</span>
+        </div>
+        <div className="po-template-card-list">
+          {shownFavorites.map((template) => (
+            <TemplateCard template={template} key={template.id} onDragStart={onDragStart} />
           ))}
         </div>
-      ) : (
-        <div className="template-dock-section">
-          <div className="template-dock-list">
-            {templates.weekly.map((template) => (
-              <article className="template-dock-card" key={template.id}>
-                <b>{template.title}</b>
-                <span>{template.description}</span>
-                <small>{template.items.length} Einheiten</small>
-              </article>
-            ))}
-          </div>
-          <div className="template-dock-list">
-            {templates.season.map((block) => (
-              <article className="template-dock-card" key={block.id}>
-                <b>{block.title}</b>
-                <span>{block.description}</span>
-                <small>{block.weeklyTemplateIds.length} Wochen</small>
-              </article>
-            ))}
+      </PaddlioOneCard>
+
+      <PaddlioOneCard className="po-template-weeks">
+        <div className="po-card-heading-row">
+          <div>
+            <p className="po-eyebrow">Wochenvorlagen</p>
+            <h2>Schnell planen</h2>
           </div>
         </div>
-      )}
+        {weeklyPlanningTemplates.slice(0, 4).map((template) => (
+          <button className="po-week-template-row" key={template.id} type="button">
+            <strong>{template.title}</strong>
+            <span>{template.description}</span>
+            <em>{template.items.length} Einheiten</em>
+          </button>
+        ))}
+      </PaddlioOneCard>
 
-      <p className="card-note">Auf Tablet und Desktop: Vorlage wählen oder ziehen. Für Konflikte und Serien den vollständigen Plan öffnen.</p>
+      <PaddlioOneCard className="po-template-season">
+        <div className="po-card-heading-row">
+          <div>
+            <p className="po-eyebrow">Saisonbausteine</p>
+            <h2>Periodisierung</h2>
+          </div>
+        </div>
+        {seasonPlanningBlocks.slice(0, 3).map((block) => (
+          <button className="po-week-template-row" key={block.id} type="button">
+            <strong>{block.title}</strong>
+            <span>{block.description}</span>
+            <em>{block.weeklyTemplateIds.length} Wochen</em>
+          </button>
+        ))}
+        <p className="po-muted">Vorlage ziehen und im Kalender ablegen.</p>
+      </PaddlioOneCard>
     </aside>
   );
 }
 
-function PeriodizationPanel({ months, entryCount }: { months: PeriodizationMonth[]; entryCount: number }) {
-  const highestLoad = months.reduce((current, month) => (month.loadPercent > current.loadPercent ? month : current), months[0]);
-  const recoveryMonths = months.filter((month) => month.phase === "Übergang" || month.phase === "Grundlage").length;
-
+function TemplateCard({
+  template,
+  onDragStart,
+}: {
+  template: TrainingTemplate;
+  onDragStart: (id: string) => void;
+}) {
+  const tone = categoryTone(template.category || template.trainingArea || template.trainingType);
   return (
-    <section className="periodization-panel" aria-label="Periodisierung und Trainingsprinzipien">
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow">Saisonplanung</p>
-          <h3>Periodisierung</h3>
-          <p className="card-note">
-            Jahresüberblick für Belastungsaufbau, Erholung und Schwerpunktwechsel. Mit echten Planeinheiten gefüllt, sonst als Trainingsmodell sichtbar.
-          </p>
-        </div>
-        <div className="periodization-summary">
-          <strong>{entryCount}</strong>
-          <span>geplante Einheiten</span>
-        </div>
+    <article
+      className={`po-template-card po-tone-${tone}`}
+      draggable
+      onDragStart={() => onDragStart(template.id)}
+      aria-label={`${template.title} in Kalender ziehen`}
+    >
+      <span className="po-template-icon">{template.category.slice(0, 1)}</span>
+      <div>
+        <strong>{template.title}</strong>
+        <small>{template.trainingArea} · {template.trainingType}</small>
+        <span>{template.defaultDurationMinutes ?? 60} min · Intensität {template.defaultIntensity}</span>
       </div>
+      <em>{template.isFavorite ? "★" : "↗"}</em>
+    </article>
+  );
+}
 
-      <div className="periodization-timeline" role="list" aria-label="Monatsphasen">
+function PeriodizationCalendar({
+  months,
+  templates,
+}: {
+  months: ReturnType<typeof getPeriodizationMonths>;
+  templates: TrainingTemplate[];
+}) {
+  return (
+    <PaddlioOneCard className="po-periodization-card">
+      <div className="po-card-heading-row">
+        <div>
+          <p className="po-eyebrow">Jahresplan</p>
+          <h2>Saisonphasen</h2>
+        </div>
+        <PaddlioOneStatusChip tone="info">{templates.length} Bausteine vorbereitet</PaddlioOneStatusChip>
+      </div>
+      <div className="po-periodization-grid">
         {months.map((month) => (
-          <article className={`periodization-month phase-${month.phase.toLowerCase()}`} key={month.key} role="listitem">
-            <div>
-              <strong>{month.label}</strong>
-              <span>{month.phase}</span>
-            </div>
-            <div className="periodization-load-track" aria-label={`Belastung ${month.loadPercent} Prozent`}>
-              <i style={{ height: `${Math.max(12, month.loadPercent)}%` }} />
-            </div>
-            <small>{month.entries ? `${month.entries} Einh. · ${month.minutes} min` : month.focus}</small>
+          <article className="po-periodization-month" key={month.key}>
+            <strong>{month.label}</strong>
+            <span>{month.phase}</span>
+            <small>{month.entries} Einheiten · {month.minutes} min</small>
+            <div className="po-mini-progress"><span style={{ width: `${month.loadPercent}%` }} /></div>
           </article>
         ))}
       </div>
-
-      <div className="periodization-insights">
-        <article>
-          <span>Belastung</span>
-          <strong>{highestLoad?.label ?? "--"} · {highestLoad?.phase ?? "offen"}</strong>
-          <small>Höchster geplanter Belastungsblock im aktuellen Kalenderjahr.</small>
-        </article>
-        <article>
-          <span>Entlastung</span>
-          <strong>{recoveryMonths} Monate</strong>
-          <small>Grundlage, Übergang und Regeneration bleiben bewusst sichtbar.</small>
-        </article>
-        <article>
-          <span>Prinzip</span>
-          <strong>3:1 Aufbau</strong>
-          <small>Belastung steigern, danach gezielt entlasten und Technik stabilisieren.</small>
-        </article>
-      </div>
-
-      <section className="section-block periodization-principles">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Trainingsprinzipien</p>
-            <h3>Belastungen kombinieren</h3>
-          </div>
-        </div>
-        <div className="principle-grid">
-          {trainingPrinciples.map((principle) => (
-            <article className="principle-card" key={principle.code}>
-              <b>{principle.code}</b>
-              <div>
-                <strong>{principle.title}</strong>
-                <span>{principle.target}</span>
-                <small>{principle.use}</small>
-              </div>
-              <em>{principle.weeks} Wo.</em>
-            </article>
-          ))}
-        </div>
-      </section>
-    </section>
+    </PaddlioOneCard>
   );
 }

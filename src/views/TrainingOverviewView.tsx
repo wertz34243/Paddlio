@@ -1,4 +1,12 @@
 import { useMemo, useState, type FormEvent } from "react";
+import {
+  PaddlioOneButton,
+  PaddlioOneCard,
+  PaddlioOneMetricCard,
+  PaddlioOnePageHeader,
+  PaddlioOneStatusChip,
+  PaddlioOneTextField,
+} from "../components/paddlio-one/PaddlioOneComponents";
 import { getTodayKey, isDoneStatus, isSkippedStatus, planStatusLabels, sortPlanEntries } from "../domain/trainingPlan";
 import type { PlanEntry, PlanStatus, TrainingJournalEntry, TrainingSession } from "../domain/types";
 
@@ -81,117 +89,120 @@ export function TrainingOverviewView({
   };
 
   return (
-    <div className="stack">
-      <section className="section-block training-overview-hero">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Training</p>
-            <h3>Übersicht</h3>
+    <div className="po-training-workflow">
+      <PaddlioOnePageHeader
+        eyebrow="Training"
+        title="Durchführen und dokumentieren"
+        description="Vom geplanten Training direkt in Feedback und Trainingstagebuch."
+        action={
+          <div className="po-action-row">
+            <PaddlioOneButton variant="secondary" icon="calendar" onClick={onOpenPlan}>Plan</PaddlioOneButton>
+            <PaddlioOneButton variant="primary" icon="training" onClick={onOpenSessions}>Freies Training</PaddlioOneButton>
           </div>
-        </div>
-        <div className="training-overview-grid">
-          <button type="button" className="action-card" onClick={onOpenSessions} aria-label="Freies Training eintragen">
-            <span>Mein Training heute</span>
-            <strong>{todayPlan.length || todaySessions.length ? `${todayPlan.length + todaySessions.length} Einheiten` : "Kein Plan"}</strong>
-            <small>Heute starten, durchführen oder frei dokumentieren.</small>
-          </button>
-          <button type="button" className="action-card" onClick={onOpenPlan} aria-label="Trainingsplan öffnen">
-            <span>Trainingsplan</span>
-            <strong>{upcomingPlan.length} kommende</strong>
-            <small>Geplante Einheiten, Wochenansicht und Vorlagen.</small>
-          </button>
-          <button type="button" className="action-card" onClick={onOpenJournal} aria-label="Trainingstagebuch öffnen">
-            <span>Trainingstagebuch</span>
-            <strong>{journal.length} Einträge</strong>
-            <small>Was tatsächlich durchgeführt wurde.</small>
-          </button>
-        </div>
+        }
+      />
+
+      <section className="po-kpi-strip">
+        <PaddlioOneMetricCard label="Heute" value={todayPlan.length + todaySessions.length} detail="Einheiten" icon="training" tone="primary" />
+        <PaddlioOneMetricCard label="Plan" value={upcomingPlan.length} detail="kommend" icon="calendar" />
+        <PaddlioOneMetricCard label="Journal" value={journal.length} detail="Einträge" icon="message" tone="success" />
       </section>
 
-      <section className="section-block">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Heute</p>
-            <h3>Mein Training heute</h3>
-          </div>
+      <PaddlioOneCard className="po-training-flow-card">
+        <div className="po-training-flow">
+          <span>Training starten</span>
+          <span>Durchführen</span>
+          <span>Feedback</span>
+          <span>Journal</span>
         </div>
+      </PaddlioOneCard>
 
-        <div className="fitness-list">
-          {todayPlan.length > 0 ? todayPlan.map((entry) => {
-            const linkedJournal = journalByPlan.get(entry.id);
-            return (
-              <article className={`fitness-card status-${isSkippedStatus(entry.status) ? "skipped" : isDoneStatus(entry.status) ? "done" : "planned"}`} key={entry.id}>
-                <div className="fitness-card-main static">
-                  <span className="activity-ring">{entry.durationMinutes}</span>
-                  <div>
-                    <strong>{entry.title || entry.trainingType}</strong>
-                    <small>{entry.startTime || entry.time || "Uhrzeit offen"} - {entry.area} - {entry.boatClass}</small>
-                    <p>{entry.goal || entry.focus || "Kein Trainingsziel hinterlegt."}</p>
-                  </div>
-                  <b>{linkedJournal ? "im Journal" : planStatusLabels[entry.status] ?? "Geplant"}</b>
+      <section className="po-training-list">
+        {todayPlan.length > 0 ? todayPlan.map((entry) => {
+          const linkedJournal = journalByPlan.get(entry.id);
+          const isDone = isDoneStatus(entry.status);
+          const skipped = isSkippedStatus(entry.status);
+
+          return (
+            <PaddlioOneCard className={`po-training-session-card ${isDone ? "is-done" : ""} ${skipped ? "is-skipped" : ""}`} key={entry.id}>
+              <div className="po-card-heading-row">
+                <div>
+                  <p className="po-eyebrow">{entry.startTime || entry.time || "Uhrzeit offen"} · {entry.durationMinutes} min</p>
+                  <h2>{entry.title || entry.trainingType}</h2>
+                  <p>{entry.goal || entry.focus || "Kein Trainingsziel hinterlegt."}</p>
                 </div>
-                <div className="smart-detail-grid">
-                  <span>Geplant: {entry.durationMinutes} min</span>
-                  <span>Intensität: {entry.intensity}</span>
-                  <span>Status: {planStatusLabels[entry.status] ?? entry.status}</span>
-                </div>
-                {linkedJournal ? (
-                  <p className="card-note">
-                    Durchgeführt: {linkedJournal.actualDurationMinutes ?? entry.durationMinutes} min
-                    {linkedJournal.averageHeartRate ? `, Durchschnittspuls ${linkedJournal.averageHeartRate}` : ""}.
-                    Bewertung: {linkedJournal.trainingRating}/10
-                  </p>
-                ) : null}
-                <div className="card-actions">
-                  <button type="button" className="edit-button" onClick={onOpenPlan} aria-label={`Training ${entry.title || entry.trainingType} ansehen`}>Training ansehen</button>
-                  <button type="button" onClick={() => onPlanStatusChange(entry.id, "in_progress")} aria-label={`Training ${entry.title || entry.trainingType} starten`}>Training starten</button>
-                  <button type="button" className="save-button" onClick={() => openCompletion(entry, "completed")} aria-label={`Training ${entry.title || entry.trainingType} als durchgeführt markieren`}>Durchgeführt</button>
-                  <button type="button" onClick={() => openCompletion(entry, "partially_completed")} aria-label={`Training ${entry.title || entry.trainingType} als teilweise durchgeführt markieren`}>Teilweise</button>
-                  <button type="button" className="delete-button" onClick={() => openCompletion(entry, "skipped")} aria-label={`Training ${entry.title || entry.trainingType} als übersprungen markieren`}>Übersprungen</button>
-                </div>
-              </article>
-            );
-          }) : (
-            <article className="empty-state action-empty">
-              <strong>Noch kein Training für heute geplant.</strong>
-              <span>Du kannst ein freies Training eintragen oder direkt eine neue Einheit planen.</span>
-              <div className="inline-actions">
-                <button type="button" className="save-button" onClick={onOpenSessions} aria-label="Freies Training für heute eintragen">Freies Training eintragen</button>
-                <button type="button" onClick={onOpenPlan} aria-label="Neue Einheit für heute planen">Einheit planen</button>
+                <PaddlioOneStatusChip tone={skipped ? "danger" : isDone ? "success" : "info"}>
+                  {linkedJournal ? "im Journal" : planStatusLabels[entry.status] ?? "Geplant"}
+                </PaddlioOneStatusChip>
               </div>
-            </article>
-          )}
-        </div>
+              <div className="po-training-meta-grid">
+                <span>{entry.area}</span>
+                <span>{entry.boatClass}</span>
+                <span>Intensität {entry.intensity}</span>
+              </div>
+              {linkedJournal ? (
+                <p className="po-card-note">
+                  Durchgeführt: {linkedJournal.actualDurationMinutes ?? entry.durationMinutes} min
+                  {linkedJournal.averageHeartRate ? ` · Ø HF ${linkedJournal.averageHeartRate}` : ""} · Bewertung {linkedJournal.trainingRating}/10
+                </p>
+              ) : null}
+              <div className="po-action-row po-training-actions">
+                <PaddlioOneButton variant="secondary" icon="calendar" onClick={onOpenPlan}>Ansehen</PaddlioOneButton>
+                <PaddlioOneButton variant="primary" icon="training" onClick={() => onPlanStatusChange(entry.id, "in_progress")}>Starten</PaddlioOneButton>
+                <PaddlioOneButton variant="secondary" icon="message" onClick={() => openCompletion(entry, "completed")}>Durchgeführt</PaddlioOneButton>
+                <PaddlioOneButton variant="secondary" onClick={() => openCompletion(entry, "partially_completed")}>Teilweise</PaddlioOneButton>
+                <PaddlioOneButton variant="ghost" onClick={() => openCompletion(entry, "skipped")}>Übersprungen</PaddlioOneButton>
+              </div>
+            </PaddlioOneCard>
+          );
+        }) : (
+          <PaddlioOneCard className="po-empty-training-day">
+            <h2>Noch kein Training für heute geplant.</h2>
+            <p>Du kannst ein freies Training eintragen oder direkt eine Einheit planen.</p>
+            <div className="po-action-row">
+              <PaddlioOneButton variant="primary" icon="training" onClick={onOpenSessions}>Freies Training</PaddlioOneButton>
+              <PaddlioOneButton variant="secondary" icon="calendar" onClick={onOpenPlan}>Einheit planen</PaddlioOneButton>
+            </div>
+          </PaddlioOneCard>
+        )}
       </section>
 
       {completionEntry ? (
-        <section className="section-block">
-          <div className="section-heading">
+        <PaddlioOneCard className="po-completion-panel">
+          <div className="po-card-heading-row">
             <div>
-              <p className="eyebrow">{completionLabel[completionStatus]}</p>
-              <h3>{completionEntry.title || completionEntry.trainingType}</h3>
+              <p className="po-eyebrow">{completionLabel[completionStatus]}</p>
+              <h2>{completionEntry.title || completionEntry.trainingType}</h2>
+              <p>Soll/Ist, RPE und Feedback direkt im Journal speichern.</p>
             </div>
           </div>
-          <form className="entry-form" onSubmit={handleCompletionSubmit}>
-            <div className="form-grid">
-              <label>Tatsächliche Dauer<input name="actualDurationMinutes" type="number" min="0" defaultValue={completionEntry.durationMinutes} /></label>
-              <label>Strecke<input name="actualDistanceKm" type="number" min="0" step="0.1" placeholder="km" /></label>
-              <label>Durchschnittspuls<input name="averageHeartRate" type="number" min="0" step="1" placeholder="bpm" /></label>
-              <label>Belastung<input name="perceivedExertion" type="number" min="1" max="10" defaultValue={completionEntry.intensity === "hart" ? 7 : 5} /></label>
-              <label>Bewertung<input name="trainingRating" type="number" min="1" max="10" defaultValue={7} /></label>
-              <label>Gefühl<input name="feeling" type="number" min="1" max="10" defaultValue={7} /></label>
-              <label>Müdigkeit<input name="fatigue" type="number" min="1" max="10" defaultValue={4} /></label>
-              <label>Schlaf<input name="sleep" type="number" min="1" max="10" defaultValue={7} /></label>
-              <label>Motivation<input name="motivation" type="number" min="1" max="10" defaultValue={7} /></label>
+          <form className="po-form po-form-compact" onSubmit={handleCompletionSubmit}>
+            <div className="po-form-grid">
+              <PaddlioOneTextField label="Tatsächliche Dauer" name="actualDurationMinutes" type="number" min="0" defaultValue={completionEntry.durationMinutes} />
+              <PaddlioOneTextField label="Strecke" name="actualDistanceKm" type="number" min="0" step="0.1" placeholder="km" />
+              <PaddlioOneTextField label="Ø Herzfrequenz" name="averageHeartRate" type="number" min="0" step="1" placeholder="bpm" />
+              <PaddlioOneTextField label="Belastung" name="perceivedExertion" type="number" min="1" max="10" defaultValue={completionEntry.intensity === "hart" ? 7 : 5} />
+              <PaddlioOneTextField label="Bewertung" name="trainingRating" type="number" min="1" max="10" defaultValue={7} />
+              <PaddlioOneTextField label="Gefühl" name="feeling" type="number" min="1" max="10" defaultValue={7} />
+              <PaddlioOneTextField label="Müdigkeit" name="fatigue" type="number" min="1" max="10" defaultValue={4} />
+              <PaddlioOneTextField label="Schlaf" name="sleep" type="number" min="1" max="10" defaultValue={7} />
+              <PaddlioOneTextField label="Motivation" name="motivation" type="number" min="1" max="10" defaultValue={7} />
             </div>
-            <label>Schmerzen oder Beschwerden<textarea name="painNotes" rows={2} /></label>
-            <label>Notizen<textarea name="notes" rows={3} defaultValue={completionEntry.notes || completionEntry.note} /></label>
-            <div className="form-actions">
-              <button className="save-button" type="submit" aria-label={`${completionEntry.title || completionEntry.trainingType} im Trainingstagebuch speichern`}>Im Tagebuch speichern</button>
-              <button className="ghost-button wide" type="button" onClick={() => setCompletionEntry(null)}>Abbrechen</button>
+            <label className="po-field po-field-wide">
+              <span>Schmerzen oder Beschwerden</span>
+              <textarea name="painNotes" rows={2} />
+            </label>
+            <label className="po-field po-field-wide">
+              <span>Notizen</span>
+              <textarea name="notes" rows={3} defaultValue={completionEntry.notes || completionEntry.note} />
+            </label>
+            <div className="po-action-row">
+              <PaddlioOneButton variant="primary" type="submit" icon="message">Im Tagebuch speichern</PaddlioOneButton>
+              <PaddlioOneButton variant="ghost" onClick={() => setCompletionEntry(null)}>Abbrechen</PaddlioOneButton>
+              <PaddlioOneButton variant="secondary" icon="message" onClick={onOpenJournal}>Journal öffnen</PaddlioOneButton>
             </div>
           </form>
-        </section>
+        </PaddlioOneCard>
       ) : null}
     </div>
   );

@@ -1,5 +1,11 @@
-﻿import { APP_SLOGAN, APP_VERSION } from "../brand";
-import { AppCard } from "../components/AppCard";
+import { APP_SLOGAN, APP_VERSION } from "../brand";
+import {
+  PaddlioOneButton,
+  PaddlioOneCard,
+  PaddlioOneMetricCard,
+  PaddlioOnePageHeader,
+  PaddlioOneStatusChip,
+} from "../components/paddlio-one/PaddlioOneComponents";
 import { getTrainingsForCurrentUser } from "../domain/accessControl";
 import { getTrainingIntelligence } from "../domain/intelligence";
 import { getLastTrainingSession, getNextPlannedEntry, getWeeklyPlanSummary } from "../domain/metrics";
@@ -13,7 +19,10 @@ type DashboardViewProps = {
   onNavigate: (page: PageId) => void;
   onOpenMoreSegment: (segment: DashboardMoreTarget) => void;
   onOpenSmartCoach: () => void;
-  onUpdateRecommendation: (recommendation: SmartCoachRecommendation, updates: Partial<Pick<SmartCoachRecommendation, "status" | "note">>) => void;
+  onUpdateRecommendation: (
+    recommendation: SmartCoachRecommendation,
+    updates: Partial<Pick<SmartCoachRecommendation, "status" | "note">>,
+  ) => void;
   onQuickAction: (action: DashboardQuickAction) => void;
 };
 
@@ -28,10 +37,7 @@ const todayText = (): string =>
   });
 
 const formatDate = (date?: string): string => {
-  if (!date) {
-    return "Noch keine Einheit";
-  }
-
+  if (!date) return "Kein Termin";
   return dateKeyToLocalDate(date).toLocaleDateString("de-DE", {
     weekday: "short",
     day: "2-digit",
@@ -39,10 +45,7 @@ const formatDate = (date?: string): string => {
   });
 };
 
-const formatEntryTime = (time?: string): string => time || "ohne Uhrzeit";
-
-const formatMinutes = (minutes: number): string =>
-  minutes > 0 ? `${Math.round(minutes)} min` : "--";
+const formatMinutes = (minutes: number): string => (minutes > 0 ? `${Math.round(minutes)} min` : "--");
 
 const weekDayLabels = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 
@@ -62,7 +65,6 @@ export function DashboardView({
   const nextTraining = getNextPlannedEntry(scopedPlan);
   const weeklyPlan = getWeeklyPlanSummary(scopedPlan);
   const lastTraining = getLastTrainingSession(data.training);
-  const currentWeekEntries = weeklyPlan.entries.slice(0, 7);
   const todayKey = todayDateKey();
   const todayEntries = scopedPlan.filter((entry) => entry.date === todayKey);
   const unreadDirect = data.directMessages.filter((item) => item.receiverId === user.userId && !item.isRead && !item.deletedAt).length;
@@ -71,13 +73,13 @@ export function DashboardView({
     !data.trainingFeedback.some((feedback) => feedback.trainingId === entry.id),
   ).length;
   const openTasks = data.taskAssignments.filter((item) => item.assignedTo === user.userId && item.status !== "done").length;
-  const openAssignments = data.taskAssignments
+  const openTaskItems = data.taskAssignments
     .filter((item) => item.assignedTo === user.userId && item.status !== "done")
-    .slice(0, 5);
-  const openTaskItems = openAssignments.map((assignment) => ({
-    assignment,
-    task: data.tasks.find((item) => item.id === assignment.taskId),
-  }));
+    .slice(0, 5)
+    .map((assignment) => ({
+      assignment,
+      task: data.tasks.find((item) => item.id === assignment.taskId),
+    }));
   const latestMessages = data.directMessages
     .filter((item) => (item.senderId === user.userId || item.receiverId === user.userId) && !item.deletedAt)
     .slice(-4)
@@ -102,280 +104,190 @@ export function DashboardView({
     ? `${intelligence.todayTraining.time || "ohne Uhrzeit"} · ${intelligence.todayTraining.area}`
     : nextTraining
       ? `${formatDate(nextTraining.date)} · ${nextTraining.startTime || nextTraining.time || "ohne Uhrzeit"}`
-      : "Kein Training geplant";
-  const nextDescription = intelligence.todayTraining?.goal || nextTraining?.goal || nextTraining?.focus || "Nutze den Tag bewusst für Erholung oder eine lockere Einheit.";
-  const trainerMessageText = unreadDirect > 0
-    ? `${unreadDirect} neue Nachricht${unreadDirect === 1 ? "" : "en"}`
-    : "Keine neuen Nachrichten";
-  const feedbackText = openFeedback > 0
-    ? `${openFeedback} Rückmeldung${openFeedback === 1 ? "" : "en"} offen`
-    : "Alles aktuell";
+      : "Heute ist kein Training geplant";
+  const nextDescription =
+    intelligence.todayTraining?.goal ||
+    nextTraining?.goal ||
+    nextTraining?.focus ||
+    "Nutze den Tag bewusst: locker bewegen, erholen oder die nächste Einheit vorbereiten.";
 
   return (
-    <div className="stack intelligence-dashboard home-v5 paddlio-work-dashboard">
-      <section className="home-v5-hero" aria-labelledby="today-title">
-        <div className="home-avatar">
-          {user.profile.profileImageDataUrl ? (
-            <img src={user.profile.profileImageDataUrl} alt="" />
-          ) : (
-            getInitials(user.profile)
-          )}
-        </div>
-        <div>
-          <p className="eyebrow">{todayText()}</p>
-          <h1 id="today-title">Heute</h1>
-          <p className="home-welcome-line">{isAdmin ? "Hallo Admin" : getGreeting(heroName)}</p>
-          <p className="hero-slogan">{APP_SLOGAN}</p>
-          <p className="muted">Version {APP_VERSION}</p>
-        </div>
+    <div className="po-workspace-dashboard">
+      <PaddlioOnePageHeader
+        eyebrow={`${APP_VERSION} · ${todayText()}`}
+        title={getGreeting(heroName)}
+        description={APP_SLOGAN}
+        action={
+          <div className="po-user-badge" aria-label={`Aktiver Benutzer ${displayName}`}>
+            {user.profile.profileImageDataUrl ? <img src={user.profile.profileImageDataUrl} alt="" /> : <span>{getInitials(user.profile)}</span>}
+          </div>
+        }
+      />
+
+      <section className="po-kpi-strip" aria-label="Tageskennzahlen">
+        <PaddlioOneMetricCard label="Heute" value={todayEntries.length} detail="Trainings" icon="calendar" tone="primary" />
+        <PaddlioOneMetricCard label="Feedback" value={openFeedback} detail="offen" icon="message" tone={openFeedback > 0 ? "warning" : "success"} />
+        <PaddlioOneMetricCard label="Aufgaben" value={openTasks} detail="warten" icon="target" tone={openTasks > 0 ? "info" : "muted"} />
+        <PaddlioOneMetricCard label="Nächstes" value={nextTraining?.startTime || nextTraining?.time || "--"} detail={nextTraining ? formatDate(nextTraining.date) : "frei"} icon="timer" />
       </section>
 
-      <section className="home-v5-training" aria-labelledby="today-training-title">
-        <div>
-          <p className="eyebrow">Heute trainieren</p>
-          <h2 id="today-training-title">{nextTitle}</h2>
-          <p>{nextMeta}</p>
-          <span>{nextDescription}</span>
+      <section className="po-dashboard-layout" aria-label="Trainingszentrale">
+        <div className="po-dashboard-column">
+          <PaddlioOneCard className="po-next-training" tone="primary">
+            <div className="po-card-heading-row">
+              <div>
+                <p className="po-eyebrow">Nächstes Training</p>
+                <h2>{nextTitle}</h2>
+                <p>{nextMeta}</p>
+              </div>
+              <PaddlioOneStatusChip tone={nextTraining ? "info" : "muted"}>{nextTraining ? "geplant" : "frei"}</PaddlioOneStatusChip>
+            </div>
+            <p>{nextDescription}</p>
+            <div className="po-training-meta-grid">
+              <span>{nextTraining?.durationMinutes ? `${nextTraining.durationMinutes} min` : "Dauer offen"}</span>
+              <span>{nextTraining?.boatClass || "Boot offen"}</span>
+              <span>{nextTraining?.intensity || "locker"}</span>
+            </div>
+            <div className="po-action-row">
+              <PaddlioOneButton variant="primary" icon="training" onClick={() => onNavigate("training")}>
+                Training öffnen
+              </PaddlioOneButton>
+              <PaddlioOneButton variant="secondary" icon="message" onClick={() => onNavigate("communication")}>
+                Feedback
+              </PaddlioOneButton>
+            </div>
+          </PaddlioOneCard>
+
+          <PaddlioOneCard className="po-quick-actions">
+            <div className="po-card-heading-row">
+              <div>
+                <p className="po-eyebrow">Schnellaktionen</p>
+                <h2>Direkt erledigen</h2>
+              </div>
+            </div>
+            <div className="po-quick-action-grid">
+              <PaddlioOneButton variant="secondary" icon="training" onClick={() => onQuickAction("training")}>Training</PaddlioOneButton>
+              <PaddlioOneButton variant="secondary" icon="calendar" onClick={() => onNavigate("plan")}>Planen</PaddlioOneButton>
+              <PaddlioOneButton variant="secondary" icon="message" onClick={() => onQuickAction("journal")}>Journal</PaddlioOneButton>
+              <PaddlioOneButton variant="secondary" icon="boat" onClick={() => onQuickAction("material")}>Material</PaddlioOneButton>
+            </div>
+          </PaddlioOneCard>
         </div>
-        <button
-          className="save-button"
-          type="button"
-          onClick={() => onQuickAction("training")}
-          aria-label={isCoachLike ? "Neue Trainingseinheit planen" : "Training für heute starten oder eintragen"}
-        >
-          {isCoachLike ? "Training planen" : "Training starten"}
-        </button>
-      </section>
 
-      <section className="home-v5-section" aria-labelledby="weekly-goal-title">
-        <div className="section-heading simple">
-          <div>
-            <p className="eyebrow">Wochenziel</p>
-            <h2 id="weekly-goal-title">Dein Fortschritt</h2>
-          </div>
-          <strong>{weeklyPlan.completedCount}/{Math.max(weeklyPlan.completedCount, scopedPlan.length || 1)}</strong>
-        </div>
-        <div className="progress-track large">
-          <span style={{ width: `${Math.min(100, Math.max(8, intelligence.trainingQuote))}%` }} />
-        </div>
-        <p className="muted">{weeklyPlan.minutes} Minuten · {intelligence.trainingQuote}% Trainingsquote</p>
-      </section>
-
-      <section className="dashboard-card-grid home-v5-metrics" aria-label="Wichtige Informationen">
-        <AppCard
-          icon="training"
-          title="Letzte Einheit"
-          subtitle={formatDate(lastTraining?.date)}
-          value={lastTraining ? `${lastTraining.durationMinutes} min` : "--"}
-          tone="primary"
-        >
-          <p className="card-note">{lastTraining?.focus || "Noch kein Training dokumentiert."}</p>
-        </AppCard>
-
-        <AppCard
-          icon="message"
-          title="Trainer Nachrichten"
-          subtitle="Team"
-          value={trainerMessageText}
-          tone="accent"
-        >
-          <button className="ghost-button wide" type="button" onClick={() => onNavigate("communication")} aria-label="Trainer Nachrichten im Team-Bereich öffnen">
-            Öffnen
-          </button>
-        </AppCard>
-
-        <AppCard
-          icon="target"
-          title="Feedback"
-          subtitle={`${openTasks} Aufgaben offen`}
-          value={feedbackText}
-          tone={openFeedback > 0 || openTasks > 0 ? "warning" : "success"}
-        >
-          <button
-            className="ghost-button wide"
-            type="button"
-            onClick={() => isAdmin ? onOpenMoreSegment("feedback") : onNavigate("training")}
-            aria-label={isAdmin ? "Beta Feedback prüfen" : "Trainingsfeedback öffnen"}
-          >
-            Prüfen
-          </button>
-        </AppCard>
-      </section>
-
-      <section className="dashboard-work-grid" aria-label="Arbeitsübersicht">
-        <article className="section-block dashboard-work-panel dashboard-today-panel">
-          <div className="section-heading compact">
-            <div>
-              <p className="eyebrow">Übersicht</p>
-              <h2>Heute</h2>
+        <div className="po-dashboard-main">
+          <PaddlioOneCard className="po-week-overview">
+            <div className="po-card-heading-row">
+              <div>
+                <p className="po-eyebrow">Diese Woche</p>
+                <h2>Wochenplan</h2>
+              </div>
+              <PaddlioOneStatusChip tone="primary">{weeklyPlan.completedCount}/{weeklyPlan.totalCount} erledigt</PaddlioOneStatusChip>
             </div>
-            <strong>{formatEntryTime(nextTraining?.startTime || nextTraining?.time)}</strong>
-          </div>
-          <div className="dashboard-kpi-strip">
-            <div>
-              <span>Trainings</span>
-              <strong>{todayEntries.length}</strong>
+            <div className="po-week-bars" aria-label="Trainingsminuten pro Wochentag">
+              {weekDayLabels.map((label, index) => (
+                <div className="po-week-bar" key={label}>
+                  <span style={{ height: `${Math.max(8, (weeklyMinutesByDay[index] / maxWeekMinutes) * 100)}%` }} />
+                  <small>{label}</small>
+                </div>
+              ))}
             </div>
-            <div>
-              <span>Feedback</span>
-              <strong>{openFeedback}</strong>
-            </div>
-            <div>
-              <span>Aufgaben</span>
-              <strong>{openTasks}</strong>
-            </div>
-          </div>
-          <button className="dashboard-next-card" type="button" onClick={() => onNavigate("training")}>
-            <span>
-              <strong>{nextTitle}</strong>
-              <small>{nextMeta}</small>
-            </span>
-            <em>{nextTraining?.status || "geplant"}</em>
-          </button>
-        </article>
-
-        <article className="section-block dashboard-work-panel dashboard-work-panel-wide">
-          <div className="section-heading compact">
-            <div>
-              <p className="eyebrow">Wochenplan</p>
-              <h2>Diese Woche</h2>
-            </div>
-            <button className="ghost-button" type="button" onClick={() => onNavigate("plan")}>
-              Kalender
-            </button>
-          </div>
-          <div className="dashboard-week-list">
-            {currentWeekEntries.length > 0 ? currentWeekEntries.map((entry) => (
-              <button className="dashboard-week-row" type="button" key={entry.id} onClick={() => onNavigate("plan")}>
-                <span>
+            <div className="po-week-list">
+              {weeklyPlan.entries.slice(0, 7).map((entry) => (
+                <button className="po-week-row" key={entry.id} type="button" onClick={() => onNavigate("plan")}>
                   <strong>{formatDate(entry.date)}</strong>
-                  <small>{formatEntryTime(entry.startTime || entry.time)} · {formatMinutes(entry.durationMinutes)}</small>
-                </span>
-                <span>
-                  <strong>{entry.title || entry.trainingType}</strong>
-                  <small>{entry.focus || entry.goal || "Training"}</small>
-                </span>
-                <em>{entry.status || "geplant"}</em>
-              </button>
-            )) : (
-              <p className="empty-state compact">Noch keine Einheiten für diese Woche geplant.</p>
-            )}
-          </div>
-        </article>
+                  <span>{entry.title || entry.trainingType}</span>
+                  <em>{entry.startTime || entry.time || "--"}</em>
+                </button>
+              ))}
+              {weeklyPlan.entries.length === 0 ? <p className="po-muted">Noch keine Einheiten in dieser Woche.</p> : null}
+            </div>
+          </PaddlioOneCard>
 
-        <article className="section-block dashboard-work-panel dashboard-load-panel">
-          <div className="section-heading compact">
-            <div>
-              <p className="eyebrow">Belastung</p>
-              <h2>Diese Woche</h2>
+          <PaddlioOneCard className="po-load-panel">
+            <div className="po-card-heading-row">
+              <div>
+                <p className="po-eyebrow">Belastung</p>
+                <h2>Aktueller Status</h2>
+              </div>
+              <PaddlioOneStatusChip tone={intelligence.athleteStatus.tone === "warning" ? "warning" : intelligence.athleteStatus.tone === "success" ? "success" : "info"}>
+                {intelligence.athleteStatus.title}
+              </PaddlioOneStatusChip>
             </div>
-            <strong>{weeklyPlan.minutes} min</strong>
-          </div>
-          <div className="dashboard-load-chart" aria-label="Trainingsminuten pro Wochentag">
-            {weeklyMinutesByDay.map((minutes, index) => (
-              <span key={weekDayLabels[index]}>
-                <i style={{ height: `${Math.max(12, Math.round((minutes / maxWeekMinutes) * 100))}%` }} />
-                <small>{weekDayLabels[index]}</small>
-              </span>
-            ))}
-          </div>
-        </article>
+            <p>{intelligence.athleteStatus.detail}</p>
+            <div className="po-load-grid">
+              <span><strong>{formatMinutes(weeklyPlan.minutes)}</strong><small>durchgeführt</small></span>
+              <span><strong>{lastTraining ? formatDate(lastTraining.date) : "--"}</strong><small>letzte Einheit</small></span>
+              <span><strong>{polarAvgHr || "--"}</strong><small>Ø HF Polar</small></span>
+              <span><strong>{formatMinutes(polarMinutes)}</strong><small>Polar-Zeit</small></span>
+            </div>
+          </PaddlioOneCard>
+        </div>
 
-        <article className="section-block dashboard-work-panel">
-          <div className="section-heading compact">
-            <div>
-              <p className="eyebrow">Polar</p>
-              <h2>Belastung</h2>
+        <div className="po-dashboard-side">
+          <PaddlioOneCard>
+            <div className="po-card-heading-row">
+              <div>
+                <p className="po-eyebrow">Rückmeldungen</p>
+                <h2>{openFeedback > 0 ? `${openFeedback} offen` : "Alles aktuell"}</h2>
+              </div>
+              <PaddlioOneButton variant="ghost" icon="message" onClick={() => onNavigate("communication")}>Öffnen</PaddlioOneButton>
             </div>
-            <button className="ghost-button" type="button" onClick={() => onNavigate("analysis")}>
-              Analyse
-            </button>
-          </div>
-          <div className="dashboard-mini-metrics">
-            <div>
-              <span>Einheiten</span>
-              <strong>{polarSessions.length}</strong>
-            </div>
-            <div>
-              <span>Zeit</span>
-              <strong>{formatMinutes(polarMinutes)}</strong>
-            </div>
-            <div>
-              <span>Ø HF</span>
-              <strong>{polarAvgHr > 0 ? polarAvgHr : "--"}</strong>
-            </div>
-            <div>
-              <span>Quote</span>
-              <strong>{intelligence.trainingQuote}%</strong>
-            </div>
-          </div>
-        </article>
+          </PaddlioOneCard>
 
-        <article className="section-block dashboard-work-panel">
-          <div className="section-heading compact">
-            <div>
-              <p className="eyebrow">Aufgaben</p>
-              <h2>Offen</h2>
+          <PaddlioOneCard className="po-compact-list">
+            <div className="po-card-heading-row">
+              <div>
+                <p className="po-eyebrow">Aufgaben</p>
+                <h2>Heute relevant</h2>
+              </div>
+              <PaddlioOneStatusChip tone={openTasks > 0 ? "warning" : "success"}>{openTasks}</PaddlioOneStatusChip>
             </div>
-            <strong>{openTasks}</strong>
-          </div>
-          <div className="dashboard-task-list">
             {openTaskItems.length > 0 ? openTaskItems.map(({ assignment, task }) => (
-              <button className="dashboard-task-row" type="button" key={assignment.id} onClick={() => onOpenMoreSegment("coach")}>
-                <span>
-                  <strong>{task?.title || "Aufgabe"}</strong>
-                  <small>{task?.dueDate ? formatDate(task.dueDate) : "ohne Fälligkeit"}</small>
-                </span>
-                <em>{assignment.status}</em>
+              <button className="po-task-row" key={assignment.id} type="button" onClick={() => onNavigate("communication")}>
+                <span>{task?.title || "Aufgabe"}</span>
+                <em>{task?.dueDate ? formatDate(task.dueDate) : "offen"}</em>
               </button>
-            )) : (
-              <p className="empty-state compact">Keine offenen Aufgaben.</p>
-            )}
-          </div>
-        </article>
+            )) : <p className="po-muted">Keine offenen Aufgaben.</p>}
+          </PaddlioOneCard>
 
-        <article className="section-block dashboard-work-panel">
-          <div className="section-heading compact">
-            <div>
-              <p className="eyebrow">Nachrichten</p>
-              <h2>Team</h2>
+          <PaddlioOneCard className="po-compact-list">
+            <div className="po-card-heading-row">
+              <div>
+                <p className="po-eyebrow">Nachrichten</p>
+                <h2>{unreadDirect > 0 ? `${unreadDirect} ungelesen` : "Keine neuen"}</h2>
+              </div>
+              <PaddlioOneButton variant="ghost" icon="message" onClick={() => onNavigate("communication")}>Chat</PaddlioOneButton>
             </div>
-            <button className="ghost-button" type="button" onClick={() => onNavigate("communication")}>
-              Öffnen
-            </button>
-          </div>
-          <div className="dashboard-message-list">
             {latestMessages.length > 0 ? latestMessages.map((message) => (
-              <button className="dashboard-message-row" type="button" key={message.id} onClick={() => onNavigate("communication")}>
-                <span>
-                  <strong>{message.senderId === user.userId ? "Gesendet" : "Neu"}</strong>
-                  <small>{message.message}</small>
-                </span>
-                {!message.isRead && message.receiverId === user.userId ? <em>ungelesen</em> : null}
+              <button className="po-message-row" key={message.id} type="button" onClick={() => onNavigate("communication")}>
+                <span>{message.senderId === user.userId ? "Du" : "Nachricht"}</span>
+                <em>{message.message}</em>
               </button>
-            )) : (
-              <p className="empty-state compact">Keine neuen Nachrichten.</p>
-            )}
-          </div>
-        </article>
+            )) : <p className="po-muted">Keine Nachrichten im Verlauf.</p>}
+          </PaddlioOneCard>
 
-        <article className="section-block dashboard-work-panel dashboard-quick-panel">
-          <div className="section-heading compact">
-            <div>
-              <p className="eyebrow">Schnellzugriff</p>
-              <h2>Aktionen</h2>
-            </div>
-          </div>
-          <div className="dashboard-quick-actions">
-            <button type="button" onClick={() => onQuickAction("training")}>Training hinzufügen</button>
-            <button type="button" onClick={() => onNavigate("plan")}>Woche planen</button>
-            <button type="button" onClick={() => onNavigate("training")}>Vorlagen nutzen</button>
-            <button type="button" onClick={() => onNavigate("communication")}>Rückmeldungen</button>
-          </div>
-        </article>
+          {isCoachLike ? (
+            <PaddlioOneCard className="po-placeholder-card">
+              <p className="po-eyebrow">Wetter</p>
+              <h2>Platzhalter</h2>
+              <p>Wetter, Wasserstand und Trainingsort werden später hier kompakt angezeigt.</p>
+            </PaddlioOneCard>
+          ) : null}
+
+          <PaddlioOneCard className="po-placeholder-card">
+            <p className="po-eyebrow">Smart Coach</p>
+            <h2>Platzhalter</h2>
+            <p>KI-Hinweise bleiben vorbereitet, blockieren aber keine Trainingsabläufe.</p>
+          </PaddlioOneCard>
+        </div>
+      </section>
+
+      <section className="po-dashboard-more-links" aria-label="Weitere Bereiche">
+        <PaddlioOneButton variant="ghost" icon="bolt" onClick={() => onOpenMoreSegment("beta")}>Beta-Status</PaddlioOneButton>
+        <PaddlioOneButton variant="ghost" icon="message" onClick={() => onOpenMoreSegment("feedback")}>Feedback senden</PaddlioOneButton>
+        {isCoachLike ? <PaddlioOneButton variant="ghost" icon="club" onClick={() => onOpenMoreSegment("coach")}>Coach-Hub</PaddlioOneButton> : null}
+        <PaddlioOneButton variant="ghost" icon="more" onClick={() => onOpenMoreSegment("notifications")}>Hinweise</PaddlioOneButton>
       </section>
     </div>
   );
 }
-
-
