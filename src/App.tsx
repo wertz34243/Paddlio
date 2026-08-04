@@ -59,7 +59,6 @@ import { RecordsView } from "./views/RecordsView";
 import { SeasonView } from "./views/SeasonView";
 import { SettingsView } from "./views/SettingsView";
 import { SmartCoachView } from "./views/SmartCoachView";
-import { TrainingCalendarView } from "./views/TrainingCalendarView";
 import { TrainingJournalView } from "./views/TrainingJournalView";
 import { TrainingOverviewView } from "./views/TrainingOverviewView";
 import { TrainingView } from "./views/TrainingView";
@@ -71,6 +70,7 @@ const PolarIntegrationView = lazy(() => import("./views/PolarIntegrationView").t
 const PaddlioOneComponentsPreview = lazy(() => import("./views/PaddlioOneComponentsPreview").then((module) => ({ default: module.PaddlioOneComponentsPreview })));
 const PaddlioOneDesignPreview = lazy(() => import("./views/PaddlioOneDesignPreview").then((module) => ({ default: module.PaddlioOneDesignPreview })));
 const ResultsReadinessView = lazy(() => import("./views/ResultsReadinessView").then((module) => ({ default: module.ResultsReadinessView })));
+const TrainingCalendarView = lazy(() => import("./views/TrainingCalendarView").then((module) => ({ default: module.TrainingCalendarView })));
 
 type TrainingSegment = "overview" | "calendar" | "plan" | "sessions" | "journal";
 type CompetitionSegment = "races" | "results" | "bests" | "stats" | "advanced" | "imports" | "coach" | "admin" | "videos";
@@ -863,10 +863,17 @@ function AppContent() {
             journal={data.journal}
             templates={activeData.trainingTemplates}
             clubId={cloudProfile?.club_id || activeUser.profile.club}
+            data={activeData}
+            user={activeUser}
             onOpenPlan={() => setTrainingSegment("plan")}
             onOpenJournal={() => setTrainingSegment("journal")}
             onStatusChange={updatePlanEntryStatus}
             onTemplateInsert={insertCalendarTemplate}
+            onSave={upsertPlanEntry}
+            onDelete={deletePlanEntry}
+            onDeleteSeries={deletePlanEntrySeries}
+            onFeedbackSave={saveTrainingFeedback}
+            onSaveJournal={upsertJournalEntry}
             deviceClass={currentDeviceClass}
           />
         );
