@@ -305,6 +305,7 @@ export function TrainingCalendarView({
   const [query, setQuery] = useState("");
   const [areaFilter, setAreaFilter] = useState<"all" | TrainingArea>("all");
   const [statusFilter, setStatusFilter] = useState<"all" | PlanStatus>("all");
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   const [quickEdit, setQuickEdit] = useState<QuickEditState | null>(null);
   const [feedbackEntry, setFeedbackEntry] = useState<PlanEntry | null>(null);
@@ -504,6 +505,11 @@ export function TrainingCalendarView({
   const nextTraining = [...filteredEntries].filter((entry) => entry.date >= getTodayKey()).sort((a, b) => `${a.date} ${a.startTime || a.time}`.localeCompare(`${b.date} ${b.startTime || b.time}`))[0];
   const weekLoad = weekEntries.reduce((sum, entry) => sum + entry.durationMinutes, 0);
   const completedThisWeek = weekEntries.filter((entry) => isDoneStatus(entry.status)).length;
+  const activeMobileFilters = [
+    areaFilter !== "all" ? { id: "area", label: areaFilter, onClear: () => setAreaFilter("all" as const) } : null,
+    statusFilter !== "all" ? { id: "status", label: planStatusLabels[statusFilter] ?? statusFilter, onClear: () => setStatusFilter("all" as const) } : null,
+    query.trim() ? { id: "query", label: query.trim(), onClear: () => setQuery("") } : null,
+  ].filter(Boolean) as Array<{ id: string; label: string; onClear: () => void }>;
 
   return (
     <div className={`master-calendar-workspace master-calendar-${deviceClass}`}>
@@ -511,7 +517,7 @@ export function TrainingCalendarView({
         <PaddlioOnePageHeader
           eyebrow="Kalender"
           title={visibleModeTitle}
-          description="Vorlagen planen, Einheiten durchführen, Feedback sichern und Soll/Ist direkt nachvollziehen."
+          description={isPhone ? "Training und Termine auf einen Blick." : "Vorlagen planen, Einheiten durchführen, Feedback sichern und Soll/Ist direkt nachvollziehen."}
           action={
             <div className="master-calendar-header-actions">
               {!isPhone ? <PaddlioOneButton variant="secondary" onClick={() => setShowTemplates((value) => !value)}>
@@ -544,6 +550,21 @@ export function TrainingCalendarView({
             </PaddlioOneButton>
           </div> : null}
         </PaddlioOneToolbar>
+
+        {isPhone ? (
+          <section className="mobile-calendar-filter-row" aria-label="Kalenderfilter">
+            <button type="button" className="mobile-filter-button" onClick={() => setMobileFiltersOpen(true)}>
+              Filter
+            </button>
+            <div className="mobile-filter-chips" aria-label="Aktive Filter">
+              {activeMobileFilters.length > 0 ? activeMobileFilters.map((filter) => (
+                <button key={filter.id} type="button" onClick={filter.onClear}>
+                  {filter.label} ×
+                </button>
+              )) : <span>Alle Einträge</span>}
+            </div>
+          </section>
+        ) : null}
 
         {!isPhone ? <section className="master-calendar-controls" aria-label="Kalenderfilter">
           <label>
@@ -667,6 +688,72 @@ export function TrainingCalendarView({
       {weekCopyOpen ? (
         <WeekCopyDialog sourceWeek={weekDays} entries={weekEntries} onCancel={() => setWeekCopyOpen(false)} onCopy={copyWeek} />
       ) : null}
+
+      {isPhone && mobileFiltersOpen ? (
+        <MobileFilterSheet
+          query={query}
+          areaFilter={areaFilter}
+          statusFilter={statusFilter}
+          onQueryChange={setQuery}
+          onAreaChange={setAreaFilter}
+          onStatusChange={setStatusFilter}
+          onClose={() => setMobileFiltersOpen(false)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function MobileFilterSheet({
+  query,
+  areaFilter,
+  statusFilter,
+  onQueryChange,
+  onAreaChange,
+  onStatusChange,
+  onClose,
+}: {
+  query: string;
+  areaFilter: "all" | TrainingArea;
+  statusFilter: "all" | PlanStatus;
+  onQueryChange: (value: string) => void;
+  onAreaChange: (value: "all" | TrainingArea) => void;
+  onStatusChange: (value: "all" | PlanStatus) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="mobile-sheet-backdrop" role="dialog" aria-modal="true" aria-label="Kalenderfilter">
+      <section className="mobile-filter-sheet">
+        <header>
+          <div>
+            <p className="po-eyebrow">Kalender</p>
+            <h2>Filter</h2>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Filter schließen">×</button>
+        </header>
+        <label>
+          Suche
+          <input value={query} onChange={(event) => onQueryChange(event.currentTarget.value)} placeholder="Training, Fokus, Gruppe" />
+        </label>
+        <label>
+          Kategorie
+          <select value={areaFilter} onChange={(event) => onAreaChange(event.currentTarget.value as "all" | TrainingArea)}>
+            <option value="all">Alle</option>
+            {trainingAreas.map((area) => <option key={area} value={area}>{area}</option>)}
+          </select>
+        </label>
+        <label>
+          Status
+          <select value={statusFilter} onChange={(event) => onStatusChange(event.currentTarget.value as "all" | PlanStatus)}>
+            <option value="all">Alle</option>
+            {Object.entries(planStatusLabels).slice(0, 6).map(([status, label]) => <option key={status} value={status}>{label}</option>)}
+          </select>
+        </label>
+        <footer>
+          <PaddlioOneButton variant="secondary" onClick={() => { onQueryChange(""); onAreaChange("all"); onStatusChange("all"); }}>Zurücksetzen</PaddlioOneButton>
+          <PaddlioOneButton variant="primary" onClick={onClose}>Anwenden</PaddlioOneButton>
+        </footer>
+      </section>
     </div>
   );
 }
@@ -955,7 +1042,7 @@ function TemplateCard({ template, onDragStart, onQuickInsert }: { template: Trai
         <small>{template.trainingArea} · {template.trainingType}</small>
         <span>{template.defaultDurationMinutes ?? 60} min · Intensität {template.defaultIntensity}</span>
       </button>
-      <em>{template.isFavorite ? "â˜…" : "â†—"}</em>
+      <em>{template.isFavorite ? "*" : "->"}</em>
     </article>
   );
 }
@@ -1258,7 +1345,7 @@ function WeekCopyDialog({ sourceWeek, entries, onCancel, onCopy }: { sourceWeek:
         <div className="master-week-copy-preview">
           {entries.map((entry) => {
             const offset = Math.round((parseLocalDateOnly(targetMonday).getTime() - parseLocalDateOnly(sourceWeek[0]).getTime()) / 86400000);
-            return <span key={entry.id}>{entry.title || entry.trainingType} â†’ {shortDateLabel(addCalendarDays(entry.date, offset))}</span>;
+            return <span key={entry.id}>{entry.title || entry.trainingType} -&gt; {shortDateLabel(addCalendarDays(entry.date, offset))}</span>;
           })}
         </div>
         <p className="master-hint">Die Zielwoche wird ergänzt. Bestehende Trainings werden nicht überschrieben.</p>

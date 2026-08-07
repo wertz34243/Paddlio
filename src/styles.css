@@ -10686,3 +10686,725 @@ body {
     min-height: 120px;
   }
 }
+
+/* Phase 2.8: mobile-first calendar/training correction.
+   This late layer fixes phone overflow, safe areas and oversized planning UI without touching data flows. */
+html,
+body,
+#root {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.app-shell,
+.page-content,
+.category-shell,
+.section-block,
+.po-card,
+.fitness-card,
+.profile-form,
+.master-calendar-workspace,
+.master-calendar-main,
+.master-calendar-card,
+.master-detail-drawer,
+.master-quick-edit,
+.entry-form {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.app-shell-phone {
+  overflow-x: hidden;
+}
+
+.app-shell-phone .app-header-compact {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: calc(8px + env(safe-area-inset-top)) 14px 8px;
+  border-radius: 0 0 18px 18px;
+}
+
+.app-shell-phone .app-header-compact .app-brand {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.app-shell-phone .app-header-compact .brand-slogan,
+.app-shell-phone .app-header-compact .app-version-line {
+  display: none;
+}
+
+.app-shell-phone .page-title-lockup {
+  min-width: 0;
+  text-align: left;
+}
+
+.app-shell-phone .page-title-lockup h1 {
+  max-width: 100%;
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.05;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-shell-phone .environment-badge {
+  align-self: center;
+  padding: 4px 7px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  line-height: 1;
+}
+
+.app-shell-phone .page-content {
+  padding-top: calc(10px + env(safe-area-inset-top));
+  padding-bottom: calc(118px + env(safe-area-inset-bottom));
+}
+
+.app-shell-phone .segment-nav,
+.app-shell-phone .training-segment-switcher,
+.app-shell-phone .master-segmented-control {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.app-shell-phone .segment-nav::-webkit-scrollbar,
+.app-shell-phone .training-segment-switcher::-webkit-scrollbar,
+.app-shell-phone .master-segmented-control::-webkit-scrollbar {
+  display: none;
+}
+
+.app-shell-phone .segment-button,
+.app-shell-phone .master-segmented-control button {
+  flex: 0 0 auto;
+  max-width: 9.5rem;
+  min-width: auto;
+  min-height: 36px;
+  padding: 7px 11px;
+  font-size: 0.88rem;
+  white-space: nowrap;
+}
+
+.app-shell-phone .bottom-nav,
+.app-shell-phone .bottom-navigation {
+  left: 10px;
+  right: 10px;
+  bottom: max(10px, env(safe-area-inset-bottom));
+  width: auto;
+  max-width: calc(100vw - 20px);
+  padding: 5px 6px calc(5px + env(safe-area-inset-bottom));
+  border-radius: 22px;
+}
+
+.app-shell-phone .bottom-nav button,
+.app-shell-phone .bottom-navigation button {
+  min-width: 0;
+  min-height: 42px;
+  padding: 5px 4px;
+  font-size: 0.68rem;
+}
+
+.app-shell-phone .bottom-nav .nav-icon,
+.app-shell-phone .bottom-navigation .nav-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.app-shell-phone .calendar-category-shell {
+  padding-left: 14px;
+  padding-right: 14px;
+  padding-bottom: calc(118px + env(safe-area-inset-bottom));
+}
+
+.app-shell-phone .calendar-category-shell .po-page-header {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.app-shell-phone .calendar-category-shell .po-page-header h1,
+.app-shell-phone .calendar-category-shell .po-page-header h2 {
+  font-size: 1.45rem;
+  line-height: 1.08;
+}
+
+.app-shell-phone .calendar-category-shell .po-page-header p {
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.app-shell-phone .master-calendar-toolbar {
+  border-radius: 16px;
+  padding: 8px;
+  gap: 8px;
+}
+
+.app-shell-phone .master-calendar-toolbar-group {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.app-shell-phone .master-calendar-toolbar-group button {
+  min-width: 0;
+  padding-left: 7px;
+  padding-right: 7px;
+}
+
+.mobile-calendar-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.mobile-filter-button {
+  flex: 0 0 auto;
+  min-height: 38px;
+  border: 1px solid rgba(144, 224, 239, 0.18);
+  border-radius: 999px;
+  background: rgba(144, 224, 239, 0.12);
+  color: var(--po-text, #f7fbff);
+  padding: 0 14px;
+  font-weight: 800;
+}
+
+.mobile-filter-chips {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.mobile-filter-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-filter-chips button,
+.mobile-filter-chips span {
+  flex: 0 0 auto;
+  max-width: 11rem;
+  min-height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--po-text-muted, #a8b3c7);
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-shell-phone .master-calendar-week-day {
+  border-radius: 16px;
+  padding: 9px;
+}
+
+.app-shell-phone .master-calendar-week-day header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.app-shell-phone .master-training-block {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  padding: 9px 10px;
+  border-radius: 14px;
+}
+
+.app-shell-phone .master-training-block-main {
+  gap: 3px;
+}
+
+.app-shell-phone .master-training-block-main strong {
+  font-size: 0.98rem;
+  line-height: 1.2;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.app-shell-phone .master-training-block-main small,
+.app-shell-phone .master-training-block-main span {
+  font-size: 0.78rem;
+  line-height: 1.25;
+}
+
+.app-shell-phone .master-training-block-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.app-shell-phone .master-training-block-actions .po-status-chip {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+.app-shell-phone .master-training-block-actions button {
+  min-width: 0;
+  min-height: 34px;
+  font-size: 0.78rem;
+}
+
+.app-shell-phone .master-template-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border-radius: 14px;
+}
+
+.app-shell-phone .master-template-card button {
+  min-width: 0;
+  text-align: left;
+}
+
+.app-shell-phone .master-template-card strong {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 0.95rem;
+}
+
+.app-shell-phone .master-template-card small,
+.app-shell-phone .master-template-card span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.76rem;
+}
+
+.mobile-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  align-items: end;
+  background: rgba(2, 6, 12, 0.62);
+}
+
+.mobile-filter-sheet {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  max-height: min(78vh, 620px);
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px 24px 0 0;
+  background: rgba(11, 18, 32, 0.98);
+  padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+  box-shadow: 0 -24px 80px rgba(0, 0, 0, 0.45);
+}
+
+.mobile-filter-sheet header,
+.mobile-filter-sheet footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mobile-filter-sheet header button {
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--po-text, #f7fbff);
+  font-size: 1.25rem;
+}
+
+.mobile-filter-sheet label {
+  display: grid;
+  gap: 6px;
+  color: var(--po-text-muted, #a8b3c7);
+  font-weight: 800;
+}
+
+.mobile-filter-sheet input,
+.mobile-filter-sheet select {
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--po-text, #f7fbff);
+  padding: 0 12px;
+}
+
+.training-create-wizard {
+  gap: 12px;
+}
+
+.training-create-header,
+.training-create-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.training-create-header h4 {
+  margin: 0;
+}
+
+.training-create-header span {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: rgba(144, 224, 239, 0.12);
+  color: var(--po-accent, #36d3ee);
+  padding: 5px 9px;
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.training-create-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.training-create-steps button {
+  min-height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--po-text-muted, #a8b3c7);
+  font-weight: 900;
+}
+
+.training-create-steps button.active {
+  border-color: rgba(54, 211, 238, 0.55);
+  background: rgba(54, 211, 238, 0.16);
+  color: var(--po-text, #f7fbff);
+}
+
+.training-create-step {
+  display: none;
+  gap: 10px;
+}
+
+.training-create-step.active {
+  display: grid;
+}
+
+.wizard-step-title {
+  margin: 0;
+  color: var(--po-text-muted, #a8b3c7);
+  font-weight: 900;
+}
+
+.app-shell-phone .training-sessions-view .summary-strip {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px;
+}
+
+.app-shell-phone .training-sessions-view .summary-strip div {
+  min-width: 0;
+}
+
+.app-shell-phone .training-sessions-panel {
+  padding: 14px;
+  border-radius: 18px;
+}
+
+.app-shell-phone .training-journal-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.app-shell-phone .fitness-card {
+  border-radius: 16px;
+}
+
+.app-shell-phone .fitness-card-main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 10px;
+}
+
+.app-shell-phone .fitness-card-main strong,
+.app-shell-phone .fitness-card-main p,
+.app-shell-phone .fitness-card-main small,
+.app-shell-phone .fitness-card-main b {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-shell-phone .fitness-card-main strong,
+.app-shell-phone .fitness-card-main p {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+.app-shell-phone .fitness-details {
+  padding: 10px;
+}
+
+.app-shell-phone .fitness-details .card-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.app-shell-phone .profile-form {
+  gap: 12px;
+}
+
+.app-shell-phone .profile-hero-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 18px;
+}
+
+.app-shell-phone .profile-hero-card h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-shell-phone .profile-avatar.large {
+  width: 58px;
+  height: 58px;
+}
+
+.app-shell-phone .profile-summary-line {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.app-shell-phone .profile-summary-line span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-shell-phone .profile-form .section-block {
+  padding: 14px;
+  border-radius: 18px;
+}
+
+.app-shell-phone .profile-form input,
+.app-shell-phone .profile-form select,
+.app-shell-phone .profile-form textarea,
+.app-shell-phone .entry-form input,
+.app-shell-phone .entry-form select,
+.app-shell-phone .entry-form textarea {
+  min-width: 0;
+  min-height: 42px;
+  font-size: 0.95rem;
+}
+
+.app-shell-phone .mobile-template-flow {
+  display: grid;
+  gap: 12px;
+}
+
+.app-shell-phone .mobile-template-flow-header {
+  display: grid;
+  gap: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  background: rgba(12, 22, 38, 0.72);
+  padding: 14px;
+}
+
+.app-shell-phone .mobile-template-flow-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.12;
+}
+
+.app-shell-phone .mobile-template-flow-header span {
+  color: var(--po-text-muted, #a8b3c7);
+  font-size: 0.88rem;
+}
+
+.app-shell-phone .mobile-template-list,
+.app-shell-phone .mobile-week-template-list {
+  display: grid;
+  gap: 8px;
+}
+
+.app-shell-phone .mobile-template-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.045);
+  padding: 10px 11px;
+}
+
+.app-shell-phone .mobile-template-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--po-accent, #36d3ee);
+  box-shadow: 0 0 0 5px rgba(54, 211, 238, 0.12);
+}
+
+.app-shell-phone .mobile-template-row button {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  text-align: left;
+}
+
+.app-shell-phone .mobile-template-row strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.98rem;
+}
+
+.app-shell-phone .mobile-template-row small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--po-text-muted, #a8b3c7);
+  font-size: 0.78rem;
+}
+
+.app-shell-phone .mobile-template-row b {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: rgba(54, 211, 238, 0.12);
+  color: var(--po-accent, #36d3ee);
+}
+
+.app-shell-phone .mobile-week-template {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.035);
+  padding: 10px 11px;
+}
+
+.app-shell-phone .mobile-week-template strong,
+.app-shell-phone .mobile-week-template span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-shell-phone .mobile-week-template span {
+  color: var(--po-text-muted, #a8b3c7);
+  font-size: 0.78rem;
+}
+
+@media (max-width: 767px) {
+  .app-shell-phone .app-header-compact {
+    min-height: 44px;
+    padding: calc(7px + env(safe-area-inset-top)) 14px 7px;
+    border-radius: 0 0 16px 16px;
+  }
+
+  .app-shell-phone .app-header-compact .app-brand {
+    font-size: 1rem;
+  }
+
+  .app-shell-phone .page-title-lockup h1 {
+    font-size: 1.08rem;
+    letter-spacing: 0;
+  }
+
+  .app-shell-phone .environment-badge {
+    padding: 3px 6px;
+    font-size: 0.62rem;
+  }
+
+  .app-shell-phone .category-shell.more-category-shell {
+    gap: 12px;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .app-shell-phone .training-segment-switcher .segment-nav {
+    padding: 6px;
+    border-radius: 18px;
+  }
+
+  .app-shell-phone .training-segment-switcher .segment-button {
+    min-height: 34px;
+    padding: 6px 10px;
+    font-size: 0.82rem;
+  }
+
+  .app-shell-phone .device-limited-panel,
+  .app-shell-phone .device-limited-state {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .app-shell-phone .device-limited-panel h2,
+  .app-shell-phone .device-limited-state h2 {
+    font-size: 1.2rem;
+    line-height: 1.15;
+  }
+
+  .app-shell-phone .device-limited-panel p,
+  .app-shell-phone .device-limited-state p {
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+}
+
+@media (min-width: 768px) {
+  .training-create-wizard .training-create-step,
+  .training-create-wizard .training-create-step.active {
+    display: grid;
+  }
+
+  .training-create-steps,
+  .training-create-header span {
+    display: none;
+  }
+}
+
+@media (min-width: 1200px) {
+  .master-detail-drawer,
+  .master-quick-edit {
+    max-width: min(520px, 38vw);
+  }
+}

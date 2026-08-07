@@ -9,7 +9,7 @@ import { createId } from "./data/storage";
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import { canUseCoachArea } from "./domain/accessControl";
 import { getActiveUser, getDisplayName, getInitials } from "./domain/profile";
-import { expandTrainingRepeatDates, getTrainingRepeatSeriesEntries, getWeekdayFromDate, isDoneStatus } from "./domain/trainingPlan";
+import { expandTrainingRepeatDates, getTodayKey, getTrainingRepeatSeriesEntries, getWeekdayFromDate, isDoneStatus } from "./domain/trainingPlan";
 import { useAppChromeVisibility } from "./hooks/useAutoHideOnScroll";
 import { useResponsiveCapabilities } from "./hooks/useResponsiveCapabilities";
 import { getFeatureMode, isFeatureAvailable, pageFeatureMap, type FeatureId, type FeatureMode } from "./lib/deviceCapabilities";
@@ -171,7 +171,7 @@ const pageTitles: Record<PageId, string> = {
   goals: "Ziele",
   records: "Rekorde",
   season: "Saison",
-  plan: "Trainingsplan",
+  plan: "Kalender",
   equipment: "Material",
   profile: "Profil",
   academy: "Akademie",
@@ -817,9 +817,54 @@ function AppContent() {
     });
   };
 
+  const renderMobileTrainingTemplates = () => {
+    const templates = activeData.trainingTemplates.slice(0, 12);
+    const weeklyTemplates = templates
+      .filter((template) => [template.title, ...(template.tags ?? [])].some((value) => value.toLowerCase().includes("woche")))
+      .slice(0, 3);
+
+    return (
+      <section className="mobile-template-flow" aria-label="Trainingsvorlagen">
+        <div className="mobile-template-flow-header">
+          <p className="eyebrow">Vorlagen</p>
+          <h2>Vorlagen kompakt</h2>
+          <span>Auswahl statt Drag & Drop auf Phone.</span>
+        </div>
+        <div className="mobile-template-list">
+          {templates.length > 0 ? templates.map((template) => (
+            <article className="mobile-template-row" key={template.id}>
+              <span className="mobile-template-dot" aria-hidden="true" />
+              <button type="button" onClick={() => insertCalendarTemplate(template, getTodayKey())}>
+                <strong>{template.title}</strong>
+                <small>{template.trainingArea} · {template.defaultDurationMinutes ?? 60} min · Intensität {template.defaultIntensity}</small>
+              </button>
+              <b aria-label={template.isFavorite ? "Favorit" : "Vorlage"}>{template.isFavorite ? "*" : "+"}</b>
+            </article>
+          )) : (
+            <p className="empty-state">Noch keine Vorlagen vorhanden.</p>
+          )}
+        </div>
+        {weeklyTemplates.length > 0 ? (
+          <div className="mobile-week-template-list">
+            <p className="eyebrow">Wochen</p>
+            {weeklyTemplates.map((template) => (
+              <article className="mobile-week-template" key={template.id}>
+                <strong>{template.title}</strong>
+                <span>{template.tags?.slice(0, 3).join(" · ") || "Wochenbaustein"}</span>
+              </article>
+            ))}
+          </div>
+        ) : null}
+      </section>
+    );
+  };
+
   const renderTrainingContent = (segment: TrainingSegment) => {
     switch (segment) {
       case "plan":
+        if (currentDeviceClass === "phone") {
+          return renderMobileTrainingTemplates();
+        }
         return (
           <PlanView
             data={activeData}
@@ -1564,10 +1609,10 @@ function AppContent() {
             <p className="brand-slogan">{APP_SLOGAN}</p>
           </div>
           <div className="page-title-lockup">
-            <span>Version {APP_VERSION} · Paddlio Beta{isProductionEnvironment ? "" : ` · ${APP_ENVIRONMENT_LABEL}`}</span>
+            <span className="app-version-line">Version {APP_VERSION}{isProductionEnvironment ? "" : ` · ${APP_ENVIRONMENT_LABEL}`}</span>
             <h1>{pageTitles[activePage]}</h1>
           </div>
-          {!isProductionEnvironment ? <b className="environment-badge">DEV</b> : null}
+          {!isProductionEnvironment ? <b className="environment-badge" aria-label="Development Umgebung">DEV</b> : null}
         </header>
       ) : null}
 

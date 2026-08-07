@@ -5,6 +5,7 @@ import type { TrainingJournalEntry, TrainingSession, TrainingType } from "../dom
 
 type TrainingDraft = Omit<TrainingSession, "athleteId" | "createdAt" | "updatedAt">;
 type TrainingFilter = "today" | "week" | "all";
+type TrainingCreateStep = 1 | 2 | 3 | 4;
 
 type TrainingViewProps = {
   sessions: TrainingSession[];
@@ -56,6 +57,7 @@ export function TrainingView({
   openJournalSignal = 0,
 }: TrainingViewProps) {
   const [draft, setDraft] = useState<TrainingDraft | null>(null);
+  const [createStep, setCreateStep] = useState<TrainingCreateStep>(1);
   const [filter, setFilter] = useState<TrainingFilter>("week");
   const [openId, setOpenId] = useState<string>("");
   const latestSession = useMemo(
@@ -66,6 +68,7 @@ export function TrainingView({
   useEffect(() => {
     if (openNewSignal > 0) {
       setDraft({ ...emptyDraft, date: todayKey() });
+      setCreateStep(1);
     }
   }, [openNewSignal]);
 
@@ -76,6 +79,7 @@ export function TrainingView({
         setOpenId(latestSession.id);
       } else {
         setDraft({ ...emptyDraft, date: todayKey() });
+        setCreateStep(1);
       }
     }
   }, [latestSession, openJournalSignal]);
@@ -148,6 +152,17 @@ export function TrainingView({
       focus: session.focus,
       note: session.note,
     });
+    setCreateStep(1);
+  };
+
+  const openCreate = () => {
+    setDraft({ ...emptyDraft, date: todayKey() });
+    setCreateStep(1);
+  };
+
+  const closeCreate = () => {
+    setDraft(null);
+    setCreateStep(1);
   };
 
   return (
@@ -173,7 +188,7 @@ export function TrainingView({
             <p className="eyebrow">Trainingstagebuch</p>
             <h3>Training</h3>
           </div>
-          <button className="primary-button" type="button" onClick={() => setDraft(emptyDraft)} aria-label="Training hinzufügen">
+          <button className="primary-button" type="button" onClick={openCreate} aria-label="Training hinzufügen">
             +
           </button>
         </div>
@@ -208,12 +223,24 @@ export function TrainingView({
         </div>
 
         {draft ? (
-          <form className="entry-form" onSubmit={handleSubmit}>
-            <div className="form-grid">
-              <label>
-                Datum
-                <input name="date" type="date" defaultValue={draft.date} required />
-              </label>
+          <form className="entry-form training-create-wizard" onSubmit={handleSubmit}>
+            <header className="training-create-header">
+              <div>
+                <p className="eyebrow">Training erstellen</p>
+                <h4>{draft.id ? "Einheit bearbeiten" : "Neue Einheit"}</h4>
+              </div>
+              <span>Schritt {createStep}/4</span>
+            </header>
+            <div className="training-create-steps" aria-label="Erstellungsschritte">
+              {[1, 2, 3, 4].map((step) => (
+                <button className={createStep === step ? "active" : ""} key={step} type="button" onClick={() => setCreateStep(step as TrainingCreateStep)}>
+                  {step}
+                </button>
+              ))}
+            </div>
+
+            <div className={`training-create-step ${createStep === 1 ? "active" : ""}`}>
+              <p className="wizard-step-title">Art</p>
               <label>
                 Typ
                 <select name="type" defaultValue={draft.type}>
@@ -224,28 +251,60 @@ export function TrainingView({
                   ))}
                 </select>
               </label>
+            </div>
+
+            <div className={`training-create-step ${createStep === 2 ? "active" : ""}`}>
+              <p className="wizard-step-title">Wann?</p>
+              <div className="form-grid">
+                <label>
+                  Datum
+                  <input name="date" type="date" defaultValue={draft.date} required />
+                </label>
+                <label>
+                  Dauer
+                  <input name="durationMinutes" type="number" min="0" step="1" defaultValue={draft.durationMinutes} />
+                </label>
+              </div>
+            </div>
+
+            <div className={`training-create-step ${createStep === 3 ? "active" : ""}`}>
+              <p className="wizard-step-title">Was?</p>
+              <div className="form-grid">
+                <label>
+                  RPE 1-10
+                  <input name="rpe" type="number" min="1" max="10" step="1" defaultValue={draft.rpe} />
+                </label>
+                <label>
+                  Fokus
+                  <input name="focus" defaultValue={draft.focus} placeholder="z. B. Linie, Start, Druck" />
+                </label>
+              </div>
+            </div>
+
+            <div className={`training-create-step ${createStep === 4 ? "active" : ""}`}>
+              <p className="wizard-step-title">Notiz</p>
               <label>
-                Dauer
-                <input name="durationMinutes" type="number" min="0" step="1" defaultValue={draft.durationMinutes} />
-              </label>
-              <label>
-                RPE 1-10
-                <input name="rpe" type="number" min="1" max="10" step="1" defaultValue={draft.rpe} />
+                Weitere Einstellungen
+                <textarea name="note" defaultValue={draft.note} rows={3} placeholder="Optional: Ort, Material, Besonderheiten" />
               </label>
             </div>
-            <label>
-              Fokus
-              <input name="focus" defaultValue={draft.focus} placeholder="z. B. Linie, Start, Druck" />
-            </label>
-            <label>
-              Notiz
-              <textarea name="note" defaultValue={draft.note} rows={3} />
-            </label>
-            <div className="form-actions">
-              <button className="save-button" type="submit">
-                Speichern
-              </button>
-              <button className="ghost-button wide" type="button" onClick={() => setDraft(null)}>
+
+            <div className="form-actions training-create-actions">
+              {createStep > 1 ? (
+                <button className="ghost-button" type="button" onClick={() => setCreateStep((step) => Math.max(1, step - 1) as TrainingCreateStep)}>
+                  Zurück
+                </button>
+              ) : null}
+              {createStep < 4 ? (
+                <button className="primary-action compact-action" type="button" onClick={() => setCreateStep((step) => Math.min(4, step + 1) as TrainingCreateStep)}>
+                  Weiter
+                </button>
+              ) : (
+                <button className="save-button" type="submit">
+                  Speichern
+                </button>
+              )}
+              <button className="ghost-button wide" type="button" onClick={closeCreate}>
                 Abbrechen
               </button>
             </div>
