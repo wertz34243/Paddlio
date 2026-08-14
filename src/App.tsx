@@ -827,8 +827,7 @@ function AppContent() {
       <section className="mobile-template-flow" aria-label="Trainingsvorlagen">
         <div className="mobile-template-flow-header">
           <p className="eyebrow">Vorlagen</p>
-          <h2>Vorlagen kompakt</h2>
-          <span>Auswahl statt Drag & Drop auf Phone.</span>
+          <h2>Schnell verwenden</h2>
         </div>
         <div className="mobile-template-list">
           {templates.length > 0 ? templates.map((template) => (
@@ -992,7 +991,6 @@ function AppContent() {
 
   const renderTrainingArea = (segment: TrainingSegment = trainingSegment) => {
     const featureMode = getCurrentFeatureMode(trainingFeatureBySegment[segment]);
-    const showCompactTrainingNotice = currentDeviceClass === "phone" && (featureMode === "simplified" || featureMode === "limited");
 
     return (
       <div className={`category-shell more-category-shell device-${currentDeviceClass}`}>
@@ -1007,14 +1005,10 @@ function AppContent() {
             }}
           />
         </div>
-        {showCompactTrainingNotice ? (
+        {currentDeviceClass !== "phone" && featureMode === "readOnly" ? (
           <DeviceLimitedPanel
-            title={segment === "plan" ? "Vorlagen kompakt" : "Training kompakt"}
-            description={
-              segment === "plan"
-                ? "Auf dem Smartphone nutzt du Vorlagen als kompakte Liste. Wochen- und Saisonbearbeitung bleibt auf Tablet und Computer übersichtlicher."
-                : "Auf dem Smartphone bleiben schnelle Erstellung, Status und Feedback im Fokus. Umfangreiche Wochenplanung nutzt du besser auf Tablet oder Computer."
-            }
+            title="Eingeschränkte Ansicht"
+            description="Diese Funktion steht für deine Rolle oder dein Gerät nur lesend zur Verfügung."
             mode={featureMode}
           />
         ) : null}

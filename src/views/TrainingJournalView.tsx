@@ -49,13 +49,13 @@ export function TrainingJournalView({
     <div className="po-journal-workspace">
       <PaddlioOnePageHeader
         eyebrow="Trainingstagebuch"
-        title="Was wirklich passiert ist"
-        description="Ist-Daten, Feedback und Belastung als Grundlage für Analyse und Planung."
+        title="Journal"
+        description="Ist-Daten, Feedback und Belastung kompakt dokumentieren."
         action={
-          <div className="po-action-row">
-            <PaddlioOneButton variant="secondary" icon="training" onClick={onOpenOverview}>Training</PaddlioOneButton>
+          <div className="po-action-row po-journal-primary-actions">
+            <PaddlioOneButton variant="primary" icon="training" onClick={onOpenSessions}>+ Training</PaddlioOneButton>
             <PaddlioOneButton variant="secondary" icon="calendar" onClick={onOpenPlan}>Vorlagen</PaddlioOneButton>
-            <PaddlioOneButton variant="primary" icon="message" onClick={onOpenSessions}>Freies Training</PaddlioOneButton>
+            <PaddlioOneButton variant="secondary" icon="message" onClick={onOpenOverview}>Training</PaddlioOneButton>
           </div>
         }
       />
@@ -107,9 +107,9 @@ export function TrainingJournalView({
           );
         }) : (
           <div className="po-empty-training-day">
-            <h2>Noch keine Journal-Einträge gespeichert.</h2>
-            <p>Nach dem Training kannst du Dauer, Belastung, Gefühl und Notizen hier festhalten.</p>
-            <PaddlioOneButton variant="primary" icon="training" onClick={onOpenSessions}>Erstes Training eintragen</PaddlioOneButton>
+            <h2>Keine Journal-Einträge</h2>
+            <p>Dauer, Belastung, Gefühl und Notizen nach dem Training festhalten.</p>
+            <PaddlioOneButton variant="primary" icon="training" onClick={onOpenSessions}>+ Training</PaddlioOneButton>
           </div>
         )}
       </PaddlioOneCard>

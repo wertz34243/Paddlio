@@ -11408,3 +11408,267 @@ body,
     max-width: min(520px, 38vw);
   }
 }
+
+/* Phase 2.9/3.0 product polish: phone-first density, calendar hierarchy and bottom-sheet details. */
+.app-shell-phone .training-segment-switcher .segment-nav {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.app-shell-phone .training-segment-switcher .segment-button {
+  max-width: none;
+  min-width: 0;
+  padding-inline: 5px;
+  font-size: clamp(0.72rem, 3vw, 0.82rem);
+  text-overflow: ellipsis;
+}
+
+.app-shell-phone .device-mode-panel {
+  display: none;
+}
+
+.app-shell-phone .calendar-category-shell .po-page-header {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  padding: 10px 12px;
+}
+
+.app-shell-phone .calendar-category-shell .po-page-header h1 {
+  font-size: 1.28rem;
+}
+
+.app-shell-phone .calendar-category-shell .po-page-header .po-eyebrow,
+.app-shell-phone .calendar-category-shell .po-page-header p {
+  display: none;
+}
+
+.app-shell-phone .master-calendar-header-actions > * {
+  flex: 0 0 auto;
+}
+
+.app-shell-phone .po-button.master-calendar-add-compact {
+  width: 42px;
+  min-width: 42px;
+  min-height: 42px;
+  padding: 0;
+  border-radius: 999px;
+}
+
+.app-shell-phone .po-button.master-calendar-add-compact svg {
+  display: none;
+}
+
+.app-shell-phone .po-button.master-calendar-add-compact span {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.app-shell-phone .master-calendar-toolbar {
+  gap: 7px;
+  padding: 8px;
+}
+
+.app-shell-phone .master-calendar-toolbar-group .po-button {
+  min-height: 36px;
+  padding-inline: 6px;
+}
+
+.app-shell-phone .master-segmented-control button {
+  min-height: 34px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+}
+
+.app-shell-phone .master-calendar-empty-drop {
+  margin: 0;
+  padding: 7px 9px;
+  border-radius: 12px;
+  font-size: 0.82rem;
+}
+
+.app-shell-phone .master-training-block-actions {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.app-shell-phone .master-training-block-actions button:nth-of-type(n + 3) {
+  display: none;
+}
+
+.app-shell-phone .master-detail-drawer {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 1250;
+  width: 100%;
+  max-width: none;
+  height: auto;
+  max-height: min(82vh, 720px);
+  margin: 0;
+  overflow-y: auto;
+  border-left: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px 24px 0 0;
+  padding: 16px 14px calc(16px + env(safe-area-inset-bottom));
+  box-shadow: 0 -24px 80px rgba(0, 0, 0, 0.48);
+}
+
+.app-shell-phone .master-detail-drawer > header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.app-shell-phone .master-detail-drawer > header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.app-shell-phone .master-detail-tabs {
+  padding-block: 8px;
+}
+
+.app-shell-phone .master-detail-tabs button {
+  min-height: 34px;
+  padding-inline: 10px;
+  font-size: 0.78rem;
+}
+
+.app-shell-phone .training-sessions-view .summary-strip {
+  border-radius: 16px;
+  padding: 8px;
+}
+
+.app-shell-phone .training-sessions-view .summary-strip span {
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.app-shell-phone .training-sessions-view .summary-strip strong {
+  font-size: clamp(1rem, 4.8vw, 1.25rem);
+  line-height: 1.05;
+}
+
+.app-shell-phone .training-journal-actions {
+  grid-template-columns: minmax(0, 1.25fr) repeat(2, minmax(0, 0.8fr));
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.app-shell-phone .training-journal-actions button {
+  min-width: 0;
+  min-height: 38px;
+  padding: 6px 8px;
+  font-size: 0.82rem;
+}
+
+.training-create-assignment-note {
+  display: grid;
+  gap: 4px;
+  border: 1px solid rgba(144, 224, 239, 0.14);
+  border-radius: 14px;
+  background: rgba(144, 224, 239, 0.08);
+  padding: 11px 12px;
+}
+
+.training-create-assignment-note span {
+  color: var(--po-text-muted, #a8b3c7);
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+.training-create-steps {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.app-shell-phone .mobile-template-flow-header {
+  border: 0;
+  background: transparent;
+  padding: 2px 0 0;
+}
+
+.app-shell-phone .mobile-template-flow-header h2 {
+  font-size: 1.1rem;
+}
+
+.app-shell-phone .mobile-template-flow-header span {
+  display: none;
+}
+
+.app-shell-phone .mobile-template-row {
+  padding: 9px 10px;
+}
+
+.app-shell-phone .mobile-template-row strong {
+  font-size: 0.92rem;
+}
+
+.app-shell-phone .po-journal-workspace .po-page-header {
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.app-shell-phone .po-journal-workspace .po-page-header h1 {
+  font-size: 1.9rem;
+  line-height: 1.05;
+}
+
+.app-shell-phone .po-journal-workspace .po-page-header p:not(.po-eyebrow) {
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.app-shell-phone .po-journal-primary-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+
+.app-shell-phone .po-journal-primary-actions .po-button:first-child {
+  grid-column: 1 / -1;
+}
+
+.app-shell-phone .po-journal-workspace .po-kpi-strip {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.app-shell-phone .po-journal-workspace .po-empty-training-day {
+  padding: 18px;
+}
+
+.app-shell-phone .po-journal-workspace .po-empty-training-day h2 {
+  font-size: 1.45rem;
+  line-height: 1.1;
+}
+
+@media (min-width: 768px) {
+  .master-calendar-workspace.master-calendar-tablet {
+    align-items: start;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet .master-template-panel {
+    position: sticky;
+    top: 12px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .master-calendar-workspace.master-calendar-desktop {
+    align-items: start;
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .master-template-panel,
+  .master-calendar-workspace.master-calendar-desktop .master-detail-drawer {
+    position: sticky;
+    top: 14px;
+    max-height: calc(100vh - 28px);
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .master-training-block-actions button {
+    min-height: 30px;
+    padding: 4px 8px;
+    font-size: 0.78rem;
+  }
+}

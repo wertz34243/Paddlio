@@ -297,7 +297,7 @@ export function TrainingCalendarView({
   const isPhone = deviceClass === "phone";
   const isDesktop = deviceClass === "desktop";
   const templateClubId = clubId ?? "paddlio-system";
-  const [mode, setMode] = useState<CalendarMode>(isPhone ? "day" : "week");
+  const [mode, setMode] = useState<CalendarMode>(isPhone ? "threeDays" : "week");
   const [focusDate, setFocusDate] = useState(getTodayKey());
   const [dragTemplateId, setDragTemplateId] = useState<string | null>(null);
   const [templateScope, setTemplateScope] = useState<TemplateScope>("favorites");
@@ -315,7 +315,7 @@ export function TrainingCalendarView({
   const [weekCopyOpen, setWeekCopyOpen] = useState(false);
 
   const availableModes: CalendarMode[] = isPhone
-    ? ["day", "threeDays", "list", "week"]
+    ? ["day", "threeDays", "week", "list"]
     : isDesktop
       ? ["day", "week", "month", "year", "season", "list"]
       : ["day", "week", "month", "list", "season"];
@@ -517,14 +517,20 @@ export function TrainingCalendarView({
         <PaddlioOnePageHeader
           eyebrow="Kalender"
           title={visibleModeTitle}
-          description={isPhone ? "Training und Termine auf einen Blick." : "Vorlagen planen, Einheiten durchführen, Feedback sichern und Soll/Ist direkt nachvollziehen."}
+          description={isPhone ? undefined : "Vorlagen planen, Einheiten durchführen, Feedback sichern und Soll/Ist direkt nachvollziehen."}
           action={
             <div className="master-calendar-header-actions">
               {!isPhone ? <PaddlioOneButton variant="secondary" onClick={() => setShowTemplates((value) => !value)}>
                 {showTemplates ? "Vorlagen ausblenden" : "Vorlagen"}
               </PaddlioOneButton> : null}
-              <PaddlioOneButton variant="primary" icon="training" onClick={onOpenPlan}>
-                Training hinzufügen
+              <PaddlioOneButton
+                variant="primary"
+                icon="training"
+                className={isPhone ? "master-calendar-add-compact" : ""}
+                onClick={onOpenPlan}
+                aria-label="Training hinzufügen"
+              >
+                {isPhone ? "+" : "Training hinzufügen"}
               </PaddlioOneButton>
             </div>
           }
@@ -532,9 +538,9 @@ export function TrainingCalendarView({
 
         <PaddlioOneToolbar className="master-calendar-toolbar">
           <div className="master-calendar-toolbar-group">
-            <PaddlioOneButton variant="ghost" onClick={() => move(-1)} aria-label="Vorheriger Zeitraum">Zurück</PaddlioOneButton>
+            <PaddlioOneButton variant="ghost" onClick={() => move(-1)} aria-label="Vorheriger Zeitraum">{isPhone ? "‹" : "Zurück"}</PaddlioOneButton>
             <PaddlioOneButton variant="secondary" icon="calendar" onClick={() => setFocusDate(getTodayKey())}>Heute</PaddlioOneButton>
-            <PaddlioOneButton variant="ghost" onClick={() => move(1)} aria-label="Nächster Zeitraum">Weiter</PaddlioOneButton>
+            <PaddlioOneButton variant="ghost" onClick={() => move(1)} aria-label="Nächster Zeitraum">{isPhone ? "›" : "Weiter"}</PaddlioOneButton>
           </div>
           <div className="master-segmented-control" aria-label="Kalenderansicht">
             {availableModes.map((item) => (

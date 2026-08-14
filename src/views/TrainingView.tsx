@@ -5,7 +5,7 @@ import type { TrainingJournalEntry, TrainingSession, TrainingType } from "../dom
 
 type TrainingDraft = Omit<TrainingSession, "athleteId" | "createdAt" | "updatedAt">;
 type TrainingFilter = "today" | "week" | "all";
-type TrainingCreateStep = 1 | 2 | 3 | 4;
+type TrainingCreateStep = 1 | 2 | 3 | 4 | 5;
 
 type TrainingViewProps = {
   sessions: TrainingSession[];
@@ -50,7 +50,6 @@ export function TrainingView({
   onSave,
   onDelete,
   onSaveJournal,
-  onOpenOverview,
   onOpenPlan,
   onOpenJournal,
   openNewSignal = 0,
@@ -174,7 +173,7 @@ export function TrainingView({
         </div>
         <div>
           <span>Belastung</span>
-          <strong>{getTrainingLoad(sessions)}</strong>
+          <strong>{getTrainingLoad(sessions)} Pkt</strong>
         </div>
         <div>
           <span>Journal</span>
@@ -194,14 +193,14 @@ export function TrainingView({
         </div>
 
         <div className="training-journal-actions" aria-label="Training Navigation">
-          <button type="button" className="secondary-button" onClick={onOpenOverview} aria-label="Zur Training-Übersicht zurückkehren">
-            Zur Übersicht
+          <button type="button" className="primary-action compact-action" onClick={openCreate} aria-label="Training erstellen">
+            + Training
           </button>
-          <button type="button" className="primary-action compact-action" onClick={onOpenPlan} aria-label="Von freiem Training zu den Vorlagen wechseln">
-            Vorlagen öffnen
+          <button type="button" className="secondary-button" onClick={onOpenPlan} aria-label="Vorlagen öffnen">
+            Vorlagen
           </button>
-          <button type="button" className="secondary-button" onClick={onOpenJournal} aria-label="Trainingstagebuch-Einträge anzeigen">
-            Tagebuch anzeigen
+          <button type="button" className="secondary-button" onClick={onOpenJournal} aria-label="Journal anzeigen">
+            Journal
           </button>
         </div>
 
@@ -229,10 +228,10 @@ export function TrainingView({
                 <p className="eyebrow">Training erstellen</p>
                 <h4>{draft.id ? "Einheit bearbeiten" : "Neue Einheit"}</h4>
               </div>
-              <span>Schritt {createStep}/4</span>
+              <span>Schritt {createStep}/5</span>
             </header>
             <div className="training-create-steps" aria-label="Erstellungsschritte">
-              {[1, 2, 3, 4].map((step) => (
+              {[1, 2, 3, 4, 5].map((step) => (
                 <button className={createStep === step ? "active" : ""} key={step} type="button" onClick={() => setCreateStep(step as TrainingCreateStep)}>
                   {step}
                 </button>
@@ -282,7 +281,15 @@ export function TrainingView({
             </div>
 
             <div className={`training-create-step ${createStep === 4 ? "active" : ""}`}>
-              <p className="wizard-step-title">Notiz</p>
+              <p className="wizard-step-title">Für wen?</p>
+              <div className="training-create-assignment-note">
+                <strong>Für mich</strong>
+                <span>Gruppen und Sportler weist du in der Kalenderplanung zu.</span>
+              </div>
+            </div>
+
+            <div className={`training-create-step ${createStep === 5 ? "active" : ""}`}>
+              <p className="wizard-step-title">Speichern</p>
               <label>
                 Weitere Einstellungen
                 <textarea name="note" defaultValue={draft.note} rows={3} placeholder="Optional: Ort, Material, Besonderheiten" />
@@ -295,8 +302,8 @@ export function TrainingView({
                   Zurück
                 </button>
               ) : null}
-              {createStep < 4 ? (
-                <button className="primary-action compact-action" type="button" onClick={() => setCreateStep((step) => Math.min(4, step + 1) as TrainingCreateStep)}>
+              {createStep < 5 ? (
+                <button className="primary-action compact-action" type="button" onClick={() => setCreateStep((step) => Math.min(5, step + 1) as TrainingCreateStep)}>
                   Weiter
                 </button>
               ) : (
