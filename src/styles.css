@@ -11672,3 +11672,363 @@ body,
     font-size: 0.78rem;
   }
 }
+
+/* Tablet Trainer Workspace 2.0: calendar-first layout with one active context panel. */
+.master-calendar-context {
+  min-width: 0;
+  width: 100%;
+}
+
+.master-calendar-context .master-template-panel,
+.master-calendar-context .master-context-section,
+.master-calendar-context .master-detail-drawer.is-context,
+.master-calendar-context .master-quick-edit {
+  min-width: 0;
+  width: 100%;
+  max-width: none;
+}
+
+.master-calendar-context .master-template-panel,
+.master-calendar-context .master-detail-drawer.is-context {
+  position: static;
+}
+
+.master-detail-drawer.is-context {
+  height: auto;
+  max-height: none;
+  margin: 0;
+  overflow: visible;
+  border: 1px solid var(--po-border, rgba(255, 255, 255, 0.12));
+  border-radius: var(--po-radius-xl, 24px);
+  background: var(--po-surface, rgba(11, 19, 30, 0.94));
+  box-shadow: var(--po-shadow-card, 0 18px 48px rgba(0, 0, 0, 0.28));
+  padding: clamp(14px, 1.6vw, 18px);
+}
+
+.master-detail-drawer.is-context > header {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.master-detail-drawer.is-context > header h2,
+.master-calendar-context .master-quick-edit h2 {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+  line-height: 1.15;
+}
+
+.master-context-section .master-quick-edit {
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--po-border, rgba(255, 255, 255, 0.12));
+  border-radius: var(--po-radius-xl, 24px);
+  background: var(--po-surface, rgba(11, 19, 30, 0.94));
+  box-shadow: var(--po-shadow-card, 0 18px 48px rgba(0, 0, 0, 0.28));
+  padding: clamp(14px, 1.6vw, 18px);
+}
+
+.master-context-section .master-quick-edit form {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+}
+
+.master-context-section .master-quick-edit label {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+  color: var(--po-text-muted, #a8b3c7);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.master-context-section .master-quick-edit input,
+.master-context-section .master-quick-edit select,
+.master-context-section .master-quick-edit textarea {
+  width: 100%;
+}
+
+.master-calendar-context .master-form-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+.master-calendar-context .master-full-field textarea {
+  min-height: 76px;
+}
+
+.master-calendar-context .master-quick-edit footer,
+.master-detail-drawer.is-context footer {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.master-template-primary-tabs,
+.master-template-tabs {
+  display: grid;
+  gap: 6px;
+}
+
+.master-template-primary-tabs {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 10px 0 8px;
+}
+
+.master-template-tabs {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0 0 10px;
+}
+
+.master-template-primary-tabs button,
+.master-template-tabs button {
+  min-width: 0;
+  min-height: 36px;
+  border: 1px solid var(--po-border, rgba(255, 255, 255, 0.1));
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--po-text-muted, #a8b3c7);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  overflow: hidden;
+  padding: 6px 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.master-template-primary-tabs button.is-active,
+.master-template-tabs button.is-active {
+  border-color: rgba(82, 232, 255, 0.36);
+  background: rgba(82, 232, 255, 0.12);
+  color: var(--po-text-strong, #f7fbff);
+}
+
+.master-calendar-context .master-template-card-list {
+  display: grid;
+  gap: 8px;
+}
+
+.master-calendar-context .master-template-card,
+.master-calendar-context .master-week-template-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: 64px;
+  gap: 10px;
+  padding: 10px 11px;
+  border-radius: 16px;
+}
+
+.master-calendar-context .master-template-card > button,
+.master-calendar-context .master-week-template-row {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  text-align: left;
+}
+
+.master-calendar-context .master-template-card > button {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  border-radius: 0;
+}
+
+.master-calendar-context .master-template-card > button:hover,
+.master-calendar-context .master-template-card > button:focus-visible {
+  background: transparent;
+  box-shadow: none;
+}
+
+.master-calendar-context .master-template-card strong,
+.master-calendar-context .master-week-template-row strong {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  width: 100%;
+  max-width: 100%;
+  background: transparent;
+  box-shadow: none;
+  color: var(--po-text-strong, #f7fbff);
+  font-size: 0.92rem;
+  line-height: 1.15;
+}
+
+.master-calendar-context .master-template-card small,
+.master-calendar-context .master-week-template-row span {
+  display: block;
+  overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+  background: transparent;
+  box-shadow: none;
+  color: var(--po-text-muted, #a8b3c7);
+  font-size: 0.76rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.master-calendar-context .master-template-card em,
+.master-calendar-context .master-week-template-row em {
+  color: var(--po-accent, #52e8ff);
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.master-template-hint {
+  margin: 9px 0 0;
+  font-size: 0.76rem;
+}
+
+.master-calendar-workspace .master-segmented-control button,
+.master-calendar-controls input,
+.master-calendar-controls select,
+.master-calendar-context input:not([type="checkbox"]),
+.master-calendar-context select,
+.master-calendar-context textarea {
+  min-width: 0;
+  min-height: 40px;
+  border: 1px solid var(--po-border, rgba(255, 255, 255, 0.12));
+  border-radius: var(--po-radius-md, 12px);
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--po-text, #e5edf7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.master-calendar-workspace .master-segmented-control {
+  display: inline-flex;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--po-border, rgba(255, 255, 255, 0.12));
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.master-calendar-workspace .master-segmented-control button {
+  min-height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--po-text-muted, #a8b3c7);
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 6px 11px;
+}
+
+.master-calendar-workspace .master-segmented-control button.is-active,
+.master-calendar-workspace .master-segmented-control button.active {
+  background: rgba(82, 232, 255, 0.16);
+  color: var(--po-text-strong, #f7fbff);
+}
+
+.master-calendar-context select,
+.master-calendar-controls select {
+  appearance: none;
+}
+
+.master-calendar-context input[type="checkbox"] {
+  accent-color: var(--po-accent, #52e8ff);
+}
+
+.master-context-empty {
+  padding: clamp(14px, 1.6vw, 18px);
+}
+
+.master-calendar-empty-drop.is-active {
+  min-height: 52px;
+  border-color: rgba(82, 232, 255, 0.42);
+  background: rgba(82, 232, 255, 0.08);
+  color: var(--po-text-strong, #f7fbff);
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .master-calendar-workspace.master-calendar-tablet {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .master-calendar-context {
+    position: static;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .master-calendar-workspace.master-calendar-tablet {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 32%);
+    gap: 14px;
+  }
+
+  .master-calendar-context {
+    position: sticky;
+    top: 12px;
+    max-height: calc(100vh - 24px);
+    overflow: auto;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet .master-calendar-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet .po-metric-card {
+    padding: 10px;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet .master-calendar-week-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet .master-calendar-week-day {
+    min-height: 17rem;
+    padding: 9px;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet .master-calendar-empty-drop {
+    min-height: 48px;
+    padding: 8px;
+    font-size: 0.76rem;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet .master-training-block {
+    gap: 7px;
+    padding: 9px;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet .master-training-block-main strong {
+    -webkit-line-clamp: 2;
+    font-size: 0.88rem;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet .master-training-block-main small,
+  .master-calendar-workspace.master-calendar-tablet .master-training-block-main span {
+    font-size: 0.72rem;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet .master-training-block-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet .master-training-block-actions button {
+    min-height: 31px;
+    padding: 4px 6px;
+    font-size: 0.72rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  .master-calendar-context {
+    position: sticky;
+    top: 14px;
+    max-height: calc(100vh - 28px);
+    overflow: auto;
+  }
+}

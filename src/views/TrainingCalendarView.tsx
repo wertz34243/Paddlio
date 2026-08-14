@@ -325,7 +325,7 @@ export function TrainingCalendarView({
   }, [availableModes, mode]);
 
   useEffect(() => {
-    if (isPhone) setShowTemplates(false);
+    setShowTemplates(!isPhone);
   }, [isPhone]);
 
   const groupOptions = data?.coachGroups.filter((group) => !clubId || group.clubId === clubId) ?? [];
@@ -611,11 +611,11 @@ export function TrainingCalendarView({
         ) : null}
 
         {mode === "month" ? (
-          <MonthCalendar days={monthDays} groupedEntries={groupedEntries} focusDate={focusDate} onSelectDate={setFocusDate} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={setSelectedEntryId} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} />
+          <MonthCalendar days={monthDays} groupedEntries={groupedEntries} focusDate={focusDate} onSelectDate={setFocusDate} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={setSelectedEntryId} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} showDropHint={Boolean(dragTemplateId) && !isPhone} />
         ) : null}
 
         {mode === "week" ? (
-          <WeekCalendar days={weekDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={setSelectedEntryId} onStartLive={(entry) => setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 })} onFeedback={setFeedbackEntry} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={!isPhone} />
+          <WeekCalendar days={weekDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={setSelectedEntryId} onStartLive={(entry) => setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 })} onFeedback={setFeedbackEntry} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={Boolean(dragTemplateId) && !isPhone} />
         ) : null}
 
         {mode === "day" ? (
@@ -641,11 +641,57 @@ export function TrainingCalendarView({
         {!isPhone ? <WeekPlanStrip entries={weekEntries} onOpenPlan={onOpenPlan} onOpenEntry={setSelectedEntryId} /> : null}
       </main>
 
-      {showTemplates ? (
-        <TemplatePanel templates={calendarTemplates} scope={templateScope} onScopeChange={setTemplateScope} onDragStart={setDragTemplateId} onQuickInsert={(template) => openQuickEdit(template)} onOpenPlan={onOpenPlan} />
+      {!isPhone ? (
+        <aside className="master-calendar-context" aria-label="Kalender-Kontext">
+          {quickEdit ? (
+            <TrainingQuickEdit
+              state={quickEdit}
+              groups={groupOptions}
+              athletes={athleteOptions}
+              trainers={trainerOptions}
+              onChange={setQuickEdit}
+              onCancel={() => setQuickEdit(null)}
+              onSave={saveQuickEdit}
+              onOpenFullPlan={() => {
+                setQuickEdit(null);
+                onOpenPlan();
+              }}
+              presentation="context"
+            />
+          ) : selectedEntry ? (
+            <TrainingDetailDrawer
+              entry={selectedEntry}
+              journal={journal}
+              feedback={data?.trainingFeedback ?? []}
+              tasks={taskItems}
+              taskAssignments={taskAssignments}
+              groups={groupOptions}
+              athletes={athleteOptions}
+              users={data?.users ?? []}
+              user={user}
+              onClose={() => setSelectedEntryId(null)}
+              onStatusChange={onStatusChange}
+              onStartLive={(entry) => setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 })}
+              onFeedback={setFeedbackEntry}
+              onDuplicate={duplicateEntry}
+              onDelete={onDelete}
+              onDeleteSeries={onDeleteSeries}
+              entries={entries}
+              presentation="context"
+            />
+          ) : showTemplates ? (
+            <TemplatePanel templates={calendarTemplates} scope={templateScope} onScopeChange={setTemplateScope} onDragStart={setDragTemplateId} onDragEnd={() => setDragTemplateId(null)} onQuickInsert={(template) => openQuickEdit(template)} onOpenPlan={onOpenPlan} />
+          ) : (
+            <PaddlioOneCard className="master-context-empty">
+              <p className="po-eyebrow">Kontext</p>
+              <h2>Kalender bleibt sichtbar</h2>
+              <p className="po-muted">Vorlagen, Trainingsdetails und Quick Edit erscheinen hier, ohne die Planung zu verdecken.</p>
+            </PaddlioOneCard>
+          )}
+        </aside>
       ) : null}
 
-      {selectedEntry ? (
+      {isPhone && selectedEntry ? (
         <TrainingDetailDrawer
           entry={selectedEntry}
           journal={journal}
@@ -667,7 +713,7 @@ export function TrainingCalendarView({
         />
       ) : null}
 
-      {quickEdit ? (
+      {isPhone && quickEdit ? (
         <TrainingQuickEdit
           state={quickEdit}
           groups={groupOptions}
@@ -775,6 +821,7 @@ function MonthCalendar({
   selectionMode,
   selectedIds,
   onSelect,
+  showDropHint = false,
 }: {
   days: string[];
   groupedEntries: Map<string, PlanEntry[]>;
@@ -786,6 +833,7 @@ function MonthCalendar({
   selectionMode: boolean;
   selectedIds: string[];
   onSelect: (id: string, checked: boolean) => void;
+  showDropHint?: boolean;
 }) {
   const focusMonth = parseLocalDateOnly(focusDate).getMonth();
   return (
@@ -800,6 +848,7 @@ function MonthCalendar({
           return (
             <button className={`master-calendar-day ${isOtherMonth ? "is-muted" : ""} ${day === focusDate ? "is-selected" : ""}`} key={day} type="button" onClick={() => onSelectDate(day)} onDragOver={onDragOver} onDrop={() => onDrop(day)}>
               <strong>{dayNumber(day)}</strong>
+              {showDropHint && entries.length === 0 ? <p className="master-calendar-empty-drop is-active">Hier ablegen</p> : null}
               {entries.slice(0, 3).map((entry) => (
                 <TrainingPill entry={entry} key={entry.id} compact onOpen={onOpenEntry} selectionMode={selectionMode} selected={selectedIds.includes(entry.id)} onSelect={onSelect} />
               ))}
@@ -960,6 +1009,7 @@ function TemplatePanel({
   scope,
   onScopeChange,
   onDragStart,
+  onDragEnd,
   onQuickInsert,
   onOpenPlan,
 }: {
@@ -967,9 +1017,11 @@ function TemplatePanel({
   scope: TemplateScope;
   onScopeChange: (scope: TemplateScope) => void;
   onDragStart: (id: string) => void;
+  onDragEnd: () => void;
   onQuickInsert: (template: TrainingTemplate) => void;
   onOpenPlan: () => void;
 }) {
+  const templateMode: "training" | "week" | "season" = scope === "weeks" ? "week" : scope === "season" ? "season" : "training";
   const filteredTemplates = templates.filter((template) => {
     if (scope === "favorites") return template.isFavorite || template.id.startsWith("system-calendar");
     if (scope === "mine") return template.visibility === "private";
@@ -979,80 +1031,88 @@ function TemplatePanel({
   });
 
   return (
-    <aside className="master-template-panel" aria-label="Vorlagenbibliothek">
+    <section className="master-template-panel" aria-label="Vorlagenbibliothek">
       <PaddlioOneCard>
         <div className="po-card-heading-row">
           <div>
             <p className="po-eyebrow">Vorlagen</p>
-            <h2>Bibliothek</h2>
+            <h2>{templateMode === "week" ? "Wochen" : templateMode === "season" ? "Saison" : "Training"}</h2>
           </div>
           <PaddlioOneButton variant="ghost" icon="more" onClick={onOpenPlan}>Alle</PaddlioOneButton>
         </div>
-        <div className="master-template-tabs" aria-label="Vorlagenbereiche">
-          {(["favorites", "recent", "mine", "club", "system"] as TemplateScope[]).map((item) => (
+        <div className="master-template-primary-tabs" aria-label="Vorlagenart">
+          {([
+            ["favorites", "Training"],
+            ["weeks", "Woche"],
+            ["season", "Saison"],
+          ] as Array<[TemplateScope, string]>).map(([item, label]) => (
             <button key={item} className={scope === item ? "is-active" : ""} type="button" onClick={() => onScopeChange(item)}>
-              {item === "favorites" ? "Favoriten" : item === "recent" ? "Zuletzt" : item === "mine" ? "Meine" : item === "club" ? "Verein" : "System"}
+              {label}
             </button>
           ))}
         </div>
-        <div className="master-template-card-list">
-          {filteredTemplates.slice(0, 10).map((template) => (
-            <TemplateCard template={template} key={template.id} onDragStart={onDragStart} onQuickInsert={onQuickInsert} />
-          ))}
-        </div>
-      </PaddlioOneCard>
-
-      <PaddlioOneCard className="master-template-weeks">
-        <div className="po-card-heading-row">
-          <div>
-            <p className="po-eyebrow">Wochenvorlagen</p>
-            <h2>Schnell planen</h2>
+        {templateMode === "training" ? (
+          <>
+            <div className="master-template-tabs" aria-label="Trainingsvorlagen filtern">
+              {([
+                ["favorites", "Favoriten"],
+                ["mine", "Meine"],
+                ["club", "Verein"],
+                ["system", "System"],
+              ] as Array<[TemplateScope, string]>).map(([item, label]) => (
+                <button key={item} className={scope === item ? "is-active" : ""} type="button" onClick={() => onScopeChange(item)}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="master-template-card-list">
+              {filteredTemplates.slice(0, 10).map((template) => (
+                <TemplateCard template={template} key={template.id} onDragStart={onDragStart} onDragEnd={onDragEnd} onQuickInsert={onQuickInsert} />
+              ))}
+            </div>
+            <p className="po-muted master-template-hint">Halten und in den Kalender ziehen. Alternative: Vorlage antippen.</p>
+          </>
+        ) : null}
+        {templateMode === "week" ? (
+          <div className="master-template-card-list">
+            {weeklyPlanningTemplates.slice(0, 6).map((template) => (
+              <button className="master-week-template-row" key={template.id} type="button" onClick={onOpenPlan}>
+                <strong>{normalizeText(template.title)}</strong>
+                <span>{template.items.length} Einheiten</span>
+                <em>Details</em>
+              </button>
+            ))}
           </div>
-        </div>
-        {weeklyPlanningTemplates.slice(0, 4).map((template) => (
-          <button className="master-week-template-row" key={template.id} type="button" onClick={onOpenPlan}>
-            <strong>{normalizeText(template.title)}</strong>
-            <span>{normalizeText(template.description)}</span>
-            <em>{template.items.length} Einheiten</em>
-          </button>
-        ))}
-      </PaddlioOneCard>
-
-      <PaddlioOneCard className="master-template-season">
-        <div className="po-card-heading-row">
-          <div>
-            <p className="po-eyebrow">Saisonbausteine</p>
-            <h2>Periodisierung</h2>
+        ) : null}
+        {templateMode === "season" ? (
+          <div className="master-template-card-list">
+            {seasonPlanningBlocks.slice(0, 6).map((block) => (
+              <button className="master-week-template-row" key={block.id} type="button" onClick={onOpenPlan}>
+                <strong>{normalizeText(block.title)}</strong>
+                <span>{block.weeklyTemplateIds.length} Wochen</span>
+                <em>Details</em>
+              </button>
+            ))}
           </div>
-        </div>
-        {seasonPlanningBlocks.slice(0, 3).map((block) => (
-          <button className="master-week-template-row" key={block.id} type="button" onClick={onOpenPlan}>
-            <strong>{block.title}</strong>
-            <span>{block.description}</span>
-            <em>{block.weeklyTemplateIds.length} Wochen</em>
-          </button>
-        ))}
-        <p className="po-muted">Vorlage ziehen und im Kalender ablegen.</p>
+        ) : null}
       </PaddlioOneCard>
-    </aside>
+    </section>
   );
 }
 
-function TemplateCard({ template, onDragStart, onQuickInsert }: { template: TrainingTemplate; onDragStart: (id: string) => void; onQuickInsert: (template: TrainingTemplate) => void }) {
+function TemplateCard({ template, onDragStart, onDragEnd, onQuickInsert }: { template: TrainingTemplate; onDragStart: (id: string) => void; onDragEnd: () => void; onQuickInsert: (template: TrainingTemplate) => void }) {
   const tone = categoryTone(template.category || template.trainingArea || template.trainingType);
   return (
-    <article className={`master-template-card po-tone-${tone}`} draggable onDragStart={() => onDragStart(template.id)} aria-label={`${template.title} in Kalender ziehen`}>
+    <article className={`master-template-card po-tone-${tone}`} draggable onDragStart={() => onDragStart(template.id)} onDragEnd={onDragEnd} aria-label={`${template.title} in Kalender ziehen`}>
       <span className="master-template-icon">{template.category.slice(0, 1)}</span>
       <button type="button" onClick={() => onQuickInsert(template)}>
         <strong>{template.title}</strong>
-        <small>{template.trainingArea} · {template.trainingType}</small>
-        <span>{template.defaultDurationMinutes ?? 60} min · Intensität {template.defaultIntensity}</span>
+        <small>{template.category || template.trainingArea} - {template.defaultDurationMinutes ?? 60} min - {template.defaultIntensity}</small>
       </button>
-      <em>{template.isFavorite ? "*" : "->"}</em>
+      <em>{template.isFavorite ? "*" : ">"}</em>
     </article>
   );
 }
-
 function TrainingQuickEdit({
   state,
   groups,
@@ -1062,6 +1122,7 @@ function TrainingQuickEdit({
   onCancel,
   onSave,
   onOpenFullPlan,
+  presentation = "modal",
 }: {
   state: QuickEditState;
   groups: CoachGroup[];
@@ -1071,10 +1132,10 @@ function TrainingQuickEdit({
   onCancel: () => void;
   onSave: (state: QuickEditState) => void;
   onOpenFullPlan: () => void;
+  presentation?: "modal" | "context";
 }) {
   const repeatCount = state.repeat === "none" ? 1 : expandTrainingRepeatDates(state.date, state.repeat, state.repeatUntil, typeof state.repeatMaxCount === "number" ? state.repeatMaxCount : undefined).length;
-  return (
-    <div className="master-modal-backdrop" role="dialog" aria-modal="true" aria-label="Training schnell einfügen">
+  const form = (
       <form className="master-quick-edit" onSubmit={(event) => { event.preventDefault(); onSave(state); }}>
         <header>
           <p className="po-eyebrow">Quick Edit</p>
@@ -1106,6 +1167,17 @@ function TrainingQuickEdit({
           <PaddlioOneButton variant="primary" type="submit">Einfügen</PaddlioOneButton>
         </footer>
       </form>
+  );
+  if (presentation === "context") {
+    return (
+      <section className="master-context-section" aria-label="Training schnell einfügen">
+        {form}
+      </section>
+    );
+  }
+  return (
+    <div className="master-modal-backdrop" role="dialog" aria-modal="true" aria-label="Training schnell einfügen">
+      {form}
     </div>
   );
 }
@@ -1128,6 +1200,7 @@ function TrainingDetailDrawer({
   onDelete,
   onDeleteSeries,
   entries,
+  presentation = "drawer",
 }: {
   entry: PlanEntry;
   journal: TrainingJournalEntry[];
@@ -1146,6 +1219,7 @@ function TrainingDetailDrawer({
   onDelete?: (id: string) => void;
   onDeleteSeries?: (id: string) => void;
   entries: PlanEntry[];
+  presentation?: "drawer" | "context";
 }) {
   const [tab, setTab] = useState<DetailTab>("planning");
   const trainingJournal = journal.find((item) => item.trainingPlanEntryId === entry.id || item.trainingId === entry.id);
@@ -1161,7 +1235,7 @@ function TrainingDetailDrawer({
   const isCoach = user?.role === "coach" || user?.role === "admin" || user?.role === "clubAdmin";
 
   return (
-    <aside className="master-detail-drawer" aria-label="Training Details">
+    <aside className={`master-detail-drawer ${presentation === "context" ? "is-context" : ""}`} aria-label="Training Details">
       <header>
         <div>
           <p className="po-eyebrow">{entry.area}</p>
