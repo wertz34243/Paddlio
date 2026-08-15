@@ -2,8 +2,9 @@ import { defineConfig, devices } from "@playwright/test";
 import { existsSync, readFileSync } from "node:fs";
 
 loadLocalEnv(".env.local");
+loadLocalEnv(".env.e2e.local", true);
 
-function loadLocalEnv(path: string) {
+function loadLocalEnv(path: string, override = false) {
   if (!existsSync(path)) return;
 
   const lines = readFileSync(path, "utf8").split(/\r?\n/);
@@ -14,7 +15,7 @@ function loadLocalEnv(path: string) {
     const separator = trimmed.indexOf("=");
     const key = trimmed.slice(0, separator).trim();
     const value = trimmed.slice(separator + 1).trim();
-    if (key && process.env[key] === undefined) {
+    if (key && (override || process.env[key] === undefined)) {
       process.env[key] = value;
     }
   }

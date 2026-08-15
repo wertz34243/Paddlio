@@ -13,8 +13,6 @@ const hasCoachAthleteCredentials = Boolean(coachEmail && coachPassword && athlet
 const hasClubAdminCredentials = Boolean(clubAdminEmail && clubAdminPassword);
 const hasAdminCredentials = Boolean(adminEmail && adminPassword);
 
-test.describe.configure({ mode: "serial" });
-
 async function login(page: Page, email: string, password: string) {
   await page.goto("/");
   await page.getByLabel("E-Mail").fill(email);
@@ -121,10 +119,15 @@ test.describe("club admin access", () => {
 test.describe("two-device training and feedback flow", () => {
   test.skip(!hasCoachAthleteCredentials, "Set PADDLIO_E2E_COACH_* and PADDLIO_E2E_ATHLETE_* for authenticated sync E2E.");
 
-  test("coach creates training, athlete sends feedback, coach sees feedback", async ({ browser }) => {
+  test("coach creates training, athlete sends feedback, coach sees feedback", async ({ browser }, testInfo) => {
+    test.skip(testInfo.project.name !== "edge", "Two-device sync uses coach desktop plus athlete phone and runs in the desktop project.");
     test.setTimeout(120_000);
     const coachContext = await browser.newContext();
-    const athleteContext = await browser.newContext();
+    const athleteContext = await browser.newContext({
+      hasTouch: true,
+      isMobile: true,
+      viewport: { width: 390, height: 844 },
+    });
     const coachPage = await coachContext.newPage();
     const athletePage = await athleteContext.newPage();
     const runId = Date.now();

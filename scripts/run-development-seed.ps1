@@ -1,7 +1,7 @@
 param(
   [string]$SupabaseUrl,
   [string]$ServiceRoleKey,
-  [string]$TestPassword = "CDxe4yhvOAZWAtifXc!9"
+  [string]$TestPassword
 )
 
 $ErrorActionPreference = "Stop"
@@ -44,6 +44,11 @@ if (-not $SupabaseUrl) {
 if (-not $ServiceRoleKey) {
   $secureKey = Read-Host "Development Service Role Key" -AsSecureString
   $ServiceRoleKey = ConvertTo-PlainText $secureKey
+}
+
+if (-not $TestPassword) {
+  $securePassword = Read-Host "Development Test Password" -AsSecureString
+  $TestPassword = ConvertTo-PlainText $securePassword
 }
 
 $normalizedUrl = Normalize-SupabaseUrl $SupabaseUrl

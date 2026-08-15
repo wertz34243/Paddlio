@@ -27,7 +27,7 @@ import type {
   UserProfile,
   UserRole,
 } from "../domain/types";
-import { ensureCloudProfile, getCloudProfile, listCloudProfiles, normalizeCloudRolesForEmail, type CloudProfile } from "../services/profileService";
+import { buildCloudRoles, ensureCloudProfile, getCloudProfile, listCloudProfiles, type CloudProfile } from "../services/profileService";
 import { listCloudClubRequests, listCloudClubs, type CloudClub, type CloudClubRequest } from "../services/clubService";
 import { listCloudGroupMembers, listCloudTrainerRequests, listCloudTrainingGroups, type CloudGroupMember, type CloudTrainerRequest, type CloudTrainingGroup } from "../services/coachService";
 import { listCloudFeedback, listCloudTraining } from "../services/trainingService";
@@ -172,7 +172,7 @@ const getPrimaryRole = (roles: string[]): UserRole => {
 };
 
 const getCloudTruthRoles = (profile: Pick<CloudProfile, "email" | "roles">): CloudProfile["roles"] =>
-  normalizeCloudRolesForEmail(profile.email, profile.roles.length > 0 ? profile.roles : ["Athlete"]);
+  buildCloudRoles(profile.email, null, profile.roles.length > 0 ? profile.roles : ["Athlete"]);
 
 const createFallbackProfile = (user: SupabaseUser): CloudProfile => {
   const metadata = user.user_metadata ?? {};
@@ -188,7 +188,7 @@ const createFallbackProfile = (user: SupabaseUser): CloudProfile => {
     last_name: lastName,
     display_name: `${firstName} ${lastName}`.trim() || email,
     club_id: null,
-    roles: normalizeCloudRolesForEmail(email, ["Athlete"]),
+    roles: buildCloudRoles(email, metadata, ["Athlete"]),
     status: "active",
     avatar_url: null,
     age_category: null,
