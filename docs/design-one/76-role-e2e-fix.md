@@ -24,3 +24,11 @@ Der Coach-Rollen-E2E war nicht stabil, weil Testdaten und UI-Erwartungen nicht m
 
 Die Skips entstehen ausschließlich, weil in dieser Shell keine `PADDLIO_E2E_*`-Variablen gesetzt sind. Die Teststruktur ist korrigiert; ein echter Rollenlauf benötigt die Development-E2E-Variablen.
 
+## Nachpruefung mit Development-Variablen
+
+Ein authentifizierter Lauf gegen `https://nlllqsfdhfiwticrcrnp.supabase.co` zeigt:
+
+- Athlete-Rolle: bestanden
+- Coach-Rolle: blockiert
+
+Der Coach-Login funktioniert, aber `dev.coach@paddlio.test` wird in der App als Sportler erkannt. Der App-Code uebersetzt `Coach` korrekt zu `coach`; die Ursache liegt daher im Development-Profil/Testdatenstand. Das Coach-Profil muss in `profiles.roles` die Rolle `Coach` enthalten, bevor Coach-, ClubAdmin-/Admin- und Zwei-Geraete-E2E als gruen bewertet werden koennen.

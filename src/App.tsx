@@ -263,6 +263,7 @@ function AppContent() {
   const [analysisSegment, setAnalysisSegment] = useState<AnalysisSegment>("overview");
   const [moreSegment, setMoreSegment] = useState<MoreSegment>("profile");
   const [moreHubOpen, setMoreHubOpen] = useState(true);
+  const [mobileTemplateDraft, setMobileTemplateDraft] = useState<{ template: TrainingTemplate; date: string; startTime: string } | null>(null);
   const { topChromeVisible, bottomNavVisible } = useAppChromeVisibility({ threshold: 8, topOffset: 8, idleMs: 1300 });
   const responsiveCapabilities = useResponsiveCapabilities();
   const currentDeviceClass = responsiveCapabilities.deviceClass;
@@ -584,8 +585,8 @@ function AppContent() {
     });
   };
 
-  const insertCalendarTemplate = (template: TrainingTemplate, date: string) => {
-    const fallbackTime = "17:30";
+  const insertCalendarTemplate = (template: TrainingTemplate, date: string, startTime = "17:30") => {
+    const fallbackTime = startTime || "17:30";
     const durationMinutes = template.defaultDurationMinutes ?? 60;
 
     upsertPlanEntry({
@@ -833,11 +834,11 @@ function AppContent() {
           {templates.length > 0 ? templates.map((template) => (
             <article className="mobile-template-row" key={template.id}>
               <span className="mobile-template-dot" aria-hidden="true" />
-              <button type="button" onClick={() => insertCalendarTemplate(template, getTodayKey())}>
+              <button type="button" onClick={() => setMobileTemplateDraft({ template, date: getTodayKey(), startTime: "17:30" })}>
                 <strong>{template.title}</strong>
                 <small>{template.trainingArea} · {template.defaultDurationMinutes ?? 60} min · Intensität {template.defaultIntensity}</small>
               </button>
-              <b aria-label={template.isFavorite ? "Favorit" : "Vorlage"}>{template.isFavorite ? "*" : "+"}</b>
+              <b aria-label={template.isFavorite ? "Favorit" : "Verwenden"}>{template.isFavorite ? "*" : "+"}</b>
             </article>
           )) : (
             <p className="empty-state">Noch keine Vorlagen vorhanden.</p>
@@ -852,6 +853,54 @@ function AppContent() {
                 <span>{template.tags?.slice(0, 3).join(" · ") || "Wochenbaustein"}</span>
               </article>
             ))}
+          </div>
+        ) : null}
+        {mobileTemplateDraft ? (
+          <div className="mobile-sheet-backdrop" role="dialog" aria-modal="true" aria-label="Vorlage verwenden">
+            <form
+              className="mobile-template-use-sheet"
+              onSubmit={(event) => {
+                event.preventDefault();
+                insertCalendarTemplate(mobileTemplateDraft.template, mobileTemplateDraft.date, mobileTemplateDraft.startTime);
+                setMobileTemplateDraft(null);
+                setActivePage("plan");
+              }}
+            >
+              <header>
+                <div>
+                  <p className="eyebrow">Vorlage verwenden</p>
+                  <h2>{mobileTemplateDraft.template.title}</h2>
+                </div>
+                <button type="button" onClick={() => setMobileTemplateDraft(null)} aria-label="Vorlage schliessen">x</button>
+              </header>
+              <div className="mobile-template-use-meta">
+                <span>{mobileTemplateDraft.template.trainingArea}</span>
+                <span>{mobileTemplateDraft.template.defaultDurationMinutes ?? 60} min</span>
+                <span>Intensitaet {mobileTemplateDraft.template.defaultIntensity}</span>
+              </div>
+              <label>
+                Tag
+                <input
+                  type="date"
+                  value={mobileTemplateDraft.date}
+                  onChange={(event) => setMobileTemplateDraft((current) => current ? { ...current, date: event.currentTarget.value } : current)}
+                  required
+                />
+              </label>
+              <label>
+                Uhrzeit
+                <input
+                  type="time"
+                  value={mobileTemplateDraft.startTime}
+                  onChange={(event) => setMobileTemplateDraft((current) => current ? { ...current, startTime: event.currentTarget.value } : current)}
+                  required
+                />
+              </label>
+              <footer>
+                <button className="ghost-button" type="button" onClick={() => setMobileTemplateDraft(null)}>Abbrechen</button>
+                <button className="save-button" type="submit">Speichern</button>
+              </footer>
+            </form>
           </div>
         ) : null}
       </section>

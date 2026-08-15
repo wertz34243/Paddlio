@@ -11333,6 +11333,92 @@ body,
   font-size: 0.78rem;
 }
 
+.app-shell-phone .mobile-template-use-sheet {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  max-height: min(78vh, 620px);
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px 24px 0 0;
+  background: rgba(11, 18, 32, 0.98);
+  padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+  box-shadow: 0 -24px 80px rgba(0, 0, 0, 0.45);
+}
+
+.app-shell-phone .mobile-template-use-sheet header,
+.app-shell-phone .mobile-template-use-sheet footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.app-shell-phone .mobile-template-use-sheet header h2 {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 1.15rem;
+  line-height: 1.15;
+}
+
+.app-shell-phone .mobile-template-use-sheet header button {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--po-text, #f7fbff);
+  font-size: 1.25rem;
+}
+
+.app-shell-phone .mobile-template-use-meta {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.app-shell-phone .mobile-template-use-meta span {
+  flex: 0 0 auto;
+  max-width: 10rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(144, 224, 239, 0.1);
+  color: var(--po-text-muted, #a8b3c7);
+  padding: 5px 9px;
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-shell-phone .mobile-template-use-sheet label {
+  display: grid;
+  gap: 6px;
+  color: var(--po-text-muted, #a8b3c7);
+  font-weight: 800;
+}
+
+.app-shell-phone .mobile-template-use-sheet input {
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--po-text, #f7fbff);
+  padding: 0 12px;
+}
+
+.app-shell-phone .mobile-template-use-sheet footer button {
+  min-width: 0;
+  min-height: 42px;
+  flex: 1 1 0;
+}
+
 @media (max-width: 767px) {
   .app-shell-phone .app-header-compact {
     min-height: 44px;
@@ -11509,6 +11595,30 @@ body,
   border-radius: 24px 24px 0 0;
   padding: 16px 14px calc(16px + env(safe-area-inset-bottom));
   box-shadow: 0 -24px 80px rgba(0, 0, 0, 0.48);
+}
+
+.app-shell-phone .master-modal-backdrop,
+.app-shell-phone .master-live-training {
+  padding: 0;
+  align-items: end;
+  overflow-x: hidden;
+}
+
+.app-shell-phone .master-feedback-sheet,
+.app-shell-phone .master-week-copy,
+.app-shell-phone .master-live-training {
+  width: 100%;
+  max-width: none;
+  max-height: min(84vh, 720px);
+  overflow-y: auto;
+  border-radius: 24px 24px 0 0;
+  padding: 16px 14px calc(16px + env(safe-area-inset-bottom));
+}
+
+.app-shell-phone .master-feedback-sheet .master-form-grid,
+.app-shell-phone .master-quick-edit .master-form-grid,
+.app-shell-phone .master-week-copy .master-form-grid {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .app-shell-phone .master-detail-drawer > header {
