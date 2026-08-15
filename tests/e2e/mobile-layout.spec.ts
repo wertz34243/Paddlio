@@ -10,6 +10,10 @@ async function expectNoHorizontalOverflow(page: import("@playwright/test").Page)
 }
 
 test.describe("mobile layout guards", () => {
+  test.beforeEach(async ({}, testInfo) => {
+    test.skip(testInfo.project.name !== "mobile-edge", "Mobile layout guards are covered in the mobile-edge project.");
+  });
+
   test("login shell does not overflow on iPhone SE width", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto("/");

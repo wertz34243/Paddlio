@@ -4,10 +4,13 @@ const coachEmail = process.env.PADDLIO_E2E_COACH_EMAIL;
 const coachPassword = process.env.PADDLIO_E2E_COACH_PASSWORD;
 const athleteEmail = process.env.PADDLIO_E2E_ATHLETE_EMAIL;
 const athletePassword = process.env.PADDLIO_E2E_ATHLETE_PASSWORD;
+const clubAdminEmail = process.env.PADDLIO_E2E_CLUBADMIN_EMAIL;
+const clubAdminPassword = process.env.PADDLIO_E2E_CLUBADMIN_PASSWORD;
 const adminEmail = process.env.PADDLIO_E2E_ADMIN_EMAIL;
 const adminPassword = process.env.PADDLIO_E2E_ADMIN_PASSWORD;
 
 const hasCoachAthleteCredentials = Boolean(coachEmail && coachPassword && athleteEmail && athletePassword);
+const hasClubAdminCredentials = Boolean(clubAdminEmail && clubAdminPassword);
 const hasAdminCredentials = Boolean(adminEmail && adminPassword);
 
 test.describe.configure({ mode: "serial" });
@@ -42,8 +45,8 @@ async function openMainPage(page: Page, label: "Training") {
 
 async function openTrainingPlan(page: Page) {
   await openMainPage(page, "Training");
-  await page.getByRole("tab", { name: "Plan" }).click();
-  await expect(page.getByRole("button", { name: "Neue Trainingseinheit im Plan eintragen" })).toBeVisible();
+  await page.getByRole("tab", { name: /Vorlagen|Plan/ }).click();
+  await expect(page.getByRole("button", { name: /Neue Trainingseinheit im Plan eintragen|Training planen/ }).first()).toBeVisible();
 }
 
 async function expectTrainingVisibleAfterSync(page: Page, title: string) {
@@ -74,6 +77,12 @@ async function expectTextVisibleAfterSync(page: Page, text: string) {
 
 const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+function seededAthletePattern(email?: string): RegExp {
+  if (email?.includes("athlete2")) return /Noah Test|athlete2/i;
+  if (email?.includes("athlete3")) return /Lea Test|athlete3/i;
+  return /Mia Test|athlete1/i;
+}
+
 test.describe("role isolation", () => {
   test.skip(!hasCoachAthleteCredentials, "Set PADDLIO_E2E_COACH_* and PADDLIO_E2E_ATHLETE_* for authenticated role E2E.");
 
@@ -92,7 +101,19 @@ test.describe("role isolation", () => {
     await login(page, coachEmail!, coachPassword!);
     await openMore(page);
 
-    await expect(page.getByText("Coach Hub")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Coach Hub" })).toBeVisible();
+    await expect(page.getByText("Admin Hub")).not.toBeVisible();
+  });
+});
+
+test.describe("club admin access", () => {
+  test.skip(!hasClubAdminCredentials, "Set PADDLIO_E2E_CLUBADMIN_* for authenticated club admin E2E.");
+
+  test("club admin can use coach-level hub without admin hub", async ({ page }) => {
+    await login(page, clubAdminEmail!, clubAdminPassword!);
+    await openMore(page);
+
+    await expect(page.getByRole("heading", { name: "Coach Hub" })).toBeVisible();
     await expect(page.getByText("Admin Hub")).not.toBeVisible();
   });
 });
@@ -117,7 +138,7 @@ test.describe("two-device training and feedback flow", () => {
     await expect(athletePage.getByRole("heading", { name: "Heute" })).toBeVisible();
 
     await openTrainingPlan(coachPage);
-    await coachPage.getByRole("button", { name: "Neue Trainingseinheit im Plan eintragen" }).click();
+    await coachPage.getByRole("button", { name: /Neue Trainingseinheit im Plan eintragen|Training planen/ }).first().click();
     const planForm = coachPage.locator("form.entry-form").filter({ has: coachPage.locator('input[name="title"]') }).last();
     await planForm.getByLabel("Titel").fill(title);
     await planForm.locator('select[name="assignedType"]').selectOption("athlete");
@@ -131,7 +152,7 @@ test.describe("two-device training and feedback flow", () => {
 
     const athleteTarget = planForm
       .locator("label.toggle-row")
-      .filter({ hasText: /auren|elritzen|icloud|trst hallo/i })
+      .filter({ hasText: seededAthletePattern(athleteEmail) })
       .locator('input[name="assignedAthleteIds"]')
       .first();
     await expect(athleteTarget).toHaveCount(1);

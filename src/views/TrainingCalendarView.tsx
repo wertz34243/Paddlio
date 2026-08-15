@@ -301,7 +301,12 @@ export function TrainingCalendarView({
   const [focusDate, setFocusDate] = useState(getTodayKey());
   const [dragTemplateId, setDragTemplateId] = useState<string | null>(null);
   const [templateScope, setTemplateScope] = useState<TemplateScope>("favorites");
-  const [showTemplates, setShowTemplates] = useState(!isPhone);
+  const [viewport, setViewport] = useState(() => ({
+    width: typeof window === "undefined" ? 1200 : window.innerWidth,
+    height: typeof window === "undefined" ? 900 : window.innerHeight,
+  }));
+  const initialOverlayContext = deviceClass === "tablet" && viewport.width < 1024;
+  const [showTemplates, setShowTemplates] = useState(!isPhone && !initialOverlayContext);
   const [query, setQuery] = useState("");
   const [areaFilter, setAreaFilter] = useState<"all" | TrainingArea>("all");
   const [statusFilter, setStatusFilter] = useState<"all" | PlanStatus>("all");
@@ -313,20 +318,41 @@ export function TrainingCalendarView({
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [weekCopyOpen, setWeekCopyOpen] = useState(false);
+  const isTablet = deviceClass === "tablet";
+  const isTabletPortrait = isTablet && viewport.width < 1024 && viewport.height >= viewport.width;
+  const usesOverlayContext = isTablet && viewport.width < 1024;
 
   const availableModes: CalendarMode[] = isPhone
     ? ["day", "threeDays", "week", "list"]
     : isDesktop
       ? ["day", "week", "month", "year", "season", "list"]
-      : ["day", "week", "month", "list", "season"];
+      : ["day", "threeDays", "week", "month", "list", "season"];
 
   useEffect(() => {
     if (!availableModes.includes(mode)) setMode(availableModes[0]);
   }, [availableModes, mode]);
 
   useEffect(() => {
-    setShowTemplates(!isPhone);
-  }, [isPhone]);
+    if (typeof window === "undefined") return undefined;
+    const updateViewport = () => setViewport({ width: window.innerWidth, height: window.innerHeight });
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    window.addEventListener("orientationchange", updateViewport);
+    return () => {
+      window.removeEventListener("resize", updateViewport);
+      window.removeEventListener("orientationchange", updateViewport);
+    };
+  }, []);
+
+  useEffect(() => {
+    setShowTemplates(!isPhone && !usesOverlayContext);
+  }, [isPhone, usesOverlayContext]);
+
+  useEffect(() => {
+    if (isTabletPortrait && mode === "week") {
+      setMode("threeDays");
+    }
+  }, [isTabletPortrait, mode]);
 
   const groupOptions = data?.coachGroups.filter((group) => !clubId || group.clubId === clubId) ?? [];
   const athleteOptions = data?.coachAthletes.filter((athlete) => !clubId || athlete.clubId === clubId) ?? [];
@@ -377,6 +403,8 @@ export function TrainingCalendarView({
   };
 
   const openQuickEdit = (template: TrainingTemplate, date = focusDate) => {
+    setSelectedEntryId(null);
+    if (usesOverlayContext) setShowTemplates(false);
     setQuickEdit(createQuickEdit(template, date, user));
   };
 
@@ -511,8 +539,62 @@ export function TrainingCalendarView({
     query.trim() ? { id: "query", label: query.trim(), onClear: () => setQuery("") } : null,
   ].filter(Boolean) as Array<{ id: string; label: string; onClear: () => void }>;
 
+  const hasContextContent = Boolean(quickEdit || selectedEntry || showTemplates);
+  const contextTitle = quickEdit ? "Quick Edit" : selectedEntry ? "Training" : showTemplates ? "Vorlagen" : "Kontext";
+  const contextContent = quickEdit ? (
+    <TrainingQuickEdit
+      state={quickEdit}
+      groups={groupOptions}
+      athletes={athleteOptions}
+      trainers={trainerOptions}
+      onChange={setQuickEdit}
+      onCancel={() => setQuickEdit(null)}
+      onSave={saveQuickEdit}
+      onOpenFullPlan={() => {
+        setQuickEdit(null);
+        onOpenPlan();
+      }}
+      presentation="context"
+    />
+  ) : selectedEntry ? (
+    <TrainingDetailDrawer
+      entry={selectedEntry}
+      journal={journal}
+      feedback={data?.trainingFeedback ?? []}
+      tasks={taskItems}
+      taskAssignments={taskAssignments}
+      groups={groupOptions}
+      athletes={athleteOptions}
+      users={data?.users ?? []}
+      user={user}
+      onClose={() => setSelectedEntryId(null)}
+      onStatusChange={onStatusChange}
+      onStartLive={(entry) => setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 })}
+      onFeedback={setFeedbackEntry}
+      onDuplicate={duplicateEntry}
+      onDelete={onDelete}
+      onDeleteSeries={onDeleteSeries}
+      entries={entries}
+      presentation="context"
+    />
+  ) : showTemplates ? (
+    <TemplatePanel templates={calendarTemplates} scope={templateScope} onScopeChange={setTemplateScope} onDragStart={setDragTemplateId} onDragEnd={() => setDragTemplateId(null)} onQuickInsert={(template) => openQuickEdit(template)} onOpenPlan={onOpenPlan} />
+  ) : (
+    <PaddlioOneCard className="master-context-empty">
+      <p className="po-eyebrow">Kontext</p>
+      <h2>Kalender bleibt sichtbar</h2>
+      <p className="po-muted">Vorlagen, Trainingsdetails und Quick Edit erscheinen hier, ohne die Planung zu verdecken.</p>
+    </PaddlioOneCard>
+  );
+
+  const closeContext = () => {
+    setQuickEdit(null);
+    setSelectedEntryId(null);
+    setShowTemplates(false);
+  };
+
   return (
-    <div className={`master-calendar-workspace master-calendar-${deviceClass}`}>
+    <div className={`master-calendar-workspace master-calendar-${deviceClass}${isTabletPortrait ? " is-tablet-portrait" : ""}${usesOverlayContext ? " is-context-overlay" : ""}`}>
       <main className="master-calendar-main">
         <PaddlioOnePageHeader
           eyebrow="Kalender"
@@ -520,7 +602,11 @@ export function TrainingCalendarView({
           description={isPhone ? undefined : "Vorlagen planen, Einheiten durchführen, Feedback sichern und Soll/Ist direkt nachvollziehen."}
           action={
             <div className="master-calendar-header-actions">
-              {!isPhone ? <PaddlioOneButton variant="secondary" onClick={() => setShowTemplates((value) => !value)}>
+              {!isPhone ? <PaddlioOneButton variant="secondary" onClick={() => {
+                setQuickEdit(null);
+                setSelectedEntryId(null);
+                setShowTemplates((value) => !value);
+              }}>
                 {showTemplates ? "Vorlagen ausblenden" : "Vorlagen"}
               </PaddlioOneButton> : null}
               <PaddlioOneButton
@@ -611,23 +697,23 @@ export function TrainingCalendarView({
         ) : null}
 
         {mode === "month" ? (
-          <MonthCalendar days={monthDays} groupedEntries={groupedEntries} focusDate={focusDate} onSelectDate={setFocusDate} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={setSelectedEntryId} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} showDropHint={Boolean(dragTemplateId) && !isPhone} />
+          <MonthCalendar days={monthDays} groupedEntries={groupedEntries} focusDate={focusDate} onSelectDate={setFocusDate} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={(id) => { setShowTemplates(false); setSelectedEntryId(id); }} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} showDropHint={Boolean(dragTemplateId) && !isPhone} />
         ) : null}
 
         {mode === "week" ? (
-          <WeekCalendar days={weekDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={setSelectedEntryId} onStartLive={(entry) => setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 })} onFeedback={setFeedbackEntry} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={Boolean(dragTemplateId) && !isPhone} />
+          <WeekCalendar days={weekDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={(id) => { setShowTemplates(false); setSelectedEntryId(id); }} onStartLive={(entry) => setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 })} onFeedback={setFeedbackEntry} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={Boolean(dragTemplateId) && !isPhone} />
         ) : null}
 
         {mode === "day" ? (
-          <DayCalendar date={focusDate} entries={dayEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={setSelectedEntryId} onStartLive={(entry) => setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 })} onFeedback={setFeedbackEntry} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={false} />
+          <DayCalendar date={focusDate} entries={dayEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={(id) => { setShowTemplates(false); setSelectedEntryId(id); }} onStartLive={(entry) => setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 })} onFeedback={setFeedbackEntry} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={false} />
         ) : null}
 
         {mode === "threeDays" ? (
-          <WeekCalendar days={threeDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={setSelectedEntryId} onStartLive={(entry) => setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 })} onFeedback={setFeedbackEntry} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} compact showDropHint={false} />
+          <WeekCalendar days={threeDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={(id) => { setShowTemplates(false); setSelectedEntryId(id); }} onStartLive={(entry) => setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 })} onFeedback={setFeedbackEntry} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} compact showDropHint={false} />
         ) : null}
 
         {mode === "list" ? (
-          <AgendaList entries={filteredEntries} onOpenEntry={setSelectedEntryId} onStartLive={(entry) => setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 })} onFeedback={setFeedbackEntry} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} />
+          <AgendaList entries={filteredEntries} onOpenEntry={(id) => { setShowTemplates(false); setSelectedEntryId(id); }} onStartLive={(entry) => setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 })} onFeedback={setFeedbackEntry} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} />
         ) : null}
 
         {mode === "year" ? (
@@ -641,54 +727,19 @@ export function TrainingCalendarView({
         {!isPhone ? <WeekPlanStrip entries={weekEntries} onOpenPlan={onOpenPlan} onOpenEntry={setSelectedEntryId} /> : null}
       </main>
 
-      {!isPhone ? (
-        <aside className="master-calendar-context" aria-label="Kalender-Kontext">
-          {quickEdit ? (
-            <TrainingQuickEdit
-              state={quickEdit}
-              groups={groupOptions}
-              athletes={athleteOptions}
-              trainers={trainerOptions}
-              onChange={setQuickEdit}
-              onCancel={() => setQuickEdit(null)}
-              onSave={saveQuickEdit}
-              onOpenFullPlan={() => {
-                setQuickEdit(null);
-                onOpenPlan();
-              }}
-              presentation="context"
-            />
-          ) : selectedEntry ? (
-            <TrainingDetailDrawer
-              entry={selectedEntry}
-              journal={journal}
-              feedback={data?.trainingFeedback ?? []}
-              tasks={taskItems}
-              taskAssignments={taskAssignments}
-              groups={groupOptions}
-              athletes={athleteOptions}
-              users={data?.users ?? []}
-              user={user}
-              onClose={() => setSelectedEntryId(null)}
-              onStatusChange={onStatusChange}
-              onStartLive={(entry) => setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 })}
-              onFeedback={setFeedbackEntry}
-              onDuplicate={duplicateEntry}
-              onDelete={onDelete}
-              onDeleteSeries={onDeleteSeries}
-              entries={entries}
-              presentation="context"
-            />
-          ) : showTemplates ? (
-            <TemplatePanel templates={calendarTemplates} scope={templateScope} onScopeChange={setTemplateScope} onDragStart={setDragTemplateId} onDragEnd={() => setDragTemplateId(null)} onQuickInsert={(template) => openQuickEdit(template)} onOpenPlan={onOpenPlan} />
-          ) : (
-            <PaddlioOneCard className="master-context-empty">
-              <p className="po-eyebrow">Kontext</p>
-              <h2>Kalender bleibt sichtbar</h2>
-              <p className="po-muted">Vorlagen, Trainingsdetails und Quick Edit erscheinen hier, ohne die Planung zu verdecken.</p>
-            </PaddlioOneCard>
-          )}
-        </aside>
+      {!isPhone && hasContextContent ? (
+        <>
+          {usesOverlayContext ? <button type="button" className="master-calendar-context-backdrop" aria-label="Kalender-Kontext schliessen" onClick={closeContext} /> : null}
+          <aside className={`master-calendar-context${usesOverlayContext ? " is-overlay" : ""}`} aria-label="Kalender-Kontext">
+            {usesOverlayContext ? (
+              <header className="master-calendar-context-header">
+                <strong>{contextTitle}</strong>
+                <button type="button" onClick={closeContext} aria-label="Kalender-Kontext schliessen">Schliessen</button>
+              </header>
+            ) : null}
+            {contextContent}
+          </aside>
+        </>
       ) : null}
 
       {isPhone && selectedEntry ? (

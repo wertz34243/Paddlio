@@ -11679,6 +11679,71 @@ body,
   width: 100%;
 }
 
+.master-calendar-workspace.is-context-overlay {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.master-calendar-context-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 79;
+  border: 0;
+  background: rgba(1, 6, 12, 0.52);
+  backdrop-filter: blur(8px);
+}
+
+.master-calendar-context.is-overlay {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
+  bottom: max(14px, env(safe-area-inset-bottom));
+  z-index: 80;
+  width: min(88vw, 620px);
+  max-width: calc(100vw - 28px);
+  overflow: auto;
+  border: 1px solid var(--po-border, rgba(255, 255, 255, 0.14));
+  border-radius: 24px;
+  background: rgba(8, 15, 24, 0.98);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.48);
+  padding: 12px;
+}
+
+.master-calendar-context-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: -12px -12px 12px;
+  padding: 12px;
+  border-bottom: 1px solid var(--po-border, rgba(255, 255, 255, 0.12));
+  background: rgba(8, 15, 24, 0.96);
+  backdrop-filter: blur(12px);
+}
+
+.master-calendar-context-header strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--po-text-strong, #f7fbff);
+  font-size: 0.95rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.master-calendar-context-header button {
+  min-height: 36px;
+  border: 1px solid var(--po-border, rgba(255, 255, 255, 0.12));
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--po-text, #e5edf7);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 6px 10px;
+}
+
 .master-calendar-context .master-template-panel,
 .master-calendar-context .master-context-section,
 .master-calendar-context .master-detail-drawer.is-context,
@@ -11954,8 +12019,95 @@ body,
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .master-calendar-context {
+  .master-calendar-workspace.master-calendar-tablet .master-calendar-main {
+    min-width: 0;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet .po-page-header {
+    gap: 10px;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet .master-calendar-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet .master-calendar-toolbar-group {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet .master-segmented-control {
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet .master-segmented-control button {
+    flex: 0 0 auto;
+    min-width: 64px;
+    padding-inline: 10px;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet .master-calendar-controls {
+    grid-template-columns: minmax(0, 1fr) repeat(2, minmax(130px, 0.45fr));
+    gap: 8px;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet .master-calendar-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet .po-metric-card {
+    padding: 10px;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet .master-calendar-week-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet .master-calendar-week-day {
+    min-height: 18rem;
+    padding: 10px;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet .master-training-block {
+    padding: 9px;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet .master-training-block-main strong {
+    -webkit-line-clamp: 2;
+    font-size: 0.9rem;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet .master-calendar-context:not(.is-overlay) {
     position: static;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) and (orientation: portrait) {
+  .master-calendar-workspace.master-calendar-tablet.is-tablet-portrait .master-calendar-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .master-calendar-workspace.master-calendar-tablet.is-tablet-portrait .master-calendar-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .master-calendar-workspace.master-calendar-tablet.is-tablet-portrait .master-calendar-week-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .master-calendar-workspace.master-calendar-tablet.is-tablet-portrait .master-calendar-empty-drop {
+    display: none;
+  }
+
+  .master-calendar-context.is-overlay {
+    width: min(90vw, 640px);
   }
 }
 

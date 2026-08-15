@@ -110,16 +110,20 @@ const users = [
 ];
 
 const profileRolesFor = (user) => {
-  if (user.key === "clubAdmin") {
-    return ["TeamAdmin"];
-  }
-
   return user.roles;
 };
 
 const today = new Date();
 const isoDate = (offsetDays) => {
   const value = new Date(today.getFullYear(), today.getMonth(), today.getDate() + offsetDays);
+  const month = `${value.getMonth() + 1}`.padStart(2, "0");
+  const day = `${value.getDate()}`.padStart(2, "0");
+  return `${value.getFullYear()}-${month}-${day}`;
+};
+const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+const weekDate = (dayIndex) => {
+  const value = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + dayIndex);
   const month = `${value.getMonth() + 1}`.padStart(2, "0");
   const day = `${value.getDate()}`.padStart(2, "0");
   return `${value.getFullYear()}-${month}-${day}`;
@@ -181,6 +185,67 @@ async function upsertAdaptive(label, table, payload, options, { optional = false
   }
 
   fail(`${label} fehlgeschlagen: zu viele Schema-Anpassungen noetig.`);
+}
+
+function buildProfilePayload(ids, { clubAdminFallback = false } = {}) {
+  return users.map((user) => {
+    const roles = clubAdminFallback && user.key === "clubAdmin" ? ["TeamAdmin"] : profileRolesFor(user);
+    return {
+      id: ids[user.key],
+      email: user.email,
+      first_name: user.firstName,
+      last_name: user.lastName,
+      display_name: `${user.firstName} ${user.lastName}`,
+      club_id: clubId,
+      active_club_id: clubId,
+      roles,
+      primary_role: roles[0],
+      status: "active",
+      age_category: user.ageCategory,
+      boat_classes: user.boatClasses,
+      updated_at: now,
+    };
+  });
+}
+
+async function upsertProfiles(ids) {
+  let nextPayload = buildProfilePayload(ids);
+  const removedColumns = [];
+  let usedClubAdminFallback = false;
+
+  for (let attempt = 0; attempt < 24; attempt += 1) {
+    const { error } = await supabase.from("profiles").upsert(nextPayload, { onConflict: "id" });
+
+    if (!error) {
+      if (removedColumns.length) {
+        console.log(`[seed:development] Profile upsert: optionale Spalten ausgelassen: ${removedColumns.join(", ")}`);
+      }
+      if (usedClubAdminFallback) {
+        console.log("[seed:development] ClubAdmin-Profilrolle auf TeamAdmin fallback, weil die Dev-Datenbank ClubAdmin im profiles_roles_check noch nicht erlaubt.");
+      }
+      return;
+    }
+
+    const missingColumn = getMissingColumn(error);
+    if (missingColumn) {
+      removedColumns.push(missingColumn);
+      nextPayload = removeColumnFromPayload(nextPayload, missingColumn);
+      continue;
+    }
+
+    if (!usedClubAdminFallback && error.message.includes("profiles_roles_check")) {
+      usedClubAdminFallback = true;
+      nextPayload = buildProfilePayload(ids, { clubAdminFallback: true });
+      for (const column of removedColumns) {
+        nextPayload = removeColumnFromPayload(nextPayload, column);
+      }
+      continue;
+    }
+
+    fail(`Profile upsert fehlgeschlagen: ${error.message}`);
+  }
+
+  fail("Profile upsert fehlgeschlagen: zu viele Schema-Anpassungen noetig.");
 }
 
 async function listAllAuthUsers() {
@@ -262,26 +327,7 @@ await upsertAdaptive(
   { onConflict: "id" },
 );
 
-await upsertAdaptive(
-  "Profile upsert",
-  "profiles",
-  users.map((user) => ({
-    id: ids[user.key],
-    email: user.email,
-    first_name: user.firstName,
-    last_name: user.lastName,
-    display_name: `${user.firstName} ${user.lastName}`,
-    club_id: clubId,
-    active_club_id: clubId,
-    roles: profileRolesFor(user),
-    primary_role: profileRolesFor(user)[0],
-    status: "active",
-    age_category: user.ageCategory,
-    boat_classes: user.boatClasses,
-    updated_at: now,
-  })),
-  { onConflict: "id" },
-);
+await upsertProfiles(ids);
 
 await upsertAdaptive(
   "Club-Mitgliedschaften upsert",
@@ -333,66 +379,178 @@ await upsertAdaptive(
   { optional: true },
 );
 
+await upsertAdaptive(
+  "Gruppenmitgliedschaften upsert",
+  "group_memberships",
+  [
+    { key: "coach", role: "Coach" },
+    { key: "athlete1", role: "Athlete" },
+    { key: "athlete2", role: "Athlete" },
+    { key: "athlete3", role: "Athlete" },
+  ].map((member, index) => ({
+    id: `22222222-2222-4222-8222-22222222224${index + 1}`,
+    group_id: groupId,
+    user_id: ids[member.key],
+    role: member.role,
+    status: "active",
+    updated_at: now,
+  })),
+  { onConflict: "id" },
+  { optional: true },
+);
+
 const trainingItems = [
   {
     id: "33333333-3333-4333-8333-333333333331",
-    title: "Technik Aufwaertstore",
-    date: isoDate(0),
+    title: "K1 GA1 Grundlagenfahrt",
+    date: weekDate(0),
     start_time: "17:00",
-    end_time: "18:15",
-    duration_minutes: 75,
+    end_time: "18:30",
+    duration_minutes: 90,
     area: "Wasser",
-    training_type: "Technik",
-    boat_class: "K1+C1",
-    goal: "Linienwahl, Blickfuehrung, saubere Torpassage",
-    intensity: "mittel",
-    notes: "Basisplan fuer die Gruppe mit individueller Zusatzaufgabe fuer Mia.",
+    training_type: "Ausdauer",
+    boat_class: "K1",
+    goal: "Ruhige Grundlagenfahrt mit sauberem Rhythmus",
+    intensity: "locker",
+    notes: "Basisplan fuer Athlete 1. Saubere Technik trotz niedriger Belastung.",
     repeat_series_id: seriesId,
   },
   {
     id: "33333333-3333-4333-8333-333333333332",
-    title: "GA1 Grundlagenfahrt",
-    date: isoDate(1),
-    start_time: "16:30",
-    end_time: "17:30",
-    duration_minutes: 60,
-    area: "Wasser",
-    training_type: "Ausdauer",
-    boat_class: "K1+C1",
-    goal: "Aerobe Grundlagenausdauer, gleichmaessiger Rhythmus",
-    intensity: "locker",
-    notes: "Soll-Training fuer Polar-Zuordnung.",
-    repeat_series_id: seriesId,
-  },
-  {
-    id: "33333333-3333-4333-8333-333333333333",
     title: "Kraftausdauer Zirkel",
-    date: isoDate(2),
+    date: weekDate(1),
     start_time: "18:00",
     end_time: "19:00",
     duration_minutes: 60,
     area: "Athletik",
     training_type: "Kraft",
     boat_class: "none",
-    goal: "Rumpfstabilitaet, Schulterstabilitaet",
+    goal: "Rumpfstabilitaet und Schulterstabilitaet",
     intensity: "mittel",
     notes: "40 Sekunden Belastung, 20 Sekunden Wechsel, 4 Runden.",
     repeat_series_id: seriesId,
   },
   {
+    id: "33333333-3333-4333-8333-333333333333",
+    title: "K1 Technik Aufwaertstore",
+    date: weekDate(2),
+    start_time: "17:00",
+    end_time: "18:30",
+    duration_minutes: 90,
+    area: "Wasser",
+    training_type: "Technik",
+    boat_class: "K1",
+    goal: "Aufwaertstor, Uebergriff, Linienwahl",
+    intensity: "mittel",
+    notes: "Basisplan fuer U14. Athlete 2 reduziert auf 60 min mit Fokus Uebergriff.",
+    repeat_series_id: seriesId,
+  },
+  {
     id: "33333333-3333-4333-8333-333333333334",
     title: "Regeneration und Beweglichkeit",
-    date: isoDate(3),
+    date: weekDate(3),
     start_time: "17:00",
-    end_time: "17:40",
-    duration_minutes: 40,
+    end_time: "17:45",
+    duration_minutes: 45,
     area: "Athletik",
     training_type: "Regeneration",
     boat_class: "none",
     goal: "Mobilisation und lockere Durchblutung",
     intensity: "locker",
-    notes: "Bewusst niedrig belasten.",
+    notes: "Bewusst niedrige Belastung nach Technikblock.",
     repeat_series_id: seriesId,
+  },
+  {
+    id: "33333333-3333-4333-8333-333333333335",
+    title: "C1 Technik Linie und Druck",
+    date: weekDate(4),
+    start_time: "16:45",
+    end_time: "18:00",
+    duration_minutes: 75,
+    area: "Wasser",
+    training_type: "Technik",
+    boat_class: "C1",
+    goal: "Druckphase, Linienwahl, saubere Ausfahrt",
+    intensity: "mittel",
+    notes: "C1-Schwerpunkt mit kurzer Videoanalyse.",
+    repeat_series_id: seriesId,
+  },
+  {
+    id: "33333333-3333-4333-8333-333333333336",
+    title: "Wettkampfsimulation U14",
+    date: weekDate(5),
+    start_time: "09:30",
+    end_time: "11:30",
+    duration_minutes: 120,
+    area: "Wasser",
+    training_type: "Wettkampf",
+    boat_class: "K1+C1",
+    goal: "Startablauf, zwei Wertungslaufe, Feedback direkt danach",
+    intensity: "hart",
+    notes: "Mit Zeitnahme und Trainerfeedback.",
+    repeat_series_id: "",
+  },
+  {
+    id: "33333333-3333-4333-8333-333333333337",
+    title: "Vereinsabend Paddlio Test",
+    date: weekDate(2),
+    start_time: "19:15",
+    end_time: "20:15",
+    duration_minutes: 60,
+    area: "Besprechung",
+    training_type: "Vereinstermin",
+    boat_class: "none",
+    goal: "Material, Termine und Feedbackrunde",
+    intensity: "locker",
+    notes: "Vereinsveranstaltung als Kalendereintrag.",
+    repeat_series_id: "",
+  },
+  {
+    id: "33333333-3333-4333-8333-333333333338",
+    title: "Trainingslagerblock Slalomkanal",
+    date: weekDate(4),
+    start_time: "08:30",
+    end_time: "15:30",
+    duration_minutes: 420,
+    area: "Wasser",
+    training_type: "Trainingslager",
+    boat_class: "K1+C1",
+    goal: "Tagesblock Technik, Mittagspause, Videoauswertung",
+    intensity: "mittel",
+    notes: "Trainingslagerblock zur Kalenderdarstellung.",
+    repeat_series_id: "",
+  },
+  {
+    id: "33333333-3333-4333-8333-333333333339",
+    title: "Abgesagtes Stabi-Training",
+    date: weekDate(1),
+    start_time: "16:30",
+    end_time: "17:15",
+    duration_minutes: 45,
+    area: "Athletik",
+    training_type: "Stabilisation",
+    boat_class: "none",
+    goal: "Rumpf und Schulter",
+    intensity: "locker",
+    notes: "Absage wegen Hallenbelegung.",
+    repeat_series_id: "",
+    status: "cancelled",
+  },
+  {
+    id: "33333333-3333-4333-8333-333333333340",
+    title: "Durchgefuehrtes Feedbacktraining",
+    date: weekDate(-1),
+    start_time: "17:30",
+    end_time: "18:30",
+    duration_minutes: 60,
+    area: "Wasser",
+    training_type: "Technik",
+    boat_class: "K1",
+    goal: "Tor 4 bis 7 flach und eng",
+    intensity: "mittel",
+    notes: "Bereits abgeschlossen mit Feedback.",
+    repeat_series_id: "",
+    status: "done",
   },
 ];
 
@@ -405,7 +563,7 @@ await upsertAdaptive(
     coach_id: ids.coach,
     club_id: clubId,
     assigned_group_id: groupId,
-    status: "planned",
+    status: item.status ?? "planned",
     updated_at: now,
     deleted_at: null,
   })),
@@ -418,9 +576,12 @@ await upsertAdaptive(
   "training_feedback",
   {
     id: "44444444-4444-4444-8444-444444444441",
-    training_plan_item_id: trainingItems[0].id,
+    training_plan_item_id: trainingItems[9].id,
+    training_id: trainingItems[9].id,
     athlete_id: ids.athlete1,
+    athlete_user_id: ids.athlete1,
     coach_id: ids.coach,
+    coach_user_id: ids.coach,
     status: "done",
     feeling: 8,
     difficulty: 6,
@@ -428,6 +589,7 @@ await upsertAdaptive(
     motivation: 9,
     sleep: 7,
     comment: "Aufwaertstor sicherer getroffen, Blickwechsel noch ueben.",
+    completed_at: now,
     updated_at: now,
   },
   { onConflict: "training_plan_item_id,athlete_id" },
@@ -457,12 +619,22 @@ const trainerTasks = [
   },
   {
     id: "55555555-5555-4555-8555-555555555553",
-    title: "Anwesenheit erfassen",
-    description: "Teilnahme und Abweichungen direkt nach dem Training speichern.",
+    title: "Zeiten bei Wettkampfsimulation erfassen",
+    description: "Beide Laeufe erfassen und Strafsekunden im Journal vermerken.",
     task_type: "training",
     priority: "normal",
-    due_date: isoDate(0),
-    related_training_id: trainingItems[0].id,
+    due_date: weekDate(5),
+    related_training_id: trainingItems[5].id,
+    assigned_to: ids.coach,
+  },
+  {
+    id: "55555555-5555-4555-8555-555555555554",
+    title: "Material fuer C1 Technik pruefen",
+    description: "C1-Boot und Paddel vor dem Training kontrollieren.",
+    task_type: "material",
+    priority: "normal",
+    due_date: weekDate(4),
+    related_training_id: trainingItems[4].id,
     assigned_to: ids.clubAdmin,
   },
 ];
