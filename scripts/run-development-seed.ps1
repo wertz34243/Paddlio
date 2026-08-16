@@ -53,9 +53,16 @@ if (-not $TestPassword) {
 
 $normalizedUrl = Normalize-SupabaseUrl $SupabaseUrl
 $projectRef = ([Uri]$normalizedUrl).Host.Split(".")[0]
+$productionProjectRef = "twlkhfbrrwjwppxinmpn"
 
 Write-Host "[seed:development] Projekt: $projectRef"
 Write-Host "[seed:development] URL: $normalizedUrl"
+
+if ($projectRef -eq $productionProjectRef) {
+  throw "Production-Supabase erkannt. Development-Seed wird abgebrochen."
+}
+
+Write-Host "[seed:development] DEVELOPMENT PROJECT DETECTED"
 
 try {
   Resolve-DnsName ([Uri]$normalizedUrl).Host -ErrorAction Stop | Out-Null
