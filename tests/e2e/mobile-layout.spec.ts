@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { login } from "./helpers/auth";
 
 async function expectNoHorizontalOverflow(page: import("@playwright/test").Page) {
   const overflow = await page.evaluate(() => {
@@ -7,14 +8,6 @@ async function expectNoHorizontalOverflow(page: import("@playwright/test").Page)
   });
 
   expect(overflow).toBeLessThanOrEqual(1);
-}
-
-async function login(page: Page, email: string, password: string) {
-  await page.goto("/");
-  await page.getByLabel("E-Mail").fill(email);
-  await page.getByLabel("Passwort").fill(password);
-  await page.getByRole("button", { name: "Einloggen" }).click();
-  await expect(page.getByRole("heading", { name: "Heute" })).toBeVisible({ timeout: 20_000 });
 }
 
 async function expectPhoneChromeUsable(page: Page) {

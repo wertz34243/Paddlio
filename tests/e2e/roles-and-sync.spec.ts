@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { login } from "./helpers/auth";
 
 const coachEmail = process.env.PADDLIO_E2E_COACH_EMAIL;
 const coachPassword = process.env.PADDLIO_E2E_COACH_PASSWORD;
@@ -12,14 +13,6 @@ const adminPassword = process.env.PADDLIO_E2E_ADMIN_PASSWORD;
 const hasCoachAthleteCredentials = Boolean(coachEmail && coachPassword && athleteEmail && athletePassword);
 const hasClubAdminCredentials = Boolean(clubAdminEmail && clubAdminPassword);
 const hasAdminCredentials = Boolean(adminEmail && adminPassword);
-
-async function login(page: Page, email: string, password: string) {
-  await page.goto("/");
-  await page.getByLabel("E-Mail").fill(email);
-  await page.getByLabel("Passwort").fill(password);
-  await page.getByRole("button", { name: "Einloggen" }).click();
-  await expect(page.getByRole("heading", { name: "Heute" })).toBeVisible({ timeout: 20_000 });
-}
 
 async function openMore(page: Page) {
   const mobileButton = page.getByRole("button", { name: "Mehr-Bereich öffnen" });
@@ -137,8 +130,8 @@ test.describe("two-device training and feedback flow", () => {
     await login(coachPage, coachEmail!, coachPassword!);
     await login(athletePage, athleteEmail!, athletePassword!);
 
-    await expect(coachPage.getByRole("heading", { name: "Heute" })).toBeVisible();
-    await expect(athletePage.getByRole("heading", { name: "Heute" })).toBeVisible();
+    await expect(coachPage.getByTestId("authenticated-app")).toBeVisible();
+    await expect(athletePage.getByTestId("authenticated-app")).toBeVisible();
 
     await openTrainingPlan(coachPage);
     await coachPage.getByRole("button", { name: /Neue Trainingseinheit im Plan eintragen|Training planen/ }).first().click();
