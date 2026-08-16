@@ -14,16 +14,13 @@ const isMissingColumnError = (error: unknown, columnName: string): boolean =>
       String((error as { message?: string }).message ?? "").includes(columnName),
   );
 
-const omitDeletedAt = <T extends Record<string, unknown>>(payload: T): Omit<T, "deleted_at"> => {
-  const { deleted_at: _deletedAt, ...nextPayload } = payload;
-  return nextPayload;
-};
-
 const omitColumn = <T extends Record<string, unknown>>(payload: T, columnName: string): T => {
   const nextPayload: Record<string, unknown> = { ...payload };
   delete nextPayload[columnName];
   return nextPayload as T;
 };
+
+const optionalTrainingPlanColumns = ["repeat_series_id", "deleted_at"] as const;
 
 const trainingPlanMetaPrefix = "\n\n[PaddlioTrainingMeta]";
 
@@ -179,17 +176,20 @@ export const upsertCloudTraining = async (entry: PlanEntry): Promise<void> => {
     return;
   }
   let cloudPayload = payload;
-  let { error } = await (client.from("training_plan_items") as any).upsert(cloudPayload, { onConflict: "id" });
-  if (error && isMissingColumnError(error, "repeat_series_id")) {
-    cloudPayload = omitColumn(cloudPayload, "repeat_series_id");
-    const fallback = await (client.from("training_plan_items") as any).upsert(cloudPayload, { onConflict: "id" });
-    error = fallback.error;
+  const omittedColumns = new Set<string>();
+
+  for (let attempt = 0; attempt <= optionalTrainingPlanColumns.length; attempt += 1) {
+    const { error } = await (client.from("training_plan_items") as any).upsert(cloudPayload, { onConflict: "id" });
+    if (!error) return;
+
+    const missingOptionalColumn = optionalTrainingPlanColumns.find(
+      (columnName) => !omittedColumns.has(columnName) && isMissingColumnError(error, columnName),
+    );
+    if (!missingOptionalColumn) throw error;
+
+    omittedColumns.add(missingOptionalColumn);
+    cloudPayload = omitColumn(cloudPayload, missingOptionalColumn);
   }
-  if (error && isMissingColumnError(error, "deleted_at")) {
-    const fallback = await (client.from("training_plan_items") as any).upsert(omitDeletedAt(cloudPayload), { onConflict: "id" });
-    error = fallback.error;
-  }
-  if (error) throw error;
 };
 
 export const deleteCloudTraining = async (id: string, deletedAt = new Date().toISOString()): Promise<void> => {

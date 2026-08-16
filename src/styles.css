@@ -11599,6 +11599,7 @@ body,
 
 .app-shell-phone .master-modal-backdrop,
 .app-shell-phone .master-live-training {
+  z-index: 1300;
   padding: 0;
   align-items: end;
   overflow-x: hidden;
