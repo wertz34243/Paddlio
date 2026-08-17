@@ -413,9 +413,9 @@ export function TrainingView({
                 </article>
               );
             })
-          ) : (
+          ) : !draft ? (
             <p className="empty-state">Keine Einheiten für diesen Filter.</p>
-          )}
+          ) : null}
         </div>
       </section>
     </div>

@@ -12,6 +12,11 @@ type AuthViewProps = {
   cloudMessage?: string;
 };
 
+const isLoginRelevantCloudMessage = (value = ""): boolean => {
+  if (!value) return false;
+  return !/optionale Module|Zusatzfunktionen/i.test(value);
+};
+
 export function AuthView({ onLogin, onRegister, onResetPassword, cloudMessage }: AuthViewProps) {
   const [mode, setMode] = useState<AuthMode>("login");
   const [clubs] = useState(() => loadClubs().filter((club) => club.status === "active"));
@@ -195,7 +200,7 @@ export function AuthView({ onLogin, onRegister, onResetPassword, cloudMessage }:
           </form>
         )}
 
-        {cloudMessage ? <p className="auth-message">{cloudMessage}</p> : null}
+        {isLoginRelevantCloudMessage(cloudMessage) ? <p className="auth-message">{cloudMessage}</p> : null}
         {message ? <p className="auth-message">{message}</p> : null}
       </section>
     </main>

@@ -482,7 +482,12 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
         <button className="save-button" type="submit" disabled={isSaving}>
           {isSaving ? "Profil wird gespeichert..." : "Profil speichern"}
         </button>
-        {formError ? <span className="form-error">{formError}</span> : null}
+        {formError ? (
+          <div className="form-status-box error" role="alert">
+            <strong>Profil konnte nicht synchronisiert werden</strong>
+            <span>{formError}</span>
+          </div>
+        ) : null}
         {savedMessage ? <span>{savedMessage}</span> : null}
       </div>
     </form>

@@ -566,7 +566,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setCloudMessage("Cloud eingeschränkt: Profil konnte nicht bestätigt werden. Die Rolle ist lokal abgeleitet und wird beim nächsten erfolgreichen Profil-Sync überschrieben.");
         setCloudStatus(navigator.onLine ? "limited" : "offline");
       } else if (optionalCloudErrorCount > 0) {
-        setCloudMessage(`Cloud eingeschränkt: ${optionalCloudErrorCount} optionale Module konnten nicht synchronisiert werden.`);
+        setCloudMessage("Einige Zusatzfunktionen sind momentan nicht verfügbar.");
         setCloudStatus(navigator.onLine ? "limited" : "offline");
       } else {
         setCloudMessage(pendingCount > 0 ? `${pendingCount} Änderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensätze wurden in die Cloud migriert.` : "");
@@ -701,7 +701,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           if (!profileIsFallback && optionalCloudErrorCount > optionalErrorsBefore) {
             setCloudStatus(navigator.onLine ? "limited" : "offline");
-            setCloudMessage(`Cloud eingeschränkt: ${optionalCloudErrorCount - optionalErrorsBefore} optionale Module konnten später nicht synchronisiert werden.`);
+            setCloudMessage("Einige Zusatzfunktionen sind momentan nicht verfügbar.");
           }
         })();
       }, 0);

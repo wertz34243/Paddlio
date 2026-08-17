@@ -11754,6 +11754,174 @@ body,
   line-height: 1.1;
 }
 
+/* Phone UI hotfix: visible iPhone spacing, controls and error-state fixes. */
+.app-shell-phone .page-content,
+.app-shell-phone .category-shell,
+.app-shell-phone .training-sessions-view,
+.app-shell-phone .profile-form {
+  padding-top: calc(14px + env(safe-area-inset-top));
+}
+
+.app-shell-phone .section-heading {
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.app-shell-phone .section-heading > div {
+  min-width: 0;
+}
+
+.app-shell-phone .section-heading .eyebrow {
+  margin-bottom: 3px;
+  font-size: 0.68rem;
+  line-height: 1;
+}
+
+.app-shell-phone .section-heading h3,
+.app-shell-phone .section-heading h4 {
+  margin: 0;
+  font-size: 1.18rem;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+
+.app-shell-phone .section-heading > .primary-button,
+.app-shell-phone .section-heading > .primary-action,
+.app-shell-phone .section-heading > .po-button {
+  align-self: center;
+  min-width: 42px;
+  min-height: 42px;
+  margin-top: 0;
+}
+
+.app-shell-phone .training-sessions-panel .section-heading {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.app-shell-phone .training-create-wizard {
+  border-radius: 18px;
+  padding: 14px;
+}
+
+.app-shell-phone .training-create-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px;
+}
+
+.app-shell-phone .training-create-header .eyebrow {
+  margin-bottom: 3px;
+  font-size: 0.68rem;
+  line-height: 1;
+}
+
+.app-shell-phone .training-create-header h4 {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 1.18rem;
+  line-height: 1.12;
+}
+
+.app-shell-phone .training-create-header span {
+  align-self: start;
+  white-space: nowrap;
+}
+
+.app-shell-phone .training-create-steps {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.app-shell-phone .training-create-step .form-grid,
+.app-shell-phone .training-create-wizard .form-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.app-shell-phone .training-create-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.app-shell-phone .training-create-actions .primary-action,
+.app-shell-phone .training-create-actions .save-button {
+  order: 1;
+  width: 100%;
+}
+
+.app-shell-phone .training-create-actions .ghost-button:not(.wide) {
+  order: 2;
+}
+
+.app-shell-phone .training-create-actions .ghost-button.wide {
+  order: 3;
+}
+
+.app-shell-phone .profile-form input[type="file"] {
+  width: 100%;
+  min-height: 48px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  line-height: 1.25;
+}
+
+.app-shell-phone .profile-form input[type="file"]::file-selector-button {
+  min-height: 38px;
+  margin-right: 10px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(54, 211, 238, 0.18);
+  color: var(--po-text, #f7fbff);
+  font-weight: 850;
+  padding: 0 12px;
+}
+
+.app-shell-phone .profile-form .toggle-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.form-status-box {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  border: 1px solid rgba(251, 146, 60, 0.42);
+  border-radius: 16px;
+  background: rgba(127, 29, 29, 0.32);
+  color: #fed7aa;
+  padding: 12px;
+}
+
+.form-status-box strong {
+  color: #fff7ed;
+  line-height: 1.2;
+}
+
+.form-status-box span {
+  color: #fed7aa;
+  line-height: 1.35;
+}
+
+.app-shell-phone .sticky-save {
+  gap: 10px;
+}
+
+.app-shell-phone .sticky-save .form-status-box {
+  margin-top: 4px;
+}
+
+.app-shell-phone .auth-message {
+  border-radius: 16px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 @media (min-width: 768px) {
   .master-calendar-workspace.master-calendar-tablet {
     align-items: start;
