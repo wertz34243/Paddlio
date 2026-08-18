@@ -78,6 +78,16 @@ type AnalysisSegment = "overview" | "smartCoach" | "training" | "competition" | 
 type MoreSegment = "profile" | "academy" | "club" | "competitions" | "equipment" | "goals" | "records" | "notifications" | "integrations" | "feedback" | "betaGuide" | "limitations" | "beta" | "betaTesters" | "coach" | "settings";
 type MoreSegmentMeta = SegmentItem<MoreSegment> & { description: string; icon: IconName };
 type MoreGroupKind = "account" | "sport" | "team" | "beta" | "admin" | "system";
+
+const shiftTimeByMinutes = (time: string, deltaMinutes: number) => {
+  const [hours = "17", minutes = "30"] = time.split(":");
+  const totalMinutes = Number(hours) * 60 + Number(minutes) + deltaMinutes;
+  const dayMinutes = 24 * 60;
+  const normalized = ((totalMinutes % dayMinutes) + dayMinutes) % dayMinutes;
+  const nextHours = Math.floor(normalized / 60).toString().padStart(2, "0");
+  const nextMinutes = (normalized % 60).toString().padStart(2, "0");
+  return `${nextHours}:${nextMinutes}`;
+};
 type SmartMoreItem = MoreSegmentMeta & { kind: MoreGroupKind; priority?: boolean; badge?: string };
 type DeviceLimitedAction = { label: string; onClick: () => void };
 
@@ -859,6 +869,7 @@ function AppContent() {
           <div className="mobile-sheet-backdrop" role="dialog" aria-modal="true" aria-label="Vorlage verwenden">
             <form
               className="mobile-template-use-sheet"
+              data-testid="mobile-template-use-sheet"
               onSubmit={(event) => {
                 event.preventDefault();
                 insertCalendarTemplate(mobileTemplateDraft.template, mobileTemplateDraft.date, mobileTemplateDraft.startTime);
@@ -889,12 +900,23 @@ function AppContent() {
               </label>
               <label>
                 Uhrzeit
-                <input
-                  type="time"
-                  value={mobileTemplateDraft.startTime}
-                  onChange={(event) => setMobileTemplateDraft((current) => current ? { ...current, startTime: event.currentTarget.value } : current)}
-                  required
-                />
+                <div className="mobile-template-time-control" data-testid="mobile-template-time-control">
+                  <button
+                    type="button"
+                    aria-label="Uhrzeit 15 Minuten frueher"
+                    onClick={() => setMobileTemplateDraft((current) => current ? { ...current, startTime: shiftTimeByMinutes(current.startTime, -15) } : current)}
+                  >
+                    -15
+                  </button>
+                  <output data-testid="mobile-template-time" aria-live="polite">{mobileTemplateDraft.startTime}</output>
+                  <button
+                    type="button"
+                    aria-label="Uhrzeit 15 Minuten spaeter"
+                    onClick={() => setMobileTemplateDraft((current) => current ? { ...current, startTime: shiftTimeByMinutes(current.startTime, 15) } : current)}
+                  >
+                    +15
+                  </button>
+                </div>
               </label>
               <footer>
                 <button className="ghost-button" type="button" onClick={() => setMobileTemplateDraft(null)}>Abbrechen</button>

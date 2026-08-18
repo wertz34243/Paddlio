@@ -98,8 +98,14 @@ test.describe("mobile layout guards", () => {
     await expect(templateButton).toBeVisible();
     await templateButton.click();
     await expect(page.getByRole("dialog", { name: "Vorlage verwenden" })).toBeVisible();
+    await expect(page.getByTestId("mobile-template-use-sheet")).toBeVisible();
     await expect(page.getByLabel("Tag")).toBeVisible();
-    await expect(page.getByLabel("Uhrzeit")).toBeVisible();
+    await expect(page.getByTestId("mobile-template-time-control")).toBeVisible();
+    const timeValue = page.getByTestId("mobile-template-time");
+    await expect(timeValue).toHaveText("17:30");
+    await page.getByRole("button", { name: "Uhrzeit 15 Minuten spaeter" }).click();
+    await expect(timeValue).toHaveText("17:45");
+    await expect(page.getByTestId("mobile-template-use-sheet")).toBeVisible();
     await expectPhoneChromeUsable(page);
   });
 });

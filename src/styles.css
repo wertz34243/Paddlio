@@ -11403,14 +11403,57 @@ body,
   font-weight: 800;
 }
 
-.app-shell-phone .mobile-template-use-sheet input {
+.app-shell-phone .mobile-template-use-sheet input,
+.app-shell-phone .mobile-template-use-sheet select {
   min-width: 0;
+  width: 100%;
   min-height: 44px;
+  height: 44px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.06);
   color: var(--po-text, #f7fbff);
   padding: 0 12px;
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+.app-shell-phone .mobile-template-use-sheet input[type="date"] {
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.app-shell-phone .mobile-template-time-control {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) 58px;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+.app-shell-phone .mobile-template-time-control button {
+  min-height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--po-text, #f7fbff);
+  font-weight: 800;
+  font-size: 0.92rem;
+}
+
+.app-shell-phone .mobile-template-time-control output {
+  display: grid;
+  min-width: 0;
+  min-height: 44px;
+  place-items: center;
+  border: 1px solid rgba(84, 214, 255, 0.28);
+  border-radius: 14px;
+  background: rgba(84, 214, 255, 0.1);
+  color: var(--po-text, #f7fbff);
+  font-size: 1rem;
+  font-weight: 850;
+  letter-spacing: 0;
 }
 
 .app-shell-phone .mobile-template-use-sheet footer button {
@@ -11606,6 +11649,7 @@ body,
 }
 
 .app-shell-phone .master-feedback-sheet,
+.app-shell-phone .master-quick-edit,
 .app-shell-phone .master-week-copy,
 .app-shell-phone .master-live-training {
   width: 100%;
@@ -11620,6 +11664,49 @@ body,
 .app-shell-phone .master-quick-edit .master-form-grid,
 .app-shell-phone .master-week-copy .master-form-grid {
   grid-template-columns: minmax(0, 1fr);
+}
+
+.app-shell-phone .master-quick-edit {
+  display: grid;
+  gap: 12px;
+  background: rgba(11, 18, 32, 0.98);
+}
+
+.app-shell-phone .master-quick-edit header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+}
+
+.app-shell-phone .master-quick-edit header h2 {
+  margin: 0;
+  font-size: 1.18rem;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.app-shell-phone .master-quick-edit header button {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--po-text, #f7fbff);
+  font-size: 1.2rem;
+}
+
+.app-shell-phone .master-quick-edit footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.app-shell-phone .master-quick-edit input,
+.app-shell-phone .master-quick-edit select,
+.app-shell-phone .master-quick-edit textarea {
+  min-width: 0;
+  width: 100%;
 }
 
 .app-shell-phone .master-detail-drawer > header {
@@ -11838,6 +11925,41 @@ body,
 .app-shell-phone .training-create-step .form-grid,
 .app-shell-phone .training-create-wizard .form-grid {
   grid-template-columns: minmax(0, 1fr);
+}
+
+.app-shell-phone .training-create-wizard label {
+  min-width: 0;
+}
+
+.app-shell-phone .training-create-wizard input,
+.app-shell-phone .training-create-wizard select,
+.app-shell-phone .training-create-wizard textarea {
+  min-width: 0;
+  width: 100%;
+}
+
+.app-shell-phone .training-create-wizard input[type="date"],
+.app-shell-phone .training-create-wizard input[type="time"],
+.app-shell-phone .master-quick-edit input[type="date"],
+.app-shell-phone .master-quick-edit input[type="time"] {
+  min-height: 44px;
+  height: 44px;
+  padding: 0 12px;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  border-radius: 14px;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.app-shell-phone .training-create-wizard input[type="number"],
+.app-shell-phone .master-quick-edit input[type="number"] {
+  min-height: 44px;
+  height: 44px;
+  padding: 0 12px;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  border-radius: 14px;
 }
 
 .app-shell-phone .training-create-actions {

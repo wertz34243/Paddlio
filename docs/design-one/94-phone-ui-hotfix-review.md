@@ -6,6 +6,17 @@ Ziel: sichtbare Phone-UI-Fehler fuer den realen Wochenlauf beheben, ohne neue Fe
 
 ## Behobene sichtbare Fehler
 
+### Rest-Hotfix: Datumsfeld im Training-Wizard
+- Das Phone-Datumsfeld in Training -> Neue Einheit -> Schritt 2/5 nutzt jetzt dieselbe kompakte Hoehe, Schriftgroesse, Innenabstaende und Rundung wie die normalen Phone-Formfelder.
+- Datum, Uhrzeit- und Zahlenfelder werden auf Phone einheitlich mit 44 px Hoehe dargestellt.
+- Datum und Dauer wirken dadurch visuell gleichwertig.
+
+### Rest-Hotfix: Blauer Screen bei Vorlagen-Uhrzeit
+- Ursache: Der Phone-Vorlagenflow nutzte im Bottom Sheet ein natives `input type="time"`. Auf Phone/iOS kann dieser native Picker einen leeren System-/Overlay-Screen erzeugen.
+- Betroffene Komponente: Phone-Vorlagen-Sheet in `App.tsx`, Bereich "Vorlage verwenden".
+- Aenderung: Die Uhrzeit wird dort jetzt ueber ein eigenes kompaktes Phone-Control in 15-Minuten-Schritten geaendert. Es wird kein nativer Time-Picker und kein natives Select-Picker-Overlay mehr geoeffnet.
+- Ergebnis: Das Bottom Sheet bleibt sichtbar, die Uhrzeit kann geaendert werden und der Vorlagenzustand geht nicht verloren.
+
 ### Safe Area und oberer Abstand
 - Phone-Seiten erhalten zusaetzliches Top-Padding oberhalb des Inhaltsbereichs.
 - Betroffen sind allgemeine Seiteninhalte, Category-Shells, Training und Profil/Einstellungen.
@@ -111,6 +122,9 @@ Diese 27 Module gehoeren nicht zum unmittelbaren Phone-Wochenlauf-Kern fuer Kale
 - test:e2e:roles: bestanden, 9 passed / 1 skipped
 
 Hinweis: Ein Rollen-E2E-Lauf wurde zuerst parallel zum Full-E2E gestartet und kollidierte beim Zwei-Geraete-Feedback mit denselben Testdaten. Der anschliessende Einzel-Lauf war gruen.
+
+Nach Rest-Hotfix ergaenzt:
+- Mobile E2E prueft jetzt zusaetzlich die Uhrzeit-Aenderung im Vorlagen-Sheet ueber das neue Zeit-Control.
 
 ## Offene Punkte
 - Keine manuelle Safari/PWA-Pruefung auf echtem iPhone im Rahmen dieses Hotfix-Laufs durchgefuehrt.
