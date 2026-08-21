@@ -80,9 +80,9 @@ function uniqueTrainingDate(runId: number) {
 }
 
 function uniqueStartTime(runId: number) {
-  const hour = 21 + (Math.floor(runId / 10) % 2);
-  const minutes = 50 + (runId % 10);
-  return `${hour}:${`${minutes}`.padStart(2, "0")}`;
+  const hour = 5 + (Math.floor(runId / 10) % 2);
+  const minutes = runId % 60;
+  return `${`${hour}`.padStart(2, "0")}:${`${minutes}`.padStart(2, "0")}`;
 }
 
 async function createTrainingFromCalendarTemplate(page: Page, marker: string, runId: number) {
@@ -110,7 +110,8 @@ async function openTrainingDetailsByMarker(page: Page, marker: string, startTime
   const startTimePattern = startTime ? new RegExp(startTime.replace(":", ":0?")) : null;
   for (let attempt = 0; attempt < 8; attempt += 1) {
     await openCalendarWorkspace(page);
-    const candidateButtons = page.locator(".master-training-block-main, .master-training-pill [role='button'], .master-agenda-row button");
+    const allCandidateButtons = page.locator(".master-training-block-main, .master-training-pill [role='button'], .master-agenda-row button");
+    const candidateButtons = startTime ? allCandidateButtons.filter({ hasText: startTime }) : allCandidateButtons;
     const count = await candidateButtons.count();
     for (let index = 0; index < count; index += 1) {
       await candidateButtons.nth(index).click();
@@ -155,7 +156,7 @@ async function expectFeedbackVisibleAfterSync(page: Page, marker: string, text: 
     await page.reload();
     const details = await openTrainingDetailsByMarker(page, marker, startTime).catch(() => null);
     if (details) {
-      await details.getByRole("button", { name: "Feedback" }).click();
+      await details.getByRole("button", { name: "Feedback", exact: true }).click({ timeout: 5_000 }).catch(() => undefined);
     }
     if (await page.getByText(text).first().isVisible().catch(() => false)) {
       return;

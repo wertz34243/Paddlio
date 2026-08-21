@@ -1661,6 +1661,25 @@ function AppContent() {
 
   const isHome = activePage === "dashboard";
   const showCompactAppHeader = !isHome || currentDeviceClass === "phone";
+  const phoneContextTitle = (() => {
+    if (activePage === "training") {
+      if (trainingSegment === "plan") return "Vorlagen";
+      if (trainingSegment === "journal") return "Journal";
+      if (trainingSegment === "sessions") return "Erstellen";
+      return "Training";
+    }
+
+    if (activePage === "more") {
+      if (moreHubOpen) return "Mehr";
+      return moreItems.find((item) => item.id === moreSegment)?.label ?? "Mehr";
+    }
+
+    if (activePage === "analysis") {
+      return analysisSegments.find((item) => item.id === analysisSegment)?.label ?? pageTitles.analysis;
+    }
+
+    return pageTitles[activePage];
+  })();
 
   return (
     <div className={`${isHome ? "app-shell app-shell-home" : "app-shell"} app-shell-${currentDeviceClass} ${topChromeVisible ? "scroll-chrome-visible" : "scroll-chrome-hidden"}`} data-testid="authenticated-app">
@@ -1676,7 +1695,7 @@ function AppContent() {
           </div>
           <div className="page-title-lockup">
             <span className="app-version-line">Version {APP_VERSION}{isProductionEnvironment ? "" : ` · ${APP_ENVIRONMENT_LABEL}`}</span>
-            <h1>{pageTitles[activePage]}</h1>
+            <h1>{currentDeviceClass === "phone" ? phoneContextTitle : pageTitles[activePage]}</h1>
           </div>
           {!isProductionEnvironment ? <b className="environment-badge" aria-label="Development Umgebung">DEV</b> : null}
         </header>
