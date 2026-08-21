@@ -80,7 +80,7 @@ function uniqueTrainingDate(runId: number) {
 }
 
 function uniqueStartTime(runId: number) {
-  const hour = 5 + (Math.floor(runId / 10) % 2);
+  const hour = 3 + (Math.floor(runId / 10) % 2);
   const minutes = runId % 60;
   return `${`${hour}`.padStart(2, "0")}:${`${minutes}`.padStart(2, "0")}`;
 }
@@ -107,7 +107,6 @@ async function createTrainingFromCalendarTemplate(page: Page, marker: string, ru
 }
 
 async function openTrainingDetailsByMarker(page: Page, marker: string, startTime?: string) {
-  const startTimePattern = startTime ? new RegExp(startTime.replace(":", ":0?")) : null;
   for (let attempt = 0; attempt < 8; attempt += 1) {
     await openCalendarWorkspace(page);
     const allCandidateButtons = page.locator(".master-training-block-main, .master-training-pill [role='button'], .master-agenda-row button");
@@ -117,8 +116,7 @@ async function openTrainingDetailsByMarker(page: Page, marker: string, startTime
       await candidateButtons.nth(index).click();
       const details = page.getByLabel("Training Details");
       const hasMarker = await details.getByText(marker).isVisible().catch(() => false);
-      const hasStartTime = startTimePattern ? await details.getByText(startTimePattern).first().isVisible().catch(() => false) : false;
-      if (await details.isVisible().catch(() => false) && (hasMarker || hasStartTime)) {
+      if (await details.isVisible().catch(() => false) && hasMarker) {
         return details;
       }
       const closeButton = details.getByRole("button", { name: /Details.*schlie/i }).first();

@@ -13849,13 +13849,15 @@ body,
   }
 }
 
-/* Phone topbar final: Paddlio context bar. */
+/* Phone topbar option B: floating Paddlio context bar. */
 @media (max-width: 767px) {
   .app-shell.app-shell-phone {
     --phone-appbar-height: 50px;
-    --phone-top-gap: calc(2px + env(safe-area-inset-top));
-    --phone-content-gap: 4px;
+    --phone-top-gap: calc(8px + env(safe-area-inset-top));
+    --phone-content-gap: 8px;
     --scroll-chrome-secondary-top: calc(var(--phone-top-gap) + var(--phone-appbar-height) + var(--phone-content-gap));
+    gap: var(--phone-content-gap);
+    padding-top: var(--phone-top-gap);
   }
 
   .app-shell-phone .app-header-compact {
@@ -13866,15 +13868,21 @@ body,
     grid-template-columns: minmax(0, 1fr) auto auto;
     align-items: center;
     min-height: var(--phone-appbar-height);
-    margin: 0 -10px;
-    padding: 0 16px;
+    margin: 0 6px;
+    padding: 0 14px;
     gap: 8px;
-    border: 0;
-    border-bottom: 1px solid rgba(142, 232, 247, 0.08);
-    border-radius: 0;
-    background: rgba(7, 13, 22, 0.84);
-    box-shadow: none;
-    backdrop-filter: blur(14px);
+    border: 1px solid rgba(142, 232, 247, 0.11);
+    border-radius: 22px;
+    background: rgba(7, 13, 22, 0.72);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(18px);
+  }
+
+  .app-shell-phone.scroll-chrome-hidden .app-header-compact,
+  .app-shell-phone .app-header-compact.is-hidden {
+    pointer-events: auto;
+    opacity: 1;
+    transform: none;
   }
 
   .app-shell-phone .app-header-compact .brand-lockup,
@@ -13952,6 +13960,7 @@ body,
 @media (max-width: 370px) {
   .app-shell-phone .app-header-compact {
     grid-template-columns: minmax(0, 1fr) auto auto;
+    margin-inline: 4px;
     padding-inline: 12px;
   }
 
