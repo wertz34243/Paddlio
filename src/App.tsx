@@ -1660,6 +1660,7 @@ function AppContent() {
   };
 
   const isHome = activePage === "dashboard";
+  const showCompactAppHeader = !isHome || currentDeviceClass === "phone";
 
   return (
     <div className={`${isHome ? "app-shell app-shell-home" : "app-shell"} app-shell-${currentDeviceClass} ${topChromeVisible ? "scroll-chrome-visible" : "scroll-chrome-hidden"}`} data-testid="authenticated-app">
@@ -1667,7 +1668,7 @@ function AppContent() {
         Zum Inhalt springen
       </a>
       <DesktopSideNavigation appName={APP_NAME} activePage={activeNavPage} user={activeUser} items={navigationItems} onNavigate={openMainNavPage} />
-      {!isHome ? (
+      {showCompactAppHeader ? (
         <header className={`app-header app-header-compact ${topChromeVisible ? "" : "is-hidden"}`} data-testid="app-header">
           <div className="brand-lockup">
             <p className="app-brand">{APP_NAME}</p>

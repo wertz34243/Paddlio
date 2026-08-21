@@ -13178,3 +13178,127 @@ body,
     margin-bottom: 2px;
   }
 }
+
+/* Phone global top-space fix: exactly one shell layer owns the top safe area. */
+@media (max-width: 767px) {
+  .app-shell.app-shell-phone {
+    --phone-appbar-height: 24px;
+    --phone-top-gap: calc(2px + env(safe-area-inset-top));
+    --phone-content-gap: 3px;
+    --scroll-chrome-secondary-top: calc(var(--phone-top-gap) + var(--phone-appbar-height) + var(--phone-content-gap));
+    gap: var(--phone-content-gap);
+    min-height: 100dvh;
+    padding-top: var(--phone-top-gap);
+    padding-inline: 10px;
+    padding-bottom: calc(var(--phone-bottom-nav-height, 64px) + 8px + env(safe-area-inset-bottom));
+  }
+
+  .app-shell.app-shell-phone.app-shell-home {
+    padding-top: var(--phone-top-gap);
+  }
+
+  .app-shell-phone .app-header-compact {
+    position: sticky;
+    top: var(--phone-top-gap);
+    grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
+    gap: 6px;
+    min-height: var(--phone-appbar-height);
+    margin: 0 -2px 0;
+    padding: 1px 6px;
+    border: 0;
+    border-radius: 0;
+    background: rgba(7, 13, 22, 0.3);
+    box-shadow: none;
+  }
+
+  .app-shell-phone .brand-lockup,
+  .app-shell-phone .page-title-lockup {
+    gap: 0;
+    min-width: 0;
+  }
+
+  .app-shell-phone .app-header-compact .app-brand,
+  .app-shell-phone .app-header-compact .page-title-lockup h1 {
+    margin: 0;
+    overflow: hidden;
+    font-size: 0.72rem;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .app-shell-phone .app-header-compact .page-title-lockup {
+    justify-self: end;
+    text-align: right;
+  }
+
+  .app-shell-phone .app-header-compact .brand-slogan,
+  .app-shell-phone .app-header-compact .app-version-line {
+    display: none;
+  }
+
+  .app-shell-phone .app-header-compact .environment-badge {
+    padding: 1px 3px;
+    border-radius: 999px;
+    font-size: 0.42rem;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    opacity: 0.72;
+  }
+
+  .app-shell-phone .page-content {
+    padding-top: 0;
+  }
+
+  .app-shell-phone .category-shell,
+  .app-shell-phone .calendar-category-shell,
+  .app-shell-phone .segment-content,
+  .app-shell-phone .training-sessions-view,
+  .app-shell-phone .profile-form,
+  .app-shell-phone .po-workspace-dashboard {
+    margin-top: 0;
+    padding-top: 0;
+  }
+
+  .app-shell-phone.app-shell-home .po-workspace-dashboard > .po-page-header {
+    margin-top: 0;
+    margin-bottom: 10px;
+    padding: 10px 12px;
+  }
+
+  .app-shell-phone.app-shell-home .po-workspace-dashboard > .po-page-header .po-eyebrow,
+  .app-shell-phone.app-shell-home .po-workspace-dashboard > .po-page-header .po-page-description {
+    display: none;
+  }
+
+  .app-shell-phone.app-shell-home .po-workspace-dashboard > .po-page-header h1 {
+    font-size: 1.18rem;
+    line-height: 1.08;
+  }
+
+  .app-shell-phone .calendar-category-shell .po-page-header {
+    margin-top: 0;
+  }
+
+  .app-shell-phone .po-button.master-calendar-add-compact {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+@media (max-width: 390px) {
+  .app-shell.app-shell-phone {
+    --phone-appbar-height: 23px;
+    --phone-top-gap: calc(1px + env(safe-area-inset-top));
+    padding-inline: 9px;
+  }
+
+  .app-shell-phone .app-header-compact {
+    padding-inline: 7px;
+  }
+
+  .app-shell-phone .app-header-compact .app-brand,
+  .app-shell-phone .app-header-compact .page-title-lockup h1 {
+    font-size: 0.68rem;
+  }
+}
