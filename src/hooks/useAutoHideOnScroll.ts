@@ -65,6 +65,7 @@ export function useAppChromeVisibility(options: AutoHideOptions = {}): AppChrome
   const [topChromeVisible, setTopChromeVisible] = useState(true);
   const [bottomNavVisible, setBottomNavVisible] = useState(true);
   const lastScrollYRef = useRef(0);
+  const touchYRef = useRef<number | null>(null);
   const tickingRef = useRef(false);
   const idleTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
 
@@ -93,6 +94,23 @@ export function useAppChromeVisibility(options: AutoHideOptions = {}): AppChrome
       }
     }, idleMs);
   }, [getScrollY, idleMs, topOffset]);
+
+  const setTopChromeFromDirection = useCallback(
+    (deltaY: number) => {
+      if (Math.abs(deltaY) < threshold) {
+        return;
+      }
+
+      const currentScrollY = getScrollY();
+      if (currentScrollY <= topOffset && deltaY < 0) {
+        setTopChromeVisible(true);
+        return;
+      }
+
+      setTopChromeVisible(deltaY < 0);
+    },
+    [getScrollY, threshold, topOffset],
+  );
 
   useEffect(() => {
     const update = () => {
@@ -124,6 +142,25 @@ export function useAppChromeVisibility(options: AutoHideOptions = {}): AppChrome
       }
     };
 
+    const onWheel = (event: WheelEvent) => {
+      setTopChromeFromDirection(event.deltaY);
+      showBottomTemporarily();
+    };
+
+    const onTouchStart = (event: TouchEvent) => {
+      touchYRef.current = event.touches[0]?.clientY ?? null;
+      showBottomTemporarily();
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      const currentY = event.touches[0]?.clientY ?? null;
+      if (currentY !== null && touchYRef.current !== null) {
+        setTopChromeFromDirection(touchYRef.current - currentY);
+        touchYRef.current = currentY;
+      }
+      showBottomTemporarily();
+    };
+
     const onInteraction = () => {
       showBottomTemporarily();
     };
@@ -134,9 +171,9 @@ export function useAppChromeVisibility(options: AutoHideOptions = {}): AppChrome
 
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll, { passive: true });
-    window.addEventListener("wheel", onInteraction, { passive: true });
-    window.addEventListener("touchstart", onInteraction, { passive: true });
-    window.addEventListener("touchmove", onInteraction, { passive: true });
+    window.addEventListener("wheel", onWheel, { passive: true });
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
     window.addEventListener("pointerdown", onInteraction, { passive: true });
     window.addEventListener("keydown", onInteraction);
 
@@ -145,9 +182,9 @@ export function useAppChromeVisibility(options: AutoHideOptions = {}): AppChrome
     return () => {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
-      window.removeEventListener("wheel", onInteraction);
-      window.removeEventListener("touchstart", onInteraction);
-      window.removeEventListener("touchmove", onInteraction);
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
       window.removeEventListener("pointerdown", onInteraction);
       window.removeEventListener("keydown", onInteraction);
 
@@ -155,7 +192,7 @@ export function useAppChromeVisibility(options: AutoHideOptions = {}): AppChrome
         window.clearTimeout(idleTimerRef.current);
       }
     };
-  }, [getScrollY, showBottomTemporarily, threshold, topOffset]);
+  }, [getScrollY, setTopChromeFromDirection, showBottomTemporarily, threshold, topOffset]);
 
   return { topChromeVisible, bottomNavVisible };
 }

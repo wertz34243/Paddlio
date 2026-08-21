@@ -13853,7 +13853,7 @@ body,
 @media (max-width: 767px) {
   .app-shell.app-shell-phone {
     --phone-appbar-height: 50px;
-    --phone-top-gap: max(10px, calc(env(safe-area-inset-top) - 28px));
+    --phone-top-gap: max(18px, calc(env(safe-area-inset-top) - 20px));
     --phone-content-gap: 10px;
     --scroll-chrome-secondary-top: calc(var(--phone-top-gap) + var(--phone-appbar-height) + var(--phone-content-gap));
     gap: var(--phone-content-gap);
@@ -13882,6 +13882,13 @@ body,
     backdrop-filter: blur(18px);
   }
 
+  .app-shell.app-shell-phone.scroll-chrome-hidden .app-header-compact,
+  .app-shell-phone .app-header-compact.is-hidden {
+    pointer-events: none !important;
+    opacity: 0 !important;
+    transform: translateY(calc(-100% - var(--phone-top-gap) - 8px)) !important;
+  }
+
   .app-shell-phone .app-header-compact::before {
     content: "";
     position: absolute;
@@ -13891,13 +13898,6 @@ body,
     height: calc(var(--phone-top-gap) + 2px);
     pointer-events: none;
     background: linear-gradient(180deg, rgba(5, 13, 22, 0.78), rgba(5, 13, 22, 0.46) 72%, transparent);
-  }
-
-  .app-shell-phone.scroll-chrome-hidden .app-header-compact,
-  .app-shell-phone .app-header-compact.is-hidden {
-    pointer-events: auto;
-    opacity: 1;
-    transform: none;
   }
 
   .app-shell-phone .app-header-compact .brand-lockup,
