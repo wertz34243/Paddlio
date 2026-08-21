@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type DragEvent, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent, type TouchEvent } from "react";
 import {
   addCalendarDays,
   expandTrainingRepeatDates,
@@ -44,7 +44,7 @@ import {
 
 type CalendarMode = "day" | "threeDays" | "week" | "month" | "year" | "list" | "season";
 type TemplateScope = "favorites" | "recent" | "mine" | "club" | "system" | "weeks" | "season";
-type DetailTab = "planning" | "execution" | "feedback" | "tasks" | "journal" | "targetActual";
+type DetailTab = "planning" | "execution" | "feedback" | "tasks";
 type CompletionStatus = "completed" | "partially_completed" | "skipped";
 
 type PlanEntryDraft = Omit<PlanEntry, "id" | "athleteId" | "createdAt" | "updatedAt" | "createdByUserId"> & { id?: string };
@@ -404,8 +404,32 @@ export function TrainingCalendarView({
 
   const openQuickEdit = (template: TrainingTemplate, date = focusDate) => {
     setSelectedEntryId(null);
+    setFeedbackEntry(null);
+    setLiveTraining(null);
     if (usesOverlayContext) setShowTemplates(false);
     setQuickEdit(createQuickEdit(template, date, user));
+  };
+
+  const openEntryDetail = (id: string) => {
+    setQuickEdit(null);
+    setFeedbackEntry(null);
+    setLiveTraining(null);
+    setShowTemplates(false);
+    setSelectedEntryId(id);
+  };
+
+  const startLiveTraining = (entry: PlanEntry) => {
+    setSelectedEntryId(null);
+    setQuickEdit(null);
+    setFeedbackEntry(null);
+    setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 });
+  };
+
+  const openFeedback = (entry: PlanEntry) => {
+    setSelectedEntryId(null);
+    setQuickEdit(null);
+    setLiveTraining(null);
+    setFeedbackEntry(entry);
   };
 
   const handleTemplateDrop = (date: string) => {
@@ -569,8 +593,8 @@ export function TrainingCalendarView({
       user={user}
       onClose={() => setSelectedEntryId(null)}
       onStatusChange={onStatusChange}
-      onStartLive={(entry) => setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 })}
-      onFeedback={setFeedbackEntry}
+      onStartLive={startLiveTraining}
+      onFeedback={openFeedback}
       onDuplicate={duplicateEntry}
       onDelete={onDelete}
       onDeleteSeries={onDeleteSeries}
@@ -697,23 +721,23 @@ export function TrainingCalendarView({
         ) : null}
 
         {mode === "month" ? (
-          <MonthCalendar days={monthDays} groupedEntries={groupedEntries} focusDate={focusDate} onSelectDate={setFocusDate} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={(id) => { setShowTemplates(false); setSelectedEntryId(id); }} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} showDropHint={Boolean(dragTemplateId) && !isPhone} />
+        <MonthCalendar days={monthDays} groupedEntries={groupedEntries} focusDate={focusDate} onSelectDate={setFocusDate} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} showDropHint={Boolean(dragTemplateId) && !isPhone} />
         ) : null}
 
         {mode === "week" ? (
-          <WeekCalendar days={weekDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={(id) => { setShowTemplates(false); setSelectedEntryId(id); }} onStartLive={(entry) => setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 })} onFeedback={setFeedbackEntry} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={Boolean(dragTemplateId) && !isPhone} />
+          <WeekCalendar days={weekDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={Boolean(dragTemplateId) && !isPhone} />
         ) : null}
 
         {mode === "day" ? (
-          <DayCalendar date={focusDate} entries={dayEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={(id) => { setShowTemplates(false); setSelectedEntryId(id); }} onStartLive={(entry) => setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 })} onFeedback={setFeedbackEntry} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={false} />
+          <DayCalendar date={focusDate} entries={dayEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={false} />
         ) : null}
 
         {mode === "threeDays" ? (
-          <WeekCalendar days={threeDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={(id) => { setShowTemplates(false); setSelectedEntryId(id); }} onStartLive={(entry) => setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 })} onFeedback={setFeedbackEntry} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} compact showDropHint={false} />
+          <WeekCalendar days={threeDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} compact showDropHint={false} />
         ) : null}
 
         {mode === "list" ? (
-          <AgendaList entries={filteredEntries} onOpenEntry={(id) => { setShowTemplates(false); setSelectedEntryId(id); }} onStartLive={(entry) => setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 })} onFeedback={setFeedbackEntry} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} />
+          <AgendaList entries={filteredEntries} onOpenEntry={openEntryDetail} onStartLive={startLiveTraining} onFeedback={openFeedback} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} />
         ) : null}
 
         {mode === "year" ? (
@@ -724,7 +748,7 @@ export function TrainingCalendarView({
           <PeriodizationCalendar months={periodizationMonths} templates={periodizationTemplates} />
         ) : null}
 
-        {!isPhone ? <WeekPlanStrip entries={weekEntries} onOpenPlan={onOpenPlan} onOpenEntry={setSelectedEntryId} /> : null}
+        {!isPhone ? <WeekPlanStrip entries={weekEntries} onOpenPlan={onOpenPlan} onOpenEntry={openEntryDetail} /> : null}
       </main>
 
       {!isPhone && hasContextContent ? (
@@ -755,8 +779,8 @@ export function TrainingCalendarView({
           user={user}
           onClose={() => setSelectedEntryId(null)}
           onStatusChange={onStatusChange}
-          onStartLive={(entry) => setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 })}
-          onFeedback={setFeedbackEntry}
+          onStartLive={startLiveTraining}
+          onFeedback={openFeedback}
           onDuplicate={duplicateEntry}
           onDelete={onDelete}
           onDeleteSeries={onDeleteSeries}
@@ -785,7 +809,7 @@ export function TrainingCalendarView({
       ) : null}
 
       {liveTraining ? (
-        <LiveTrainingMode state={liveTraining} onChange={setLiveTraining} onEnd={(entry) => setFeedbackEntry(entry)} />
+        <LiveTrainingMode state={liveTraining} onChange={setLiveTraining} onEnd={openFeedback} />
       ) : null}
 
       {weekCopyOpen ? (
@@ -824,8 +848,9 @@ function MobileFilterSheet({
   onStatusChange: (value: "all" | PlanStatus) => void;
   onClose: () => void;
 }) {
+  const swipeHandlers = useMobileSwipeDismiss(onClose);
   return (
-    <div className="mobile-sheet-backdrop" role="dialog" aria-modal="true" aria-label="Kalenderfilter">
+    <div className="mobile-sheet-backdrop" role="dialog" aria-modal="true" aria-label="Kalenderfilter" {...swipeHandlers}>
       <section className="mobile-filter-sheet">
         <header>
           <div>
@@ -1164,6 +1189,33 @@ function TemplateCard({ template, onDragStart, onDragEnd, onQuickInsert }: { tem
     </article>
   );
 }
+
+function useMobileSwipeDismiss(onDismiss: () => void, confirmMessage?: string) {
+  const startRef = useRef<{ x: number; y: number } | null>(null);
+  const dismiss = () => {
+    if (confirmMessage && !window.confirm(confirmMessage)) return;
+    onDismiss();
+  };
+  return {
+    onTouchStart: (event: TouchEvent<HTMLElement>) => {
+      const touch = event.touches[0];
+      if (!touch) return;
+      startRef.current = { x: touch.clientX, y: touch.clientY };
+    },
+    onTouchEnd: (event: TouchEvent<HTMLElement>) => {
+      const start = startRef.current;
+      const touch = event.changedTouches[0];
+      startRef.current = null;
+      if (!start || !touch) return;
+      const deltaX = touch.clientX - start.x;
+      const deltaY = touch.clientY - start.y;
+      const edgeBack = start.x <= 32 && deltaX > 72 && Math.abs(deltaY) < 80;
+      const sheetDown = deltaY > 90 && Math.abs(deltaX) < 80;
+      if (edgeBack || sheetDown) dismiss();
+    },
+  };
+}
+
 function TrainingQuickEdit({
   state,
   groups,
@@ -1185,13 +1237,17 @@ function TrainingQuickEdit({
   onOpenFullPlan: () => void;
   presentation?: "modal" | "context";
 }) {
+  const requestCancel = () => {
+    if (window.confirm("Änderungen verwerfen?")) onCancel();
+  };
+  const swipeHandlers = useMobileSwipeDismiss(requestCancel);
   const repeatCount = state.repeat === "none" ? 1 : expandTrainingRepeatDates(state.date, state.repeat, state.repeatUntil, typeof state.repeatMaxCount === "number" ? state.repeatMaxCount : undefined).length;
   const form = (
-      <form className="master-quick-edit" onSubmit={(event) => { event.preventDefault(); onSave(state); }}>
+      <form className="master-quick-edit" onSubmit={(event) => { event.preventDefault(); onSave(state); }} {...swipeHandlers}>
         <header>
           <p className="po-eyebrow">Quick Edit</p>
           <h2>{state.template.title}</h2>
-          <button type="button" onClick={onCancel} aria-label="Schließen">×</button>
+          <button type="button" onClick={requestCancel} aria-label="Schließen">×</button>
         </header>
         <div className="master-form-grid">
           <label>Datum<input type="date" value={state.date} onChange={(event) => onChange({ ...state, date: event.currentTarget.value })} /></label>
@@ -1214,7 +1270,7 @@ function TrainingQuickEdit({
         {state.repeat !== "none" ? <p className="master-hint">Vorschau: {repeatCount} Termine werden angelegt. Nichts wird überschrieben.</p> : null}
         <footer>
           <PaddlioOneButton variant="secondary" onClick={onOpenFullPlan}>Weitere Details</PaddlioOneButton>
-          <PaddlioOneButton variant="ghost" onClick={onCancel}>Abbrechen</PaddlioOneButton>
+          <PaddlioOneButton variant="ghost" onClick={requestCancel}>Abbrechen</PaddlioOneButton>
           <PaddlioOneButton variant="primary" type="submit">Einfügen</PaddlioOneButton>
         </footer>
       </form>
@@ -1282,11 +1338,13 @@ function TrainingDetailDrawer({
   const actualDuration = trainingJournal?.actualDurationMinutes;
   const plannedIntensity = entry.intensity;
   const actualIntensity = trainingJournal?.perceivedExertion;
+  const feedbackState = trainingFeedback.length > 0 ? "Gespeichert" : "Offen";
   const assignedLabel = getAssignedLabel(entry, groups, athletes, users);
   const isCoach = user?.role === "coach" || user?.role === "admin" || user?.role === "clubAdmin";
+  const swipeHandlers = useMobileSwipeDismiss(onClose);
 
   return (
-    <aside className={`master-detail-drawer ${presentation === "context" ? "is-context" : ""}`} aria-label="Training Details">
+    <aside className={`master-detail-drawer ${presentation === "context" ? "is-context" : ""}`} aria-label="Training Details" {...swipeHandlers}>
       <header>
         <div>
           <p className="po-eyebrow">{entry.area}</p>
@@ -1296,9 +1354,9 @@ function TrainingDetailDrawer({
         <button type="button" onClick={onClose} aria-label="Details schließen">×</button>
       </header>
       <nav className="master-detail-tabs" aria-label="Training Detailbereiche">
-        {(["planning", "execution", "feedback", "tasks", "journal", "targetActual"] as DetailTab[]).map((item) => (
+        {(["planning", "execution", "feedback", "tasks"] as DetailTab[]).map((item) => (
           <button key={item} className={tab === item ? "is-active" : ""} type="button" onClick={() => setTab(item)}>
-            {item === "planning" ? "Planung" : item === "execution" ? "Durchführung" : item === "feedback" ? "Feedback" : item === "tasks" ? "Aufgaben" : item === "journal" ? "Journal" : "Soll/Ist"}
+            {item === "planning" ? "Planung" : item === "execution" ? "Durchführung" : item === "feedback" ? "Feedback" : "Aufgaben"}
           </button>
         ))}
       </nav>
@@ -1309,7 +1367,8 @@ function TrainingDetailDrawer({
           <InfoRow label="Dauer" value={`${entry.durationMinutes} min`} />
           <InfoRow label="Fokus" value={entry.focus || entry.goal || "Noch offen"} />
           <InfoRow label="Bootsklasse" value={entry.boatClass} />
-          {entry.feedbackNote ? <InfoRow label="Individuelle Anpassung" value={entry.feedbackNote} /> : null}
+          <InfoRow label="Rückmeldung" value={feedbackState} />
+          {entry.feedbackNote ? <InfoRow label="Anpassung" value={entry.feedbackNote} /> : null}
           {entry.description ? <p className="master-detail-text">{entry.description}</p> : null}
         </section>
       ) : null}
@@ -1334,6 +1393,10 @@ function TrainingDetailDrawer({
               {item.comment ? <p>{item.comment}</p> : null}
             </article>
           )) : <p className="po-muted">Noch kein Feedback gespeichert.</p>}
+          <div className="master-target-actual-summary">
+            <InfoRow label="Dauer" value={`Geplant ${plannedDuration} min · Ist ${actualDuration ? `${actualDuration} min` : "offen"}`} />
+            <InfoRow label="Intensität" value={`Geplant ${plannedIntensity} · Empfunden ${actualIntensity ? `${actualIntensity}/10` : "offen"}`} />
+          </div>
         </section>
       ) : null}
       {tab === "tasks" ? (
@@ -1350,26 +1413,6 @@ function TrainingDetailDrawer({
               </article>
             );
           }) : <p className="po-muted">Noch keine Traineraufgaben an dieser Einheit.</p>}
-        </section>
-      ) : null}
-      {tab === "journal" ? (
-        <section className="master-detail-section">
-          {trainingJournal ? (
-            <>
-              <InfoRow label="Status" value={trainingJournal.completionStatus ?? "gespeichert"} />
-              <InfoRow label="Ist-Dauer" value={`${trainingJournal.actualDurationMinutes ?? entry.durationMinutes} min`} />
-              <InfoRow label="RPE" value={`${trainingJournal.perceivedExertion ?? "-"} / 10`} />
-              {trainingJournal.notes ? <p className="master-detail-text">{trainingJournal.notes}</p> : null}
-            </>
-          ) : <p className="po-muted">Das Journal wird nach dem Feedback automatisch vorbereitet.</p>}
-          <PaddlioOneButton variant="secondary" onClick={() => onFeedback(entry)}>Journal vorbereiten</PaddlioOneButton>
-        </section>
-      ) : null}
-      {tab === "targetActual" ? (
-        <section className="master-detail-section">
-          <InfoRow label="Dauer" value={`Geplant ${plannedDuration} min · Ist ${actualDuration ? `${actualDuration} min` : "offen"}`} />
-          <InfoRow label="Intensität" value={`Geplant ${plannedIntensity} · Empfunden ${actualIntensity ? `${actualIntensity}/10` : "offen"}`} />
-          <InfoRow label="Feedback" value={trainingFeedback.length > 0 ? `${trainingFeedback.length} Rückmeldung(en)` : "offen"} />
         </section>
       ) : null}
       <footer>
@@ -1395,13 +1438,17 @@ function FeedbackSheet({
   onSave: (entry: PlanEntry, status: CompletionStatus, formData: FormData) => void;
 }) {
   const [status, setStatus] = useState<CompletionStatus>("completed");
+  const requestCancel = () => {
+    if (window.confirm("Feedback verwerfen?")) onCancel();
+  };
+  const swipeHandlers = useMobileSwipeDismiss(requestCancel);
   return (
     <div className="master-modal-backdrop" role="dialog" aria-modal="true" aria-label="Feedback schreiben">
-      <form className="master-feedback-sheet" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); onSave(entry, status, new FormData(event.currentTarget)); }}>
+      <form className="master-feedback-sheet" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); onSave(entry, status, new FormData(event.currentTarget)); }} {...swipeHandlers}>
         <header>
           <p className="po-eyebrow">Feedback</p>
           <h2>{entry.title || entry.trainingType}</h2>
-          <button type="button" onClick={onCancel} aria-label="Schließen">×</button>
+          <button type="button" onClick={requestCancel} aria-label="Schließen">×</button>
         </header>
         <div className="master-segmented-control">
           {(["completed", "partially_completed", "skipped"] as CompletionStatus[]).map((item) => (
@@ -1419,7 +1466,7 @@ function FeedbackSheet({
         </div>
         <label className="master-full-field">Kurze Notiz<textarea name="note" rows={3} placeholder="Was lief gut? Was soll der Trainer wissen?" /></label>
         <footer>
-          <PaddlioOneButton variant="ghost" onClick={onCancel}>Abbrechen</PaddlioOneButton>
+          <PaddlioOneButton variant="ghost" onClick={requestCancel}>Abbrechen</PaddlioOneButton>
           <PaddlioOneButton variant="primary" type="submit">Speichern</PaddlioOneButton>
         </footer>
       </form>
@@ -1429,6 +1476,10 @@ function FeedbackSheet({
 
 function LiveTrainingMode({ state, onChange, onEnd }: { state: LiveTrainingState; onChange: (state: LiveTrainingState | null) => void; onEnd: (entry: PlanEntry) => void }) {
   const [tick, setTick] = useState(0);
+  const closeLive = () => {
+    if (window.confirm("Live-Training schließen?")) onChange(null);
+  };
+  const swipeHandlers = useMobileSwipeDismiss(closeLive);
   useEffect(() => {
     const timer = window.setInterval(() => setTick((value) => value + 1), 1000);
     return () => window.clearInterval(timer);
@@ -1440,11 +1491,11 @@ function LiveTrainingMode({ state, onChange, onEnd }: { state: LiveTrainingState
   const pause = () => onChange({ ...state, paused: true, elapsedBeforePause: elapsed });
   const resume = () => onChange({ ...state, paused: false, startedAt: Date.now(), elapsedBeforePause: elapsed });
   return (
-    <div className="master-live-training" role="dialog" aria-modal="true" aria-label="Live Training">
+    <div className="master-live-training" role="dialog" aria-modal="true" aria-label="Live Training" {...swipeHandlers}>
       <header>
         <p className="po-eyebrow">Live Training</p>
         <h2>{state.entry.title || state.entry.trainingType}</h2>
-        <button type="button" onClick={() => onChange(null)} aria-label="Live Training schließen">×</button>
+        <button type="button" onClick={closeLive} aria-label="Live Training schließen">×</button>
       </header>
       <strong className="master-live-timer">{String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}</strong>
       <p>{state.entry.focus || state.entry.goal}</p>

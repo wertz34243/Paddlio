@@ -157,7 +157,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
       console.error("Profil konnte nicht gespeichert werden", error);
       const message = error instanceof Error ? error.message : "";
       setFormError(message.includes("profile_data_schema_missing")
-        ? "Das Profil konnte nicht vollständig synchronisiert werden. Supabase braucht die aktuelle Profil-Migration 0032."
+        ? "Das Profil konnte nicht vollständig synchronisiert werden. Bitte aktualisiere die Development-Datenbank und versuche es erneut."
         : "Das Profil konnte nicht synchronisiert werden. Bitte prüfe die Verbindung und versuche es erneut.");
     } finally {
       setIsSaving(false);
