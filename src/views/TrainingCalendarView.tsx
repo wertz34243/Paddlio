@@ -1329,6 +1329,7 @@ function TrainingDetailDrawer({
   presentation?: "drawer" | "context";
 }) {
   const [tab, setTab] = useState<DetailTab>("planning");
+  const [showDescription, setShowDescription] = useState(false);
   const trainingJournal = journal.find((item) => item.trainingPlanEntryId === entry.id || item.trainingId === entry.id);
   const trainingFeedback = feedback.filter((item) => item.trainingId === entry.id);
   const trainingTasks = tasks.filter((task) => task.relatedTrainingId === entry.id && !task.deletedAt);
@@ -1342,6 +1343,9 @@ function TrainingDetailDrawer({
   const assignedLabel = getAssignedLabel(entry, groups, athletes, users);
   const isCoach = user?.role === "coach" || user?.role === "admin" || user?.role === "clubAdmin";
   const swipeHandlers = useMobileSwipeDismiss(onClose);
+  const startTime = entry.startTime || entry.time;
+  const endTime = entry.endTime || addMinutesToTime(startTime, entry.durationMinutes);
+  const focusText = entry.focus || entry.goal || "Noch offen";
 
   return (
     <aside className={`master-detail-drawer ${presentation === "context" ? "is-context" : ""}`} aria-label="Training Details" {...swipeHandlers}>
@@ -1349,7 +1353,7 @@ function TrainingDetailDrawer({
         <div>
           <p className="po-eyebrow">{entry.area}</p>
           <h2>{entry.title || entry.trainingType}</h2>
-          <span>{fullDateLabel(entry.date)} · {entry.startTime || entry.time} · {assignedLabel}</span>
+          <span>{fullDateLabel(entry.date)} · {startTime}-{endTime} · {planStatusLabels[entry.status] ?? entry.status}</span>
         </div>
         <button type="button" onClick={onClose} aria-label="Details schließen">×</button>
       </header>
@@ -1363,18 +1367,31 @@ function TrainingDetailDrawer({
       {tab === "planning" ? (
         <section className="master-detail-section">
           <InfoRow label="Status" value={planStatusLabels[entry.status] ?? entry.status} />
-          <InfoRow label="Zeit" value={`${entry.startTime || entry.time} - ${entry.endTime || addMinutesToTime(entry.startTime || entry.time, entry.durationMinutes)}`} />
+          <InfoRow label="Zeit" value={`${startTime}-${endTime}`} />
           <InfoRow label="Dauer" value={`${entry.durationMinutes} min`} />
-          <InfoRow label="Fokus" value={entry.focus || entry.goal || "Noch offen"} />
           <InfoRow label="Bootsklasse" value={entry.boatClass} />
           <InfoRow label="Rückmeldung" value={feedbackState} />
+          <div className="master-focus-summary">
+            <span>Fokus</span>
+            <p>{focusText}</p>
+          </div>
           {entry.feedbackNote ? <InfoRow label="Anpassung" value={entry.feedbackNote} /> : null}
-          {entry.description ? <p className="master-detail-text">{entry.description}</p> : null}
+          {entry.description ? (
+            <div className="master-collapsible-detail">
+              {showDescription ? <p className="master-detail-text">{entry.description}</p> : null}
+              <button type="button" onClick={() => setShowDescription((value) => !value)}>
+                {showDescription ? "Weniger anzeigen" : "Mehr anzeigen"}
+              </button>
+            </div>
+          ) : null}
         </section>
       ) : null}
       {tab === "execution" ? (
         <section className="master-detail-section">
           <PaddlioOneButton variant="primary" onClick={() => onStartLive(entry)}>Live-Modus starten</PaddlioOneButton>
+          <InfoRow label="Status" value={planStatusLabels[entry.status] ?? entry.status} />
+          <InfoRow label="Ist-Dauer" value={actualDuration ? `${actualDuration} min` : "Offen"} />
+          <InfoRow label="Abschluss" value={trainingJournal?.completionStatus ?? "Noch nicht abgeschlossen"} />
           <div className="master-action-grid">
             <button type="button" onClick={() => onStatusChange(entry.id, "in_progress")}>Läuft</button>
             <button type="button" onClick={() => onStatusChange(entry.id, "completed")}>Durchgeführt</button>
@@ -1415,10 +1432,15 @@ function TrainingDetailDrawer({
           }) : <p className="po-muted">Noch keine Traineraufgaben an dieser Einheit.</p>}
         </section>
       ) : null}
-      <footer>
-        <PaddlioOneButton variant="secondary" onClick={() => onDuplicate(entry)}>Duplizieren</PaddlioOneButton>
-        {canDeleteSeries && onDeleteSeries ? <PaddlioOneButton variant="danger" onClick={() => onDeleteSeries(entry.id)}>Serie löschen</PaddlioOneButton> : null}
-        {onDelete ? <PaddlioOneButton variant="danger" onClick={() => onDelete(entry.id)}>Löschen</PaddlioOneButton> : null}
+      <footer className="master-detail-actions">
+        <details>
+          <summary>Aktionen</summary>
+          <div>
+            <button type="button" onClick={() => onDuplicate(entry)}>Duplizieren</button>
+            {canDeleteSeries && onDeleteSeries ? <button className="is-danger" type="button" onClick={() => onDeleteSeries(entry.id)}>Serie löschen</button> : null}
+            {onDelete ? <button className="is-danger" type="button" onClick={() => onDelete(entry.id)}>Löschen</button> : null}
+          </div>
+        </details>
       </footer>
     </aside>
   );

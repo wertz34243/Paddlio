@@ -12915,3 +12915,266 @@ body,
     font-size: 0.62rem;
   }
 }
+
+/* Phone final polish 2: flatter app bar and denser training detail. */
+.app-shell-phone {
+  --phone-top-gap: calc(4px + env(safe-area-inset-top));
+}
+
+.app-shell-phone .app-header-compact {
+  min-height: 34px;
+  margin: 0 -8px 3px;
+  padding: 3px 8px;
+  border-color: rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  background: rgba(7, 13, 22, 0.72);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
+  gap: 6px;
+}
+
+.app-shell-phone .brand-logo {
+  width: 22px;
+  height: 22px;
+}
+
+.app-shell-phone .brand-text strong,
+.app-shell-phone .page-title-lockup h1 {
+  font-size: 0.88rem;
+  line-height: 1;
+}
+
+.app-shell-phone .brand-slogan,
+.app-shell-phone .page-title-lockup span {
+  font-size: 0.58rem;
+}
+
+.app-shell-phone .environment-badge {
+  padding: 2px 5px;
+  font-size: 0.55rem;
+  opacity: 0.8;
+}
+
+.app-shell-phone .page-content {
+  padding-top: 4px;
+}
+
+.app-shell-phone .master-detail-drawer {
+  max-height: min(70dvh, 560px);
+  padding: 10px 12px calc(11px + env(safe-area-inset-bottom));
+  border-radius: 19px 19px 0 0;
+}
+
+.app-shell-phone .master-detail-drawer > header {
+  gap: 8px;
+}
+
+.app-shell-phone .master-detail-drawer > header .po-eyebrow {
+  margin-bottom: 2px;
+  font-size: 0.6rem;
+}
+
+.app-shell-phone .master-detail-drawer > header h2 {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 1rem;
+  line-height: 1.08;
+}
+
+.app-shell-phone .master-detail-drawer > header span {
+  display: block;
+  margin-top: 3px;
+  overflow: hidden;
+  color: var(--po-text-muted, #a8b3c7);
+  font-size: 0.72rem;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-shell-phone .master-detail-drawer > header button {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+}
+
+.app-shell-phone .master-detail-tabs {
+  gap: 5px;
+  padding: 6px 0 7px;
+}
+
+.app-shell-phone .master-detail-tabs button {
+  min-height: 30px;
+  padding: 5px 9px;
+  font-size: 0.72rem;
+}
+
+.app-shell-phone .master-detail-section {
+  gap: 5px;
+}
+
+.app-shell-phone .master-info-row {
+  grid-template-columns: minmax(76px, 0.72fr) minmax(0, 1.5fr);
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.app-shell-phone .master-info-row span {
+  font-size: 0.64rem;
+}
+
+.app-shell-phone .master-info-row strong {
+  font-size: 0.84rem;
+  line-height: 1.16;
+}
+
+.app-shell-phone .master-focus-summary {
+  display: grid;
+  gap: 3px;
+  padding: 5px 0;
+}
+
+.app-shell-phone .master-focus-summary span {
+  color: var(--po-text-muted, #a8b3c7);
+  font-size: 0.64rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.app-shell-phone .master-focus-summary p {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  color: var(--po-text-strong, #f7fbff);
+  font-size: 0.88rem;
+  line-height: 1.22;
+}
+
+.app-shell-phone .master-collapsible-detail {
+  display: grid;
+  gap: 5px;
+  padding-top: 3px;
+}
+
+.app-shell-phone .master-collapsible-detail .master-detail-text {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.28;
+}
+
+.app-shell-phone .master-collapsible-detail button,
+.app-shell-phone .master-detail-actions summary,
+.app-shell-phone .master-detail-actions button {
+  min-height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--po-text-strong, #f7fbff);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 850;
+}
+
+.app-shell-phone .master-collapsible-detail button {
+  justify-self: start;
+  padding: 0 10px;
+}
+
+.app-shell-phone .master-action-grid {
+  gap: 6px;
+}
+
+.app-shell-phone .master-action-grid button {
+  min-height: 34px;
+  padding: 5px 8px;
+  font-size: 0.78rem;
+}
+
+.app-shell-phone .master-detail-actions {
+  margin-top: 5px;
+}
+
+.app-shell-phone .master-detail-actions details {
+  display: grid;
+  gap: 6px;
+}
+
+.app-shell-phone .master-detail-actions summary {
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  list-style: none;
+}
+
+.app-shell-phone .master-detail-actions summary::-webkit-details-marker {
+  display: none;
+}
+
+.app-shell-phone .master-detail-actions details > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  padding-top: 6px;
+}
+
+.app-shell-phone .master-detail-actions button {
+  width: 100%;
+}
+
+.app-shell-phone .master-detail-actions button.is-danger {
+  border-color: rgba(248, 113, 113, 0.34);
+  color: #fecaca;
+}
+
+/* Phone final polish 2b: remove inherited shell air above the compact app bar. */
+.app-shell.app-shell-phone {
+  gap: 6px;
+  padding-top: calc(4px + env(safe-area-inset-top));
+  padding-inline: 12px;
+  padding-bottom: calc(var(--phone-bottom-nav-height) + 10px + env(safe-area-inset-bottom));
+}
+
+.app-shell-phone .app-header-compact {
+  top: calc(2px + env(safe-area-inset-top));
+  min-height: 32px;
+}
+
+.app-shell-phone .app-header-compact .app-brand,
+.app-shell-phone .app-brand {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.skip-link:focus:not(:focus-visible) {
+  top: -4rem;
+}
+
+@media (pointer: coarse) {
+  .skip-link:focus,
+  .skip-link:focus-visible {
+    top: -4rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .skip-link:focus,
+  .skip-link:focus-visible {
+    top: -4rem;
+  }
+}
+
+@media (max-width: 430px) {
+  .app-shell.app-shell-phone {
+    padding-top: calc(3px + env(safe-area-inset-top));
+    padding-inline: 10px;
+  }
+
+  .app-shell-phone .app-header-compact {
+    margin-bottom: 2px;
+  }
+}

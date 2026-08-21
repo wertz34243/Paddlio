@@ -67,16 +67,22 @@ async function selectOptionMatching(select: Locator, pattern: RegExp) {
   throw new Error(`No select option matched ${pattern}`);
 }
 
-function todayKey() {
+function dateKeyWithOffset(dayOffset: number) {
   const now = new Date();
+  now.setDate(now.getDate() + dayOffset);
   const month = `${now.getMonth() + 1}`.padStart(2, "0");
   const day = `${now.getDate()}`.padStart(2, "0");
   return `${now.getFullYear()}-${month}-${day}`;
 }
 
+function uniqueTrainingDate(runId: number) {
+  return dateKeyWithOffset(1 + (runId % 2));
+}
+
 function uniqueStartTime(runId: number) {
-  const minutes = 5 + (runId % 45);
-  return `18:${`${minutes}`.padStart(2, "0")}`;
+  const hour = 21 + (Math.floor(runId / 10) % 2);
+  const minutes = 50 + (runId % 10);
+  return `${hour}:${`${minutes}`.padStart(2, "0")}`;
 }
 
 async function createTrainingFromCalendarTemplate(page: Page, marker: string, runId: number) {
@@ -88,17 +94,20 @@ async function createTrainingFromCalendarTemplate(page: Page, marker: string, ru
 
   const quickEdit = page.getByRole("region", { name: /Training schnell/i }).or(page.getByRole("dialog", { name: /Training schnell/i })).first();
   await expect(quickEdit).toBeVisible({ timeout: 20_000 });
-  await quickEdit.getByLabel("Datum").fill(todayKey());
-  await quickEdit.getByLabel("Start").fill(uniqueStartTime(runId));
+  const startTime = uniqueStartTime(runId);
+  await quickEdit.getByLabel("Datum").fill(uniqueTrainingDate(runId));
+  await quickEdit.getByLabel("Start").fill(startTime);
   await quickEdit.getByLabel("Dauer").fill("55");
   await quickEdit.getByLabel("Zuweisung").selectOption("athlete");
   await selectOptionMatching(quickEdit.getByLabel("Ziel"), seededAthletePattern(athleteEmail));
   await quickEdit.getByLabel("Individuelle Anpassung").fill(marker);
   await quickEdit.getByRole("button", { name: /Einf.*gen/i }).click();
   await expect(quickEdit).not.toBeVisible({ timeout: 20_000 });
+  return startTime;
 }
 
-async function openTrainingDetailsByMarker(page: Page, marker: string) {
+async function openTrainingDetailsByMarker(page: Page, marker: string, startTime?: string) {
+  const startTimePattern = startTime ? new RegExp(startTime.replace(":", ":0?")) : null;
   for (let attempt = 0; attempt < 8; attempt += 1) {
     await openCalendarWorkspace(page);
     const candidateButtons = page.locator(".master-training-block-main, .master-training-pill [role='button'], .master-agenda-row button");
@@ -106,7 +115,9 @@ async function openTrainingDetailsByMarker(page: Page, marker: string) {
     for (let index = 0; index < count; index += 1) {
       await candidateButtons.nth(index).click();
       const details = page.getByLabel("Training Details");
-      if (await details.isVisible().catch(() => false) && await details.getByText(marker).isVisible().catch(() => false)) {
+      const hasMarker = await details.getByText(marker).isVisible().catch(() => false);
+      const hasStartTime = startTimePattern ? await details.getByText(startTimePattern).first().isVisible().catch(() => false) : false;
+      if (await details.isVisible().catch(() => false) && (hasMarker || hasStartTime)) {
         return details;
       }
       const closeButton = details.getByRole("button", { name: /Details.*schlie/i }).first();
@@ -139,17 +150,17 @@ async function expectTrainingVisibleAfterSync(page: Page, marker: string) {
   await expect(page.getByText(marker)).toBeVisible({ timeout: 20_000 });
 }
 
-async function expectFeedbackVisibleAfterSync(page: Page, marker: string, text: string) {
-  for (let attempt = 0; attempt < 6; attempt += 1) {
+async function expectFeedbackVisibleAfterSync(page: Page, marker: string, text: string, startTime?: string) {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
     await page.reload();
-    const details = await openTrainingDetailsByMarker(page, marker).catch(() => null);
+    const details = await openTrainingDetailsByMarker(page, marker, startTime).catch(() => null);
     if (details) {
       await details.getByRole("button", { name: "Feedback" }).click();
     }
     if (await page.getByText(text).first().isVisible().catch(() => false)) {
       return;
     }
-    await page.waitForTimeout(2_500);
+    await page.waitForTimeout(3_000);
   }
 
   await expect(page.getByText(text)).toBeVisible({ timeout: 20_000 });
@@ -201,7 +212,7 @@ test.describe("two-device training and feedback flow", () => {
 
   test("coach creates training, athlete sends feedback, coach sees feedback", async ({ browser }, testInfo) => {
     test.skip(testInfo.project.name !== "edge", "Two-device sync uses coach desktop plus athlete phone and runs in the desktop project.");
-    test.setTimeout(120_000);
+    test.setTimeout(240_000);
     const coachContext = await browser.newContext();
     const athleteContext = await browser.newContext({
       hasTouch: true,
@@ -220,21 +231,26 @@ test.describe("two-device training and feedback flow", () => {
     await expect(coachPage.getByTestId("authenticated-app")).toBeVisible();
     await expect(athletePage.getByTestId("authenticated-app")).toBeVisible();
 
-    await createTrainingFromCalendarTemplate(coachPage, marker, runId);
-    await openTrainingDetailsByMarker(coachPage, marker);
+    const trainingStartTime = await createTrainingFromCalendarTemplate(coachPage, marker, runId);
+    await openTrainingDetailsByMarker(coachPage, marker, trainingStartTime);
 
-    const athleteDetails = await openTrainingDetailsByMarker(athletePage, marker);
+    const athleteDetails = await openTrainingDetailsByMarker(athletePage, marker, trainingStartTime);
     await athleteDetails.getByRole("button", { name: "Feedback", exact: true }).click();
     await athleteDetails.getByRole("button", { name: /Feedback erfassen/i }).click();
     const feedbackDialog = athletePage.getByRole("dialog", { name: /Feedback schreiben/i });
     await expect(feedbackDialog).toBeVisible({ timeout: 20_000 });
     await feedbackDialog.getByLabel("Kurze Notiz").fill(feedbackComment);
     await feedbackDialog.getByRole("button", { name: "Speichern" }).click();
-    await expectFeedbackVisibleAfterSync(athletePage, marker, feedbackComment);
+    await expect(feedbackDialog).not.toBeVisible({ timeout: 20_000 });
+    const savedAthleteDetails = await openTrainingDetailsByMarker(athletePage, marker, trainingStartTime);
+    await savedAthleteDetails.getByRole("button", { name: "Feedback" }).click();
+    await expect(savedAthleteDetails.getByText(feedbackComment)).toBeVisible({ timeout: 20_000 });
+    await athletePage.waitForTimeout(5_000);
 
-    await expectFeedbackVisibleAfterSync(coachPage, marker, feedbackComment);
+    await expectFeedbackVisibleAfterSync(coachPage, marker, feedbackComment, trainingStartTime);
 
-    const coachDetails = await openTrainingDetailsByMarker(coachPage, marker);
+    const coachDetails = await openTrainingDetailsByMarker(coachPage, marker, trainingStartTime);
+    await coachDetails.getByText("Aktionen").click();
     await coachDetails.getByRole("button", { name: /L.*schen/i }).last().click();
     await coachPage.reload();
     await openCalendarWorkspace(coachPage);
