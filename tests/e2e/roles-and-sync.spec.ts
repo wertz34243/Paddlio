@@ -114,9 +114,15 @@ async function openTrainingDetailsByMarker(page: Page, marker: string, startTime
     const count = await candidateButtons.count();
     for (let index = 0; index < count; index += 1) {
       await candidateButtons.nth(index).click();
-      const details = page.getByLabel("Training Details");
-      const hasMarker = await details.getByText(marker).isVisible().catch(() => false);
-      if (await details.isVisible().catch(() => false) && hasMarker) {
+      const details = (startTime
+        ? page.getByTestId("training-detail-panel").filter({ hasText: startTime }).last()
+        : page.getByTestId("training-detail-panel").last());
+      const detailsVisible = await details.isVisible().catch(() => false)
+        || await details.waitFor({ state: "visible", timeout: 1_500 }).then(() => true).catch(() => false);
+      const hasMarker = detailsVisible
+        ? await expect(details.getByText(marker)).toBeVisible({ timeout: 1_500 }).then(() => true).catch(() => false)
+        : false;
+      if (detailsVisible && hasMarker) {
         return details;
       }
       const closeButton = details.getByRole("button", { name: /Details.*schlie/i }).first();

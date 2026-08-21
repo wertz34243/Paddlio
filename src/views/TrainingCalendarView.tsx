@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent, type TouchEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent, type ReactNode, type TouchEvent } from "react";
 import {
   addCalendarDays,
   expandTrainingRepeatDates,
@@ -354,6 +354,20 @@ export function TrainingCalendarView({
     }
   }, [isTabletPortrait, mode]);
 
+  useEffect(() => {
+    if (!isPhone) return;
+    const activeEntryId = liveTraining?.entry.id ?? selectedEntryId;
+    if (!activeEntryId) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      document
+        .querySelector(`[data-calendar-entry-id="${CSS.escape(activeEntryId)}"]`)
+        ?.scrollIntoView({ block: "center", behavior: "smooth" });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [isPhone, liveTraining?.entry.id, selectedEntryId]);
+
   const groupOptions = data?.coachGroups.filter((group) => !clubId || group.clubId === clubId) ?? [];
   const athleteOptions = data?.coachAthletes.filter((athlete) => !clubId || athlete.clubId === clubId) ?? [];
   const trainerOptions = data?.users.filter((item) => item.role === "coach" || item.role === "admin" || item.role === "clubAdmin") ?? (user ? [user] : []);
@@ -483,6 +497,8 @@ export function TrainingCalendarView({
 
     if (onSave) onSave(draft);
     else onTemplateInsert?.(state.template, state.date);
+    setFocusDate(state.date);
+    if (isPhone) setMode("day");
     setQuickEdit(null);
   };
 
@@ -617,6 +633,41 @@ export function TrainingCalendarView({
     setShowTemplates(false);
   };
 
+  const renderPhoneEntryPanel = (entry: PlanEntry): ReactNode => {
+    if (!isPhone) return null;
+
+    if (liveTraining?.entry.id === entry.id) {
+      return <LiveTrainingMode state={liveTraining} onChange={setLiveTraining} onEnd={openFeedback} presentation="inline" />;
+    }
+
+    if (selectedEntryId === entry.id && selectedEntry) {
+      return (
+        <TrainingDetailDrawer
+          entry={selectedEntry}
+          journal={journal}
+          feedback={data?.trainingFeedback ?? []}
+          tasks={taskItems}
+          taskAssignments={taskAssignments}
+          groups={groupOptions}
+          athletes={athleteOptions}
+          users={data?.users ?? []}
+          user={user}
+          onClose={() => setSelectedEntryId(null)}
+          onStatusChange={onStatusChange}
+          onStartLive={startLiveTraining}
+          onFeedback={openFeedback}
+          onDuplicate={duplicateEntry}
+          onDelete={onDelete}
+          onDeleteSeries={onDeleteSeries}
+          entries={entries}
+          presentation="inline"
+        />
+      );
+    }
+
+    return null;
+  };
+
   return (
     <div className={`master-calendar-workspace master-calendar-${deviceClass}${isTabletPortrait ? " is-tablet-portrait" : ""}${usesOverlayContext ? " is-context-overlay" : ""}`}>
       <main className="master-calendar-main">
@@ -725,19 +776,19 @@ export function TrainingCalendarView({
         ) : null}
 
         {mode === "week" ? (
-          <WeekCalendar days={weekDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={Boolean(dragTemplateId) && !isPhone} />
+          <WeekCalendar days={weekDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={Boolean(dragTemplateId) && !isPhone} renderEntryPanel={renderPhoneEntryPanel} />
         ) : null}
 
         {mode === "day" ? (
-          <DayCalendar date={focusDate} entries={dayEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={false} />
+          <DayCalendar date={focusDate} entries={dayEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={false} renderEntryPanel={renderPhoneEntryPanel} />
         ) : null}
 
         {mode === "threeDays" ? (
-          <WeekCalendar days={threeDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} compact showDropHint={false} />
+          <WeekCalendar days={threeDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} compact showDropHint={false} renderEntryPanel={renderPhoneEntryPanel} />
         ) : null}
 
         {mode === "list" ? (
-          <AgendaList entries={filteredEntries} onOpenEntry={openEntryDetail} onStartLive={startLiveTraining} onFeedback={openFeedback} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} />
+          <AgendaList entries={filteredEntries} onOpenEntry={openEntryDetail} onStartLive={startLiveTraining} onFeedback={openFeedback} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} renderEntryPanel={renderPhoneEntryPanel} />
         ) : null}
 
         {mode === "year" ? (
@@ -766,7 +817,7 @@ export function TrainingCalendarView({
         </>
       ) : null}
 
-      {isPhone && selectedEntry ? (
+      {!isPhone && selectedEntry ? (
         <TrainingDetailDrawer
           entry={selectedEntry}
           journal={journal}
@@ -808,7 +859,7 @@ export function TrainingCalendarView({
         <FeedbackSheet entry={feedbackEntry} onCancel={() => setFeedbackEntry(null)} onSave={applyFeedback} />
       ) : null}
 
-      {liveTraining ? (
+      {!isPhone && liveTraining ? (
         <LiveTrainingMode state={liveTraining} onChange={setLiveTraining} onEnd={openFeedback} />
       ) : null}
 
@@ -956,6 +1007,7 @@ function WeekCalendar({
   users,
   compact = false,
   showDropHint = true,
+  renderEntryPanel,
 }: {
   days: string[];
   groupedEntries: Map<string, PlanEntry[]>;
@@ -975,6 +1027,7 @@ function WeekCalendar({
   users: User[];
   compact?: boolean;
   showDropHint?: boolean;
+  renderEntryPanel?: (entry: PlanEntry) => ReactNode;
 }) {
   return (
     <PaddlioOneCard className={`master-calendar-card master-week-calendar-card ${compact ? "is-compact" : ""}`.trim()}>
@@ -989,7 +1042,10 @@ function WeekCalendar({
               </header>
               <div className="master-calendar-entry-stack">
                 {entries.length > 0 ? entries.map((entry) => (
-                  <TrainingBlock entry={entry} key={entry.id} onStatusChange={onStatusChange} onOpenEntry={onOpenEntry} onStartLive={onStartLive} onFeedback={onFeedback} onDuplicate={onDuplicate} onDelete={onDelete} selectionMode={selectionMode} selected={selectedIds.includes(entry.id)} onSelect={onSelect} assignedLabel={getAssignedLabel(entry, groups, athletes, users)} />
+                  <div className="master-calendar-entry-with-panel" data-calendar-entry-id={entry.id} key={entry.id}>
+                    <TrainingBlock entry={entry} onStatusChange={onStatusChange} onOpenEntry={onOpenEntry} onStartLive={onStartLive} onFeedback={onFeedback} onDuplicate={onDuplicate} onDelete={onDelete} selectionMode={selectionMode} selected={selectedIds.includes(entry.id)} onSelect={onSelect} assignedLabel={getAssignedLabel(entry, groups, athletes, users)} />
+                    {renderEntryPanel?.(entry)}
+                  </div>
                 )) : <p className="master-calendar-empty-drop">{showDropHint ? "Vorlage hier ablegen" : "Keine Einträge"}</p>}
               </div>
             </section>
@@ -1326,7 +1382,7 @@ function TrainingDetailDrawer({
   onDelete?: (id: string) => void;
   onDeleteSeries?: (id: string) => void;
   entries: PlanEntry[];
-  presentation?: "drawer" | "context";
+  presentation?: "drawer" | "context" | "inline";
 }) {
   const [tab, setTab] = useState<DetailTab>("planning");
   const [showDescription, setShowDescription] = useState(false);
@@ -1348,7 +1404,7 @@ function TrainingDetailDrawer({
   const focusText = entry.focus || entry.goal || "Noch offen";
 
   return (
-    <aside className={`master-detail-drawer ${presentation === "context" ? "is-context" : ""}`} aria-label="Training Details" {...swipeHandlers}>
+    <aside className={`master-detail-drawer ${presentation === "context" ? "is-context" : ""} ${presentation === "inline" ? "is-inline" : ""}`.trim()} aria-label="Training Details" data-testid="training-detail-panel" data-training-entry-id={entry.id} {...swipeHandlers}>
       <header>
         <div>
           <p className="po-eyebrow">{entry.area}</p>
@@ -1496,7 +1552,7 @@ function FeedbackSheet({
   );
 }
 
-function LiveTrainingMode({ state, onChange, onEnd }: { state: LiveTrainingState; onChange: (state: LiveTrainingState | null) => void; onEnd: (entry: PlanEntry) => void }) {
+function LiveTrainingMode({ state, onChange, onEnd, presentation = "fullscreen" }: { state: LiveTrainingState; onChange: (state: LiveTrainingState | null) => void; onEnd: (entry: PlanEntry) => void; presentation?: "fullscreen" | "inline" }) {
   const [tick, setTick] = useState(0);
   const closeLive = () => {
     if (window.confirm("Live-Training schließen?")) onChange(null);
@@ -1513,7 +1569,7 @@ function LiveTrainingMode({ state, onChange, onEnd }: { state: LiveTrainingState
   const pause = () => onChange({ ...state, paused: true, elapsedBeforePause: elapsed });
   const resume = () => onChange({ ...state, paused: false, startedAt: Date.now(), elapsedBeforePause: elapsed });
   return (
-    <div className="master-live-training" role="dialog" aria-modal="true" aria-label="Live Training" {...swipeHandlers}>
+    <div className={`master-live-training ${presentation === "inline" ? "is-inline" : ""}`.trim()} role="dialog" aria-modal={presentation === "fullscreen"} aria-label="Live Training" {...swipeHandlers}>
       <header>
         <p className="po-eyebrow">Live Training</p>
         <h2>{state.entry.title || state.entry.trainingType}</h2>
@@ -1562,11 +1618,12 @@ function WeekCopyDialog({ sourceWeek, entries, onCancel, onCopy }: { sourceWeek:
   );
 }
 
-function AgendaList({ entries, onOpenEntry, onStartLive, onFeedback, groups, athletes, users }: { entries: PlanEntry[]; onOpenEntry: (id: string) => void; onStartLive: (entry: PlanEntry) => void; onFeedback: (entry: PlanEntry) => void; groups: CoachGroup[]; athletes: CoachAthlete[]; users: User[] }) {
+function AgendaList({ entries, onOpenEntry, onStartLive, onFeedback, groups, athletes, users, renderEntryPanel }: { entries: PlanEntry[]; onOpenEntry: (id: string) => void; onStartLive: (entry: PlanEntry) => void; onFeedback: (entry: PlanEntry) => void; groups: CoachGroup[]; athletes: CoachAthlete[]; users: User[]; renderEntryPanel?: (entry: PlanEntry) => ReactNode }) {
   return (
     <PaddlioOneCard className="master-agenda-card">
       {sortPlanEntries(entries).slice(0, 40).map((entry) => (
-        <article className="master-agenda-row" key={entry.id}>
+        <div className="master-calendar-entry-with-panel" data-calendar-entry-id={entry.id} key={entry.id}>
+        <article className="master-agenda-row">
           <button type="button" onClick={() => onOpenEntry(entry.id)}>
             <strong>{entry.title || entry.trainingType}</strong>
             <span>{fullDateLabel(entry.date)} · {entry.startTime || entry.time} · {getAssignedLabel(entry, groups, athletes, users)}</span>
@@ -1577,6 +1634,8 @@ function AgendaList({ entries, onOpenEntry, onStartLive, onFeedback, groups, ath
             <button type="button" onClick={() => onFeedback(entry)}>Feedback</button>
           </div>
         </article>
+        {renderEntryPanel?.(entry)}
+        </div>
       ))}
       {entries.length === 0 ? <p className="po-muted">Keine Einheiten für die aktuellen Filter.</p> : null}
     </PaddlioOneCard>
