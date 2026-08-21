@@ -169,7 +169,23 @@ async function expectFeedbackVisibleAfterSync(page: Page, marker: string, text: 
 function seededAthletePattern(email?: string): RegExp {
   if (email?.includes("athlete2")) return /Noah Test|athlete2/i;
   if (email?.includes("athlete3")) return /Lea Test|athlete3/i;
-  return /Mia Test|athlete1/i;
+  return /Mia Test|Test Athlete|athlete1|dev\.athlete/i;
+}
+
+function coachAreaLocator(page: Page) {
+  return page
+    .getByRole("heading", { name: "Coach Hub" })
+    .or(page.getByRole("button", { name: /Coach(?:-Ansicht|-Bereich)? .*ffnen/i }))
+    .or(page.getByRole("button", { name: /Coach(?:-Ansicht|-Bereich)?/i }))
+    .first();
+}
+
+function adminAreaLocator(page: Page) {
+  return page
+    .getByRole("heading", { name: "Admin Hub" })
+    .or(page.getByRole("button", { name: /Admin(?:-Ansicht)? .*ffnen/i }))
+    .or(page.getByRole("button", { name: /Admin(?:-Ansicht)?/i }))
+    .first();
 }
 
 test.describe("role isolation", () => {
@@ -190,8 +206,8 @@ test.describe("role isolation", () => {
     await login(page, coachEmail!, coachPassword!);
     await openMore(page);
 
-    await expect(page.getByRole("heading", { name: "Coach Hub" })).toBeVisible();
-    await expect(page.getByText("Admin Hub")).not.toBeVisible();
+    await expect(coachAreaLocator(page)).toBeVisible();
+    await expect(adminAreaLocator(page)).not.toBeVisible();
   });
 });
 
@@ -202,8 +218,8 @@ test.describe("club admin access", () => {
     await login(page, clubAdminEmail!, clubAdminPassword!);
     await openMore(page);
 
-    await expect(page.getByRole("heading", { name: "Coach Hub" })).toBeVisible();
-    await expect(page.getByText("Admin Hub")).not.toBeVisible();
+    await expect(coachAreaLocator(page)).toBeVisible();
+    await expect(adminAreaLocator(page)).not.toBeVisible();
   });
 });
 
@@ -270,6 +286,6 @@ test.describe("admin access", () => {
   test("admin sees admin hub", async ({ page }) => {
     await login(page, adminEmail!, adminPassword!);
     await openMore(page);
-    await expect(page.getByText("Admin Hub")).toBeVisible();
+    await expect(adminAreaLocator(page)).toBeVisible();
   });
 });

@@ -13302,3 +13302,549 @@ body,
     font-size: 0.68rem;
   }
 }
+
+/* Phone final content density: reduce page heroes while keeping the fixed shell untouched. */
+@media (max-width: 767px) {
+  .app-shell-phone .po-page-header,
+  .app-shell-phone .smart-more-hero,
+  .app-shell-phone .section-hero,
+  .app-shell-phone .hero-card {
+    min-height: 0;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding: 12px 14px;
+    border-radius: 18px;
+  }
+
+  .app-shell-phone .po-page-header h1,
+  .app-shell-phone .smart-more-hero h2,
+  .app-shell-phone .section-hero h1,
+  .app-shell-phone .section-hero h2,
+  .app-shell-phone .hero-card h1,
+  .app-shell-phone .hero-card h2 {
+    margin: 0;
+    font-size: clamp(1.42rem, 8vw, 2rem);
+    line-height: 1.02;
+    letter-spacing: 0;
+  }
+
+  .app-shell-phone .po-page-header p:not(.po-eyebrow),
+  .app-shell-phone .smart-more-hero p,
+  .app-shell-phone .section-hero p,
+  .app-shell-phone .hero-card p {
+    display: -webkit-box;
+    margin: 4px 0 0;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    color: var(--po-text-muted, #a8b3c7);
+    font-size: 0.9rem;
+    line-height: 1.24;
+  }
+
+  .app-shell-phone .po-page-header .po-eyebrow,
+  .app-shell-phone .smart-more-hero .eyebrow,
+  .app-shell-phone .section-hero .eyebrow,
+  .app-shell-phone .hero-card .eyebrow {
+    margin: 0 0 3px;
+    font-size: 0.6rem;
+    line-height: 1;
+  }
+
+  .app-shell-phone .po-workspace-dashboard {
+    gap: 10px;
+  }
+
+  .app-shell-phone.app-shell-home .po-workspace-dashboard > .po-page-header {
+    display: none;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 9px 11px;
+  }
+
+  .app-shell-phone.app-shell-home .po-workspace-dashboard > .po-page-header h1 {
+    font-size: 1.25rem;
+  }
+
+  .app-shell-phone.app-shell-home .po-workspace-dashboard > .po-page-header .po-user-badge {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+  }
+
+  .app-shell-phone .po-kpi-strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .app-shell-phone .po-kpi-strip .po-metric-card,
+  .app-shell-phone .po-metric-card {
+    min-height: 0;
+    padding: 9px 8px;
+    border-radius: 16px;
+  }
+
+  .app-shell-phone .po-kpi-strip .po-metric-card .po-icon-box {
+    display: none;
+  }
+
+  .app-shell-phone .po-metric-card span {
+    font-size: 0.68rem;
+    line-height: 1.05;
+  }
+
+  .app-shell-phone .po-metric-card strong {
+    font-size: 1.15rem;
+    line-height: 1;
+  }
+
+  .app-shell-phone .po-metric-card small {
+    font-size: 0.65rem;
+    line-height: 1.1;
+  }
+
+  .app-shell-phone .po-card,
+  .app-shell-phone .po-next-training,
+  .app-shell-phone .section-block {
+    gap: 9px;
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .app-shell-phone .po-next-training > p {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 0.9rem;
+    line-height: 1.25;
+  }
+
+  .app-shell-phone .po-training-meta-grid {
+    gap: 6px;
+  }
+
+  .app-shell-phone .po-training-meta-grid span {
+    padding: 6px 7px;
+  }
+
+  .app-shell-phone .training-sessions-view {
+    gap: 10px;
+  }
+
+  .app-shell-phone .po-training-workflow {
+    gap: 10px;
+  }
+
+  .app-shell-phone .category-shell.more-category-shell.device-phone {
+    padding-top: 0;
+    margin-top: 0;
+  }
+
+  .app-shell-phone .training-segment-switcher {
+    position: static;
+    display: block;
+    min-height: 42px;
+    margin: 0 0 8px;
+    padding: 0;
+    overflow: visible;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .app-shell-phone .po-training-workflow > .po-page-header {
+    display: none;
+    grid-template-columns: minmax(0, 1fr) minmax(112px, 0.58fr);
+    align-items: center;
+    gap: 10px;
+    min-height: 0;
+    margin-bottom: 8px;
+    padding: 10px 12px;
+    border-radius: 18px;
+  }
+
+  .app-shell-phone .po-training-workflow > .po-page-header .po-eyebrow {
+    display: none;
+  }
+
+  .app-shell-phone .po-training-workflow > .po-page-header h1 {
+    font-size: clamp(1.12rem, 6vw, 1.55rem);
+    line-height: 1.02;
+  }
+
+  .app-shell-phone .po-training-workflow > .po-page-header p:not(.po-eyebrow) {
+    -webkit-line-clamp: 2;
+    font-size: 0.86rem;
+    line-height: 1.18;
+  }
+
+  .app-shell-phone .po-training-workflow > .po-page-header .po-action-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .app-shell-phone .po-training-workflow > .po-page-header .po-button {
+    min-height: 34px;
+    padding: 6px 8px;
+    border-radius: 15px;
+    font-size: 0.78rem;
+  }
+
+  .app-shell-phone .po-training-workflow > .po-page-header .po-button svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .app-shell-phone .training-segment-switcher .segment-nav {
+    position: static !important;
+    top: auto !important;
+    z-index: 1;
+    gap: 5px;
+    min-height: 42px;
+    margin: 0;
+    padding: 3px;
+    transform: none !important;
+    opacity: 1 !important;
+    overflow-x: auto;
+    pointer-events: auto !important;
+    scrollbar-width: none;
+  }
+
+  .app-shell-phone .training-segment-switcher + .segment-content {
+    clear: both;
+    padding-top: 0;
+  }
+
+  .app-shell-phone .training-segment-switcher .segment-nav button {
+    flex: 0 0 auto;
+    min-height: 34px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+  }
+
+  .app-shell-phone .po-training-workflow .po-kpi-strip .po-icon-box {
+    display: none;
+  }
+
+  .app-shell-phone .po-training-flow-card {
+    padding: 9px 10px;
+  }
+
+  .app-shell-phone .po-training-flow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    justify-content: space-between;
+  }
+
+  .app-shell-phone .po-training-flow span {
+    min-width: 0;
+    font-size: 0.78rem;
+    line-height: 1.05;
+  }
+
+  .app-shell-phone .po-training-session-card {
+    padding: 11px;
+  }
+
+  .app-shell-phone .po-training-session-card .po-card-heading-row h2 {
+    font-size: 1.15rem;
+    line-height: 1.1;
+  }
+
+  .app-shell-phone .po-training-session-card .po-card-heading-row p:not(.po-eyebrow) {
+    -webkit-line-clamp: 2;
+    font-size: 0.9rem;
+    line-height: 1.18;
+  }
+
+  .app-shell-phone .training-sessions-view .summary-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 0;
+  }
+
+  .app-shell-phone .training-sessions-view .summary-strip div {
+    min-height: 0;
+    padding: 8px;
+    border-radius: 15px;
+  }
+
+  .app-shell-phone .training-sessions-panel {
+    padding: 10px;
+  }
+
+  .app-shell-phone .training-sessions-panel .section-heading {
+    min-height: 0;
+    padding: 0;
+  }
+
+  .app-shell-phone .training-sessions-panel .section-heading .eyebrow {
+    display: none;
+  }
+
+  .app-shell-phone .training-sessions-panel .section-heading h3 {
+    font-size: 1.2rem;
+  }
+
+  .app-shell-phone .training-journal-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) repeat(2, minmax(0, 0.78fr));
+    gap: 7px;
+  }
+
+  .app-shell-phone .training-journal-actions button {
+    min-height: 38px;
+    padding: 7px 9px;
+    font-size: 0.82rem;
+  }
+
+  .app-shell-phone .training-sessions-panel .filter-tabs {
+    gap: 5px;
+    padding: 3px;
+  }
+
+  .app-shell-phone .training-sessions-panel .filter-tabs button {
+    min-height: 34px;
+    padding: 6px 8px;
+    font-size: 0.78rem;
+  }
+
+  .app-shell-phone .fitness-card,
+  .app-shell-phone .fitness-list .fitness-card {
+    min-height: 0;
+    padding: 10px;
+    border-radius: 16px;
+  }
+
+  .app-shell-phone .communication-shell {
+    gap: 9px;
+  }
+
+  .app-shell-phone .communication-shell > .segment-nav {
+    gap: 5px;
+    margin-bottom: 6px;
+    padding: 3px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .app-shell-phone .communication-shell > .segment-nav button {
+    flex: 0 0 auto;
+    min-height: 34px;
+    padding: 7px 10px;
+    font-size: 0.82rem;
+  }
+
+  .app-shell-phone .communication-shell .section-hero,
+  .app-shell-phone .communication-shell .hero-card,
+  .app-shell-phone .communication-shell .premium-hero,
+  .app-shell-phone .communication-shell .home-profile-card {
+    display: none;
+  }
+
+  .app-shell-phone .communication-shell .metric-grid.two-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .app-shell-phone .communication-shell .metric-card {
+    min-height: 0;
+    padding: 10px;
+    border-radius: 16px;
+  }
+
+  .app-shell-phone .communication-shell .metric-card span,
+  .app-shell-phone .communication-shell .metric-card small {
+    font-size: 0.72rem;
+    line-height: 1.1;
+  }
+
+  .app-shell-phone .communication-shell .metric-card strong {
+    font-size: 1.35rem;
+    line-height: 1;
+  }
+
+  .app-shell-phone .communication-shell .summary-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .app-shell-phone .communication-shell .summary-strip div {
+    min-height: 0;
+    padding: 10px;
+    border-radius: 16px;
+  }
+
+  .app-shell-phone .communication-layout,
+  .app-shell-phone .communication-contact {
+    gap: 7px;
+  }
+
+  .app-shell-phone .communication-contact {
+    min-height: 0;
+    padding: 10px;
+    border-radius: 15px;
+  }
+
+  .app-shell-phone .more-category-shell {
+    gap: 10px;
+  }
+
+  .app-shell-phone .smart-more-panel {
+    gap: 10px;
+  }
+
+  .app-shell-phone .smart-more-hero {
+    display: none;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .app-shell-phone .smart-more-hero h2 {
+    font-size: 1.38rem;
+  }
+
+  .app-shell-phone .smart-more-helper {
+    display: none;
+  }
+
+  .app-shell-phone .smart-profile-pill {
+    display: grid;
+    grid-template-columns: auto;
+    place-items: center;
+    gap: 0;
+    padding: 0;
+    background: transparent;
+  }
+
+  .app-shell-phone .smart-profile-pill > span {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    border-radius: 14px;
+    font-size: 0.74rem;
+  }
+
+  .app-shell-phone .smart-profile-pill div {
+    display: none;
+  }
+
+  .app-shell-phone .smart-quick-grid .section-heading {
+    margin-bottom: 6px;
+  }
+
+  .app-shell-phone .smart-quick-grid .section-heading .eyebrow {
+    display: none;
+  }
+
+  .app-shell-phone .smart-quick-grid .section-heading h2,
+  .app-shell-phone .smart-group .section-heading h2 {
+    font-size: 1.05rem;
+    line-height: 1.12;
+  }
+
+  .app-shell-phone .smart-grid,
+  .app-shell-phone .smart-list {
+    gap: 8px;
+  }
+
+  .app-shell-phone .smart-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .app-shell-phone .smart-tile,
+  .app-shell-phone .smart-grid .smart-tile {
+    min-height: 52px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 16px;
+  }
+
+  .app-shell-phone .smart-tile .smart-icon,
+  .app-shell-phone .more-menu-icon.smart-icon {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    border-radius: 14px;
+  }
+
+  .app-shell-phone .smart-tile-copy strong {
+    font-size: 0.96rem;
+    line-height: 1.12;
+  }
+
+  .app-shell-phone .smart-tile-copy small {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    font-size: 0.78rem;
+    line-height: 1.15;
+  }
+
+  .app-shell-phone .calendar-category-shell .po-page-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .app-shell-phone .calendar-category-shell .po-page-header h1,
+  .app-shell-phone .calendar-category-shell .po-page-header h2 {
+    font-size: 1.45rem;
+    line-height: 1.04;
+  }
+
+  .app-shell-phone .calendar-category-shell .po-page-header .master-calendar-add-compact {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border-radius: 18px;
+  }
+
+  .app-shell-phone .master-calendar-toolbar,
+  .app-shell-phone .master-calendar-controls,
+  .app-shell-phone .master-calendar-card {
+    gap: 8px;
+  }
+
+  .app-shell-phone .master-training-block {
+    min-height: 0;
+    gap: 5px;
+    padding: 8px;
+    border-radius: 13px;
+  }
+
+  .app-shell-phone .master-training-block-main {
+    gap: 3px;
+    padding: 0;
+  }
+
+  .app-shell-phone .master-training-block-main strong {
+    -webkit-line-clamp: 1;
+    font-size: 0.9rem;
+    line-height: 1.12;
+  }
+
+  .app-shell-phone .master-training-block-main small,
+  .app-shell-phone .master-training-block-main span {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    font-size: 0.72rem;
+    line-height: 1.12;
+  }
+}
