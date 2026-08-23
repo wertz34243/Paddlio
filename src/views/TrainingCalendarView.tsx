@@ -46,6 +46,7 @@ type CalendarMode = "day" | "threeDays" | "week" | "month" | "year" | "list" | "
 type TemplateScope = "favorites" | "recent" | "mine" | "club" | "system" | "weeks" | "season";
 type DetailTab = "planning" | "execution" | "feedback" | "tasks";
 type CompletionStatus = "completed" | "partially_completed" | "skipped";
+type ContextMode = "templates" | "quickEdit" | "detail" | "filter";
 
 type PlanEntryDraft = Omit<PlanEntry, "id" | "athleteId" | "createdAt" | "updatedAt" | "createdByUserId"> & { id?: string };
 type JournalDraft = Omit<TrainingJournalEntry, "id" | "athleteId" | "createdAt" | "updatedAt"> & { id?: string };
@@ -307,6 +308,7 @@ export function TrainingCalendarView({
   }));
   const initialOverlayContext = deviceClass === "tablet" && viewport.width < 1024;
   const [showTemplates, setShowTemplates] = useState(!isPhone && !initialOverlayContext);
+  const [contextMode, setContextMode] = useState<ContextMode>("templates");
   const [query, setQuery] = useState("");
   const [areaFilter, setAreaFilter] = useState<"all" | TrainingArea>("all");
   const [statusFilter, setStatusFilter] = useState<"all" | PlanStatus>("all");
@@ -321,6 +323,7 @@ export function TrainingCalendarView({
   const isTablet = deviceClass === "tablet";
   const isTabletPortrait = isTablet && viewport.width < 1024 && viewport.height >= viewport.width;
   const usesOverlayContext = isTablet && viewport.width < 1024;
+  const isTabletWorkspace = isTablet && !isPhone;
 
   const availableModes: CalendarMode[] = isPhone
     ? ["day", "threeDays", "week", "list"]
@@ -421,6 +424,7 @@ export function TrainingCalendarView({
     setFeedbackEntry(null);
     setLiveTraining(null);
     if (usesOverlayContext) setShowTemplates(false);
+    setContextMode("quickEdit");
     setQuickEdit(createQuickEdit(template, date, user));
   };
 
@@ -429,6 +433,7 @@ export function TrainingCalendarView({
     setFeedbackEntry(null);
     setLiveTraining(null);
     setShowTemplates(false);
+    setContextMode("detail");
     setSelectedEntryId(id);
   };
 
@@ -578,9 +583,10 @@ export function TrainingCalendarView({
     statusFilter !== "all" ? { id: "status", label: planStatusLabels[statusFilter] ?? statusFilter, onClear: () => setStatusFilter("all" as const) } : null,
     query.trim() ? { id: "query", label: query.trim(), onClear: () => setQuery("") } : null,
   ].filter(Boolean) as Array<{ id: string; label: string; onClear: () => void }>;
+  const activeFilters = activeMobileFilters;
 
-  const hasContextContent = Boolean(quickEdit || selectedEntry || showTemplates);
-  const contextTitle = quickEdit ? "Quick Edit" : selectedEntry ? "Training" : showTemplates ? "Vorlagen" : "Kontext";
+  const hasContextContent = Boolean(quickEdit || selectedEntry || showTemplates || contextMode === "filter");
+  const contextTitle = quickEdit ? "Quick Edit" : selectedEntry ? "Training" : contextMode === "filter" ? "Filter" : showTemplates ? "Vorlagen" : "Kontext";
   const contextContent = quickEdit ? (
     <TrainingQuickEdit
       state={quickEdit}
@@ -619,6 +625,20 @@ export function TrainingCalendarView({
     />
   ) : showTemplates ? (
     <TemplatePanel templates={calendarTemplates} scope={templateScope} onScopeChange={setTemplateScope} onDragStart={setDragTemplateId} onDragEnd={() => setDragTemplateId(null)} onQuickInsert={(template) => openQuickEdit(template)} onOpenPlan={onOpenPlan} />
+  ) : contextMode === "filter" ? (
+    <CalendarFilterPanel
+      query={query}
+      areaFilter={areaFilter}
+      statusFilter={statusFilter}
+      onQueryChange={setQuery}
+      onAreaChange={setAreaFilter}
+      onStatusChange={setStatusFilter}
+      onReset={() => {
+        setQuery("");
+        setAreaFilter("all");
+        setStatusFilter("all");
+      }}
+    />
   ) : (
     <PaddlioOneCard className="master-context-empty">
       <p className="po-eyebrow">Kontext</p>
@@ -684,9 +704,10 @@ export function TrainingCalendarView({
               {!isPhone ? <PaddlioOneButton variant="secondary" onClick={() => {
                 setQuickEdit(null);
                 setSelectedEntryId(null);
+                setContextMode("templates");
                 setShowTemplates((value) => !value);
               }}>
-                {showTemplates ? "Vorlagen ausblenden" : "Vorlagen"}
+                Vorlagen
               </PaddlioOneButton> : null}
               <PaddlioOneButton
                 variant="primary"
@@ -715,7 +736,13 @@ export function TrainingCalendarView({
             ))}
           </div>
           {!isPhone ? <div className="master-calendar-toolbar-group">
-            <PaddlioOneButton variant="secondary" onClick={() => setWeekCopyOpen(true)}>Woche kopieren</PaddlioOneButton>
+            <PaddlioOneButton variant="secondary" onClick={() => {
+              setQuickEdit(null);
+              setSelectedEntryId(null);
+              setShowTemplates(false);
+              setContextMode("filter");
+            }}>Filter</PaddlioOneButton>
+            <PaddlioOneButton variant="secondary" onClick={() => setWeekCopyOpen(true)}>Aktionen</PaddlioOneButton>
             <PaddlioOneButton variant={selectionMode ? "primary" : "secondary"} onClick={() => setSelectionMode((value) => !value)}>
               Mehrfach
             </PaddlioOneButton>
@@ -737,7 +764,7 @@ export function TrainingCalendarView({
           </section>
         ) : null}
 
-        {!isPhone ? <section className="master-calendar-controls" aria-label="Kalenderfilter">
+        {!isPhone && !isTabletWorkspace ? <section className="master-calendar-controls" aria-label="Kalenderfilter">
           <label>
             Suche
             <input value={query} onChange={(event) => setQuery(event.currentTarget.value)} placeholder="Training, Fokus, Gruppe ..." />
@@ -758,7 +785,15 @@ export function TrainingCalendarView({
           </label>
         </section> : null}
 
-        {!isPhone ? <section className="master-calendar-stats">
+        {activeFilters.length > 0 && isTabletWorkspace ? (
+          <section className="master-calendar-active-filters" aria-label="Aktive Filter">
+            {activeFilters.map((filter) => (
+              <button key={filter.id} type="button" onClick={filter.onClear}>{filter.label} ×</button>
+            ))}
+          </section>
+        ) : null}
+
+        {!isPhone && !isTabletWorkspace ? <section className="master-calendar-stats">
           <PaddlioOneMetricCard label="Diese Woche" value={weekEntries.length} detail="Einheiten" icon="calendar" tone="primary" />
           <PaddlioOneMetricCard label="Belastung" value={`${weekLoad} min`} detail="geplante Zeit" icon="timer" tone="info" />
           <PaddlioOneMetricCard label="Durchgeführt" value={`${completedThisWeek}/${weekEntries.length}`} detail="Soll/Ist" icon="target" tone="success" />
@@ -780,15 +815,15 @@ export function TrainingCalendarView({
         ) : null}
 
         {mode === "week" ? (
-          <WeekCalendar days={weekDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={Boolean(dragTemplateId) && !isPhone} renderEntryPanel={renderPhoneEntryPanel} />
+          <WeekCalendar days={weekDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={Boolean(dragTemplateId) && !isPhone} renderEntryPanel={renderPhoneEntryPanel} compactActions={isTabletWorkspace} />
         ) : null}
 
         {mode === "day" ? (
-          <DayCalendar date={focusDate} entries={dayEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={false} renderEntryPanel={renderPhoneEntryPanel} />
+          <DayCalendar date={focusDate} entries={dayEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={false} renderEntryPanel={renderPhoneEntryPanel} compactActions={isTabletWorkspace} />
         ) : null}
 
         {mode === "threeDays" ? (
-          <WeekCalendar days={threeDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} compact showDropHint={false} renderEntryPanel={renderPhoneEntryPanel} />
+          <WeekCalendar days={threeDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} compact showDropHint={false} renderEntryPanel={renderPhoneEntryPanel} compactActions={isTabletWorkspace} />
         ) : null}
 
         {mode === "list" ? (
@@ -803,7 +838,7 @@ export function TrainingCalendarView({
           <PeriodizationCalendar months={periodizationMonths} templates={periodizationTemplates} />
         ) : null}
 
-        {!isPhone ? <WeekPlanStrip entries={weekEntries} onOpenPlan={onOpenPlan} onOpenEntry={openEntryDetail} /> : null}
+        {!isPhone && !isTabletWorkspace ? <WeekPlanStrip entries={weekEntries} onOpenPlan={onOpenPlan} onOpenEntry={openEntryDetail} /> : null}
       </main>
 
       {!isPhone && hasContextContent ? (
@@ -821,7 +856,7 @@ export function TrainingCalendarView({
         </>
       ) : null}
 
-      {!isPhone && selectedEntry ? (
+      {!isPhone && !isTabletWorkspace && selectedEntry ? (
         <TrainingDetailDrawer
           entry={selectedEntry}
           journal={journal}
@@ -941,6 +976,56 @@ function MobileFilterSheet({
   );
 }
 
+function CalendarFilterPanel({
+  query,
+  areaFilter,
+  statusFilter,
+  onQueryChange,
+  onAreaChange,
+  onStatusChange,
+  onReset,
+}: {
+  query: string;
+  areaFilter: "all" | TrainingArea;
+  statusFilter: "all" | PlanStatus;
+  onQueryChange: (value: string) => void;
+  onAreaChange: (value: "all" | TrainingArea) => void;
+  onStatusChange: (value: "all" | PlanStatus) => void;
+  onReset: () => void;
+}) {
+  return (
+    <PaddlioOneCard className="master-filter-panel">
+      <div className="po-card-heading-row">
+        <div>
+          <p className="po-eyebrow">Kalender</p>
+          <h2>Filter</h2>
+        </div>
+        <PaddlioOneButton variant="ghost" onClick={onReset}>Reset</PaddlioOneButton>
+      </div>
+      <div className="master-filter-form">
+        <label>
+          Suche
+          <input value={query} onChange={(event) => onQueryChange(event.currentTarget.value)} placeholder="Training, Fokus, Gruppe" />
+        </label>
+        <label>
+          Bereich
+          <select value={areaFilter} onChange={(event) => onAreaChange(event.currentTarget.value as "all" | TrainingArea)}>
+            <option value="all">Alle</option>
+            {trainingAreas.map((area) => <option key={area} value={area}>{area}</option>)}
+          </select>
+        </label>
+        <label>
+          Status
+          <select value={statusFilter} onChange={(event) => onStatusChange(event.currentTarget.value as "all" | PlanStatus)}>
+            <option value="all">Alle</option>
+            {Object.entries(planStatusLabels).slice(0, 6).map(([status, label]) => <option key={status} value={status}>{label}</option>)}
+          </select>
+        </label>
+      </div>
+    </PaddlioOneCard>
+  );
+}
+
 function MonthCalendar({
   days,
   groupedEntries,
@@ -1012,6 +1097,7 @@ function WeekCalendar({
   compact = false,
   showDropHint = true,
   renderEntryPanel,
+  compactActions = false,
 }: {
   days: string[];
   groupedEntries: Map<string, PlanEntry[]>;
@@ -1032,6 +1118,7 @@ function WeekCalendar({
   compact?: boolean;
   showDropHint?: boolean;
   renderEntryPanel?: (entry: PlanEntry) => ReactNode;
+  compactActions?: boolean;
 }) {
   return (
     <PaddlioOneCard className={`master-calendar-card master-week-calendar-card ${compact ? "is-compact" : ""}`.trim()}>
@@ -1047,7 +1134,7 @@ function WeekCalendar({
               <div className="master-calendar-entry-stack">
                 {entries.length > 0 ? entries.map((entry) => (
                   <div className="master-calendar-entry-with-panel" data-calendar-entry-id={entry.id} key={entry.id}>
-                    <TrainingBlock entry={entry} onStatusChange={onStatusChange} onOpenEntry={onOpenEntry} onStartLive={onStartLive} onFeedback={onFeedback} onDuplicate={onDuplicate} onDelete={onDelete} selectionMode={selectionMode} selected={selectedIds.includes(entry.id)} onSelect={onSelect} assignedLabel={getAssignedLabel(entry, groups, athletes, users)} />
+                    <TrainingBlock entry={entry} onStatusChange={onStatusChange} onOpenEntry={onOpenEntry} onStartLive={onStartLive} onFeedback={onFeedback} onDuplicate={onDuplicate} onDelete={onDelete} selectionMode={selectionMode} selected={selectedIds.includes(entry.id)} onSelect={onSelect} assignedLabel={getAssignedLabel(entry, groups, athletes, users)} compactActions={compactActions} />
                     {renderEntryPanel?.(entry)}
                   </div>
                 )) : <p className="master-calendar-empty-drop">{showDropHint ? "Vorlage hier ablegen" : "Keine Einträge"}</p>}
@@ -1077,6 +1164,7 @@ function TrainingBlock({
   selectionMode,
   selected,
   onSelect,
+  compactActions = false,
 }: {
   entry: PlanEntry;
   assignedLabel: string;
@@ -1089,6 +1177,7 @@ function TrainingBlock({
   selectionMode: boolean;
   selected: boolean;
   onSelect: (id: string, checked: boolean) => void;
+  compactActions?: boolean;
 }) {
   const done = isDoneStatus(entry.status);
   const skipped = isSkippedStatus(entry.status);
@@ -1105,11 +1194,17 @@ function TrainingBlock({
       </button>
       <div className="master-training-block-actions">
         <PaddlioOneStatusChip tone={done ? "success" : skipped ? "danger" : "info"}>{planStatusLabels[entry.status] ?? entry.status}</PaddlioOneStatusChip>
-        <button type="button" onClick={() => onStartLive(entry)}>Start</button>
-        <button type="button" onClick={() => onFeedback(entry)}>Feedback</button>
-        <button type="button" onClick={() => onDuplicate(entry)}>Kopie</button>
-        {!done ? <button type="button" onClick={() => onStatusChange(entry.id, "completed")}>Erledigt</button> : null}
-        {onDelete ? <button className="is-danger" type="button" onClick={() => onDelete(entry.id)}>Löschen</button> : null}
+        {compactActions ? (
+          <button type="button" onClick={() => onOpenEntry(entry.id)} aria-label="Training Aktionen öffnen">…</button>
+        ) : (
+          <>
+            <button type="button" onClick={() => onStartLive(entry)}>Start</button>
+            <button type="button" onClick={() => onFeedback(entry)}>Feedback</button>
+            <button type="button" onClick={() => onDuplicate(entry)}>Kopie</button>
+            {!done ? <button type="button" onClick={() => onStatusChange(entry.id, "completed")}>Erledigt</button> : null}
+            {onDelete ? <button className="is-danger" type="button" onClick={() => onDelete(entry.id)}>Löschen</button> : null}
+          </>
+        )}
       </div>
     </article>
   );
