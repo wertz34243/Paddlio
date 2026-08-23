@@ -155,6 +155,8 @@ const addMinutesToTime = (time: string, minutes: number): string => {
   return `${String(base.getHours()).padStart(2, "0")}:${String(base.getMinutes()).padStart(2, "0")}`;
 };
 
+const shortTimeLabel = (time?: string): string => (time || "").slice(0, 5);
+
 const getMonthGrid = (dateKey: string): string[] => {
   const base = parseLocalDateOnly(dateKey);
   const firstOfMonth = new Date(base.getFullYear(), base.getMonth(), 1);
@@ -330,6 +332,7 @@ export function TrainingCalendarView({
     : isDesktop
       ? ["day", "week", "month", "year", "season", "list"]
       : ["day", "threeDays", "week", "month", "list", "season"];
+  const primaryModes: CalendarMode[] = isTabletWorkspace ? ["day", "threeDays", "week", "month"] : availableModes;
 
   useEffect(() => {
     if (!availableModes.includes(mode)) setMode(availableModes[0]);
@@ -701,7 +704,7 @@ export function TrainingCalendarView({
           description={isPhone ? undefined : "Vorlagen planen, Einheiten durchführen, Feedback sichern und Soll/Ist direkt nachvollziehen."}
           action={
             <div className="master-calendar-header-actions">
-              {!isPhone ? <PaddlioOneButton variant="secondary" onClick={() => {
+              {!isPhone && !isTabletWorkspace ? <PaddlioOneButton variant="secondary" onClick={() => {
                 setQuickEdit(null);
                 setSelectedEntryId(null);
                 setContextMode("templates");
@@ -709,7 +712,7 @@ export function TrainingCalendarView({
               }}>
                 Vorlagen
               </PaddlioOneButton> : null}
-              <PaddlioOneButton
+              {!isTabletWorkspace ? <PaddlioOneButton
                 variant="primary"
                 icon="training"
                 className={isPhone ? "master-calendar-add-compact" : ""}
@@ -717,7 +720,7 @@ export function TrainingCalendarView({
                 aria-label="Training hinzufügen"
               >
                 {isPhone ? "+" : "Training hinzufügen"}
-              </PaddlioOneButton>
+              </PaddlioOneButton> : null}
             </div>
           }
         />
@@ -729,23 +732,56 @@ export function TrainingCalendarView({
             <PaddlioOneButton variant="ghost" onClick={() => move(1)} aria-label="Nächster Zeitraum">{isPhone ? "›" : "Weiter"}</PaddlioOneButton>
           </div>
           <div className="master-segmented-control" aria-label="Kalenderansicht">
-            {availableModes.map((item) => (
+            {primaryModes.map((item) => (
               <button className={mode === item ? "is-active" : ""} key={item} type="button" onClick={() => setMode(item)}>
                 {modeLabels[item]}
               </button>
             ))}
           </div>
           {!isPhone ? <div className="master-calendar-toolbar-group">
-            <PaddlioOneButton variant="secondary" onClick={() => {
-              setQuickEdit(null);
-              setSelectedEntryId(null);
-              setShowTemplates(false);
-              setContextMode("filter");
-            }}>Filter</PaddlioOneButton>
-            <PaddlioOneButton variant="secondary" onClick={() => setWeekCopyOpen(true)}>Aktionen</PaddlioOneButton>
-            <PaddlioOneButton variant={selectionMode ? "primary" : "secondary"} onClick={() => setSelectionMode((value) => !value)}>
-              Mehrfach
-            </PaddlioOneButton>
+            {isTabletWorkspace ? (
+              <>
+                <PaddlioOneButton variant="secondary" onClick={() => {
+                  setQuickEdit(null);
+                  setSelectedEntryId(null);
+                  setContextMode("templates");
+                  setShowTemplates(true);
+                }}>Vorlagen</PaddlioOneButton>
+                <PaddlioOneButton variant="secondary" onClick={() => {
+                  setQuickEdit(null);
+                  setSelectedEntryId(null);
+                  setShowTemplates(false);
+                  setContextMode("filter");
+                }}>Filter</PaddlioOneButton>
+                <PaddlioOneButton variant="primary" onClick={onOpenPlan}>+ Training</PaddlioOneButton>
+                <select
+                  className="master-calendar-overflow-select"
+                  aria-label="Weitere Kalenderansichten"
+                  value={mode === "season" || mode === "list" ? mode : ""}
+                  onChange={(event) => {
+                    const nextMode = event.currentTarget.value as CalendarMode | "";
+                    if (nextMode) setMode(nextMode);
+                  }}
+                >
+                  <option value="">Mehr</option>
+                  <option value="list">Liste</option>
+                  <option value="season">Saison</option>
+                </select>
+              </>
+            ) : (
+              <>
+                <PaddlioOneButton variant="secondary" onClick={() => {
+                  setQuickEdit(null);
+                  setSelectedEntryId(null);
+                  setShowTemplates(false);
+                  setContextMode("filter");
+                }}>Filter</PaddlioOneButton>
+                <PaddlioOneButton variant="secondary" onClick={() => setWeekCopyOpen(true)}>Aktionen</PaddlioOneButton>
+                <PaddlioOneButton variant={selectionMode ? "primary" : "secondary"} onClick={() => setSelectionMode((value) => !value)}>
+                  Mehrfach
+                </PaddlioOneButton>
+              </>
+            )}
           </div> : null}
         </PaddlioOneToolbar>
 
@@ -1182,20 +1218,32 @@ function TrainingBlock({
   const done = isDoneStatus(entry.status);
   const skipped = isSkippedStatus(entry.status);
   const tone = skipped ? "danger" : done ? "success" : categoryTone(entry.area || entry.trainingType);
+  const title = entry.title || entry.trainingType;
+  const startLabel = shortTimeLabel(entry.startTime || entry.time) || "--";
+  const endLabel = shortTimeLabel(entry.endTime || addMinutesToTime(entry.startTime || entry.time, entry.durationMinutes));
+  const timeRange = `${startLabel} - ${endLabel}`;
+  const compactMeta = `${entry.durationMinutes} min${entry.area ? ` · ${entry.area}` : ""}`;
   return (
-    <article className={`master-training-block po-tone-${tone}`}>
+    <article className={`master-training-block po-tone-${tone}${compactActions ? " is-tablet-compact" : ""}`}>
       {selectionMode ? (
         <input aria-label={`${entry.title || entry.trainingType} auswählen`} checked={selected} type="checkbox" onChange={(event) => onSelect(entry.id, event.currentTarget.checked)} />
       ) : null}
       <button className="master-training-block-main" type="button" onClick={() => onOpenEntry(entry.id)}>
-        <strong>{entry.title || entry.trainingType}</strong>
-        <small>{entry.startTime || entry.time || "--"} - {entry.endTime || addMinutesToTime(entry.startTime || entry.time, entry.durationMinutes)} · {entry.durationMinutes} min · {assignedLabel}</small>
-        <span>{entry.focus || entry.goal || "Fokus offen"}</span>
+        <strong>{title}</strong>
+        <small>{compactActions ? timeRange : `${timeRange} · ${entry.durationMinutes} min · ${assignedLabel}`}</small>
+        <span>{compactActions ? compactMeta : entry.focus || entry.goal || "Fokus offen"}</span>
       </button>
       <div className="master-training-block-actions">
-        <PaddlioOneStatusChip tone={done ? "success" : skipped ? "danger" : "info"}>{planStatusLabels[entry.status] ?? entry.status}</PaddlioOneStatusChip>
         {compactActions ? (
-          <button type="button" onClick={() => onOpenEntry(entry.id)} aria-label="Training Aktionen öffnen">…</button>
+          <span className={`master-status-mini po-tone-${done ? "success" : skipped ? "danger" : "info"}`} aria-label={`Status ${planStatusLabels[entry.status] ?? entry.status}`}>
+            <span aria-hidden="true" />
+            {planStatusLabels[entry.status] ?? entry.status}
+          </span>
+        ) : (
+          <PaddlioOneStatusChip tone={done ? "success" : skipped ? "danger" : "info"}>{planStatusLabels[entry.status] ?? entry.status}</PaddlioOneStatusChip>
+        )}
+        {compactActions ? (
+          <button className="master-training-menu-button" type="button" onClick={() => onOpenEntry(entry.id)} aria-label="Training Aktionen öffnen">…</button>
         ) : (
           <>
             <button type="button" onClick={() => onStartLive(entry)}>Start</button>
@@ -1229,7 +1277,7 @@ function TrainingPill({
     <span className={`master-training-pill po-tone-${categoryTone(entry.area || entry.trainingType)} ${compact ? "is-compact" : ""}`.trim()}>
       {selectionMode ? <input aria-label={`${entry.title || entry.trainingType} auswählen`} checked={selected} type="checkbox" onChange={(event) => onSelect(entry.id, event.currentTarget.checked)} onClick={(event) => event.stopPropagation()} /> : null}
       <span role="button" tabIndex={0} onClick={(event) => { event.stopPropagation(); onOpen(entry.id); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") onOpen(entry.id); }}>
-        {entry.startTime || entry.time ? `${entry.startTime || entry.time} · ` : ""}{entry.title || entry.trainingType}
+        {entry.startTime || entry.time ? `${shortTimeLabel(entry.startTime || entry.time)} · ` : ""}{entry.title || entry.trainingType}
       </span>
     </span>
   );
@@ -1805,9 +1853,9 @@ function PeriodizationCalendar({ months, templates }: { months: ReturnType<typeo
         </div>
         <PaddlioOneStatusChip tone="info">{templates.length} Bausteine vorbereitet</PaddlioOneStatusChip>
       </div>
-      <div className="master-periodization-grid">
+      <div className="master-season-band" aria-label="Saisonphasen als Jahresband">
         {months.map((month) => (
-          <article className="master-periodization-month" key={month.key}>
+          <article className={`master-season-month po-tone-${categoryTone(month.phase)}`} key={month.key}>
             <strong>{month.label}</strong>
             <span>{month.phase}</span>
             <small>{month.entries} Einheiten · {month.minutes} min</small>

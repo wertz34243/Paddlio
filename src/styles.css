@@ -687,7 +687,7 @@
   }
 }
 
-@media (min-width: 1024px) and (max-width: 1365px) {
+@media (min-width: 1024px) and (max-width: 1439px) {
   .master-calendar-workspace.is-tablet:not(.is-context-overlay) {
     grid-template-columns: minmax(0, 1fr) clamp(260px, 29vw, 320px);
     gap: 12px;
@@ -713,7 +713,7 @@
 
   .master-calendar-tablet .master-calendar-toolbar {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr);
     gap: 8px;
     padding: 8px;
   }
@@ -728,6 +728,25 @@
     flex-wrap: nowrap;
   }
 
+  .master-calendar-tablet .master-calendar-toolbar-group:last-child {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .master-calendar-tablet .master-calendar-overflow-select {
+    appearance: none;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--po-border, rgba(255,255,255,0.12));
+    border-radius: 999px;
+    color: var(--po-text);
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 800;
+    min-height: 36px;
+    padding: 0 24px 0 12px;
+  }
+
   .master-calendar-tablet .master-calendar-toolbar button,
   .master-calendar-tablet .master-template-tabs button,
   .master-calendar-tablet .master-template-primary-tabs button {
@@ -735,13 +754,21 @@
     padding-inline: 10px;
   }
 
+  .master-calendar-tablet .master-week-calendar-card {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+
   .master-calendar-tablet .master-calendar-week-grid {
     gap: 7px;
-    grid-template-columns: repeat(7, minmax(88px, 1fr));
+    grid-template-columns: repeat(7, minmax(148px, 1fr));
+    min-width: calc(7 * 148px + 6 * 7px);
   }
 
   .master-calendar-tablet .master-week-calendar-card.is-compact .master-calendar-week-grid {
-    grid-template-columns: repeat(3, minmax(150px, 1fr));
+    grid-template-columns: repeat(3, minmax(180px, 1fr));
+    min-width: 0;
   }
 
   .master-calendar-tablet .master-calendar-week-day {
@@ -760,6 +787,12 @@
     padding: 8px;
   }
 
+  .master-calendar-tablet .master-training-block.is-tablet-compact {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 8px 42px 8px 9px;
+    position: relative;
+  }
+
   .master-calendar-tablet .master-training-block-main {
     min-width: 0;
   }
@@ -773,6 +806,7 @@
     overflow: hidden;
     overflow-wrap: normal;
     text-overflow: ellipsis;
+    white-space: normal;
     word-break: normal;
   }
 
@@ -789,10 +823,59 @@
     line-height: 1.2;
   }
 
+  .master-calendar-tablet .master-training-block.is-tablet-compact .master-training-block-main small,
+  .master-calendar-tablet .master-training-block.is-tablet-compact .master-training-block-main span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .master-calendar-tablet .master-training-block-actions {
     align-items: center;
     justify-content: space-between;
     gap: 5px;
+  }
+
+  .master-calendar-tablet .master-training-block.is-tablet-compact .master-training-block-actions {
+    align-items: center;
+    display: flex;
+    gap: 6px;
+    position: absolute;
+    right: 7px;
+    top: 7px;
+  }
+
+  .master-calendar-tablet .master-training-block.is-tablet-compact .po-status-chip {
+    display: none;
+  }
+
+  .master-calendar-tablet .master-training-block.is-tablet-compact .master-status-mini {
+    font-size: 0;
+    gap: 0;
+  }
+
+  .master-calendar-tablet .master-training-block.is-tablet-compact .master-status-mini > span {
+    height: 7px;
+    width: 7px;
+  }
+
+  .master-calendar-tablet .master-training-block.is-tablet-compact .master-training-menu-button {
+    min-height: 24px;
+    width: 24px;
+  }
+
+  .master-calendar-tablet .master-training-pill {
+    min-width: 0;
+    padding: 5px 7px;
+  }
+
+  .master-calendar-tablet .master-training-pill span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    word-break: normal;
   }
 
   .master-calendar-tablet .master-template-panel,
@@ -855,6 +938,43 @@
   .master-calendar-tablet .master-detail-drawer.is-context header h2 {
     font-size: 1.15rem;
     line-height: 1.15;
+  }
+
+  .master-calendar-tablet .master-detail-section {
+    display: grid;
+    gap: 8px;
+  }
+
+  .master-calendar-tablet .master-info-row {
+    align-items: baseline;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: grid;
+    gap: 8px;
+    grid-template-columns: minmax(84px, 0.42fr) minmax(0, 1fr);
+    padding-bottom: 6px;
+  }
+
+  .master-calendar-tablet .master-info-row span,
+  .master-calendar-tablet .master-focus-summary span {
+    color: var(--po-text-muted, rgba(255, 255, 255, 0.68));
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+
+  .master-calendar-tablet .master-info-row strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .master-calendar-tablet .master-focus-summary {
+    display: grid;
+    gap: 4px;
+  }
+
+  .master-calendar-tablet .master-focus-summary p {
+    margin: 0;
   }
 
   .master-calendar-tablet .master-detail-tabs {
@@ -7556,6 +7676,111 @@ body {
   gap: 6px;
 }
 
+.master-status-mini {
+  align-items: center;
+  color: var(--po-text-muted, rgba(255, 255, 255, 0.68));
+  display: inline-flex;
+  font-size: 0.68rem;
+  font-weight: 800;
+  gap: 4px;
+  letter-spacing: 0;
+  line-height: 1;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.master-status-mini > span {
+  background: var(--po-tone, var(--po-accent));
+  border-radius: 999px;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--po-tone, var(--po-accent)) 16%, transparent);
+  flex: 0 0 auto;
+  height: 6px;
+  width: 6px;
+}
+
+.master-training-menu-button {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 1rem;
+  font-weight: 900;
+  justify-content: center;
+  line-height: 1;
+  min-height: 28px;
+  padding: 0;
+  width: 28px;
+}
+
+.master-season-band {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(12, minmax(78px, 1fr));
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+
+.master-season-month {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--po-tone, var(--po-accent)) 15%, transparent), transparent 72%),
+    var(--po-surface-muted, rgba(255, 255, 255, 0.055));
+  border: 1px solid color-mix(in srgb, var(--po-tone, var(--po-accent)) 32%, var(--po-border, rgba(255,255,255,0.12)));
+  border-radius: 14px;
+  display: grid;
+  gap: 6px;
+  min-height: 112px;
+  min-width: 78px;
+  padding: 10px;
+}
+
+.master-season-month strong,
+.master-season-month span,
+.master-season-month small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.master-season-month strong {
+  font-size: 0.82rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.master-season-month span {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: var(--po-text);
+  font-size: 0.76rem;
+  font-weight: 900;
+  line-height: 1.12;
+  word-break: normal;
+}
+
+.master-season-month small {
+  color: var(--po-text-muted, rgba(255,255,255,0.66));
+  font-size: 0.68rem;
+  line-height: 1.15;
+}
+
+.master-mini-progress {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  height: 5px;
+  overflow: hidden;
+}
+
+.master-mini-progress span {
+  background: var(--po-tone, var(--po-accent));
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+}
+
 .master-template-card,
 .calendar-training-card,
 .po-training-session-card {
@@ -12739,8 +12964,9 @@ body,
   }
 
   .master-calendar-workspace.master-calendar-tablet .master-calendar-week-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(180px, 1fr));
     gap: 8px;
+    min-width: 0;
   }
 
   .master-calendar-workspace.master-calendar-tablet .master-calendar-week-day {
@@ -12772,7 +12998,8 @@ body,
   }
 
   .master-calendar-workspace.master-calendar-tablet.is-tablet-portrait .master-calendar-week-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(180px, 1fr));
+    min-width: 0;
   }
 
   .master-calendar-workspace.master-calendar-tablet.is-tablet-portrait .master-calendar-empty-drop {
@@ -12807,8 +13034,9 @@ body,
   }
 
   .master-calendar-workspace.master-calendar-tablet .master-calendar-week-grid {
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-template-columns: repeat(7, minmax(150px, 1fr));
     gap: 8px;
+    min-width: calc(7 * 150px + 6 * 8px);
   }
 
   .master-calendar-workspace.master-calendar-tablet .master-calendar-week-day {

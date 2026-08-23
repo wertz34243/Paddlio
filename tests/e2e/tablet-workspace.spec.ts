@@ -26,7 +26,7 @@ async function openTemplates(page: Page) {
   const panel = page.locator(".master-template-panel").first();
   if (await panel.isVisible().catch(() => false)) return;
 
-  const templateButtons = page.getByRole("button", { name: /^Vorlagen$/i });
+  const templateButtons = page.locator(".master-calendar-toolbar").getByRole("button", { name: /^Vorlagen$/i });
   for (let index = 0; index < await templateButtons.count(); index += 1) {
     const button = templateButtons.nth(index);
     if (await button.isVisible().catch(() => false)) {
@@ -81,6 +81,11 @@ async function closeTabletContextIfOpen(page: Page) {
 
 async function openQuickEdit(page: Page) {
   await openTemplates(page);
+  const templatePanel = page.locator(".master-template-panel").first();
+  const trainingTab = templatePanel.locator(".master-template-primary-tabs").getByRole("button", { name: "Training" });
+  if (await trainingTab.isVisible().catch(() => false)) {
+    await trainingTab.click();
+  }
   const templateButton = page.locator(".master-template-panel").getByRole("button").filter({ hasText: /GA1|GA2|K1|Kraft|Wettkampf/i }).first();
   await expect(templateButton).toBeVisible({ timeout: 20_000 });
   await templateButton.click();
@@ -104,9 +109,9 @@ test.describe("tablet trainer workspace 4", () => {
 
     await openTemplates(page);
     await page.screenshot({ path: join(screenshotDir, "landscape-02-templates.png"), fullPage: true });
-    await page.getByRole("button", { name: "Woche" }).first().click();
+    await page.locator(".master-template-panel .master-template-primary-tabs").getByRole("button", { name: "Woche" }).click();
     await page.screenshot({ path: join(screenshotDir, "landscape-03-week-templates.png"), fullPage: true });
-    await page.getByRole("button", { name: "Saison" }).first().click();
+    await page.locator(".master-template-panel .master-template-primary-tabs").getByRole("button", { name: "Saison" }).click();
     await page.screenshot({ path: join(screenshotDir, "landscape-04-season-blocks.png"), fullPage: true });
 
     await openFirstTrainingDetail(page);
@@ -123,7 +128,7 @@ test.describe("tablet trainer workspace 4", () => {
     await openQuickEdit(page);
     await page.screenshot({ path: join(screenshotDir, "landscape-09-quick-edit.png"), fullPage: true });
 
-    await page.getByRole("button", { name: "Monat" }).click();
+    await page.locator(".master-segmented-control").getByRole("button", { name: "Monat" }).click();
     await page.screenshot({ path: join(screenshotDir, "landscape-10-month.png"), fullPage: true });
     await page.getByRole("button", { name: "Filter" }).click();
     await page.screenshot({ path: join(screenshotDir, "landscape-11-filter.png"), fullPage: true });
@@ -144,7 +149,7 @@ test.describe("tablet trainer workspace 4", () => {
 
     await closeTabletContextIfOpen(page);
     await openCalendar(page);
-    await page.getByRole("button", { name: "Monat" }).click();
+    await page.locator(".master-segmented-control").getByRole("button", { name: "Monat" }).click();
     await page.screenshot({ path: join(screenshotDir, "portrait-04-month.png"), fullPage: true });
     await openFirstTrainingDetail(page);
     await page.screenshot({ path: join(screenshotDir, "portrait-05-training-detail-drawer.png"), fullPage: true });
