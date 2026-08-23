@@ -82,6 +82,7 @@ type PlanViewProps = {
   onOpenSessions: () => void;
   onOpenJournal: () => void;
   deviceClass?: DeviceClass;
+  tabletBuilderOnly?: boolean;
 };
 
 type CalendarView = "day" | "week" | "month" | "year" | "list";
@@ -250,6 +251,13 @@ const getDateOffset = getCalendarDayOffset;
 const parseTags = (value: string): string[] =>
   value.split(",").map((tag) => tag.trim()).filter(Boolean);
 
+const addMinutesToTime = (time: string, minutes: number): string => {
+  const [hourValue, minuteValue] = (time || "17:30").split(":").map(Number);
+  const date = new Date(2026, 0, 1, Number.isFinite(hourValue) ? hourValue : 17, Number.isFinite(minuteValue) ? minuteValue : 30);
+  date.setMinutes(date.getMinutes() + minutes);
+  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+};
+
 export function PlanView({
   data,
   entries,
@@ -264,6 +272,7 @@ export function PlanView({
   onOpenSessions,
   onOpenJournal,
   deviceClass = "desktop",
+  tabletBuilderOnly = false,
 }: PlanViewProps) {
   const [draft, setDraft] = useState<PlanDraft | null>(null);
   const [templateDraft, setTemplateDraft] = useState<TrainingTemplate | null>(null);
@@ -302,6 +311,7 @@ export function PlanView({
   const [copyMessage, setCopyMessage] = useState("");
   const isCoach = canUseCoachArea(user.role);
   const isPhone = deviceClass === "phone";
+  const isTablet = deviceClass === "tablet";
   const workflowTabs = useMemo(() => {
     const baseTabs = isCoach ? coachWorkflowTabs : athleteWorkflowTabs;
 
@@ -526,6 +536,48 @@ export function PlanView({
     setSelectedRepeatMaxCount(nextDraft.repeatMaxCount);
     setDraft(nextDraft);
   };
+
+  const updateDraft = (patch: Partial<PlanDraft>) => {
+    setDraft((current) => current ? { ...current, ...patch } : current);
+  };
+
+  const selectSingleTarget = (assignedType: PlanEntry["assignedType"], targetId = "") => {
+    setDraft((current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        assignedType,
+        assignedAthleteIds: assignedType === "athlete" ? [targetId].filter(Boolean) : assignedType === "self" ? [data.athlete.id] : [],
+        assignedGroupIds: assignedType === "group" ? [targetId].filter(Boolean) : [],
+        assignedAthleteId: assignedType === "athlete" ? targetId : assignedType === "self" ? data.athlete.id : "",
+        assignedGroupId: assignedType === "group" ? targetId : "",
+      };
+    });
+  };
+
+  const applyTemplateToDraft = (templateId: string) => {
+    const template = visibleTemplates.find((item) => item.id === templateId);
+    if (!template) return;
+    setSelectedArea(template.trainingArea);
+    updateDraft({
+      title: template.title,
+      area: template.trainingArea,
+      trainingType: template.trainingType,
+      boatClass: template.boatClass ?? "K1",
+      durationMinutes: template.defaultDurationMinutes ?? 75,
+      intensity: template.defaultIntensity,
+      goal: template.focus,
+      focus: template.focus,
+      description: template.description,
+      notes: template.notes,
+      note: template.notes,
+    });
+  };
+
+  useEffect(() => {
+    if (!tabletBuilderOnly || !isTablet || draft) return;
+    startCreate();
+  }, [draft, isTablet, tabletBuilderOnly]);
 
   const startTemplateCreate = () => {
     const timestamp = new Date().toISOString();
@@ -1127,6 +1179,132 @@ export function PlanView({
     }));
   };
 
+  const renderTabletTrainingBuilder = () => {
+    if (!draft) return null;
+    const start = draft.startTime || draft.time || "17:30";
+    const end = draft.endTime || addMinutesToTime(start, draft.durationMinutes || 75);
+    const targetName = draft.assignedType === "group"
+      ? visibleGroups.find((group) => draft.assignedGroupIds.includes(group.id) || draft.assignedGroupId === group.id)?.name ?? "Gruppe auswählen"
+      : draft.assignedType === "athlete"
+        ? visibleAthletes.find((athlete) => draft.assignedAthleteIds.includes(athlete.id) || draft.assignedAthleteId === athlete.id)?.name ?? "Sportler auswählen"
+        : "Für mich";
+    const focusParts = (draft.focus || draft.goal || "").split(",").map((item) => item.trim()).filter(Boolean).slice(0, 4);
+    const sectionHints = [
+      ["Aufwärmen", "10 min", "locker"],
+      [draft.trainingType || "Technikblock", `${Math.max(20, draft.durationMinutes - 20)} min`, draft.intensity],
+      ["Cooldown", "10 min", "locker"],
+    ];
+
+    return (
+      <section className="tablet-training-builder-shell" aria-label="Training erstellen Tablet">
+        <form className="tablet-training-builder" onSubmit={handleSubmit}>
+          <header className="tablet-builder-header">
+            <button type="button" onClick={() => setDraft(null)}>Zurück</button>
+            <div>
+              <p className="eyebrow">Training</p>
+              <h2>{draft.id ? "Training bearbeiten" : "Training erstellen"}</h2>
+            </div>
+            <div className="tablet-builder-actions">
+              <button type="button" onClick={() => updateDraft({ id: "", title: `${draft.title || "Training"} Kopie` })}>Duplizieren</button>
+              <button type="button" onClick={startTemplateCreate}>Als Vorlage speichern</button>
+              <button type="button" onClick={() => setDraft(null)}>Abbrechen</button>
+              <button className="save-button" type="submit">Training planen</button>
+            </div>
+          </header>
+
+          {formMessage ? <p className="auth-message">{formMessage}</p> : null}
+
+          <div className="tablet-builder-layout">
+            <div className="tablet-builder-form">
+              <section className="tablet-builder-section">
+                <div className="section-heading compact"><div><p className="eyebrow">1</p><h3>Grunddaten</h3></div></div>
+                <div className="tablet-builder-grid">
+                  <label>Titel<input name="title" value={draft.title} onChange={(event) => updateDraft({ title: event.currentTarget.value })} required /></label>
+                  <label>Datum<input name="date" type="date" value={draft.date} onChange={(event) => updateDraft({ date: event.currentTarget.value, weekday: getWeekdayFromDate(event.currentTarget.value) })} required /></label>
+                  <label>Uhrzeit<input name="startTime" type="time" value={start} onChange={(event) => updateDraft({ startTime: event.currentTarget.value, time: event.currentTarget.value })} /></label>
+                  <label>Ende<input name="endTime" type="time" value={draft.endTime || end} onChange={(event) => updateDraft({ endTime: event.currentTarget.value })} /></label>
+                  <label>Dauer<input name="durationMinutes" type="number" min="10" step="5" value={draft.durationMinutes} onChange={(event) => updateDraft({ durationMinutes: Number(event.currentTarget.value) || 75 })} /></label>
+                  <label>Status<select name="status" value={draft.status} onChange={(event) => updateDraft({ status: event.currentTarget.value as PlanStatus })}>{planStatuses.map((status) => <option key={status} value={status}>{statusLabel[status]}</option>)}</select></label>
+                </div>
+              </section>
+
+              <section className="tablet-builder-section">
+                <div className="section-heading compact"><div><p className="eyebrow">2</p><h3>Zuordnung</h3></div></div>
+                <div className="tablet-builder-grid">
+                  <label>Zuweisung<select name="assignedType" value={draft.assignedType} onChange={(event) => selectSingleTarget(event.currentTarget.value as PlanEntry["assignedType"])}>
+                    <option value="self">Für mich</option>
+                    {isCoach ? <option value="athlete">Einzelner Sportler</option> : null}
+                    {isCoach ? <option value="group">Trainingsgruppe</option> : null}
+                  </select></label>
+                  {draft.assignedType === "athlete" ? <label>Sportler<select value={draft.assignedAthleteIds[0] ?? draft.assignedAthleteId ?? ""} onChange={(event) => selectSingleTarget("athlete", event.currentTarget.value)}>{visibleAthletes.map((athlete) => <option key={athlete.id} value={athlete.id}>{getAthleteName(athlete)}</option>)}</select></label> : null}
+                  {draft.assignedType === "group" ? <label>Gruppe<select value={draft.assignedGroupIds[0] ?? draft.assignedGroupId ?? ""} onChange={(event) => selectSingleTarget("group", event.currentTarget.value)}>{visibleGroups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select></label> : null}
+                  <label>Bootsklasse<select name="boatClass" value={draft.boatClass} onChange={(event) => updateDraft({ boatClass: event.currentTarget.value as TrainingBoatClass })}><option value="K1">K1</option><option value="C1">C1</option><option value="K1+C1">K1+C1</option><option value="none">ohne Boot</option></select></label>
+                  <label>Trainer<select value={user.userId} disabled><option>{getUserProfileName(user)}</option></select></label>
+                </div>
+                {draft.assignedType === "athlete" ? draft.assignedAthleteIds.map((id) => <input key={id} type="hidden" name="assignedAthleteIds" value={id} />) : null}
+                {draft.assignedType === "group" ? draft.assignedGroupIds.map((id) => <input key={id} type="hidden" name="assignedGroupIds" value={id} />) : null}
+              </section>
+
+              <section className="tablet-builder-section">
+                <div className="section-heading compact"><div><p className="eyebrow">3</p><h3>Trainingsinhalt</h3></div></div>
+                <div className="tablet-builder-grid">
+                  <label>Vorlage laden<select value="" onChange={(event) => applyTemplateToDraft(event.currentTarget.value)}>
+                    <option value="">Keine Vorlage</option>
+                    {visibleTemplates.slice(0, 12).map((template) => <option key={template.id} value={template.id}>{template.title}</option>)}
+                  </select></label>
+                  <label>Bereich<select name="area" value={draft.area} onChange={(event) => { const area = event.currentTarget.value as TrainingArea; setSelectedArea(area); updateDraft({ area, trainingType: trainingTypeGroups[area][0] }); }}>{trainingAreas.map((area) => <option key={area} value={area}>{area}</option>)}</select></label>
+                  <label>Trainingsart<select name="trainingType" value={draft.trainingType} onChange={(event) => updateDraft({ trainingType: event.currentTarget.value as TrainingPlanType })}>{trainingTypeGroups[selectedArea].map((trainingType) => <option key={trainingType} value={trainingType}>{trainingType}</option>)}</select></label>
+                </div>
+                <label>Ziel / Fokus<input name="focus" value={draft.focus || draft.goal} onChange={(event) => updateDraft({ focus: event.currentTarget.value, goal: event.currentTarget.value })} placeholder="Linienwahl, Druck, Stabilität" /></label>
+                <label>Beschreibung<textarea name="description" value={draft.description} onChange={(event) => updateDraft({ description: event.currentTarget.value })} rows={4} /></label>
+                <div className="tablet-section-builder" aria-label="Trainingsabschnitte">
+                  <div className="tablet-section-builder-head"><strong>Abschnitte</strong><button type="button" onClick={() => updateDraft({ description: [draft.description, "Neuer Abschnitt: Ziel, Dauer, Intensität"].filter(Boolean).join("\n") })}>+ Abschnitt</button></div>
+                  {sectionHints.map(([name, duration, intensity]) => (
+                    <article key={name}><span>{name}</span><strong>{duration}</strong><em>{intensity}</em></article>
+                  ))}
+                </div>
+              </section>
+
+              <section className="tablet-builder-section">
+                <div className="section-heading compact"><div><p className="eyebrow">4</p><h3>Belastung / Steuerung</h3></div></div>
+                <div className="tablet-builder-grid">
+                  <label>Intensität<select name="intensity" value={draft.intensity} onChange={(event) => updateDraft({ intensity: event.currentTarget.value as TrainingIntensity })}>{trainingIntensities.map((intensity) => <option key={intensity} value={intensity}>{intensityLabel[intensity]}</option>)}</select></label>
+                  <label>Wiederholung<select name="repeat" value={selectedRepeat} onChange={(event) => { const repeat = event.currentTarget.value as TrainingRepeat; setSelectedRepeat(repeat); updateDraft({ repeat }); }}><option value="none">Keine</option><option value="weekly">Wöchentlich</option><option value="daily">Täglich</option></select></label>
+                  <label>Bis<input name="repeatUntil" type="date" value={selectedRepeatUntil} disabled={selectedRepeat === "none"} onChange={(event) => { setSelectedRepeatUntil(event.currentTarget.value); updateDraft({ repeatUntil: event.currentTarget.value }); }} /></label>
+                  <label>Anzahl<input name="repeatMaxCount" type="number" min="1" max="90" value={selectedRepeatMaxCount ?? ""} disabled={selectedRepeat === "none"} onChange={(event) => { const value = Number(event.currentTarget.value) || undefined; setSelectedRepeatMaxCount(value); updateDraft({ repeatMaxCount: value }); }} /></label>
+                </div>
+              </section>
+
+              <section className="tablet-builder-section">
+                <div className="section-heading compact"><div><p className="eyebrow">5</p><h3>Notizen</h3></div></div>
+                <label>Trainerhinweise / Material<textarea name="notes" value={draft.notes || draft.note} onChange={(event) => updateDraft({ notes: event.currentTarget.value, note: event.currentTarget.value })} rows={3} /></label>
+                <label>Individuelle Anpassung<textarea name="feedbackNote" value={draft.feedbackNote} onChange={(event) => updateDraft({ feedbackNote: event.currentTarget.value })} rows={2} /></label>
+              </section>
+            </div>
+
+            <aside className="tablet-builder-preview" aria-label="Live Vorschau">
+              <p className="eyebrow">Live-Vorschau</p>
+              <h3>{draft.title || "Neues Training"}</h3>
+              <span className={`status-pill ${getEntryStatusClass(draft.status)}`}>{statusLabel[draft.status]}</span>
+              <dl>
+                <div><dt>Datum</dt><dd>{draft.date}</dd></div>
+                <div><dt>Zeit</dt><dd>{start} - {end}</dd></div>
+                <div><dt>Dauer</dt><dd>{draft.durationMinutes} min</dd></div>
+                <div><dt>Bereich</dt><dd>{draft.area}</dd></div>
+                <div><dt>Intensität</dt><dd>{intensityLabel[draft.intensity]}</dd></div>
+                <div><dt>Zuweisung</dt><dd>{targetName}</dd></div>
+                <div><dt>Boot</dt><dd>{draft.boatClass}</dd></div>
+                <div><dt>Trainer</dt><dd>{getUserProfileName(user)}</dd></div>
+              </dl>
+              {focusParts.length > 0 ? <div className="tablet-preview-chips">{focusParts.map((part) => <span key={part}>{part}</span>)}</div> : null}
+              {draft.description ? <p>{draft.description}</p> : <p className="card-note">Beschreibung erscheint hier während der Eingabe.</p>}
+            </aside>
+          </div>
+        </form>
+      </section>
+    );
+  };
+
   const renderEntryCard = (entry: PlanEntry) => {
     const entryFeedback = data.trainingFeedback.filter((feedback) => feedback.trainingId === entry.id);
     const assignedAthleteIds = Array.from(new Set([...entry.assignedAthleteIds, entry.assignedAthleteId].filter(Boolean)));
@@ -1338,6 +1516,24 @@ export function PlanView({
   const repeatPreviewCount = draft && selectedRepeat !== "none" && (selectedRepeatUntil || selectedRepeatMaxCount)
     ? expandTrainingRepeatDates(selectedDate, selectedRepeat, selectedRepeatUntil, selectedRepeatMaxCount).length
     : 1;
+
+  if (tabletBuilderOnly && isTablet) {
+    return (
+      <div className="stack tablet-training-builder-page">
+        {draft ? renderTabletTrainingBuilder() : (
+          <section className="section-block">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Training</p>
+                <h3>Training erstellen</h3>
+              </div>
+              <button className="primary-button" type="button" onClick={startCreate}>Training planen</button>
+            </div>
+          </section>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="stack calendar-shell planning-shell">
@@ -1733,7 +1929,9 @@ export function PlanView({
         </section>
       ) : null}
 
-      {draft ? (
+      {isTablet && draft ? renderTabletTrainingBuilder() : null}
+
+      {!isTablet && draft ? (
         <section className="section-block planning-side-editor planning-draft-editor">
           <div className="section-heading"><div><p className="eyebrow">Planung</p><h3>{draft.id ? "Training bearbeiten" : "Training planen"}</h3></div></div>
           {formMessage ? <p className="auth-message">{formMessage}</p> : null}

@@ -988,6 +988,29 @@ function AppContent() {
         );
       case "sessions":
       default:
+        if (currentDeviceClass === "tablet") {
+          return (
+            <PlanView
+              data={activeData}
+              entries={activePlanEntries}
+              user={activeUser}
+              onSave={upsertPlanEntry}
+              onDelete={deletePlanEntry}
+              onDeleteSeries={deletePlanEntrySeries}
+              onToggleDone={togglePlanEntryDone}
+              onFeedbackSave={saveTrainingFeedback}
+              onDataChange={updateData}
+              onOpenOverview={() => setTrainingSegment("overview")}
+              onOpenSessions={() => {
+                setTrainingSegment("sessions");
+                setNewTrainingSignal((value) => value + 1);
+              }}
+              onOpenJournal={() => setTrainingSegment("journal")}
+              deviceClass={currentDeviceClass}
+              tabletBuilderOnly
+            />
+          );
+        }
         return (
           <TrainingView
             sessions={data.training}
