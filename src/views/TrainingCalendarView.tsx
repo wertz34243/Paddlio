@@ -356,7 +356,7 @@ export function TrainingCalendarView({
 
   useEffect(() => {
     if (!isPhone) return;
-    const activeEntryId = liveTraining?.entry.id ?? selectedEntryId;
+    const activeEntryId = feedbackEntry?.id ?? liveTraining?.entry.id ?? selectedEntryId;
     if (!activeEntryId) return;
 
     const frame = window.requestAnimationFrame(() => {
@@ -366,7 +366,7 @@ export function TrainingCalendarView({
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [isPhone, liveTraining?.entry.id, selectedEntryId]);
+  }, [feedbackEntry?.id, isPhone, liveTraining?.entry.id, selectedEntryId]);
 
   const groupOptions = data?.coachGroups.filter((group) => !clubId || group.clubId === clubId) ?? [];
   const athleteOptions = data?.coachAthletes.filter((athlete) => !clubId || athlete.clubId === clubId) ?? [];
@@ -640,6 +640,10 @@ export function TrainingCalendarView({
       return <LiveTrainingMode state={liveTraining} onChange={setLiveTraining} onEnd={openFeedback} presentation="inline" />;
     }
 
+    if (feedbackEntry?.id === entry.id) {
+      return <FeedbackSheet entry={feedbackEntry} onCancel={() => setFeedbackEntry(null)} onSave={applyFeedback} presentation="inline" />;
+    }
+
     if (selectedEntryId === entry.id && selectedEntry) {
       return (
         <TrainingDetailDrawer
@@ -855,7 +859,7 @@ export function TrainingCalendarView({
         />
       ) : null}
 
-      {feedbackEntry ? (
+      {!isPhone && feedbackEntry ? (
         <FeedbackSheet entry={feedbackEntry} onCancel={() => setFeedbackEntry(null)} onSave={applyFeedback} />
       ) : null}
 
@@ -1510,22 +1514,25 @@ function FeedbackSheet({
   entry,
   onCancel,
   onSave,
+  presentation = "modal",
 }: {
   entry: PlanEntry;
   onCancel: () => void;
   onSave: (entry: PlanEntry, status: CompletionStatus, formData: FormData) => void;
+  presentation?: "modal" | "inline";
 }) {
   const [status, setStatus] = useState<CompletionStatus>("completed");
   const requestCancel = () => {
     if (window.confirm("Feedback verwerfen?")) onCancel();
   };
   const swipeHandlers = useMobileSwipeDismiss(requestCancel);
-  return (
-    <div className="master-modal-backdrop" role="dialog" aria-modal="true" aria-label="Feedback schreiben">
-      <form className="master-feedback-sheet" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); onSave(entry, status, new FormData(event.currentTarget)); }} {...swipeHandlers}>
+  const form = (
+      <form className={`master-feedback-sheet ${presentation === "inline" ? "master-feedback-inline-panel" : ""}`.trim()} onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); onSave(entry, status, new FormData(event.currentTarget)); }} {...swipeHandlers}>
         <header>
-          <p className="po-eyebrow">Feedback</p>
-          <h2>{entry.title || entry.trainingType}</h2>
+          <div>
+            <p className="po-eyebrow">Feedback</p>
+            <h2>{entry.title || entry.trainingType}</h2>
+          </div>
           <button type="button" onClick={requestCancel} aria-label="Schließen">×</button>
         </header>
         <div className="master-segmented-control">
@@ -1548,6 +1555,13 @@ function FeedbackSheet({
           <PaddlioOneButton variant="primary" type="submit">Speichern</PaddlioOneButton>
         </footer>
       </form>
+  );
+  if (presentation === "inline") {
+    return <section className="master-entry-inline-feedback" role="region" aria-label="Feedback schreiben">{form}</section>;
+  }
+  return (
+    <div className="master-modal-backdrop" role="dialog" aria-modal="true" aria-label="Feedback schreiben">
+      {form}
     </div>
   );
 }

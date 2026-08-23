@@ -86,6 +86,7 @@ export function DesktopSideNavigation({
             type="button"
             onClick={() => onNavigate(item.id)}
             aria-current={activePage === item.id ? "page" : undefined}
+            data-testid={`nav-${item.id}`}
           >
             <span className="desktop-nav-icon" aria-hidden="true">
               <Icon name={item.icon} />
@@ -123,6 +124,7 @@ export function BottomNavigation({
           onClick={() => onNavigate(item.id)}
           aria-current={activePage === item.id ? "page" : undefined}
           aria-label={bottomNavAriaLabel(item.id)}
+          data-testid={`nav-${item.id}`}
         >
           <span className="nav-icon" aria-hidden="true">
             <Icon name={item.icon} />

@@ -676,8 +676,9 @@ function AppContent() {
       nextFeedback.reason?.trim() ||
       (nextFeedback.status === "skipped" ? "Training ausgelassen" : "Rückmeldung gespeichert");
     const linkedPlanEntry = data.plan.find((entry) => entry.id === nextFeedback.trainingId && !entry.deletedAt);
+    const nextFeedbackNote = linkedPlanEntry?.feedbackNote?.trim() ? linkedPlanEntry.feedbackNote : feedbackSummary;
     const nextPlanEntry = linkedPlanEntry
-      ? { ...linkedPlanEntry, status: nextFeedback.status, feedbackNote: feedbackSummary, updatedAt: timestamp }
+      ? { ...linkedPlanEntry, status: nextFeedback.status, feedbackNote: nextFeedbackNote, updatedAt: timestamp }
       : null;
 
     updateData((current) => {
@@ -690,7 +691,7 @@ function AppContent() {
           : [nextFeedback, ...current.trainingFeedback],
         plan: current.plan.map((entry) =>
           entry.id === nextFeedback.trainingId
-            ? { ...entry, status: nextFeedback.status, feedbackNote: feedbackSummary, updatedAt: timestamp }
+            ? { ...entry, status: nextFeedback.status, feedbackNote: entry.feedbackNote?.trim() ? entry.feedbackNote : feedbackSummary, updatedAt: timestamp }
             : entry,
         ),
       };

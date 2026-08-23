@@ -12844,6 +12844,7 @@ body,
 
 .app-shell-phone:has(.master-detail-drawer) .bottom-nav,
 .app-shell-phone:has(.master-modal-backdrop) .bottom-nav,
+.app-shell-phone:has(.master-feedback-inline-panel) .bottom-nav,
 .app-shell-phone:has(.master-live-training) .bottom-nav,
 .app-shell-phone:has(.mobile-sheet-backdrop) .bottom-nav {
   pointer-events: none;
@@ -13177,6 +13178,62 @@ body,
 
 .app-shell-phone .master-live-training.is-inline footer {
   margin-top: 8px;
+}
+
+.app-shell-phone .master-entry-inline-feedback {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  margin: 8px 0 10px;
+}
+
+.app-shell-phone .master-feedback-sheet.master-feedback-inline-panel {
+  position: static;
+  inset: auto;
+  z-index: 1;
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  overflow: visible;
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  border-radius: 18px;
+  padding: 13px;
+  background: rgba(3, 8, 18, 0.97);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.3);
+}
+
+.app-shell-phone .master-feedback-sheet.master-feedback-inline-panel header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 38px;
+  align-items: start;
+  gap: 10px;
+}
+
+.app-shell-phone .master-feedback-sheet.master-feedback-inline-panel header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+
+.app-shell-phone .master-feedback-sheet.master-feedback-inline-panel .master-segmented-control {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  padding: 3px;
+}
+
+.app-shell-phone .master-feedback-sheet.master-feedback-inline-panel .master-segmented-control button {
+  min-width: 0;
+  min-height: 36px;
+  padding: 6px 7px;
+  font-size: 0.78rem;
+}
+
+.app-shell-phone .master-feedback-sheet.master-feedback-inline-panel footer {
+  margin-top: 8px;
+  padding-bottom: 0;
 }
 
 /* Phone final polish 2b: remove inherited shell air above the compact app bar. */
@@ -13675,7 +13732,10 @@ body,
 
   .app-shell-phone .communication-shell > .segment-nav {
     gap: 5px;
-    margin-bottom: 6px;
+    position: relative;
+    z-index: 2;
+    margin-top: -16px;
+    margin-bottom: 32px;
     padding: 3px;
     overflow-x: auto;
     scrollbar-width: none;
@@ -13698,6 +13758,7 @@ body,
   .app-shell-phone .communication-shell .metric-grid.two-columns {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 7px;
+    margin-top: 0;
   }
 
   .app-shell-phone .communication-shell .metric-card {

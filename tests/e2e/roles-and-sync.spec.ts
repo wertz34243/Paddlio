@@ -25,13 +25,24 @@ async function openMore(page: Page) {
 }
 
 async function openMainPage(page: Page, label: "Training" | "Kalender") {
-  const mobileButton = page.getByRole("button", { name: new RegExp(`${label}(?:-Bereich)? .*ffnen|${label}`, "i") });
+  const pageId = label === "Kalender" ? "plan" : "training";
+  const target = label === "Kalender" ? "Kalender" : "Training";
+  const stableNavButtons = page.getByTestId(`nav-${pageId}`);
+  for (let index = 0; index < await stableNavButtons.count(); index += 1) {
+    const button = stableNavButtons.nth(index);
+    if (await button.isVisible().catch(() => false)) {
+      await button.click();
+      return;
+    }
+  }
+
+  const mobileButton = page.getByRole("button", { name: new RegExp(`${target}(?:-Bereich)? .*ffnen|^${target}$`, "i") }).first();
   if (await mobileButton.isVisible().catch(() => false)) {
     await mobileButton.click();
     return;
   }
 
-  await page.locator(".desktop-nav-item:visible").filter({ hasText: label }).click();
+  await page.locator(".desktop-nav-item:visible").nth(label === "Kalender" ? 1 : 2).click();
 }
 
 async function openCalendarWorkspace(page: Page) {
@@ -76,12 +87,13 @@ function dateKeyWithOffset(dayOffset: number) {
 }
 
 function uniqueTrainingDate(runId: number) {
-  return dateKeyWithOffset(1 + (runId % 2));
+  return dateKeyWithOffset(0);
 }
 
 function uniqueStartTime(runId: number) {
-  const hour = 3 + (Math.floor(runId / 10) % 2);
-  const minutes = runId % 60;
+  const minuteOfDay = 5 * 60 + (runId % (17 * 60));
+  const hour = Math.floor(minuteOfDay / 60);
+  const minutes = minuteOfDay % 60;
   return `${`${hour}`.padStart(2, "0")}:${`${minutes}`.padStart(2, "0")}`;
 }
 
@@ -258,11 +270,13 @@ test.describe("two-device training and feedback flow", () => {
     const athleteDetails = await openTrainingDetailsByMarker(athletePage, marker, trainingStartTime);
     await athleteDetails.getByRole("button", { name: "Feedback", exact: true }).click();
     await athleteDetails.getByRole("button", { name: /Feedback erfassen/i }).click();
-    const feedbackDialog = athletePage.getByRole("dialog", { name: /Feedback schreiben/i });
-    await expect(feedbackDialog).toBeVisible({ timeout: 20_000 });
-    await feedbackDialog.getByLabel("Kurze Notiz").fill(feedbackComment);
-    await feedbackDialog.getByRole("button", { name: "Speichern" }).click();
-    await expect(feedbackDialog).not.toBeVisible({ timeout: 20_000 });
+    const feedbackSurface = athletePage.getByRole("dialog", { name: /Feedback schreiben/i })
+      .or(athletePage.getByRole("region", { name: /Feedback schreiben/i }))
+      .first();
+    await expect(feedbackSurface).toBeVisible({ timeout: 20_000 });
+    await feedbackSurface.getByLabel("Kurze Notiz").fill(feedbackComment);
+    await feedbackSurface.getByRole("button", { name: "Speichern" }).click();
+    await expect(feedbackSurface).not.toBeVisible({ timeout: 20_000 });
     const savedAthleteDetails = await openTrainingDetailsByMarker(athletePage, marker, trainingStartTime);
     await savedAthleteDetails.getByRole("button", { name: "Feedback" }).click();
     await expect(savedAthleteDetails.getByText(feedbackComment)).toBeVisible({ timeout: 20_000 });
