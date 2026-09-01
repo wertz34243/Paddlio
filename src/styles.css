@@ -14928,3 +14928,138 @@ body,
   white-space: nowrap;
   word-break: normal;
 }
+
+/* Training detail action polish: clear trainer actions, no squeezed text. */
+.master-detail-drawer,
+.master-detail-drawer * {
+  min-width: 0;
+}
+
+.master-detail-drawer > header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+}
+
+.master-detail-drawer > header h2,
+.master-detail-drawer > header span {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  overflow-wrap: normal;
+  text-overflow: ellipsis;
+  word-break: normal;
+}
+
+.master-detail-drawer > header span {
+  display: block;
+  white-space: nowrap;
+}
+
+.master-detail-drawer .master-detail-section {
+  display: grid;
+  gap: 10px;
+}
+
+.master-detail-drawer .master-info-row {
+  display: grid;
+  grid-template-columns: minmax(92px, 0.45fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 6px 0;
+}
+
+.master-detail-drawer .master-info-row span {
+  color: var(--po-text-muted, #a8b3c7);
+  font-size: 0.72rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.master-detail-drawer .master-info-row strong {
+  min-width: 0;
+  color: var(--po-text-strong, #f7fbff);
+  line-height: 1.22;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.master-detail-drawer .master-info-row strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.master-detail-drawer .master-focus-summary p,
+.master-detail-drawer .master-detail-text,
+.master-detail-drawer .master-feedback-row p,
+.master-detail-drawer .master-task-row p {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.master-detail-drawer .master-action-grid,
+.master-detail-drawer .master-detail-actions details > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+  gap: 8px;
+}
+
+.master-detail-drawer .master-action-grid button,
+.master-detail-drawer .master-detail-actions summary,
+.master-detail-drawer .master-detail-actions button {
+  display: inline-grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--po-text-strong, #f7fbff);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 850;
+  line-height: 1.15;
+  overflow: hidden;
+  padding: 8px 10px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.master-detail-drawer .master-detail-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.master-detail-drawer .master-detail-actions details {
+  display: grid;
+  gap: 8px;
+}
+
+.master-detail-drawer .master-detail-actions summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.master-detail-drawer .master-detail-actions summary::-webkit-details-marker {
+  display: none;
+}
+
+.master-detail-drawer .master-detail-actions button.is-danger {
+  border-color: rgba(248, 113, 113, 0.34);
+  color: #fecaca;
+}
+
+.master-calendar-context .master-detail-drawer.is-context .master-action-grid,
+.master-calendar-context .master-detail-drawer.is-context .master-detail-actions details > div,
+.app-shell-phone .master-detail-drawer .master-action-grid,
+.app-shell-phone .master-detail-drawer .master-detail-actions details > div {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.app-shell-phone .master-detail-drawer .master-info-row strong {
+  overflow-wrap: normal;
+  word-break: normal;
+}
