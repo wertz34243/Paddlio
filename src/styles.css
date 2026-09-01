@@ -14836,3 +14836,95 @@ body,
     position: static;
   }
 }
+
+/* Calendar summary cards: Vivendi-style overview, full IDA-style depth stays in detail panels. */
+.master-training-block.is-vivendi-summary {
+  border-left: 3px solid rgba(82, 232, 255, 0.44);
+}
+
+.master-training-block.is-vivendi-summary.po-tone-success {
+  border-left-color: rgba(38, 221, 145, 0.72);
+}
+
+.master-training-block.is-vivendi-summary.po-tone-info,
+.master-training-block.is-vivendi-summary.po-tone-primary {
+  border-left-color: rgba(82, 232, 255, 0.72);
+}
+
+.master-training-block.is-vivendi-summary.po-tone-warning {
+  border-left-color: rgba(255, 171, 64, 0.76);
+}
+
+.master-training-block.is-vivendi-summary.po-tone-danger {
+  border-left-color: rgba(255, 104, 104, 0.76);
+}
+
+.master-training-block.is-vivendi-summary.po-tone-muted {
+  border-left-color: rgba(171, 139, 255, 0.7);
+}
+
+.master-training-block.is-vivendi-summary .master-training-block-main {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  text-align: left;
+}
+
+.master-training-block.is-vivendi-summary .master-training-block-main strong,
+.master-training-block.is-vivendi-summary .master-training-block-main small,
+.master-training-block.is-vivendi-summary .master-training-block-main > span {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  overflow-wrap: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-break: normal;
+}
+
+.master-training-block.is-vivendi-summary .master-training-time {
+  color: var(--po-text-muted, rgba(255, 255, 255, 0.72));
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1.12;
+}
+
+.master-training-block.is-vivendi-summary .master-training-block-main strong {
+  color: var(--po-text-strong, #f7fbff);
+  font-size: 0.9rem;
+  line-height: 1.14;
+}
+
+.master-training-block.is-vivendi-summary .master-training-summary-meta {
+  align-items: center;
+  display: flex;
+  gap: 5px;
+  line-height: 1.1;
+}
+
+.master-training-block.is-vivendi-summary .master-training-summary-meta b {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--po-cyan, #52e8ff);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.master-training-block.is-vivendi-summary .master-training-summary-meta span {
+  flex: 0 0 auto;
+  color: var(--po-success, #26dd91);
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.app-shell-phone .master-training-block.is-vivendi-summary .master-training-block-main strong,
+.app-shell-phone .master-training-block.is-vivendi-summary .master-training-block-main small,
+.app-shell-phone .master-training-block.is-vivendi-summary .master-training-block-main > span {
+  display: block;
+  overflow-wrap: normal;
+  white-space: nowrap;
+  word-break: normal;
+}

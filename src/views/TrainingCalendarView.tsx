@@ -157,6 +157,65 @@ const addMinutesToTime = (time: string, minutes: number): string => {
 
 const shortTimeLabel = (time?: string): string => (time || "").slice(0, 5);
 
+type CalendarTrainingSummary = {
+  startTime: string;
+  endTime: string;
+  title: string;
+  category: string;
+  tone: ReturnType<typeof categoryTone>;
+  statusLabel: string;
+  done: boolean;
+  skipped: boolean;
+};
+
+const findTrainingCategoryCode = (entry: PlanEntry): string => {
+  const source = [
+    entry.area,
+    entry.trainingType,
+    entry.title,
+    entry.goal,
+    entry.focus,
+    entry.description,
+  ].filter(Boolean).join(" ");
+  const directCode = source.match(/\b(GA1|GA2|WA|SA|KB|S)\b/i)?.[1];
+  if (directCode) return directCode.toUpperCase();
+
+  const normalized = source.toLowerCase();
+  if (normalized.includes("wett")) return "WA";
+  if (normalized.includes("kraft")) return "KB";
+  if (normalized.includes("technik") || normalized.includes("slalom")) return "TE";
+  if (normalized.includes("sprint")) return "S";
+  if (normalized.includes("regen") || normalized.includes("mobility") || normalized.includes("pause")) return "REG";
+  return "GA1";
+};
+
+const calendarCategoryTone = (category: string, entry: PlanEntry): ReturnType<typeof categoryTone> => {
+  if (category === "WA") return "danger";
+  if (category === "KB") return "warning";
+  if (category === "TE" || category === "SA" || category === "S") return "info";
+  if (category === "REG") return "muted";
+  return categoryTone(entry.area || entry.trainingType);
+};
+
+const buildCalendarTrainingSummary = (entry: PlanEntry): CalendarTrainingSummary => {
+  const done = isDoneStatus(entry.status);
+  const skipped = isSkippedStatus(entry.status);
+  const startTime = shortTimeLabel(entry.startTime || entry.time) || "--";
+  const endTime = shortTimeLabel(entry.endTime || addMinutesToTime(entry.startTime || entry.time, entry.durationMinutes)) || "--";
+  const category = findTrainingCategoryCode(entry);
+
+  return {
+    startTime,
+    endTime,
+    title: entry.title || entry.trainingType,
+    category,
+    tone: skipped ? "danger" : done ? "success" : calendarCategoryTone(category, entry),
+    statusLabel: skipped ? "!" : done ? "\u2713" : planStatusLabels[entry.status] ?? entry.status,
+    done,
+    skipped,
+  };
+};
+
 const getMonthGrid = (dateKey: string): string[] => {
   const base = parseLocalDateOnly(dateKey);
   const firstOfMonth = new Date(base.getFullYear(), base.getMonth(), 1);
@@ -1215,32 +1274,40 @@ function TrainingBlock({
   onSelect: (id: string, checked: boolean) => void;
   compactActions?: boolean;
 }) {
-  const done = isDoneStatus(entry.status);
-  const skipped = isSkippedStatus(entry.status);
-  const tone = skipped ? "danger" : done ? "success" : categoryTone(entry.area || entry.trainingType);
-  const title = entry.title || entry.trainingType;
-  const startLabel = shortTimeLabel(entry.startTime || entry.time) || "--";
-  const endLabel = shortTimeLabel(entry.endTime || addMinutesToTime(entry.startTime || entry.time, entry.durationMinutes));
-  const timeRange = `${startLabel} - ${endLabel}`;
-  const compactMeta = `${entry.durationMinutes} min${entry.area ? ` · ${entry.area}` : ""}`;
+  const summary = buildCalendarTrainingSummary(entry);
+  const tone = summary.tone;
+  const timeRange = `${summary.startTime} - ${summary.endTime}`;
   return (
-    <article className={`master-training-block po-tone-${tone}${compactActions ? " is-tablet-compact" : ""}`}>
+    <article className={`master-training-block po-tone-${tone}${compactActions ? " is-tablet-compact is-vivendi-summary" : ""}`}>
       {selectionMode ? (
         <input aria-label={`${entry.title || entry.trainingType} auswählen`} checked={selected} type="checkbox" onChange={(event) => onSelect(entry.id, event.currentTarget.checked)} />
       ) : null}
-      <button className="master-training-block-main" type="button" onClick={() => onOpenEntry(entry.id)}>
-        <strong>{title}</strong>
-        <small>{compactActions ? timeRange : `${timeRange} · ${entry.durationMinutes} min · ${assignedLabel}`}</small>
-        <span>{compactActions ? compactMeta : entry.focus || entry.goal || "Fokus offen"}</span>
+      <button className="master-training-block-main" type="button" onClick={() => onOpenEntry(entry.id)} aria-label={`${summary.startTime} bis ${summary.endTime}, ${summary.title}, ${summary.category}`}>
+        {compactActions ? (
+          <>
+            <small className="master-training-time">{timeRange}</small>
+            <strong>{summary.title}</strong>
+            <span className="master-training-summary-meta">
+              <b>{summary.category}</b>
+              {summary.done || summary.skipped ? <span aria-label={`Status ${planStatusLabels[entry.status] ?? summary.statusLabel}`}>{summary.statusLabel}</span> : null}
+            </span>
+          </>
+        ) : (
+          <>
+            <strong>{summary.title}</strong>
+            <small>{`${timeRange} · ${entry.durationMinutes} min · ${assignedLabel}`}</small>
+            <span>{entry.focus || entry.goal || "Fokus offen"}</span>
+          </>
+        )}
       </button>
       <div className="master-training-block-actions">
         {compactActions ? (
-          <span className={`master-status-mini po-tone-${done ? "success" : skipped ? "danger" : "info"}`} aria-label={`Status ${planStatusLabels[entry.status] ?? entry.status}`}>
+          <span className={`master-status-mini po-tone-${summary.done ? "success" : summary.skipped ? "danger" : "info"}`} aria-label={`Status ${planStatusLabels[entry.status] ?? entry.status}`}>
             <span aria-hidden="true" />
-            {planStatusLabels[entry.status] ?? entry.status}
+            {summary.statusLabel}
           </span>
         ) : (
-          <PaddlioOneStatusChip tone={done ? "success" : skipped ? "danger" : "info"}>{planStatusLabels[entry.status] ?? entry.status}</PaddlioOneStatusChip>
+          <PaddlioOneStatusChip tone={summary.done ? "success" : summary.skipped ? "danger" : "info"}>{planStatusLabels[entry.status] ?? entry.status}</PaddlioOneStatusChip>
         )}
         {compactActions ? (
           <button className="master-training-menu-button" type="button" onClick={() => onOpenEntry(entry.id)} aria-label="Training Aktionen öffnen">…</button>
@@ -1249,7 +1316,7 @@ function TrainingBlock({
             <button type="button" onClick={() => onStartLive(entry)}>Start</button>
             <button type="button" onClick={() => onFeedback(entry)}>Feedback</button>
             <button type="button" onClick={() => onDuplicate(entry)}>Kopie</button>
-            {!done ? <button type="button" onClick={() => onStatusChange(entry.id, "completed")}>Erledigt</button> : null}
+            {!summary.done ? <button type="button" onClick={() => onStatusChange(entry.id, "completed")}>Erledigt</button> : null}
             {onDelete ? <button className="is-danger" type="button" onClick={() => onDelete(entry.id)}>Löschen</button> : null}
           </>
         )}
