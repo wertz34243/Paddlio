@@ -83,12 +83,14 @@ type PlanViewProps = {
   onOpenJournal: () => void;
   deviceClass?: DeviceClass;
   tabletBuilderOnly?: boolean;
+  initialWorkflowTab?: WorkflowTab;
 };
 
 type CalendarView = "day" | "week" | "month" | "year" | "list";
 type WorkflowTab = "today" | "week" | "month" | "templates" | "groups" | "feedback" | "upcoming" | "done";
 type TabletBuilderStep = "basics" | "assignment" | "content" | "load" | "notes";
 type JournalRangeFilter = "all" | "7" | "30" | "90";
+type TemplateSourceFilter = "all" | "favorites" | "mine" | "club" | "system";
 type WorkflowTabConfig = {
   id: WorkflowTab;
   label: string;
@@ -154,6 +156,13 @@ const intensityLabel: Record<TrainingIntensity, string> = {
 
 const templateCategories: TrainingTemplateCategory[] = ["K1", "C1", "Ausdauer", "Kraft", "Technik", "Regeneration", "Wettkampf", "Allgemein"];
 const templateTagFilters = ["all", "GA1", "GA2", "Technik", "Kraft", "Wettkampf", "Regeneration"] as const;
+const templateSourceFilters: Array<{ id: TemplateSourceFilter; label: string }> = [
+  { id: "all", label: "Alle" },
+  { id: "favorites", label: "Favoriten" },
+  { id: "mine", label: "Meine" },
+  { id: "club", label: "Verein" },
+  { id: "system", label: "System" },
+];
 
 const tabletBuilderSteps: Array<{ id: TabletBuilderStep; label: string }> = [
   { id: "basics", label: "Grunddaten" },
@@ -175,6 +184,27 @@ const areaLabel: Record<TrainingArea, string> = {
   Trainerarbeit: "coach",
   Regeneration: "regeneration",
   Wettkampf: "competition",
+};
+
+const getTemplateCategoryGroup = (template: TrainingTemplate): string => {
+  const source = [template.tags.join(" "), template.title, template.category, template.trainingArea, template.trainingType, template.focus].join(" ").toLowerCase();
+  if (source.includes("ga1")) return "GA1";
+  if (source.includes("ga2")) return "GA2";
+  if (source.includes("kraft")) return "Kraft";
+  if (source.includes("wett")) return "Wettkampf";
+  if (source.includes("regen") || source.includes("mobility")) return "Regeneration";
+  if (source.includes("technik") || source.includes("slalom")) return "Technik";
+  return template.category || "Allgemein";
+};
+
+const getTemplateToneClass = (template: TrainingTemplate): string => {
+  const group = getTemplateCategoryGroup(template);
+  if (group === "GA1" || group === "GA2" || template.trainingArea === "Ausdauer") return "endurance";
+  if (group === "Technik") return "technique";
+  if (group === "Kraft") return "strength";
+  if (group === "Wettkampf") return "competition";
+  if (group === "Regeneration") return "regeneration";
+  return "neutral";
 };
 
 const emptyDraft = (user: User, athleteId: string): PlanDraft => ({
@@ -284,11 +314,12 @@ export function PlanView({
   onOpenJournal,
   deviceClass = "desktop",
   tabletBuilderOnly = false,
+  initialWorkflowTab = "week",
 }: PlanViewProps) {
   const [draft, setDraft] = useState<PlanDraft | null>(null);
   const [templateDraft, setTemplateDraft] = useState<TrainingTemplate | null>(null);
   const [calendarView, setCalendarView] = useState<CalendarView>("week");
-  const [workflowTab, setWorkflowTab] = useState<WorkflowTab>("week");
+  const [workflowTab, setWorkflowTab] = useState<WorkflowTab>(initialWorkflowTab);
   const [selectedArea, setSelectedArea] = useState<TrainingArea>("Wassertraining");
   const [templateArea, setTemplateArea] = useState<TrainingArea>("Wassertraining");
   const [selectedDate, setSelectedDate] = useState(today);
@@ -306,6 +337,8 @@ export function PlanView({
   const [intensityFilter, setIntensityFilter] = useState<"all" | TrainingIntensity>("all");
   const [templateCategoryFilter, setTemplateCategoryFilter] = useState<"all" | TrainingTemplateCategory>("all");
   const [templateTagFilter, setTemplateTagFilter] = useState<(typeof templateTagFilters)[number]>("all");
+  const [templateSourceFilter, setTemplateSourceFilter] = useState<TemplateSourceFilter>("all");
+  const [selectedTemplateDetailId, setSelectedTemplateDetailId] = useState("");
   const [templateSearch, setTemplateSearch] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
@@ -368,6 +401,13 @@ export function PlanView({
       .filter((template) => template.title.trim().toLowerCase() !== "test")
       .filter((template) => templateCategoryFilter === "all" || template.category === templateCategoryFilter)
       .filter((template) => {
+        if (templateSourceFilter === "all") return true;
+        if (templateSourceFilter === "favorites") return template.isFavorite;
+        if (templateSourceFilter === "mine") return template.visibility === "private" && !isSystemTrainingTemplate(template);
+        if (templateSourceFilter === "club") return template.visibility === "club" && !isSystemTrainingTemplate(template);
+        return isSystemTrainingTemplate(template);
+      })
+      .filter((template) => {
         if (templateTagFilter === "all") return true;
         return [template.title, template.category, template.trainingArea, template.trainingType, template.focus, template.tags.join(" ")]
           .join(" ")
@@ -382,7 +422,7 @@ export function PlanView({
           .includes(query);
       })
       .sort((a, b) => Number(isSystemTrainingTemplate(b)) - Number(isSystemTrainingTemplate(a)) || Number(b.isFavorite) - Number(a.isFavorite) || a.title.localeCompare(b.title));
-  }, [data, periodizationTemplates, templateCategoryFilter, templateSearch, templateTagFilter, user]);
+  }, [data, periodizationTemplates, templateCategoryFilter, templateSearch, templateSourceFilter, templateTagFilter, user]);
 
   const visibleEntries = useMemo(() => {
     const scopedEntries = getTrainingsForCurrentUser({ ...data, plan: entries }, user);
@@ -406,23 +446,16 @@ export function PlanView({
   const plannedThisWeek = visibleEntries.filter((entry) => weekDates.includes(entry.date));
   const weeklyMinutes = completedThisWeek.reduce((sum, entry) => sum + entry.durationMinutes, 0);
   const templateGroups = useMemo(() => {
-    const pickGroup = (template: TrainingTemplate) => {
-      const source = [template.tags.join(" "), template.title, template.category, template.trainingArea, template.trainingType, template.focus].join(" ").toLowerCase();
-      if (source.includes("ga1")) return "GA1";
-      if (source.includes("ga2")) return "GA2";
-      if (source.includes("kraft")) return "Kraft";
-      if (source.includes("wett")) return "Wettkampf";
-      if (source.includes("regen") || source.includes("mobility")) return "Regeneration";
-      if (source.includes("technik") || source.includes("slalom")) return "Technik";
-      return template.category || "Allgemein";
-    };
-
     return visibleTemplates.reduce<Record<string, TrainingTemplate[]>>((groups, template) => {
-      const key = pickGroup(template);
+      const key = getTemplateCategoryGroup(template);
       groups[key] = [...(groups[key] ?? []), template];
       return groups;
     }, {});
   }, [visibleTemplates]);
+  const selectedTemplateDetail = useMemo(
+    () => visibleTemplates.find((template) => template.id === selectedTemplateDetailId) ?? null,
+    [selectedTemplateDetailId, visibleTemplates],
+  );
   const journalFilteredEntries = useMemo(() => {
     const rangeStart = journalRangeFilter === "all" ? "" : addDays(today, -Number(journalRangeFilter));
     return visibleEntries.filter((entry) => {
@@ -765,6 +798,50 @@ export function PlanView({
       trainingTemplates: current.trainingTemplates.filter((item) => item.id !== template.id),
     }));
     setFormMessage("Vorlage gelöscht.");
+  };
+
+  const duplicateTemplate = (template: TrainingTemplate) => {
+    const timestamp = new Date().toISOString();
+    const nextTemplate: TrainingTemplate = {
+      ...template,
+      id: `template-${crypto.randomUUID()}`,
+      ownerUserId: user.userId,
+      clubId: user.profile.club,
+      createdByUserId: user.userId,
+      title: `${template.title} Kopie`,
+      visibility: "private",
+      isFavorite: false,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+
+    onDataChange((current) => ({
+      ...current,
+      trainingTemplates: [nextTemplate, ...current.trainingTemplates],
+    }));
+    setTemplateSourceFilter("all");
+    setSelectedTemplateDetailId(nextTemplate.id);
+    setFormMessage("Vorlage dupliziert.");
+  };
+
+  const toggleTemplateFavorite = (template: TrainingTemplate) => {
+    if (isSystemTrainingTemplate(template) || !canEditTrainingTemplate(user, template)) {
+      setFormMessage("Systemvorlagen kannst du über Duplizieren als eigene Vorlage übernehmen.");
+      return;
+    }
+
+    onDataChange((current) => ({
+      ...current,
+      trainingTemplates: current.trainingTemplates.map((item) =>
+        item.id === template.id ? { ...item, isFavorite: !item.isFavorite, updatedAt: new Date().toISOString() } : item,
+      ),
+    }));
+  };
+
+  const useTemplateFromDetail = (template: TrainingTemplate) => {
+    applyTemplateSelection(template.id, "replace");
+    setShowTemplatePicker(false);
+    setFormMessage(`${template.title} ist für die Planung ausgewählt.`);
   };
 
   const copyPlanEntry = (
@@ -1499,7 +1576,7 @@ export function PlanView({
   );
 
   const renderPlanningTemplateDock = () => {
-    if (!isCoach) return null;
+    if (!isCoach || (workflowTab === "templates" && selectedTemplateDetail)) return null;
     const templateList = (favoriteTemplates.length > 0 ? favoriteTemplates : visibleTemplates).slice(0, 8);
 
     return (
@@ -1727,32 +1804,119 @@ export function PlanView({
             </button>
           ))}
         </div>
-        <div className="template-group-list">
-          {visibleTemplates.length > 0 ? Object.entries(templateGroups).map(([groupName, groupTemplates]) => (
-            <section className="template-group-section" key={groupName}>
-              <header>
-                <h4>{groupName}</h4>
-                <span>{groupTemplates.length} Vorlage{groupTemplates.length === 1 ? "" : "n"}</span>
-              </header>
-              <div className="template-group-rows">
-                {groupTemplates.map((template) => (
-                  <article className="template-library-row" key={template.id}>
-                    <span className={`template-dock-icon ${areaLabel[template.trainingArea]}`} aria-hidden="true" />
-                    <div>
-                      <strong>{template.isFavorite ? "* " : ""}{template.title}</strong>
-                      <small>{template.category} · {template.trainingType} · {template.defaultDurationMinutes ?? 0} min · {intensityLabel[template.defaultIntensity]}</small>
+        {!isPhone ? (
+          <>
+            <div className="template-source-filter" aria-label="Vorlagen nach Quelle filtern">
+              {templateSourceFilters.map((source) => (
+                <button key={source.id} className={templateSourceFilter === source.id ? "is-active" : ""} type="button" onClick={() => setTemplateSourceFilter(source.id)}>
+                  {source.label}
+                </button>
+              ))}
+            </div>
+            <div className={`template-library-redesign-layout ${selectedTemplateDetail ? "has-detail" : ""}`}>
+              <div className="template-grid-library">
+                {visibleTemplates.length > 0 ? Object.entries(templateGroups).map(([groupName, groupTemplates]) => (
+                  <section className="template-grid-section" key={groupName}>
+                    <header>
+                      <h4>{groupName}</h4>
+                      <span>{groupTemplates.length} Vorlage{groupTemplates.length === 1 ? "" : "n"}</span>
+                    </header>
+                    <div className="template-tile-grid">
+                      {groupTemplates.map((template) => (
+                        <button
+                          className={`template-library-tile template-tone-${getTemplateToneClass(template)} ${selectedTemplateDetailId === template.id ? "is-selected" : ""}`}
+                          draggable={!isPhone}
+                          key={template.id}
+                          type="button"
+                          onClick={() => setSelectedTemplateDetailId(template.id)}
+                          onDragStart={(event) => handleTemplateDragStart(event, template.id)}
+                        >
+                          <span className="template-tile-head">
+                            <span><i aria-hidden="true" />{getTemplateCategoryGroup(template).toUpperCase()}</span>
+                            <b aria-label={template.isFavorite ? "Favorit" : "Kein Favorit"}>{template.isFavorite ? "★" : ""}</b>
+                          </span>
+                          <strong>{template.title}</strong>
+                          <small>{template.defaultDurationMinutes ?? 0} min · {intensityLabel[template.defaultIntensity]}</small>
+                          <em>{isSystemTrainingTemplate(template) ? "System" : template.visibility === "club" ? "Verein" : "Eigene"}</em>
+                        </button>
+                      ))}
                     </div>
-                    <div className="template-library-actions">
-                      {isSystemTrainingTemplate(template) ? <span className="status-pill planned">System</span> : null}
-                      {!isSystemTrainingTemplate(template) && canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => { setTemplateDraft(template); setTemplateArea(template.trainingArea); }} aria-label={`Vorlage ${template.title} bearbeiten`}>Bearbeiten</button> : null}
-                      {!isSystemTrainingTemplate(template) && canEditTrainingTemplate(user, template) ? <button className="delete-button" type="button" onClick={() => deleteTemplate(template)} aria-label={`Vorlage ${template.title} löschen`}>Löschen</button> : null}
-                    </div>
-                  </article>
-                ))}
+                  </section>
+                )) : (
+                  <div className="template-empty-state">
+                    <h4>Keine Vorlagen gefunden.</h4>
+                    <p>Andere Kategorie wählen oder Filter zurücksetzen.</p>
+                    <button type="button" onClick={() => { setTemplateSearch(""); setTemplateTagFilter("all"); setTemplateCategoryFilter("all"); setTemplateSourceFilter("all"); }}>Filter zurücksetzen</button>
+                  </div>
+                )}
               </div>
-            </section>
-          )) : <p className="empty-state">Noch keine Trainingsvorlagen. Erstelle deine erste Vorlage für schnelle Trainingsplanung.</p>}
-        </div>
+              {selectedTemplateDetail ? (
+                <aside className="template-detail-panel" aria-label="Vorlagendetails">
+                  <header>
+                    <div>
+                      <p className="eyebrow">{getTemplateCategoryGroup(selectedTemplateDetail)}</p>
+                      <h4>{selectedTemplateDetail.title}</h4>
+                      <span>{isSystemTrainingTemplate(selectedTemplateDetail) ? "Systemvorlage" : selectedTemplateDetail.visibility === "club" ? "Vereinsvorlage" : "Eigene Vorlage"}</span>
+                    </div>
+                    <button className="template-detail-close" type="button" onClick={() => setSelectedTemplateDetailId("")} aria-label="Vorlagendetails schließen">×</button>
+                  </header>
+                  <dl>
+                    <div><dt>Kategorie</dt><dd>{selectedTemplateDetail.category}</dd></div>
+                    <div><dt>Dauer</dt><dd>{selectedTemplateDetail.defaultDurationMinutes ?? 0} min</dd></div>
+                    <div><dt>Intensität</dt><dd>{intensityLabel[selectedTemplateDetail.defaultIntensity]}</dd></div>
+                    <div><dt>Trainingsart</dt><dd>{selectedTemplateDetail.trainingType}</dd></div>
+                    <div><dt>Boot</dt><dd>{selectedTemplateDetail.boatClass ?? "none"}</dd></div>
+                    <div><dt>Favorit</dt><dd>{selectedTemplateDetail.isFavorite ? "Ja" : "Nein"}</dd></div>
+                  </dl>
+                  <section>
+                    <strong>Fokus</strong>
+                    <p>{selectedTemplateDetail.focus || "Noch kein Fokus hinterlegt."}</p>
+                  </section>
+                  {selectedTemplateDetail.description ? (
+                    <details>
+                      <summary>Beschreibung</summary>
+                      <p>{selectedTemplateDetail.description}</p>
+                    </details>
+                  ) : null}
+                  {selectedTemplateDetail.tags.length > 0 ? <p className="template-detail-tags">{selectedTemplateDetail.tags.join(" · ")}</p> : null}
+                  <div className="template-detail-actions">
+                    <button className="save-button" type="button" onClick={() => useTemplateFromDetail(selectedTemplateDetail)}>Verwenden</button>
+                    {!isSystemTrainingTemplate(selectedTemplateDetail) && canEditTrainingTemplate(user, selectedTemplateDetail) ? <button type="button" onClick={() => { setTemplateDraft(selectedTemplateDetail); setTemplateArea(selectedTemplateDetail.trainingArea); }}>Bearbeiten</button> : null}
+                    <button type="button" onClick={() => duplicateTemplate(selectedTemplateDetail)}>Duplizieren</button>
+                    <button type="button" onClick={() => toggleTemplateFavorite(selectedTemplateDetail)}>Favorit</button>
+                  </div>
+                </aside>
+              ) : null}
+            </div>
+          </>
+        ) : (
+          <div className="template-group-list">
+            {visibleTemplates.length > 0 ? Object.entries(templateGroups).map(([groupName, groupTemplates]) => (
+              <section className="template-group-section" key={groupName}>
+                <header>
+                  <h4>{groupName}</h4>
+                  <span>{groupTemplates.length} Vorlage{groupTemplates.length === 1 ? "" : "n"}</span>
+                </header>
+                <div className="template-group-rows">
+                  {groupTemplates.map((template) => (
+                    <article className="template-library-row" key={template.id}>
+                      <span className={`template-dock-icon ${areaLabel[template.trainingArea]}`} aria-hidden="true" />
+                      <div>
+                        <strong>{template.isFavorite ? "* " : ""}{template.title}</strong>
+                        <small>{template.category} · {template.trainingType} · {template.defaultDurationMinutes ?? 0} min · {intensityLabel[template.defaultIntensity]}</small>
+                      </div>
+                      <div className="template-library-actions">
+                        {isSystemTrainingTemplate(template) ? <span className="status-pill planned">System</span> : null}
+                        {!isSystemTrainingTemplate(template) && canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => { setTemplateDraft(template); setTemplateArea(template.trainingArea); }} aria-label={`Vorlage ${template.title} bearbeiten`}>Bearbeiten</button> : null}
+                        {!isSystemTrainingTemplate(template) && canEditTrainingTemplate(user, template) ? <button className="delete-button" type="button" onClick={() => deleteTemplate(template)} aria-label={`Vorlage ${template.title} löschen`}>Löschen</button> : null}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            )) : <p className="empty-state">Noch keine Trainingsvorlagen. Erstelle deine erste Vorlage für schnelle Trainingsplanung.</p>}
+          </div>
+        )}
       </section> : null}
 
       {templateDraft ? (

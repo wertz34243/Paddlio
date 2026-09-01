@@ -85,6 +85,7 @@ test.describe("tablet calendar and builder final", () => {
     await page.screenshot({ path: join(screenshotDir, "07-builder-empty.png"), fullPage: true });
 
     await page.getByLabel("Titel").fill(`Tablet Builder ${Date.now()}`);
+    await page.getByRole("button", { name: /Zuordnung/ }).click();
     await page.getByLabel("Zuweisung").selectOption("group");
     const groupSelect = page.getByLabel("Gruppe");
     if (await groupSelect.isVisible().catch(() => false)) {
@@ -92,6 +93,7 @@ test.describe("tablet calendar and builder final", () => {
     }
     await page.screenshot({ path: join(screenshotDir, "08-builder-group.png"), fullPage: true });
 
+    await page.getByRole("button", { name: /Trainingsinhalt/ }).click();
     const templateSelect = page.getByLabel("Vorlage laden");
     if (await templateSelect.isVisible().catch(() => false)) {
       await templateSelect.selectOption({ index: 1 });

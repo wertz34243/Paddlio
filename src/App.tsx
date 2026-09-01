@@ -954,6 +954,7 @@ function AppContent() {
             }}
             onOpenJournal={() => setTrainingSegment("journal")}
             deviceClass={currentDeviceClass}
+            initialWorkflowTab="templates"
           />
         );
       case "journal":
