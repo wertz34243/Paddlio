@@ -87,6 +87,8 @@ type PlanViewProps = {
 
 type CalendarView = "day" | "week" | "month" | "year" | "list";
 type WorkflowTab = "today" | "week" | "month" | "templates" | "groups" | "feedback" | "upcoming" | "done";
+type TabletBuilderStep = "basics" | "assignment" | "content" | "load" | "notes";
+type JournalRangeFilter = "all" | "7" | "30" | "90";
 type WorkflowTabConfig = {
   id: WorkflowTab;
   label: string;
@@ -151,6 +153,15 @@ const intensityLabel: Record<TrainingIntensity, string> = {
 };
 
 const templateCategories: TrainingTemplateCategory[] = ["K1", "C1", "Ausdauer", "Kraft", "Technik", "Regeneration", "Wettkampf", "Allgemein"];
+const templateTagFilters = ["all", "GA1", "GA2", "Technik", "Kraft", "Wettkampf", "Regeneration"] as const;
+
+const tabletBuilderSteps: Array<{ id: TabletBuilderStep; label: string }> = [
+  { id: "basics", label: "Grunddaten" },
+  { id: "assignment", label: "Zuordnung" },
+  { id: "content", label: "Trainingsinhalt" },
+  { id: "load", label: "Belastung" },
+  { id: "notes", label: "Notizen" },
+];
 
 const visibilityLabel: Record<TrainingTemplateVisibility, string> = {
   private: "Privat",
@@ -294,6 +305,7 @@ export function PlanView({
   const [boatFilter, setBoatFilter] = useState<"all" | TrainingBoatClass>("all");
   const [intensityFilter, setIntensityFilter] = useState<"all" | TrainingIntensity>("all");
   const [templateCategoryFilter, setTemplateCategoryFilter] = useState<"all" | TrainingTemplateCategory>("all");
+  const [templateTagFilter, setTemplateTagFilter] = useState<(typeof templateTagFilters)[number]>("all");
   const [templateSearch, setTemplateSearch] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
@@ -306,6 +318,9 @@ export function PlanView({
   const [pendingTemplateId, setPendingTemplateId] = useState("");
   const [athleteFilter, setAthleteFilter] = useState("all");
   const [groupFilter, setGroupFilter] = useState("all");
+  const [journalAthleteFilter, setJournalAthleteFilter] = useState("all");
+  const [journalRangeFilter, setJournalRangeFilter] = useState<JournalRangeFilter>("30");
+  const [tabletBuilderStep, setTabletBuilderStep] = useState<TabletBuilderStep>("basics");
   const [dragTemplateId, setDragTemplateId] = useState("");
   const [formMessage, setFormMessage] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
@@ -348,9 +363,17 @@ export function PlanView({
   );
   const visibleTemplates = useMemo(() => {
     const query = templateSearch.trim().toLowerCase();
+    const tagQuery = templateTagFilter.toLowerCase();
     return [...periodizationTemplates, ...getTrainingTemplatesForCurrentUser(data, user, [user.profile.club])]
       .filter((template) => template.title.trim().toLowerCase() !== "test")
       .filter((template) => templateCategoryFilter === "all" || template.category === templateCategoryFilter)
+      .filter((template) => {
+        if (templateTagFilter === "all") return true;
+        return [template.title, template.category, template.trainingArea, template.trainingType, template.focus, template.tags.join(" ")]
+          .join(" ")
+          .toLowerCase()
+          .includes(tagQuery);
+      })
       .filter((template) => {
         if (!query) return true;
         return [template.title, template.focus, template.trainingArea, template.trainingType, template.tags.join(" ")]
@@ -359,7 +382,7 @@ export function PlanView({
           .includes(query);
       })
       .sort((a, b) => Number(isSystemTrainingTemplate(b)) - Number(isSystemTrainingTemplate(a)) || Number(b.isFavorite) - Number(a.isFavorite) || a.title.localeCompare(b.title));
-  }, [data, periodizationTemplates, templateCategoryFilter, templateSearch, user]);
+  }, [data, periodizationTemplates, templateCategoryFilter, templateSearch, templateTagFilter, user]);
 
   const visibleEntries = useMemo(() => {
     const scopedEntries = getTrainingsForCurrentUser({ ...data, plan: entries }, user);
@@ -382,8 +405,37 @@ export function PlanView({
   const skippedThisWeek = visibleEntries.filter((entry) => weekDates.includes(entry.date) && isSkippedStatus(entry.status));
   const plannedThisWeek = visibleEntries.filter((entry) => weekDates.includes(entry.date));
   const weeklyMinutes = completedThisWeek.reduce((sum, entry) => sum + entry.durationMinutes, 0);
-  const entriesWithFeedback = visibleEntries.filter((entry) => data.trainingFeedback.some((feedback) => feedback.trainingId === entry.id));
-  const openFeedbackEntries = visibleEntries.filter((entry) => isDoneStatus(entry.status) && !data.trainingFeedback.some((feedback) => feedback.trainingId === entry.id));
+  const templateGroups = useMemo(() => {
+    const pickGroup = (template: TrainingTemplate) => {
+      const source = [template.tags.join(" "), template.title, template.category, template.trainingArea, template.trainingType, template.focus].join(" ").toLowerCase();
+      if (source.includes("ga1")) return "GA1";
+      if (source.includes("ga2")) return "GA2";
+      if (source.includes("kraft")) return "Kraft";
+      if (source.includes("wett")) return "Wettkampf";
+      if (source.includes("regen") || source.includes("mobility")) return "Regeneration";
+      if (source.includes("technik") || source.includes("slalom")) return "Technik";
+      return template.category || "Allgemein";
+    };
+
+    return visibleTemplates.reduce<Record<string, TrainingTemplate[]>>((groups, template) => {
+      const key = pickGroup(template);
+      groups[key] = [...(groups[key] ?? []), template];
+      return groups;
+    }, {});
+  }, [visibleTemplates]);
+  const journalFilteredEntries = useMemo(() => {
+    const rangeStart = journalRangeFilter === "all" ? "" : addDays(today, -Number(journalRangeFilter));
+    return visibleEntries.filter((entry) => {
+      if (rangeStart && entry.date < rangeStart) return false;
+      if (journalAthleteFilter === "all") return true;
+      const entryFeedback = data.trainingFeedback.filter((feedback) => feedback.trainingId === entry.id);
+      return entry.assignedAthleteIds.includes(journalAthleteFilter)
+        || entry.assignedAthleteId === journalAthleteFilter
+        || entryFeedback.some((feedback) => feedback.athleteUserId === journalAthleteFilter);
+    });
+  }, [data.trainingFeedback, journalAthleteFilter, journalRangeFilter, visibleEntries]);
+  const entriesWithFeedback = journalFilteredEntries.filter((entry) => data.trainingFeedback.some((feedback) => feedback.trainingId === entry.id));
+  const openFeedbackEntries = journalFilteredEntries.filter((entry) => isDoneStatus(entry.status) && !data.trainingFeedback.some((feedback) => feedback.trainingId === entry.id));
   const openFeedbackCount = openFeedbackEntries.length;
   const nextWeekDates = getWeekDates(addDays(selectedDate, 7));
   const nextWeekCount = visibleEntries.filter((entry) => nextWeekDates.includes(entry.date)).length;
@@ -534,6 +586,7 @@ export function PlanView({
     setSelectedRepeat(nextDraft.repeat);
     setSelectedRepeatUntil(nextDraft.repeatUntil);
     setSelectedRepeatMaxCount(nextDraft.repeatMaxCount);
+    setTabletBuilderStep("basics");
     setDraft(nextDraft);
   };
 
@@ -611,6 +664,7 @@ export function PlanView({
     setSelectedRepeat(entry.repeat);
     setSelectedRepeatUntil(entry.repeatUntil);
     setSelectedRepeatMaxCount(entry.repeatMaxCount);
+    setTabletBuilderStep("basics");
     setDraft({
       ...entry,
       focus: entry.focus || entry.goal,
@@ -1194,6 +1248,11 @@ export function PlanView({
       [draft.trainingType || "Technikblock", `${Math.max(20, draft.durationMinutes - 20)} min`, draft.intensity],
       ["Cooldown", "10 min", "locker"],
     ];
+    const activeStepIndex = tabletBuilderSteps.findIndex((step) => step.id === tabletBuilderStep);
+    const goToBuilderStep = (direction: -1 | 1) => {
+      const nextStep = tabletBuilderSteps[Math.min(tabletBuilderSteps.length - 1, Math.max(0, activeStepIndex + direction))];
+      setTabletBuilderStep(nextStep.id);
+    };
 
     return (
       <section className="tablet-training-builder-shell" aria-label="Training erstellen Tablet">
@@ -1214,13 +1273,28 @@ export function PlanView({
 
           {formMessage ? <p className="auth-message">{formMessage}</p> : null}
 
+          <nav className="tablet-builder-stepper" aria-label="Training erstellen Schritte">
+            {tabletBuilderSteps.map((step, index) => (
+              <button
+                key={step.id}
+                className={tabletBuilderStep === step.id ? "is-active" : ""}
+                type="button"
+                onClick={() => setTabletBuilderStep(step.id)}
+                aria-current={tabletBuilderStep === step.id ? "step" : undefined}
+              >
+                <span>{index + 1}</span>
+                {step.label}
+              </button>
+            ))}
+          </nav>
+
           <div className="tablet-builder-layout">
             <div className="tablet-builder-form">
-              <section className="tablet-builder-section">
+              <section className={`tablet-builder-section ${tabletBuilderStep === "basics" ? "is-active" : "is-hidden"}`}>
                 <div className="section-heading compact"><div><p className="eyebrow">1</p><h3>Grunddaten</h3></div></div>
                 <div className="tablet-builder-grid">
-                  <label>Titel<input name="title" value={draft.title} onChange={(event) => updateDraft({ title: event.currentTarget.value })} required /></label>
-                  <label>Datum<input name="date" type="date" value={draft.date} onChange={(event) => updateDraft({ date: event.currentTarget.value, weekday: getWeekdayFromDate(event.currentTarget.value) })} required /></label>
+                  <label>Titel<input name="title" value={draft.title} onChange={(event) => updateDraft({ title: event.currentTarget.value })} /></label>
+                  <label>Datum<input name="date" type="date" value={draft.date} onChange={(event) => updateDraft({ date: event.currentTarget.value, weekday: getWeekdayFromDate(event.currentTarget.value) })} /></label>
                   <label>Uhrzeit<input name="startTime" type="time" value={start} onChange={(event) => updateDraft({ startTime: event.currentTarget.value, time: event.currentTarget.value })} /></label>
                   <label>Ende<input name="endTime" type="time" value={draft.endTime || end} onChange={(event) => updateDraft({ endTime: event.currentTarget.value })} /></label>
                   <label>Dauer<input name="durationMinutes" type="number" min="10" step="5" value={draft.durationMinutes} onChange={(event) => updateDraft({ durationMinutes: Number(event.currentTarget.value) || 75 })} /></label>
@@ -1228,7 +1302,7 @@ export function PlanView({
                 </div>
               </section>
 
-              <section className="tablet-builder-section">
+              <section className={`tablet-builder-section ${tabletBuilderStep === "assignment" ? "is-active" : "is-hidden"}`}>
                 <div className="section-heading compact"><div><p className="eyebrow">2</p><h3>Zuordnung</h3></div></div>
                 <div className="tablet-builder-grid">
                   <label>Zuweisung<select name="assignedType" value={draft.assignedType} onChange={(event) => selectSingleTarget(event.currentTarget.value as PlanEntry["assignedType"])}>
@@ -1245,7 +1319,7 @@ export function PlanView({
                 {draft.assignedType === "group" ? draft.assignedGroupIds.map((id) => <input key={id} type="hidden" name="assignedGroupIds" value={id} />) : null}
               </section>
 
-              <section className="tablet-builder-section">
+              <section className={`tablet-builder-section ${tabletBuilderStep === "content" ? "is-active" : "is-hidden"}`}>
                 <div className="section-heading compact"><div><p className="eyebrow">3</p><h3>Trainingsinhalt</h3></div></div>
                 <div className="tablet-builder-grid">
                   <label>Vorlage laden<select value="" onChange={(event) => applyTemplateToDraft(event.currentTarget.value)}>
@@ -1265,7 +1339,7 @@ export function PlanView({
                 </div>
               </section>
 
-              <section className="tablet-builder-section">
+              <section className={`tablet-builder-section ${tabletBuilderStep === "load" ? "is-active" : "is-hidden"}`}>
                 <div className="section-heading compact"><div><p className="eyebrow">4</p><h3>Belastung / Steuerung</h3></div></div>
                 <div className="tablet-builder-grid">
                   <label>Intensität<select name="intensity" value={draft.intensity} onChange={(event) => updateDraft({ intensity: event.currentTarget.value as TrainingIntensity })}>{trainingIntensities.map((intensity) => <option key={intensity} value={intensity}>{intensityLabel[intensity]}</option>)}</select></label>
@@ -1275,11 +1349,21 @@ export function PlanView({
                 </div>
               </section>
 
-              <section className="tablet-builder-section">
+              <section className={`tablet-builder-section ${tabletBuilderStep === "notes" ? "is-active" : "is-hidden"}`}>
                 <div className="section-heading compact"><div><p className="eyebrow">5</p><h3>Notizen</h3></div></div>
                 <label>Trainerhinweise / Material<textarea name="notes" value={draft.notes || draft.note} onChange={(event) => updateDraft({ notes: event.currentTarget.value, note: event.currentTarget.value })} rows={3} /></label>
                 <label>Individuelle Anpassung<textarea name="feedbackNote" value={draft.feedbackNote} onChange={(event) => updateDraft({ feedbackNote: event.currentTarget.value })} rows={2} /></label>
               </section>
+
+              <div className="tablet-builder-step-actions">
+                <button type="button" onClick={() => goToBuilderStep(-1)} disabled={activeStepIndex === 0}>Zurück</button>
+                <span>Schritt {activeStepIndex + 1} von {tabletBuilderSteps.length}</span>
+                {activeStepIndex < tabletBuilderSteps.length - 1 ? (
+                  <button className="save-button" type="button" onClick={() => goToBuilderStep(1)}>Weiter</button>
+                ) : (
+                  <button className="save-button" type="submit">Training planen</button>
+                )}
+              </div>
             </div>
 
             <aside className="tablet-builder-preview" aria-label="Live Vorschau">
@@ -1636,27 +1720,37 @@ export function PlanView({
           <label>Suche<input value={templateSearch} onChange={(event) => setTemplateSearch(event.target.value)} placeholder="Titel, Fokus, Tags" /></label>
           <label>Kategorie<select value={templateCategoryFilter} onChange={(event) => setTemplateCategoryFilter(event.target.value as typeof templateCategoryFilter)}><option value="all">Alle</option>{templateCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
         </div>
-        <div className="calendar-list">
-          {visibleTemplates.length > 0 ? visibleTemplates.map((template) => (
-            <article className="calendar-training-card" key={template.id}>
-              <div className="plan-card-head">
-                <div><span>{isSystemTrainingTemplate(template) ? "Paddlio-Periodisierung" : `${template.category} - ${visibilityLabel[template.visibility]}`}</span><h4>{template.isFavorite ? "* " : ""}{template.title}</h4></div>
-                <b className="status-pill planned">{template.defaultDurationMinutes ?? 0} min</b>
+        <div className="template-tag-filter" aria-label="Vorlagen nach Trainingsart filtern">
+          {templateTagFilters.map((tag) => (
+            <button key={tag} className={templateTagFilter === tag ? "is-active" : ""} type="button" onClick={() => setTemplateTagFilter(tag)}>
+              {tag === "all" ? "Alle" : tag}
+            </button>
+          ))}
+        </div>
+        <div className="template-group-list">
+          {visibleTemplates.length > 0 ? Object.entries(templateGroups).map(([groupName, groupTemplates]) => (
+            <section className="template-group-section" key={groupName}>
+              <header>
+                <h4>{groupName}</h4>
+                <span>{groupTemplates.length} Vorlage{groupTemplates.length === 1 ? "" : "n"}</span>
+              </header>
+              <div className="template-group-rows">
+                {groupTemplates.map((template) => (
+                  <article className="template-library-row" key={template.id}>
+                    <span className={`template-dock-icon ${areaLabel[template.trainingArea]}`} aria-hidden="true" />
+                    <div>
+                      <strong>{template.isFavorite ? "* " : ""}{template.title}</strong>
+                      <small>{template.category} · {template.trainingType} · {template.defaultDurationMinutes ?? 0} min · {intensityLabel[template.defaultIntensity]}</small>
+                    </div>
+                    <div className="template-library-actions">
+                      {isSystemTrainingTemplate(template) ? <span className="status-pill planned">System</span> : null}
+                      {!isSystemTrainingTemplate(template) && canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => { setTemplateDraft(template); setTemplateArea(template.trainingArea); }} aria-label={`Vorlage ${template.title} bearbeiten`}>Bearbeiten</button> : null}
+                      {!isSystemTrainingTemplate(template) && canEditTrainingTemplate(user, template) ? <button className="delete-button" type="button" onClick={() => deleteTemplate(template)} aria-label={`Vorlage ${template.title} löschen`}>Löschen</button> : null}
+                    </div>
+                  </article>
+                ))}
               </div>
-              <div className="smart-detail-grid">
-                <span>{template.trainingArea}</span>
-                <span>{template.trainingType}</span>
-                <span>{template.boatClass ?? "none"}</span>
-                <span>{intensityLabel[template.defaultIntensity]}</span>
-              </div>
-              <p>{template.focus || "Noch kein Fokus eingetragen."}</p>
-              {template.tags.length > 0 ? <small className="card-note">{template.tags.join(" - ")}</small> : null}
-              <div className="card-actions">
-                {isSystemTrainingTemplate(template) ? <span className="status-pill planned">Systemvorlage</span> : null}
-                {!isSystemTrainingTemplate(template) && canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => { setTemplateDraft(template); setTemplateArea(template.trainingArea); }} aria-label={`Vorlage ${template.title} bearbeiten`}>Bearbeiten</button> : null}
-                {!isSystemTrainingTemplate(template) && canEditTrainingTemplate(user, template) ? <button type="button" onClick={() => deleteTemplate(template)} aria-label={`Vorlage ${template.title} löschen`}>Löschen</button> : null}
-              </div>
-            </article>
+            </section>
           )) : <p className="empty-state">Noch keine Trainingsvorlagen. Erstelle deine erste Vorlage für schnelle Trainingsplanung.</p>}
         </div>
       </section> : null}
@@ -1883,6 +1977,21 @@ export function PlanView({
         <section className="section-block">
           <div className="section-heading">
             <div><p className="eyebrow">Rückmeldungen</p><h3>{isCoach ? "Statusübersicht" : "Trainingstagebuch"}</h3></div>
+            <span className="status-pill planned">{journalFilteredEntries.length} Treffer</span>
+          </div>
+          <div className="journal-filter-bar" aria-label="Journal filtern">
+            {isCoach ? (
+              <label>Sportler<select value={journalAthleteFilter} onChange={(event) => setJournalAthleteFilter(event.currentTarget.value)}>
+                <option value="all">Alle Sportler</option>
+                {visibleAthletes.map((athlete) => <option key={athlete.id} value={athlete.id}>{getAthleteName(athlete)}</option>)}
+              </select></label>
+            ) : null}
+            <label>Zeitraum<select value={journalRangeFilter} onChange={(event) => setJournalRangeFilter(event.currentTarget.value as JournalRangeFilter)}>
+              <option value="7">Letzte 7 Tage</option>
+              <option value="30">Letzte 30 Tage</option>
+              <option value="90">Letzte 90 Tage</option>
+              <option value="all">Alle</option>
+            </select></label>
           </div>
           <div className="calendar-list">
             {isCoach && openFeedbackEntries.length > 0 ? openFeedbackEntries.map((entry) => (
