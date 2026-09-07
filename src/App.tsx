@@ -52,7 +52,6 @@ import { CommunicationView } from "./views/CommunicationView";
 import { DashboardView, type DashboardMoreTarget, type DashboardQuickAction } from "./views/DashboardView";
 import { EquipmentView } from "./views/EquipmentView";
 import { GoalsView } from "./views/GoalsView";
-import { PlanView } from "./views/PlanView";
 import { NotificationsView } from "./views/NotificationsView";
 import { ProfileView } from "./views/ProfileView";
 import { RecordsView } from "./views/RecordsView";
@@ -66,6 +65,7 @@ const AcademyView = lazy(() => import("./views/AcademyView").then((module) => ({
 const AnalyticsCenterView = lazy(() => import("./views/AnalyticsCenterView").then((module) => ({ default: module.AnalyticsCenterView })));
 const CoachView = lazy(() => import("./views/CoachView").then((module) => ({ default: module.CoachView })));
 const ImportExportView = lazy(() => import("./views/ImportExportView").then((module) => ({ default: module.ImportExportView })));
+const PlanView = lazy(() => import("./views/PlanView").then((module) => ({ default: module.PlanView })));
 const PolarIntegrationView = lazy(() => import("./views/PolarIntegrationView").then((module) => ({ default: module.PolarIntegrationView })));
 const PaddlioOneComponentsPreview = lazy(() => import("./views/PaddlioOneComponentsPreview").then((module) => ({ default: module.PaddlioOneComponentsPreview })));
 const PaddlioOneDesignPreview = lazy(() => import("./views/PaddlioOneDesignPreview").then((module) => ({ default: module.PaddlioOneDesignPreview })));
@@ -1087,9 +1087,10 @@ function AppContent() {
 
   const renderTrainingArea = (segment: TrainingSegment = trainingSegment) => {
     const featureMode = getCurrentFeatureMode(trainingFeatureBySegment[segment]);
+    const isTabletBuilderMode = currentDeviceClass === "tablet" && segment === "sessions";
 
     return (
-      <div className={`category-shell more-category-shell device-${currentDeviceClass}`}>
+      <div className={`category-shell more-category-shell device-${currentDeviceClass} ${isTabletBuilderMode ? "tablet-builder-mode" : ""}`}>
         <div className="training-segment-switcher" onTouchStart={handleTrainingTouchStart} onTouchEnd={handleTrainingTouchEnd}>
           <SegmentNav
             label="Training Kategorien"

@@ -88,9 +88,19 @@ type PlanViewProps = {
 
 type CalendarView = "day" | "week" | "month" | "year" | "list";
 type WorkflowTab = "today" | "week" | "month" | "templates" | "groups" | "feedback" | "upcoming" | "done";
-type TabletBuilderStep = "basics" | "assignment" | "content" | "load" | "notes";
 type JournalRangeFilter = "all" | "7" | "30" | "90";
 type TemplateSourceFilter = "all" | "favorites" | "mine" | "club" | "system";
+type TabletBuilderSection = {
+  id: string;
+  title: string;
+  category: string;
+  durationMinutes: number;
+  intensity: TrainingIntensity;
+  boatClass: TrainingBoatClass;
+  focus: string;
+  description: string;
+  optional: boolean;
+};
 type WorkflowTabConfig = {
   id: WorkflowTab;
   label: string;
@@ -164,14 +174,6 @@ const templateSourceFilters: Array<{ id: TemplateSourceFilter; label: string }> 
   { id: "system", label: "System" },
 ];
 
-const tabletBuilderSteps: Array<{ id: TabletBuilderStep; label: string }> = [
-  { id: "basics", label: "Grunddaten" },
-  { id: "assignment", label: "Zuordnung" },
-  { id: "content", label: "Trainingsinhalt" },
-  { id: "load", label: "Belastung" },
-  { id: "notes", label: "Notizen" },
-];
-
 const visibilityLabel: Record<TrainingTemplateVisibility, string> = {
   private: "Privat",
   club: "Verein",
@@ -204,6 +206,16 @@ const getTemplateToneClass = (template: TrainingTemplate): string => {
   if (group === "Kraft") return "strength";
   if (group === "Wettkampf") return "competition";
   if (group === "Regeneration") return "regeneration";
+  return "neutral";
+};
+
+const getBuilderSectionToneClass = (section: TabletBuilderSection): string => {
+  const source = [section.category, section.title, section.focus, section.description].join(" ").toLowerCase();
+  if (source.includes("ga1") || source.includes("ga2") || source.includes("ausdauer")) return "endurance";
+  if (source.includes("technik") || source.includes("slalom")) return "technique";
+  if (source.includes("kraft")) return "strength";
+  if (source.includes("wett")) return "competition";
+  if (source.includes("regen") || source.includes("mobility")) return "regeneration";
   return "neutral";
 };
 
@@ -353,7 +365,10 @@ export function PlanView({
   const [groupFilter, setGroupFilter] = useState("all");
   const [journalAthleteFilter, setJournalAthleteFilter] = useState("all");
   const [journalRangeFilter, setJournalRangeFilter] = useState<JournalRangeFilter>("30");
-  const [tabletBuilderStep, setTabletBuilderStep] = useState<TabletBuilderStep>("basics");
+  const [tabletBuilderSections, setTabletBuilderSections] = useState<TabletBuilderSection[]>([]);
+  const [selectedTabletSectionId, setSelectedTabletSectionId] = useState("");
+  const [tabletBuilderSearch, setTabletBuilderSearch] = useState("");
+  const [tabletBuilderCategory, setTabletBuilderCategory] = useState<(typeof templateTagFilters)[number]>("all");
   const [dragTemplateId, setDragTemplateId] = useState("");
   const [formMessage, setFormMessage] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
@@ -619,7 +634,8 @@ export function PlanView({
     setSelectedRepeat(nextDraft.repeat);
     setSelectedRepeatUntil(nextDraft.repeatUntil);
     setSelectedRepeatMaxCount(nextDraft.repeatMaxCount);
-    setTabletBuilderStep("basics");
+    setTabletBuilderSections([]);
+    setSelectedTabletSectionId("");
     setDraft(nextDraft);
   };
 
@@ -660,6 +676,89 @@ export function PlanView({
     });
   };
 
+  const createBuilderSectionFromTemplate = (template: TrainingTemplate): TabletBuilderSection => ({
+    id: `builder-section-${crypto.randomUUID()}`,
+    title: template.title,
+    category: getTemplateCategoryGroup(template),
+    durationMinutes: Math.max(10, Math.min(90, template.defaultDurationMinutes ?? 20)),
+    intensity: template.defaultIntensity,
+    boatClass: template.boatClass ?? "K1",
+    focus: template.focus,
+    description: template.description ?? "",
+    optional: false,
+  });
+
+  const updateBuilderTotalDuration = (sections: TabletBuilderSection[]) => {
+    const total = sections.reduce((sum, section) => sum + section.durationMinutes, 0);
+    updateDraft({ durationMinutes: total || draft?.durationMinutes || 75, endTime: draft ? addMinutesToTime(draft.startTime || draft.time, total || draft.durationMinutes || 75) : "" });
+  };
+
+  const addBuilderSection = (template: TrainingTemplate) => {
+    const section = createBuilderSectionFromTemplate(template);
+    setTabletBuilderSections((current) => {
+      const next = [...current, section];
+      updateBuilderTotalDuration(next);
+      return next;
+    });
+    setSelectedTabletSectionId(section.id);
+    if (draft && !draft.title) {
+      updateDraft({ title: template.title, area: template.trainingArea, trainingType: template.trainingType, intensity: template.defaultIntensity, boatClass: template.boatClass ?? "K1", focus: template.focus, goal: template.focus });
+    }
+  };
+
+  const updateBuilderSection = (sectionId: string, patch: Partial<TabletBuilderSection>) => {
+    setTabletBuilderSections((current) => {
+      const next = current.map((section) => section.id === sectionId ? { ...section, ...patch } : section);
+      if (patch.durationMinutes !== undefined) updateBuilderTotalDuration(next);
+      return next;
+    });
+  };
+
+  const moveBuilderSection = (sectionId: string, direction: -1 | 1) => {
+    setTabletBuilderSections((current) => {
+      const index = current.findIndex((section) => section.id === sectionId);
+      const targetIndex = index + direction;
+      if (index < 0 || targetIndex < 0 || targetIndex >= current.length) return current;
+      const next = [...current];
+      [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+      return next;
+    });
+  };
+
+  const duplicateBuilderSection = (section: TabletBuilderSection) => {
+    const duplicate = { ...section, id: `builder-section-${crypto.randomUUID()}`, title: `${section.title} Kopie` };
+    setTabletBuilderSections((current) => {
+      const index = current.findIndex((item) => item.id === section.id);
+      const next = [...current];
+      next.splice(index + 1, 0, duplicate);
+      updateBuilderTotalDuration(next);
+      return next;
+    });
+    setSelectedTabletSectionId(duplicate.id);
+  };
+
+  const deleteBuilderSection = (sectionId: string) => {
+    setTabletBuilderSections((current) => {
+      const next = current.filter((section) => section.id !== sectionId);
+      updateBuilderTotalDuration(next);
+      return next;
+    });
+    setSelectedTabletSectionId("");
+  };
+
+  const applyQuickBuild = () => {
+    const baseIntensity = draft?.intensity ?? "mittel";
+    const sections: TabletBuilderSection[] = [
+      { id: `builder-section-${crypto.randomUUID()}`, title: "Warm-up", category: "GA1", durationMinutes: 15, intensity: "locker", boatClass: draft?.boatClass ?? "K1", focus: "Einpaddeln, Mobilisieren", description: "Locker einfahren und Technikgefuehl vorbereiten.", optional: false },
+      { id: `builder-section-${crypto.randomUUID()}`, title: "Grundtechnik", category: "Technik", durationMinutes: 20, intensity: baseIntensity, boatClass: draft?.boatClass ?? "K1", focus: draft?.focus || "Linienwahl, Druck", description: "Technikblock mit sauberer Linienwahl und stabiler Druckphase.", optional: false },
+      { id: `builder-section-${crypto.randomUUID()}`, title: "Slalomtechnik", category: "Technik", durationMinutes: 25, intensity: baseIntensity, boatClass: draft?.boatClass ?? "K1", focus: "Innenstab, Blickfuehrung", description: "Streckenabschnitt mit klaren Wiederholungen und kurzem Feedback.", optional: false },
+      { id: `builder-section-${crypto.randomUUID()}`, title: "Cool-down", category: "Regeneration", durationMinutes: 10, intensity: "locker", boatClass: draft?.boatClass ?? "K1", focus: "Auspaddeln", description: "Belastung ruhig herunterfahren.", optional: false },
+    ];
+    setTabletBuilderSections(sections);
+    setSelectedTabletSectionId(sections[1].id);
+    updateBuilderTotalDuration(sections);
+  };
+
   useEffect(() => {
     if (!tabletBuilderOnly || !isTablet || draft) return;
     startCreate();
@@ -691,13 +790,49 @@ export function PlanView({
     });
   };
 
+  const saveDraftAsTemplate = () => {
+    if (!draft) return;
+    const timestamp = new Date().toISOString();
+    const totalDuration = tabletBuilderSections.reduce((sum, section) => sum + section.durationMinutes, 0) || draft.durationMinutes || 75;
+    const sectionSummary = tabletBuilderSections.length > 0
+      ? tabletBuilderSections.map((section, index) => `${index + 1}. ${section.title} (${section.durationMinutes} min): ${section.focus}`).join("\n")
+      : "";
+    const nextTemplate: TrainingTemplate = {
+      id: `template-${crypto.randomUUID()}`,
+      ownerUserId: user.userId,
+      clubId: user.profile.club,
+      createdByUserId: user.userId,
+      title: draft.title.trim() || tabletBuilderSections[0]?.title || "Training Vorlage",
+      category: (tabletBuilderSections[0]?.category as TrainingTemplateCategory) || "Allgemein",
+      trainingArea: draft.area,
+      trainingType: draft.trainingType,
+      boatClass: draft.boatClass,
+      defaultDurationMinutes: totalDuration,
+      defaultIntensity: draft.intensity,
+      focus: draft.focus || draft.goal,
+      description: [draft.description, sectionSummary ? `Ablauf:\n${sectionSummary}` : ""].filter(Boolean).join("\n\n"),
+      notes: draft.notes || draft.note,
+      tags: Array.from(new Set(tabletBuilderSections.map((section) => section.category).filter(Boolean))),
+      isFavorite: true,
+      visibility: isCoach ? "club" : "private",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    onDataChange((current) => ({
+      ...current,
+      trainingTemplates: [nextTemplate, ...current.trainingTemplates],
+    }));
+    setTemplateSourceFilter("all");
+    setSelectedTemplateDetailId(nextTemplate.id);
+    setFormMessage("Training wurde als Vorlage gespeichert.");
+  };
+
   const startEdit = (entry: PlanEntry) => {
     setSelectedArea(entry.area);
     setSelectedDate(entry.date);
     setSelectedRepeat(entry.repeat);
     setSelectedRepeatUntil(entry.repeatUntil);
     setSelectedRepeatMaxCount(entry.repeatMaxCount);
-    setTabletBuilderStep("basics");
     setDraft({
       ...entry,
       focus: entry.focus || entry.goal,
@@ -1320,29 +1455,51 @@ export function PlanView({
         ? visibleAthletes.find((athlete) => draft.assignedAthleteIds.includes(athlete.id) || draft.assignedAthleteId === athlete.id)?.name ?? "Sportler auswählen"
         : "Für mich";
     const focusParts = (draft.focus || draft.goal || "").split(",").map((item) => item.trim()).filter(Boolean).slice(0, 4);
-    const sectionHints = [
-      ["Aufwärmen", "10 min", "locker"],
-      [draft.trainingType || "Technikblock", `${Math.max(20, draft.durationMinutes - 20)} min`, draft.intensity],
-      ["Cooldown", "10 min", "locker"],
-    ];
-    const activeStepIndex = tabletBuilderSteps.findIndex((step) => step.id === tabletBuilderStep);
-    const goToBuilderStep = (direction: -1 | 1) => {
-      const nextStep = tabletBuilderSteps[Math.min(tabletBuilderSteps.length - 1, Math.max(0, activeStepIndex + direction))];
-      setTabletBuilderStep(nextStep.id);
+    const builderQuery = tabletBuilderSearch.trim().toLowerCase();
+    const builderTemplates = visibleTemplates
+      .filter((template) => tabletBuilderCategory === "all" || [template.title, template.category, template.trainingArea, template.trainingType, template.focus, template.tags.join(" ")]
+        .join(" ")
+        .toLowerCase()
+        .includes(tabletBuilderCategory.toLowerCase()))
+      .filter((template) => !builderQuery || [template.title, template.focus, template.trainingArea, template.trainingType, template.tags.join(" ")]
+        .join(" ")
+        .toLowerCase()
+        .includes(builderQuery))
+      .slice(0, 18);
+    const selectedSection = tabletBuilderSections.find((section) => section.id === selectedTabletSectionId) ?? null;
+    const totalDuration = tabletBuilderSections.reduce((sum, section) => sum + section.durationMinutes, 0) || draft.durationMinutes || 75;
+    const plannedEnd = addMinutesToTime(start, totalDuration);
+    const selectedAthleteId = draft.assignedAthleteIds[0] ?? draft.assignedAthleteId ?? "";
+    const selectedGroupId = draft.assignedGroupIds[0] ?? draft.assignedGroupId ?? "";
+    const timelineText = tabletBuilderSections.length > 0
+      ? tabletBuilderSections.map((section, index) => `${index + 1}. ${section.title} (${section.durationMinutes} min, ${intensityLabel[section.intensity]}): ${section.focus}`).join("\n")
+      : "";
+    const savedDescription = [draft.description, timelineText ? `Ablauf:\n${timelineText}` : ""].filter(Boolean).join("\n\n");
+    const savedNotes = [draft.notes || draft.note, tabletBuilderSections.length > 0 ? `Abschnitte: ${tabletBuilderSections.length} · Soll-Dauer: ${totalDuration} min` : ""].filter(Boolean).join("\n");
+    const dragOverTimeline = (event: DragEvent<HTMLElement>) => {
+      if (!dragTemplateId) return;
+      event.preventDefault();
+    };
+    const dropTemplateOnTimeline = (event: DragEvent<HTMLElement>) => {
+      event.preventDefault();
+      const templateId = event.dataTransfer.getData("text/plain") || dragTemplateId;
+      const template = visibleTemplates.find((item) => item.id === templateId);
+      if (template) addBuilderSection(template);
+      setDragTemplateId("");
     };
 
     return (
       <section className="tablet-training-builder-shell" aria-label="Training erstellen Tablet">
         <form className="tablet-training-builder" onSubmit={handleSubmit}>
           <header className="tablet-builder-header">
-            <button type="button" onClick={() => setDraft(null)}>Zurück</button>
+              <button type="button" onClick={() => setDraft(null)}>Zurück</button>
             <div>
               <p className="eyebrow">Training</p>
               <h2>{draft.id ? "Training bearbeiten" : "Training erstellen"}</h2>
             </div>
             <div className="tablet-builder-actions">
               <button type="button" onClick={() => updateDraft({ id: "", title: `${draft.title || "Training"} Kopie` })}>Duplizieren</button>
-              <button type="button" onClick={startTemplateCreate}>Als Vorlage speichern</button>
+              <button type="button" onClick={saveDraftAsTemplate}>Als Vorlage speichern</button>
               <button type="button" onClick={() => setDraft(null)}>Abbrechen</button>
               <button className="save-button" type="submit">Training planen</button>
             </div>
@@ -1350,115 +1507,171 @@ export function PlanView({
 
           {formMessage ? <p className="auth-message">{formMessage}</p> : null}
 
-          <nav className="tablet-builder-stepper" aria-label="Training erstellen Schritte">
-            {tabletBuilderSteps.map((step, index) => (
-              <button
-                key={step.id}
-                className={tabletBuilderStep === step.id ? "is-active" : ""}
-                type="button"
-                onClick={() => setTabletBuilderStep(step.id)}
-                aria-current={tabletBuilderStep === step.id ? "step" : undefined}
-              >
-                <span>{index + 1}</span>
-                {step.label}
-              </button>
-            ))}
-          </nav>
+          <input type="hidden" name="title" value={draft.title} />
+          <input type="hidden" name="date" value={draft.date} />
+          <input type="hidden" name="startTime" value={start} />
+          <input type="hidden" name="endTime" value={plannedEnd} />
+          <input type="hidden" name="durationMinutes" value={totalDuration} />
+          <input type="hidden" name="status" value={draft.status} />
+          <input type="hidden" name="assignedType" value={draft.assignedType} />
+          {draft.assignedType === "athlete" ? draft.assignedAthleteIds.map((id) => <input key={id} type="hidden" name="assignedAthleteIds" value={id} />) : null}
+          {draft.assignedType === "group" ? draft.assignedGroupIds.map((id) => <input key={id} type="hidden" name="assignedGroupIds" value={id} />) : null}
+          <input type="hidden" name="area" value={draft.area} />
+          <input type="hidden" name="trainingType" value={draft.trainingType} />
+          <input type="hidden" name="boatClass" value={draft.boatClass} />
+          <input type="hidden" name="focus" value={draft.focus || draft.goal} />
+          <input type="hidden" name="description" value={savedDescription} />
+          <input type="hidden" name="intensity" value={draft.intensity} />
+          <input type="hidden" name="notes" value={savedNotes} />
+          <input type="hidden" name="repeat" value={selectedRepeat} />
+          <input type="hidden" name="repeatUntil" value={selectedRepeatUntil} />
+          <input type="hidden" name="repeatMaxCount" value={selectedRepeatMaxCount ?? ""} />
+          <input type="hidden" name="feedbackNote" value={draft.feedbackNote} />
 
-          <div className="tablet-builder-layout">
-            <div className="tablet-builder-form">
-              <section className={`tablet-builder-section ${tabletBuilderStep === "basics" ? "is-active" : "is-hidden"}`}>
-                <div className="section-heading compact"><div><p className="eyebrow">1</p><h3>Grunddaten</h3></div></div>
-                <div className="tablet-builder-grid">
-                  <label>Titel<input name="title" value={draft.title} onChange={(event) => updateDraft({ title: event.currentTarget.value })} /></label>
-                  <label>Datum<input name="date" type="date" value={draft.date} onChange={(event) => updateDraft({ date: event.currentTarget.value, weekday: getWeekdayFromDate(event.currentTarget.value) })} /></label>
-                  <label>Uhrzeit<input name="startTime" type="time" value={start} onChange={(event) => updateDraft({ startTime: event.currentTarget.value, time: event.currentTarget.value })} /></label>
-                  <label>Ende<input name="endTime" type="time" value={draft.endTime || end} onChange={(event) => updateDraft({ endTime: event.currentTarget.value })} /></label>
-                  <label>Dauer<input name="durationMinutes" type="number" min="10" step="5" value={draft.durationMinutes} onChange={(event) => updateDraft({ durationMinutes: Number(event.currentTarget.value) || 75 })} /></label>
-                  <label>Status<select name="status" value={draft.status} onChange={(event) => updateDraft({ status: event.currentTarget.value as PlanStatus })}>{planStatuses.map((status) => <option key={status} value={status}>{statusLabel[status]}</option>)}</select></label>
+          <div className="tablet-builder-workspace">
+            <aside className="tablet-block-library" aria-label="Trainingsbausteine">
+              <div className="tablet-panel-heading">
+                <p className="eyebrow">Trainingsbausteine</p>
+                <h3>Bausteine</h3>
+              </div>
+              <label className="tablet-builder-search">Suche<input value={tabletBuilderSearch} onChange={(event) => setTabletBuilderSearch(event.currentTarget.value)} placeholder="Baustein suchen" /></label>
+              <div className="template-tag-filter compact" aria-label="Bausteine filtern">
+                {templateTagFilters.map((tag) => (
+                  <button key={tag} className={tabletBuilderCategory === tag ? "is-active" : ""} type="button" onClick={() => setTabletBuilderCategory(tag)}>
+                    {tag === "all" ? "Alle" : tag}
+                  </button>
+                ))}
+              </div>
+              <div className="tablet-block-list">
+                {builderTemplates.map((template) => (
+                  <button
+                    className={`tablet-block-card template-tone-${getTemplateToneClass(template)}`}
+                    draggable
+                    key={template.id}
+                    type="button"
+                    onClick={() => addBuilderSection(template)}
+                    onDragStart={(event) => handleTemplateDragStart(event, template.id)}
+                    onDragEnd={() => setDragTemplateId("")}
+                  >
+                    <span><i aria-hidden="true" />{getTemplateCategoryGroup(template)}</span>
+                    <strong>{template.title}</strong>
+                    <small>{template.defaultDurationMinutes ?? 20} min · {intensityLabel[template.defaultIntensity]}</small>
+                    <em>{template.focus || template.trainingType}</em>
+                  </button>
+                ))}
+              </div>
+            </aside>
+
+            <section className="tablet-training-timeline" aria-label="Training Timeline" onDragOver={dragOverTimeline} onDrop={dropTemplateOnTimeline}>
+              <div className="tablet-timeline-top">
+                <div>
+                  <p className="eyebrow">Training erstellen</p>
+                  <label>Titel<input value={draft.title} onChange={(event) => updateDraft({ title: event.currentTarget.value })} placeholder="K1 Technik - Linienwahl" /></label>
                 </div>
-              </section>
-
-              <section className={`tablet-builder-section ${tabletBuilderStep === "assignment" ? "is-active" : "is-hidden"}`}>
-                <div className="section-heading compact"><div><p className="eyebrow">2</p><h3>Zuordnung</h3></div></div>
-                <div className="tablet-builder-grid">
-                  <label>Zuweisung<select name="assignedType" value={draft.assignedType} onChange={(event) => selectSingleTarget(event.currentTarget.value as PlanEntry["assignedType"])}>
-                    <option value="self">Für mich</option>
-                    {isCoach ? <option value="athlete">Einzelner Sportler</option> : null}
-                    {isCoach ? <option value="group">Trainingsgruppe</option> : null}
-                  </select></label>
-                  {draft.assignedType === "athlete" ? <label>Sportler<select value={draft.assignedAthleteIds[0] ?? draft.assignedAthleteId ?? ""} onChange={(event) => selectSingleTarget("athlete", event.currentTarget.value)}>{visibleAthletes.map((athlete) => <option key={athlete.id} value={athlete.id}>{getAthleteName(athlete)}</option>)}</select></label> : null}
-                  {draft.assignedType === "group" ? <label>Gruppe<select value={draft.assignedGroupIds[0] ?? draft.assignedGroupId ?? ""} onChange={(event) => selectSingleTarget("group", event.currentTarget.value)}>{visibleGroups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select></label> : null}
-                  <label>Bootsklasse<select name="boatClass" value={draft.boatClass} onChange={(event) => updateDraft({ boatClass: event.currentTarget.value as TrainingBoatClass })}><option value="K1">K1</option><option value="C1">C1</option><option value="K1+C1">K1+C1</option><option value="none">ohne Boot</option></select></label>
-                  <label>Trainer<select value={user.userId} disabled><option>{getUserProfileName(user)}</option></select></label>
+                <div className="tablet-timeline-meta">
+                  <label>Datum<input type="date" value={draft.date} onChange={(event) => updateDraft({ date: event.currentTarget.value, weekday: getWeekdayFromDate(event.currentTarget.value) })} /></label>
+                  <label>Start<input type="time" value={start} onChange={(event) => updateDraft({ startTime: event.currentTarget.value, time: event.currentTarget.value, endTime: addMinutesToTime(event.currentTarget.value, totalDuration) })} /></label>
                 </div>
-                {draft.assignedType === "athlete" ? draft.assignedAthleteIds.map((id) => <input key={id} type="hidden" name="assignedAthleteIds" value={id} />) : null}
-                {draft.assignedType === "group" ? draft.assignedGroupIds.map((id) => <input key={id} type="hidden" name="assignedGroupIds" value={id} />) : null}
-              </section>
+              </div>
 
-              <section className={`tablet-builder-section ${tabletBuilderStep === "content" ? "is-active" : "is-hidden"}`}>
-                <div className="section-heading compact"><div><p className="eyebrow">3</p><h3>Trainingsinhalt</h3></div></div>
-                <div className="tablet-builder-grid">
-                  <label>Vorlage laden<select value="" onChange={(event) => applyTemplateToDraft(event.currentTarget.value)}>
-                    <option value="">Keine Vorlage</option>
-                    {visibleTemplates.slice(0, 12).map((template) => <option key={template.id} value={template.id}>{template.title}</option>)}
-                  </select></label>
-                  <label>Bereich<select name="area" value={draft.area} onChange={(event) => { const area = event.currentTarget.value as TrainingArea; setSelectedArea(area); updateDraft({ area, trainingType: trainingTypeGroups[area][0] }); }}>{trainingAreas.map((area) => <option key={area} value={area}>{area}</option>)}</select></label>
-                  <label>Trainingsart<select name="trainingType" value={draft.trainingType} onChange={(event) => updateDraft({ trainingType: event.currentTarget.value as TrainingPlanType })}>{trainingTypeGroups[selectedArea].map((trainingType) => <option key={trainingType} value={trainingType}>{trainingType}</option>)}</select></label>
-                </div>
-                <label>Ziel / Fokus<input name="focus" value={draft.focus || draft.goal} onChange={(event) => updateDraft({ focus: event.currentTarget.value, goal: event.currentTarget.value })} placeholder="Linienwahl, Druck, Stabilität" /></label>
-                <label>Beschreibung<textarea name="description" value={draft.description} onChange={(event) => updateDraft({ description: event.currentTarget.value })} rows={4} /></label>
-                <div className="tablet-section-builder" aria-label="Trainingsabschnitte">
-                  <div className="tablet-section-builder-head"><strong>Abschnitte</strong><button type="button" onClick={() => updateDraft({ description: [draft.description, "Neuer Abschnitt: Ziel, Dauer, Intensität"].filter(Boolean).join("\n") })}>+ Abschnitt</button></div>
-                  {sectionHints.map(([name, duration, intensity]) => (
-                    <article key={name}><span>{name}</span><strong>{duration}</strong><em>{intensity}</em></article>
-                  ))}
-                </div>
-              </section>
+              <div className="tablet-assignment-strip" aria-label="Zuweisung">
+                {(["self", "athlete", "group"] as PlanEntry["assignedType"][]).map((type) => (
+                  <button
+                    key={type}
+                    className={draft.assignedType === type ? "is-active" : ""}
+                    type="button"
+                    onClick={() => selectSingleTarget(type, type === "athlete" ? visibleAthletes[0]?.id ?? "" : type === "group" ? visibleGroups[0]?.id ?? "" : "")}
+                  >
+                    {type === "self" ? "Mich" : type === "athlete" ? "Sportler" : "Gruppe"}
+                  </button>
+                ))}
+                {draft.assignedType === "athlete" ? <select aria-label="Sportler" value={selectedAthleteId} onChange={(event) => selectSingleTarget("athlete", event.currentTarget.value)}>{visibleAthletes.map((athlete) => <option key={athlete.id} value={athlete.id}>{getAthleteName(athlete)}</option>)}</select> : null}
+                {draft.assignedType === "group" ? <select aria-label="Gruppe" value={selectedGroupId} onChange={(event) => selectSingleTarget("group", event.currentTarget.value)}>{visibleGroups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select> : null}
+              </div>
 
-              <section className={`tablet-builder-section ${tabletBuilderStep === "load" ? "is-active" : "is-hidden"}`}>
-                <div className="section-heading compact"><div><p className="eyebrow">4</p><h3>Belastung / Steuerung</h3></div></div>
-                <div className="tablet-builder-grid">
-                  <label>Intensität<select name="intensity" value={draft.intensity} onChange={(event) => updateDraft({ intensity: event.currentTarget.value as TrainingIntensity })}>{trainingIntensities.map((intensity) => <option key={intensity} value={intensity}>{intensityLabel[intensity]}</option>)}</select></label>
-                  <label>Wiederholung<select name="repeat" value={selectedRepeat} onChange={(event) => { const repeat = event.currentTarget.value as TrainingRepeat; setSelectedRepeat(repeat); updateDraft({ repeat }); }}><option value="none">Keine</option><option value="weekly">Wöchentlich</option><option value="daily">Täglich</option></select></label>
-                  <label>Bis<input name="repeatUntil" type="date" value={selectedRepeatUntil} disabled={selectedRepeat === "none"} onChange={(event) => { setSelectedRepeatUntil(event.currentTarget.value); updateDraft({ repeatUntil: event.currentTarget.value }); }} /></label>
-                  <label>Anzahl<input name="repeatMaxCount" type="number" min="1" max="90" value={selectedRepeatMaxCount ?? ""} disabled={selectedRepeat === "none"} onChange={(event) => { const value = Number(event.currentTarget.value) || undefined; setSelectedRepeatMaxCount(value); updateDraft({ repeatMaxCount: value }); }} /></label>
-                </div>
-              </section>
+              <div className={`tablet-drop-zone ${dragTemplateId ? "is-active" : ""}`}>
+                {dragTemplateId ? "Hier ablegen und zur Timeline hinzufuegen" : "Baustein antippen oder hier ablegen"}
+              </div>
 
-              <section className={`tablet-builder-section ${tabletBuilderStep === "notes" ? "is-active" : "is-hidden"}`}>
-                <div className="section-heading compact"><div><p className="eyebrow">5</p><h3>Notizen</h3></div></div>
-                <label>Trainerhinweise / Material<textarea name="notes" value={draft.notes || draft.note} onChange={(event) => updateDraft({ notes: event.currentTarget.value, note: event.currentTarget.value })} rows={3} /></label>
-                <label>Individuelle Anpassung<textarea name="feedbackNote" value={draft.feedbackNote} onChange={(event) => updateDraft({ feedbackNote: event.currentTarget.value })} rows={2} /></label>
-              </section>
-
-              <div className="tablet-builder-step-actions">
-                <button type="button" onClick={() => goToBuilderStep(-1)} disabled={activeStepIndex === 0}>Zurück</button>
-                <span>Schritt {activeStepIndex + 1} von {tabletBuilderSteps.length}</span>
-                {activeStepIndex < tabletBuilderSteps.length - 1 ? (
-                  <button className="save-button" type="button" onClick={() => goToBuilderStep(1)}>Weiter</button>
-                ) : (
-                  <button className="save-button" type="submit">Training planen</button>
+              <div className="tablet-timeline-list">
+                {tabletBuilderSections.length > 0 ? tabletBuilderSections.map((section, index) => {
+                  const sectionStart = addMinutesToTime(start, tabletBuilderSections.slice(0, index).reduce((sum, item) => sum + item.durationMinutes, 0));
+                  return (
+                    <article className={`tablet-timeline-card template-tone-${getBuilderSectionToneClass(section)} ${selectedTabletSectionId === section.id ? "is-selected" : ""}`} key={section.id}>
+                      <button type="button" onClick={() => setSelectedTabletSectionId(section.id)}>
+                        <span>{sectionStart}</span>
+                        <strong>{section.title}</strong>
+                        <small>{section.category} · {intensityLabel[section.intensity]}{section.optional ? " · optional" : ""}</small>
+                      </button>
+                      <div className="tablet-duration-stepper">
+                        <button type="button" onClick={() => updateBuilderSection(section.id, { durationMinutes: Math.max(5, section.durationMinutes - 5) })}>-5</button>
+                        <b>{section.durationMinutes} min</b>
+                        <button type="button" onClick={() => updateBuilderSection(section.id, { durationMinutes: section.durationMinutes + 5 })}>+5</button>
+                      </div>
+                      <menu>
+                        <button type="button" onClick={() => duplicateBuilderSection(section)}>Duplizieren</button>
+                        <button type="button" onClick={() => moveBuilderSection(section.id, -1)}>Hoch</button>
+                        <button type="button" onClick={() => moveBuilderSection(section.id, 1)}>Runter</button>
+                        <button type="button" onClick={() => updateBuilderSection(section.id, { optional: !section.optional })}>Optional</button>
+                        <button className="delete-button" type="button" onClick={() => deleteBuilderSection(section.id)}>Loeschen</button>
+                      </menu>
+                    </article>
+                  );
+                }) : (
+                  <div className="tablet-timeline-empty">
+                    <h3>Noch kein Ablauf</h3>
+                    <p>Fuege links Bausteine hinzu oder starte mit Quick Build.</p>
+                    <button type="button" onClick={applyQuickBuild}>Quick Build uebernehmen</button>
+                  </div>
                 )}
               </div>
-            </div>
 
-            <aside className="tablet-builder-preview" aria-label="Live Vorschau">
-              <p className="eyebrow">Live-Vorschau</p>
-              <h3>{draft.title || "Neues Training"}</h3>
-              <span className={`status-pill ${getEntryStatusClass(draft.status)}`}>{statusLabel[draft.status]}</span>
-              <dl>
-                <div><dt>Datum</dt><dd>{draft.date}</dd></div>
-                <div><dt>Zeit</dt><dd>{start} - {end}</dd></div>
-                <div><dt>Dauer</dt><dd>{draft.durationMinutes} min</dd></div>
-                <div><dt>Bereich</dt><dd>{draft.area}</dd></div>
-                <div><dt>Intensität</dt><dd>{intensityLabel[draft.intensity]}</dd></div>
-                <div><dt>Zuweisung</dt><dd>{targetName}</dd></div>
-                <div><dt>Boot</dt><dd>{draft.boatClass}</dd></div>
-                <div><dt>Trainer</dt><dd>{getUserProfileName(user)}</dd></div>
-              </dl>
-              {focusParts.length > 0 ? <div className="tablet-preview-chips">{focusParts.map((part) => <span key={part}>{part}</span>)}</div> : null}
-              {draft.description ? <p>{draft.description}</p> : <p className="card-note">Beschreibung erscheint hier während der Eingabe.</p>}
+              <footer className="tablet-timeline-summary">
+                <strong>Gesamt: {totalDuration} min</strong>
+                <span>{start} - {plannedEnd} · {targetName}</span>
+              </footer>
+            </section>
+
+            <aside className="tablet-builder-inspector" aria-label="Details und Vorschau">
+              {selectedSection ? (
+                <>
+                  <div className="tablet-panel-heading">
+                    <p className="eyebrow">{selectedSection.category}</p>
+                    <h3>{selectedSection.title}</h3>
+                  </div>
+                  <label>Titel<input value={selectedSection.title} onChange={(event) => updateBuilderSection(selectedSection.id, { title: event.currentTarget.value })} /></label>
+                  <label>Dauer<input type="number" min="5" step="5" value={selectedSection.durationMinutes} onChange={(event) => updateBuilderSection(selectedSection.id, { durationMinutes: Number(event.currentTarget.value) || 5 })} /></label>
+                  <label>Intensität<select value={selectedSection.intensity} onChange={(event) => updateBuilderSection(selectedSection.id, { intensity: event.currentTarget.value as TrainingIntensity })}>{trainingIntensities.map((intensity) => <option key={intensity} value={intensity}>{intensityLabel[intensity]}</option>)}</select></label>
+                  <label>Boot<select value={selectedSection.boatClass} onChange={(event) => updateBuilderSection(selectedSection.id, { boatClass: event.currentTarget.value as TrainingBoatClass })}><option value="K1">K1</option><option value="C1">C1</option><option value="K1+C1">K1+C1</option><option value="none">ohne Boot</option></select></label>
+                  <label>Ziel / Fokus<textarea rows={3} value={selectedSection.focus} onChange={(event) => updateBuilderSection(selectedSection.id, { focus: event.currentTarget.value })} /></label>
+                  <label>Beschreibung<textarea rows={4} value={selectedSection.description} onChange={(event) => updateBuilderSection(selectedSection.id, { description: event.currentTarget.value })} /></label>
+                  <label className="toggle-row"><span>Optionaler Abschnitt</span><input type="checkbox" checked={selectedSection.optional} onChange={(event) => updateBuilderSection(selectedSection.id, { optional: event.currentTarget.checked })} /></label>
+                </>
+              ) : (
+                <>
+                  <div className="tablet-panel-heading">
+                    <p className="eyebrow">Vorschau</p>
+                    <h3>{draft.title || "Neues Training"}</h3>
+                  </div>
+                  <dl>
+                    <div><dt>Datum</dt><dd>{draft.date}</dd></div>
+                    <div><dt>Zeit</dt><dd>{start} - {plannedEnd}</dd></div>
+                    <div><dt>Dauer</dt><dd>{totalDuration} min</dd></div>
+                    <div><dt>Bereich</dt><dd>{draft.area}</dd></div>
+                    <div><dt>Intensität</dt><dd>{intensityLabel[draft.intensity]}</dd></div>
+                    <div><dt>Zuweisung</dt><dd>{targetName}</dd></div>
+                    <div><dt>Trainer</dt><dd>{getUserProfileName(user)}</dd></div>
+                  </dl>
+                  {focusParts.length > 0 ? <div className="tablet-preview-chips">{focusParts.map((part) => <span key={part}>{part}</span>)}</div> : null}
+                  <label>Fokus<textarea rows={3} value={draft.focus || draft.goal} onChange={(event) => updateDraft({ focus: event.currentTarget.value, goal: event.currentTarget.value })} /></label>
+                  <label>Notizen<textarea rows={3} value={draft.notes || draft.note} onChange={(event) => updateDraft({ notes: event.currentTarget.value, note: event.currentTarget.value })} /></label>
+                </>
+              )}
+              <div className="tablet-load-meter" aria-label="Belastung">
+                <span>Belastung</span>
+                <b>{intensityLabel[draft.intensity]}</b>
+                <i />
+              </div>
             </aside>
           </div>
         </form>
