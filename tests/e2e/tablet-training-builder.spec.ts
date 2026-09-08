@@ -24,8 +24,9 @@ async function clickVisible(page: Page, testId: string) {
 
 async function openTabletBuilder(page: Page) {
   await clickVisible(page, "nav-training");
-  const createTab = page.locator(".training-segment-switcher").getByRole("tab", { name: "Erstellen" });
-  if (await createTab.isVisible().catch(() => false)) await createTab.click();
+  const createTab = page.getByRole("tab", { name: "Erstellen" }).first();
+  await expect(createTab).toBeVisible({ timeout: 20_000 });
+  await createTab.click();
   await expect(page.locator(".tablet-training-builder-shell")).toBeVisible({ timeout: 20_000 });
 }
 
@@ -74,10 +75,12 @@ test.describe("tablet training builder", () => {
     await capture(page, "03-builder-with-sections.png");
 
     await page.locator(".tablet-timeline-card").first().click();
-    await expect(page.locator(".tablet-builder-inspector").getByLabel("Dauer")).toBeVisible({ timeout: 20_000 });
+    await expect(page.locator(".tablet-builder-inspector").getByRole("spinbutton", { name: "Dauer" })).toBeVisible({ timeout: 20_000 });
     await capture(page, "04-builder-section-inspector.png");
 
-    await page.locator(".tablet-timeline-card").first().locator("menu").getByRole("button", { name: "Duplizieren" }).click();
+    const firstSectionMenu = page.locator(".tablet-timeline-card").first().locator(".tablet-section-menu");
+    await firstSectionMenu.locator("summary").click();
+    await firstSectionMenu.getByRole("button", { name: "Duplizieren" }).click();
     await capture(page, "05-builder-duplicate.png");
 
     await page.locator(".tablet-builder-inspector").getByLabel("Ziel / Fokus").fill("Linienwahl, Druck, stabiler Rhythmus");

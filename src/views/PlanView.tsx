@@ -398,6 +398,12 @@ export function PlanView({
     }
   }, [workflowTab, workflowTabs]);
 
+  useEffect(() => {
+    if (!isPhone && (initialWorkflowTab === "templates" || initialWorkflowTab === "feedback")) {
+      setWorkflowTab(initialWorkflowTab);
+    }
+  }, [initialWorkflowTab, isPhone]);
+
   const visibleAthletes = useMemo(() => getAthletesForCurrentUser(data, user), [data, user]);
   const visibleGroups = useMemo(() => getGroupsForCurrentUser(data, user), [data, user]);
   const trainerTaskAssignees = useMemo(() => {
@@ -475,13 +481,16 @@ export function PlanView({
     const rangeStart = journalRangeFilter === "all" ? "" : addDays(today, -Number(journalRangeFilter));
     return visibleEntries.filter((entry) => {
       if (rangeStart && entry.date < rangeStart) return false;
-      if (journalAthleteFilter === "all") return true;
       const entryFeedback = data.trainingFeedback.filter((feedback) => feedback.trainingId === entry.id);
+      if (areaFilter !== "all" && entry.area !== areaFilter) return false;
+      if (statusFilter !== "all" && entry.status !== statusFilter) return false;
+      if (groupFilter !== "all" && !entry.assignedGroupIds.includes(groupFilter) && entry.assignedGroupId !== groupFilter) return false;
+      if (journalAthleteFilter === "all") return true;
       return entry.assignedAthleteIds.includes(journalAthleteFilter)
         || entry.assignedAthleteId === journalAthleteFilter
         || entryFeedback.some((feedback) => feedback.athleteUserId === journalAthleteFilter);
     });
-  }, [data.trainingFeedback, journalAthleteFilter, journalRangeFilter, visibleEntries]);
+  }, [areaFilter, data.trainingFeedback, groupFilter, journalAthleteFilter, journalRangeFilter, statusFilter, visibleEntries]);
   const entriesWithFeedback = journalFilteredEntries.filter((entry) => data.trainingFeedback.some((feedback) => feedback.trainingId === entry.id));
   const openFeedbackEntries = journalFilteredEntries.filter((entry) => isDoneStatus(entry.status) && !data.trainingFeedback.some((feedback) => feedback.trainingId === entry.id));
   const openFeedbackCount = openFeedbackEntries.length;
@@ -760,9 +769,9 @@ export function PlanView({
   };
 
   useEffect(() => {
-    if (!tabletBuilderOnly || !isTablet || draft) return;
+    if (!tabletBuilderOnly || isPhone || draft) return;
     startCreate();
-  }, [draft, isTablet, tabletBuilderOnly]);
+  }, [draft, isPhone, tabletBuilderOnly]);
 
   const startTemplateCreate = () => {
     const timestamp = new Date().toISOString();
@@ -1498,9 +1507,14 @@ export function PlanView({
               <h2>{draft.id ? "Training bearbeiten" : "Training erstellen"}</h2>
             </div>
             <div className="tablet-builder-actions">
-              <button type="button" onClick={() => updateDraft({ id: "", title: `${draft.title || "Training"} Kopie` })}>Duplizieren</button>
               <button type="button" onClick={saveDraftAsTemplate}>Als Vorlage speichern</button>
-              <button type="button" onClick={() => setDraft(null)}>Abbrechen</button>
+              <details className="tablet-builder-more">
+                <summary aria-label="Weitere Trainingsaktionen">...</summary>
+                <div>
+                  <button type="button" onClick={() => updateDraft({ id: "", title: `${draft.title || "Training"} Kopie` })}>Training duplizieren</button>
+                  <button type="button" onClick={() => setDraft(null)}>Entwurf verwerfen</button>
+                </div>
+              </details>
               <button className="save-button" type="submit">Training planen</button>
             </div>
           </header>
@@ -1608,13 +1622,17 @@ export function PlanView({
                         <b>{section.durationMinutes} min</b>
                         <button type="button" onClick={() => updateBuilderSection(section.id, { durationMinutes: section.durationMinutes + 5 })}>+5</button>
                       </div>
-                      <menu>
-                        <button type="button" onClick={() => duplicateBuilderSection(section)}>Duplizieren</button>
-                        <button type="button" onClick={() => moveBuilderSection(section.id, -1)}>Hoch</button>
-                        <button type="button" onClick={() => moveBuilderSection(section.id, 1)}>Runter</button>
-                        <button type="button" onClick={() => updateBuilderSection(section.id, { optional: !section.optional })}>Optional</button>
-                        <button className="delete-button" type="button" onClick={() => deleteBuilderSection(section.id)}>Loeschen</button>
-                      </menu>
+                      <details className="tablet-section-menu">
+                        <summary aria-label={`Aktionen für ${section.title}`}>...</summary>
+                        <menu>
+                          <button type="button" onClick={() => setSelectedTabletSectionId(section.id)}>Bearbeiten</button>
+                          <button type="button" onClick={() => duplicateBuilderSection(section)}>Duplizieren</button>
+                          <button type="button" onClick={() => moveBuilderSection(section.id, -1)}>Nach oben</button>
+                          <button type="button" onClick={() => moveBuilderSection(section.id, 1)}>Nach unten</button>
+                          <button type="button" onClick={() => updateBuilderSection(section.id, { optional: !section.optional })}>Optional markieren</button>
+                          <button className="delete-button" type="button" onClick={() => deleteBuilderSection(section.id)}>Loeschen</button>
+                        </menu>
+                      </details>
                     </article>
                   );
                 }) : (
@@ -1887,11 +1905,64 @@ export function PlanView({
     );
   };
 
+  const renderProgramTemplateSections = () => {
+    if (!isCoach || isPhone) return null;
+
+    return (
+      <section className="program-template-sections" aria-label="Wochen- und Saisonvorlagen">
+        <div className="program-template-group">
+          <div className="section-heading compact">
+            <div>
+              <p className="eyebrow">Woche</p>
+              <h3>Wochenvorlagen</h3>
+            </div>
+          </div>
+          <div className="program-template-grid">
+            {weeklyPlanningTemplates.map((weeklyTemplate) => (
+              <article className="program-template-card" key={weeklyTemplate.id}>
+                <div>
+                  <span>{weeklyTemplate.category}</span>
+                  <strong>{weeklyTemplate.title}</strong>
+                  <small>{weeklyTemplate.items.length} Einheiten</small>
+                </div>
+                <button type="button" onClick={() => applyWeeklyTemplate(weeklyTemplate)}>Verwenden</button>
+              </article>
+            ))}
+          </div>
+        </div>
+
+        <div className="program-template-group">
+          <div className="section-heading compact">
+            <div>
+              <p className="eyebrow">Saison</p>
+              <h3>Saisonbausteine</h3>
+            </div>
+          </div>
+          <div className="program-template-grid">
+            {seasonPlanningBlocks.map((seasonBlock) => (
+              <article className="program-template-card" key={seasonBlock.id}>
+                <div>
+                  <span>{seasonBlock.weeklyTemplateIds.length} Wochen</span>
+                  <strong>{seasonBlock.title}</strong>
+                  <small>{seasonBlock.description}</small>
+                </div>
+                <button type="button" onClick={() => applySeasonBlock(seasonBlock.id)}>Verwenden</button>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  };
+
   const repeatPreviewCount = draft && selectedRepeat !== "none" && (selectedRepeatUntil || selectedRepeatMaxCount)
     ? expandTrainingRepeatDates(selectedDate, selectedRepeat, selectedRepeatUntil, selectedRepeatMaxCount).length
     : 1;
+  const isTemplatesOnlyMode = !isPhone && initialWorkflowTab === "templates";
+  const isJournalOnlyMode = !isPhone && initialWorkflowTab === "feedback";
+  const isSingleWorkspaceMode = isTemplatesOnlyMode || isJournalOnlyMode;
 
-  if (tabletBuilderOnly && isTablet) {
+  if (tabletBuilderOnly && !isPhone) {
     return (
       <div className="stack tablet-training-builder-page">
         {draft ? renderTabletTrainingBuilder() : (
@@ -1910,20 +1981,20 @@ export function PlanView({
   }
 
   return (
-    <div className="stack calendar-shell planning-shell">
-      <section className="summary-strip">
+    <div className={`stack calendar-shell planning-shell ${isSingleWorkspaceMode ? "training-single-workspace" : ""} ${isTemplatesOnlyMode ? "training-templates-only" : ""} ${isJournalOnlyMode ? "training-journal-only" : ""}`}>
+      {!isSingleWorkspaceMode ? <section className="summary-strip">
         <div><span>Diese Woche</span><strong>{plannedThisWeek.length}</strong></div>
         <div><span>Erledigt</span><strong>{completedThisWeek.length}</strong></div>
         <div><span>Ausgelassen</span><strong>{skippedThisWeek.length}</strong></div>
-      </section>
+      </section> : null}
 
-      <section className="summary-strip">
+      {!isSingleWorkspaceMode ? <section className="summary-strip">
         <div><span>Favorisierte Vorlagen</span><strong>{visibleTemplates.filter((template) => template.isFavorite).length}</strong></div>
         <div><span>Nächste Woche</span><strong>{nextWeekCount}</strong></div>
         <div><span>{isCoach ? "Ungeplante Sportler" : "Offene Rückmeldung"}</span><strong>{isCoach ? unplannedAthletes.length : openFeedbackCount}</strong></div>
-      </section>
+      </section> : null}
 
-      <section className="training-workflow-hero section-block">
+      {!isSingleWorkspaceMode ? <section className="training-workflow-hero section-block">
         <div>
           <p className="eyebrow">{isCoach ? "Coach Workflow" : "Mein Trainingsplan"}</p>
           <h3>{isCoach ? "Trainingsplanung 2.0" : "Deine nächsten Einheiten"}</h3>
@@ -1933,9 +2004,9 @@ export function PlanView({
           <button className="primary-button" type="button" onClick={startCreate} aria-label="Neue Trainingseinheit im Plan eintragen">Training planen</button>
           {isCoach ? <button type="button" onClick={startTemplateCreate}>Vorlage erstellen</button> : null}
         </div>
-      </section>
+      </section> : null}
 
-      <div className="training-journal-actions" aria-label="Trainingsplan Navigation">
+      {!isSingleWorkspaceMode ? <div className="training-journal-actions" aria-label="Trainingsplan Navigation">
         <button type="button" className="secondary-button" onClick={onOpenOverview} aria-label="Zur Training-Übersicht zurückkehren">
           Zur Übersicht
         </button>
@@ -1945,17 +2016,17 @@ export function PlanView({
         <button type="button" className="secondary-button" onClick={onOpenJournal} aria-label="Vom Trainingsplan zum Trainingstagebuch wechseln">
           Trainingstagebuch
         </button>
-      </div>
+      </div> : null}
 
-      <nav className="calendar-view-tabs workflow-tabs" aria-label="Trainingsplanung Bereiche">
+      {!isSingleWorkspaceMode ? <nav className="calendar-view-tabs workflow-tabs" aria-label="Trainingsplanung Bereiche">
         {workflowTabs.map((tab) => (
           <button className={workflowTab === tab.id ? "active" : ""} key={tab.id} type="button" onClick={() => switchWorkflowTab(tab)}>
             {tab.label}
           </button>
         ))}
-      </nav>
+      </nav> : null}
 
-      {(workflowTab === "today" || workflowTab === "week" || workflowTab === "month" || workflowTab === "templates") ? renderPlanningTemplateDock() : null}
+      {!isSingleWorkspaceMode && (workflowTab === "today" || workflowTab === "week" || workflowTab === "month" || workflowTab === "templates") ? renderPlanningTemplateDock() : null}
 
       {workflowTab === "today" || workflowTab === "week" || workflowTab === "month" ? <section className="section-block planning-calendar-panel">
         <div className="section-heading">
@@ -2002,7 +2073,6 @@ export function PlanView({
           <div>
             <p className="eyebrow">Trainingsbibliothek</p>
             <h3>{visibleTemplates.length > 0 ? `${visibleTemplates.length} Vorlagen` : "Noch keine Trainingsvorlagen."}</h3>
-            <p className="card-note">Paddlio-Vorlagen aus der Periodisierung helfen bei Grundlagen-, Aufbau-, Wettkampf- und Regenerationsphasen.</p>
           </div>
           <button className="primary-button" type="button" onClick={startTemplateCreate}>{visibleTemplates.length > 0 ? "Vorlage erstellen" : "Erste Vorlage erstellen"}</button>
         </div>
@@ -2132,6 +2202,8 @@ export function PlanView({
         )}
       </section> : null}
 
+      {workflowTab === "templates" ? renderProgramTemplateSections() : null}
+
       {templateDraft ? (
         <section className="section-block planning-side-editor planning-template-editor">
           <div className="section-heading"><div><p className="eyebrow">Vorlage</p><h3>{templateDraft.id ? "Vorlage bearbeiten" : "Vorlage erstellen"}</h3></div></div>
@@ -2156,7 +2228,7 @@ export function PlanView({
         </section>
       ) : null}
 
-      {workflowTab === "templates" || workflowTab === "week" ? <section className="section-block planning-side-editor planning-template-plan-panel">
+      {!isTemplatesOnlyMode && (workflowTab === "templates" || workflowTab === "week") ? <section className="section-block planning-side-editor planning-template-plan-panel">
         <div className="section-heading"><div><p className="eyebrow">Schnell planen</p><h3>Aus Vorlage planen</h3></div></div>
         {formMessage ? <p className="auth-message">{formMessage}</p> : null}
         {pendingTemplateId ? (
@@ -2369,6 +2441,18 @@ export function PlanView({
               <option value="90">Letzte 90 Tage</option>
               <option value="all">Alle</option>
             </select></label>
+            {isCoach ? <label>Gruppe<select value={groupFilter} onChange={(event) => setGroupFilter(event.currentTarget.value)}>
+              <option value="all">Alle Gruppen</option>
+              {visibleGroups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}
+            </select></label> : null}
+            <label>Kategorie<select value={areaFilter} onChange={(event) => setAreaFilter(event.currentTarget.value as typeof areaFilter)}>
+              <option value="all">Alle Kategorien</option>
+              {trainingAreas.map((area) => <option key={area} value={area}>{area}</option>)}
+            </select></label>
+            <label>Status<select value={statusFilter} onChange={(event) => setStatusFilter(event.currentTarget.value as typeof statusFilter)}>
+              <option value="all">Alle Status</option>
+              {planStatuses.map((status) => <option key={status} value={status}>{statusLabel[status]}</option>)}
+            </select></label>
           </div>
           <div className="calendar-list">
             {isCoach && openFeedbackEntries.length > 0 ? openFeedbackEntries.map((entry) => (
@@ -2415,7 +2499,7 @@ export function PlanView({
         </section>
       ) : null}
 
-      {isTablet && draft ? renderTabletTrainingBuilder() : null}
+      {!isSingleWorkspaceMode && isTablet && draft ? renderTabletTrainingBuilder() : null}
 
       {!isTablet && draft ? (
         <section className="section-block planning-side-editor planning-draft-editor">

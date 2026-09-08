@@ -109,7 +109,7 @@ const navPageByPage: Partial<Record<PageId, PageId>> = {
 };
 
 const trainingSegments: SegmentItem<TrainingSegment>[] = [
-  { id: "overview", label: "Übersicht" },
+  { id: "overview", label: "Kalender" },
   { id: "sessions", label: "Erstellen" },
   { id: "plan", label: "Vorlagen" },
   { id: "journal", label: "Journal" },
@@ -958,6 +958,29 @@ function AppContent() {
           />
         );
       case "journal":
+        if (currentDeviceClass !== "phone") {
+          return (
+            <PlanView
+              data={activeData}
+              entries={activePlanEntries}
+              user={activeUser}
+              onSave={upsertPlanEntry}
+              onDelete={deletePlanEntry}
+              onDeleteSeries={deletePlanEntrySeries}
+              onToggleDone={togglePlanEntryDone}
+              onFeedbackSave={saveTrainingFeedback}
+              onDataChange={updateData}
+              onOpenOverview={() => setTrainingSegment("overview")}
+              onOpenSessions={() => {
+                setTrainingSegment("sessions");
+                setNewTrainingSignal((value) => value + 1);
+              }}
+              onOpenJournal={() => setTrainingSegment("journal")}
+              deviceClass={currentDeviceClass}
+              initialWorkflowTab="feedback"
+            />
+          );
+        }
         return (
           <TrainingJournalView
             sessions={data.training}
@@ -972,24 +995,46 @@ function AppContent() {
           />
         );
       case "overview":
+        if (currentDeviceClass === "phone") {
+          return (
+            <TrainingOverviewView
+              plan={activePlanEntries}
+              sessions={data.training}
+              journal={data.journal}
+              onPlanStatusChange={updatePlanEntryStatus}
+              onSaveJournal={upsertJournalEntry}
+              onOpenPlan={() => setTrainingSegment("plan")}
+              onOpenSessions={() => {
+                setTrainingSegment("sessions");
+                setNewTrainingSignal((value) => value + 1);
+              }}
+              onOpenJournal={() => setTrainingSegment("journal")}
+            />
+          );
+        }
         return (
-          <TrainingOverviewView
-            plan={activePlanEntries}
-            sessions={data.training}
+          <TrainingCalendarView
+            entries={activePlanEntries}
             journal={data.journal}
-            onPlanStatusChange={updatePlanEntryStatus}
-            onSaveJournal={upsertJournalEntry}
+            templates={activeData.trainingTemplates}
+            clubId={cloudProfile?.club_id || activeUser.profile.club}
+            data={activeData}
+            user={activeUser}
             onOpenPlan={() => setTrainingSegment("plan")}
-            onOpenSessions={() => {
-              setTrainingSegment("sessions");
-              setNewTrainingSignal((value) => value + 1);
-            }}
             onOpenJournal={() => setTrainingSegment("journal")}
+            onStatusChange={updatePlanEntryStatus}
+            onTemplateInsert={insertCalendarTemplate}
+            onSave={upsertPlanEntry}
+            onDelete={deletePlanEntry}
+            onDeleteSeries={deletePlanEntrySeries}
+            onFeedbackSave={saveTrainingFeedback}
+            onSaveJournal={upsertJournalEntry}
+            deviceClass={currentDeviceClass}
           />
         );
       case "sessions":
       default:
-        if (currentDeviceClass === "tablet") {
+        if (currentDeviceClass !== "phone") {
           return (
             <PlanView
               data={activeData}

@@ -25,19 +25,9 @@ async function clickVisible(page: Page, testId: string) {
 async function openTrainingTemplates(page: Page) {
   await clickVisible(page, "nav-training");
 
-  const templatesTab = page.locator(".training-segment-switcher").getByRole("tab", { name: "Vorlagen" });
-  if (await templatesTab.isVisible().catch(() => false)) {
-    await templatesTab.click();
-  }
-
-  const planningTemplatesTabs = page.locator(".workflow-tabs").getByRole("button", { name: "Vorlagen" });
-  for (let index = 0; index < await planningTemplatesTabs.count(); index += 1) {
-    const tab = planningTemplatesTabs.nth(index);
-    if (await tab.isVisible().catch(() => false)) {
-      await tab.click();
-      break;
-    }
-  }
+  const templatesTab = page.getByRole("tab", { name: "Vorlagen" }).first();
+  await expect(templatesTab).toBeVisible({ timeout: 20_000 });
+  await templatesTab.click();
 
   await expect(page.getByText("Trainingsbibliothek").first()).toBeVisible({ timeout: 20_000 });
   await expect(page.locator(".template-library-redesign-layout, .template-group-list").first()).toBeVisible({ timeout: 20_000 });
@@ -78,13 +68,13 @@ test.describe("template grid redesign", () => {
     await openTemplateDetail(page);
     await page.screenshot({ path: join(screenshotDir, "03-tablet-landscape-template-detail.png"), fullPage: true });
 
-    const weekSection = page.locator(".planning-template-dock .template-dock-section").filter({ hasText: "Wochenvorlagen" }).first();
+    const weekSection = page.locator(".program-template-group").filter({ hasText: "Wochenvorlagen" }).first();
     if (await weekSection.isVisible().catch(() => false)) {
       await weekSection.scrollIntoViewIfNeeded();
       await page.screenshot({ path: join(screenshotDir, "04-tablet-landscape-week-templates.png"), fullPage: true });
     }
 
-    const seasonSection = page.locator(".planning-template-dock .template-dock-section").filter({ hasText: "Saisonbausteine" }).first();
+    const seasonSection = page.locator(".program-template-group").filter({ hasText: "Saisonbausteine" }).first();
     if (await seasonSection.isVisible().catch(() => false)) {
       await seasonSection.scrollIntoViewIfNeeded();
       await page.screenshot({ path: join(screenshotDir, "05-tablet-landscape-season-templates.png"), fullPage: true });
