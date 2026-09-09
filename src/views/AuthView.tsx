@@ -226,7 +226,7 @@ export function AuthView({ onLogin, onRegister, onResetPassword, onResendConfirm
           </form>
         )}
 
-        {isLoginRelevantCloudMessage(cloudMessage) ? <p className="auth-message">{cloudMessage}</p> : null}
+        {isLoginRelevantCloudMessage(cloudMessage) && !message ? <p className="auth-message neutral">{cloudMessage}</p> : null}
         {message ? (
           <div className={`auth-message ${messageOk ? "success" : ""}`}>
             <p>{message}</p>
