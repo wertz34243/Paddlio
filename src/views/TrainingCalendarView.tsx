@@ -1008,7 +1008,6 @@ export function TrainingCalendarView({
           <PeriodizationCalendar months={periodizationMonths} templates={periodizationTemplates} />
         ) : null}
 
-        {!isPhone && !isTabletWorkspace ? <WeekPlanStrip entries={weekEntries} onOpenPlan={onOpenPlan} onOpenEntry={openEntryDetail} /> : null}
       </main>
 
       {!isPhone && hasContextContent ? (
@@ -1996,30 +1995,6 @@ function AgendaList({ entries, onOpenEntry, onStartLive, onFeedback, groups, ath
         </div>
       ))}
       {entries.length === 0 ? <p className="po-muted">Keine Einheiten für die aktuellen Filter.</p> : null}
-    </PaddlioOneCard>
-  );
-}
-
-function WeekPlanStrip({ entries, onOpenPlan, onOpenEntry }: { entries: PlanEntry[]; onOpenPlan: () => void; onOpenEntry: (id: string) => void }) {
-  return (
-    <PaddlioOneCard className="master-week-plan-strip">
-      <div className="po-card-heading-row">
-        <div>
-          <p className="po-eyebrow">Wochenplan</p>
-          <h2>Planbare Einheiten</h2>
-        </div>
-        <PaddlioOneButton variant="secondary" onClick={onOpenPlan}>Plan öffnen</PaddlioOneButton>
-      </div>
-      <div className="master-week-plan-list">
-        {entries.slice(0, 10).map((entry) => (
-          <button className="master-week-row" key={entry.id} type="button" onClick={() => onOpenEntry(entry.id)}>
-            <strong>{getLocalWeekdayLabel(entry.date).slice(0, 2)}</strong>
-            <span>{entry.title || entry.trainingType}</span>
-            <em>{entry.startTime || entry.time || "--"}</em>
-          </button>
-        ))}
-        {entries.length === 0 ? <p className="po-muted">Diese Woche ist noch frei. Ziehe eine Vorlage in den Kalender.</p> : null}
-      </div>
     </PaddlioOneCard>
   );
 }
