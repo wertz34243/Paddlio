@@ -105,6 +105,7 @@ type AuthContextValue = {
   signUp: (input: RegisterInput) => Promise<CloudAuthResult>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<CloudAuthResult>;
+  resendConfirmation: (email: string) => Promise<CloudAuthResult>;
   refreshCloudData: () => Promise<void>;
 };
 
@@ -136,6 +137,11 @@ const isAuthRateLimitError = (error: unknown): boolean => {
 
 const logCloudError = (scope: string, error: unknown) => {
   console.error(`[Paddlio Cloud] ${scope} fehlgeschlagen: ${describeCloudError(error)}`, error);
+};
+
+const getAuthEmailRedirectTo = (): string | undefined => {
+  if (typeof window === "undefined") return undefined;
+  return `${window.location.origin}${window.location.pathname}`;
 };
 
 let optionalCloudErrorCount = 0;
@@ -856,6 +862,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: input.email.trim().toLowerCase(),
       password: input.password,
       options: {
+        ...(getAuthEmailRedirectTo() ? { emailRedirectTo: getAuthEmailRedirectTo() } : {}),
         data: {
           firstName: input.firstName.trim(),
           lastName: input.lastName.trim(),
@@ -887,7 +894,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ok: true,
       message: result.session
         ? "Konto erstellt. Du bist als Athlete angemeldet. Rollen können später im Adminbereich vergeben werden."
-        : "Konto erstellt. Bitte bestätige deine E-Mail, bevor du dich einloggst. Wenn Auto Confirm in Supabase aktiv ist, wirst du direkt angemeldet.",
+        : "Konto erstellt. Supabase hat die Bestätigungsmail angefordert. Bitte prüfe Posteingang und Spam. Falls nichts ankommt, kannst du die Mail hier erneut senden.",
     };
   };
 
@@ -914,6 +921,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { ok: true, message: "Wenn die E-Mail existiert, wurde ein Link zum Zurücksetzen gesendet." };
   };
 
+  const resendConfirmation = async (email: string): Promise<CloudAuthResult> => {
+    const client = getSupabaseClient();
+    if (!client) return { ok: false, message: getSupabaseConfigMessage() };
+
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) return { ok: false, message: "Bitte gib deine E-Mail-Adresse ein." };
+
+    const emailRedirectTo = getAuthEmailRedirectTo();
+    const { error } = await client.auth.resend({
+      type: "signup",
+      email: normalizedEmail,
+      options: emailRedirectTo ? { emailRedirectTo } : undefined,
+    });
+
+    if (error) {
+      if (isAuthRateLimitError(error)) {
+        logCloudError("Bestätigungsmail erneut senden Rate Limit", error);
+        return {
+          ok: false,
+          message: "Supabase blockiert gerade zu viele E-Mail-Anfragen. Bitte warte ein paar Minuten und versuche es erneut.",
+        };
+      }
+
+      return { ok: false, message: error.message };
+    }
+
+    return { ok: true, message: "Bestätigungsmail wurde erneut angefordert. Bitte prüfe auch Spam und Werbung." };
+  };
+
   const value = useMemo<AuthContextValue>(() => ({
     session,
     currentUser,
@@ -932,6 +968,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signUp,
     signOut,
     resetPassword,
+    resendConfirmation,
     refreshCloudData,
   }), [session, currentUser, profile, club, data, loading, cloudStatus, syncCount, pendingSyncCount, lastSyncAt, cloudMessage]);
 

@@ -265,7 +265,7 @@ function DeviceLimitedPanel({
 }
 
 function AppContent() {
-  const { session, data, setData, profile: cloudProfile, loading, cloudStatus, cloudMessage, syncCount, pendingSyncCount, lastSyncAt, signIn, signUp, signOut, resetPassword } = useAuth();
+  const { session, data, setData, profile: cloudProfile, loading, cloudStatus, cloudMessage, syncCount, pendingSyncCount, lastSyncAt, signIn, signUp, signOut, resetPassword, resendConfirmation } = useAuth();
   const [activePage, setActivePage] = useState<PageId>("dashboard");
   const [trainingSegment, setTrainingSegment] = useState<TrainingSegment>("overview");
   const [trainingSwipeStart, setTrainingSwipeStart] = useState<{ x: number; y: number } | null>(null);
@@ -305,7 +305,15 @@ function AppContent() {
   }
 
   if (!session || !data) {
-    return <AuthView onLogin={signIn} onRegister={signUp} onResetPassword={resetPassword} cloudMessage={cloudMessage || "Bitte melde dich mit deinem Paddlio Cloud-Konto an."} />;
+    return (
+      <AuthView
+        onLogin={signIn}
+        onRegister={signUp}
+        onResetPassword={resetPassword}
+        onResendConfirmation={resendConfirmation}
+        cloudMessage={cloudMessage || "Bitte melde dich mit deinem Paddlio Cloud-Konto an."}
+      />
+    );
   }
 
   const activeUser = getActiveUser(data.users, data.activeUserId);

@@ -9,6 +9,7 @@ type AuthViewProps = {
   onLogin: (input: LoginInput) => Promise<CloudAuthResult>;
   onRegister: (input: RegisterInput) => Promise<CloudAuthResult>;
   onResetPassword: (email: string) => Promise<CloudAuthResult>;
+  onResendConfirmation: (email: string) => Promise<CloudAuthResult>;
   cloudMessage?: string;
 };
 
@@ -17,13 +18,16 @@ const isLoginRelevantCloudMessage = (value = ""): boolean => {
   return !/optionale Module|Zusatzfunktionen/i.test(value);
 };
 
-export function AuthView({ onLogin, onRegister, onResetPassword, cloudMessage }: AuthViewProps) {
+export function AuthView({ onLogin, onRegister, onResetPassword, onResendConfirmation, cloudMessage }: AuthViewProps) {
   const [mode, setMode] = useState<AuthMode>("login");
   const [clubs] = useState(() => loadClubs().filter((club) => club.status === "active"));
   const [suggestClub, setSuggestClub] = useState(false);
   const [message, setMessage] = useState("");
+  const [messageOk, setMessageOk] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
+  const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState("");
+  const [resendPending, setResendPending] = useState(false);
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -34,15 +38,17 @@ export function AuthView({ onLogin, onRegister, onResetPassword, cloudMessage }:
     });
 
     setMessage(result.ok ? result.message ?? "" : result.message);
+    setMessageOk(result.ok);
   };
 
   const handleRegister = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") ?? "");
     const result = await onRegister({
       firstName: String(formData.get("firstName") ?? ""),
       lastName: String(formData.get("lastName") ?? ""),
-      email: String(formData.get("email") ?? ""),
+      email,
       password: String(formData.get("password") ?? ""),
       passwordRepeat: String(formData.get("passwordRepeat") ?? ""),
       clubId: suggestClub ? "" : String(formData.get("clubId") ?? ""),
@@ -52,6 +58,8 @@ export function AuthView({ onLogin, onRegister, onResetPassword, cloudMessage }:
     });
 
     setMessage(result.ok ? result.message ?? "" : result.message);
+    setMessageOk(result.ok);
+    setPendingConfirmationEmail(result.ok ? email.trim().toLowerCase() : "");
   };
 
   const handleResetPassword = async () => {
@@ -63,16 +71,34 @@ export function AuthView({ onLogin, onRegister, onResetPassword, cloudMessage }:
 
     const result = await onResetPassword(email);
     setMessage(result.message ?? "Passwort-Reset wurde angefordert.");
+    setMessageOk(result.ok);
     if (result.ok) {
       setResetOpen(false);
       setResetEmail("");
     }
   };
 
+  const handleResendConfirmation = async () => {
+    const email = pendingConfirmationEmail.trim();
+    if (!email) {
+      setMessage("Bitte registriere dich zuerst mit deiner E-Mail-Adresse.");
+      setMessageOk(false);
+      return;
+    }
+
+    setResendPending(true);
+    const result = await onResendConfirmation(email);
+    setResendPending(false);
+    setMessage(result.ok ? result.message ?? "" : result.message);
+    setMessageOk(result.ok);
+  };
+
   const switchMode = (nextMode: AuthMode) => {
     setMode(nextMode);
     setResetOpen(false);
     setMessage("");
+    setMessageOk(false);
+    setPendingConfirmationEmail("");
   };
 
   return (
@@ -201,7 +227,16 @@ export function AuthView({ onLogin, onRegister, onResetPassword, cloudMessage }:
         )}
 
         {isLoginRelevantCloudMessage(cloudMessage) ? <p className="auth-message">{cloudMessage}</p> : null}
-        {message ? <p className="auth-message">{message}</p> : null}
+        {message ? (
+          <div className={`auth-message ${messageOk ? "success" : ""}`}>
+            <p>{message}</p>
+            {mode === "register" && messageOk && pendingConfirmationEmail ? (
+              <button className="ghost-button" type="button" onClick={() => void handleResendConfirmation()} disabled={resendPending}>
+                {resendPending ? "Sende..." : "Bestätigungsmail erneut senden"}
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </section>
     </main>
   );
