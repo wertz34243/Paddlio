@@ -2550,7 +2550,7 @@ export function PlanView({
       ) : null}
 
       {taskEntry ? (
-        <section className="section-block">
+        <section className="section-block planning-task-sheet">
           <div className="section-heading">
             <div>
               <p className="eyebrow">Traineraufgabe</p>

@@ -1029,6 +1029,7 @@ function AppContent() {
             onDeleteSeries={deletePlanEntrySeries}
             onFeedbackSave={saveTrainingFeedback}
             onSaveJournal={upsertJournalEntry}
+            onDataChange={updateData}
             deviceClass={currentDeviceClass}
           />
         );
@@ -1098,6 +1099,7 @@ function AppContent() {
         onDeleteSeries={deletePlanEntrySeries}
         onFeedbackSave={saveTrainingFeedback}
         onSaveJournal={upsertJournalEntry}
+        onDataChange={updateData}
         deviceClass={currentDeviceClass}
       />
     </div>

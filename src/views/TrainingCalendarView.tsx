@@ -23,6 +23,10 @@ import type {
   PaddleMotionData,
   PlanEntry,
   PlanStatus,
+  TeamTask,
+  TeamTaskAssignment,
+  TeamTaskPriority,
+  TeamTaskType,
   TrainingArea,
   TrainingAssignedType,
   TrainingBoatClass,
@@ -92,6 +96,7 @@ type TrainingCalendarViewProps = {
   onDeleteSeries?: (id: string) => void;
   onFeedbackSave?: (feedback: FeedbackDraft) => void;
   onSaveJournal?: (entry: JournalDraft) => void;
+  onDataChange?: (updater: (current: PaddleMotionData) => PaddleMotionData) => void;
   deviceClass?: DeviceClass;
 };
 
@@ -111,6 +116,24 @@ const repeatLabels: Record<TrainingRepeat, string> = {
   weekly: "Wöchentlich",
   biweekly: "Alle 2 Wochen",
   monthly: "Monatlich",
+};
+
+const trainingTaskTypes: TeamTaskType[] = ["training", "technique", "material", "video", "competition", "mental", "recovery", "general"];
+const trainingTaskPriorities: TeamTaskPriority[] = ["normal", "important", "urgent"];
+const trainingTaskTypeLabels: Record<TeamTaskType, string> = {
+  general: "Allgemein",
+  technique: "Technik",
+  material: "Material",
+  video: "Video",
+  competition: "Wettkampf",
+  training: "Training",
+  mental: "Mental",
+  recovery: "Regeneration",
+};
+const trainingTaskPriorityLabels: Record<TeamTaskPriority, string> = {
+  normal: "Normal",
+  important: "Wichtig",
+  urgent: "Dringend",
 };
 
 const categoryTone = (value?: string): "primary" | "success" | "warning" | "danger" | "info" | "muted" => {
@@ -354,6 +377,7 @@ export function TrainingCalendarView({
   onDeleteSeries,
   onFeedbackSave,
   onSaveJournal,
+  onDataChange,
   deviceClass = "desktop",
 }: TrainingCalendarViewProps) {
   const isPhone = deviceClass === "phone";
@@ -367,8 +391,7 @@ export function TrainingCalendarView({
     width: typeof window === "undefined" ? 1200 : window.innerWidth,
     height: typeof window === "undefined" ? 900 : window.innerHeight,
   }));
-  const initialOverlayContext = deviceClass === "tablet" && viewport.width < 1024;
-  const [showTemplates, setShowTemplates] = useState(!isPhone && !initialOverlayContext);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [contextMode, setContextMode] = useState<ContextMode>("templates");
   const [query, setQuery] = useState("");
   const [areaFilter, setAreaFilter] = useState<"all" | TrainingArea>("all");
@@ -377,6 +400,7 @@ export function TrainingCalendarView({
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   const [quickEdit, setQuickEdit] = useState<QuickEditState | null>(null);
   const [feedbackEntry, setFeedbackEntry] = useState<PlanEntry | null>(null);
+  const [taskEntry, setTaskEntry] = useState<PlanEntry | null>(null);
   const [liveTraining, setLiveTraining] = useState<LiveTrainingState | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -410,7 +434,7 @@ export function TrainingCalendarView({
   }, []);
 
   useEffect(() => {
-    setShowTemplates(!isPhone && !usesOverlayContext);
+    setShowTemplates(false);
   }, [isPhone, usesOverlayContext]);
 
   useEffect(() => {
@@ -484,6 +508,7 @@ export function TrainingCalendarView({
   const openQuickEdit = (template: TrainingTemplate, date = focusDate) => {
     setSelectedEntryId(null);
     setFeedbackEntry(null);
+    setTaskEntry(null);
     setLiveTraining(null);
     if (usesOverlayContext) setShowTemplates(false);
     setContextMode("quickEdit");
@@ -493,6 +518,7 @@ export function TrainingCalendarView({
   const openEntryDetail = (id: string) => {
     setQuickEdit(null);
     setFeedbackEntry(null);
+    setTaskEntry(null);
     setLiveTraining(null);
     setShowTemplates(false);
     setContextMode("detail");
@@ -503,12 +529,14 @@ export function TrainingCalendarView({
     setSelectedEntryId(null);
     setQuickEdit(null);
     setFeedbackEntry(null);
+    setTaskEntry(null);
     setLiveTraining({ entry, startedAt: Date.now(), paused: false, elapsedBeforePause: 0, activeStep: 0 });
   };
 
   const openFeedback = (entry: PlanEntry) => {
     setSelectedEntryId(null);
     setQuickEdit(null);
+    setTaskEntry(null);
     setLiveTraining(null);
     setFeedbackEntry(entry);
   };
@@ -636,6 +664,50 @@ export function TrainingCalendarView({
     setLiveTraining(null);
   };
 
+  const createTrainingTask = (entry: PlanEntry, formData: FormData) => {
+    if (!onDataChange || !user) return;
+
+    const title = String(formData.get("title") ?? "").trim();
+    if (!title) return;
+
+    const timestamp = new Date().toISOString();
+    const taskId = `task-${crypto.randomUUID()}`;
+    const task: TeamTask = {
+      id: taskId,
+      clubId: entry.clubId || clubId || user.profile.club || "",
+      createdBy: user.userId,
+      title,
+      description: String(formData.get("description") ?? "").trim(),
+      taskType: String(formData.get("taskType") ?? "training") as TeamTaskType,
+      priority: String(formData.get("priority") ?? "normal") as TeamTaskPriority,
+      dueDate: String(formData.get("dueDate") ?? entry.date),
+      relatedTrainingId: entry.id,
+      relatedCompetitionId: "",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      deletedAt: "",
+    };
+    const assignment: TeamTaskAssignment = {
+      id: `task-assignment-${crypto.randomUUID()}`,
+      taskId,
+      assignedTo: String(formData.get("assignedTo") ?? user.userId),
+      status: "open",
+      completedAt: "",
+      responseNote: "",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+
+    onDataChange((current) => ({
+      ...current,
+      tasks: [task, ...current.tasks],
+      taskAssignments: [assignment, ...current.taskAssignments],
+    }));
+    setTaskEntry(null);
+    setSelectedEntryId(entry.id);
+    setContextMode("detail");
+  };
+
   const visibleModeTitle = mode === "season" ? "Saisonplanung" : mode === "year" ? `Jahr ${parseLocalDateOnly(focusDate).getFullYear()}` : monthLabel(focusDate);
   const nextTraining = [...filteredEntries].filter((entry) => entry.date >= getTodayKey()).sort((a, b) => `${a.date} ${a.startTime || a.time}`.localeCompare(`${b.date} ${b.startTime || b.time}`))[0];
   const weekLoad = weekEntries.reduce((sum, entry) => sum + entry.durationMinutes, 0);
@@ -679,6 +751,7 @@ export function TrainingCalendarView({
       onStatusChange={onStatusChange}
       onStartLive={startLiveTraining}
       onFeedback={openFeedback}
+      onCreateTask={onDataChange && user ? (entry) => setTaskEntry(entry) : undefined}
       onDuplicate={duplicateEntry}
       onDelete={onDelete}
       onDeleteSeries={onDeleteSeries}
@@ -713,6 +786,7 @@ export function TrainingCalendarView({
     setQuickEdit(null);
     setSelectedEntryId(null);
     setShowTemplates(false);
+    setTaskEntry(null);
   };
 
   const renderPhoneEntryPanel = (entry: PlanEntry): ReactNode => {
@@ -742,6 +816,7 @@ export function TrainingCalendarView({
           onStatusChange={onStatusChange}
           onStartLive={startLiveTraining}
           onFeedback={openFeedback}
+          onCreateTask={!isPhone && onDataChange && user ? (entry) => setTaskEntry(entry) : undefined}
           onDuplicate={duplicateEntry}
           onDelete={onDelete}
           onDeleteSeries={onDeleteSeries}
@@ -755,7 +830,7 @@ export function TrainingCalendarView({
   };
 
   return (
-    <div className={`master-calendar-workspace master-calendar-${deviceClass}${isTabletPortrait ? " is-tablet-portrait" : ""}${usesOverlayContext ? " is-context-overlay" : ""}`}>
+    <div className={`master-calendar-workspace master-calendar-${deviceClass}${hasContextContent ? " has-context" : ""}${isTabletPortrait ? " is-tablet-portrait" : ""}${usesOverlayContext ? " is-context-overlay" : ""}`}>
       <main className="master-calendar-main">
         <PaddlioOnePageHeader
           eyebrow="Kalender"
@@ -804,7 +879,7 @@ export function TrainingCalendarView({
                   setQuickEdit(null);
                   setSelectedEntryId(null);
                   setContextMode("templates");
-                  setShowTemplates(true);
+                  setShowTemplates((value) => !value);
                 }}>Vorlagen</PaddlioOneButton>
                 <PaddlioOneButton variant="secondary" onClick={() => {
                   setQuickEdit(null);
@@ -966,6 +1041,7 @@ export function TrainingCalendarView({
           onStatusChange={onStatusChange}
           onStartLive={startLiveTraining}
           onFeedback={openFeedback}
+          onCreateTask={onDataChange && user ? (entry) => setTaskEntry(entry) : undefined}
           onDuplicate={duplicateEntry}
           onDelete={onDelete}
           onDeleteSeries={onDeleteSeries}
@@ -991,6 +1067,10 @@ export function TrainingCalendarView({
 
       {!isPhone && feedbackEntry ? (
         <FeedbackSheet entry={feedbackEntry} onCancel={() => setFeedbackEntry(null)} onSave={applyFeedback} />
+      ) : null}
+
+      {!isPhone && taskEntry && onDataChange && user ? (
+        <TrainingTaskSheet entry={taskEntry} trainers={trainerOptions} user={user} onCancel={() => setTaskEntry(null)} onSave={createTrainingTask} />
       ) : null}
 
       {!isPhone && liveTraining ? (
@@ -1573,6 +1653,7 @@ function TrainingDetailDrawer({
   onStatusChange,
   onStartLive,
   onFeedback,
+  onCreateTask,
   onDuplicate,
   onDelete,
   onDeleteSeries,
@@ -1592,6 +1673,7 @@ function TrainingDetailDrawer({
   onStatusChange: (id: string, status: PlanStatus) => void;
   onStartLive: (entry: PlanEntry) => void;
   onFeedback: (entry: PlanEntry) => void;
+  onCreateTask?: (entry: PlanEntry) => void;
   onDuplicate: (entry: PlanEntry) => void;
   onDelete?: (id: string) => void;
   onDeleteSeries?: (id: string) => void;
@@ -1688,14 +1770,14 @@ function TrainingDetailDrawer({
       ) : null}
       {tab === "tasks" ? (
         <section className="master-detail-section">
-          {isCoach ? <PaddlioOneButton variant="secondary" onClick={() => onDuplicate(entry)}>Als Vorlage/Kopie nutzen</PaddlioOneButton> : null}
+          {isCoach && onCreateTask ? <PaddlioOneButton variant="primary" onClick={() => onCreateTask(entry)}>Traineraufgabe erstellen</PaddlioOneButton> : null}
           {trainingTasks.length > 0 ? trainingTasks.map((task) => {
             const assignment = taskAssignments.find((item) => item.taskId === task.id);
             const assignee = users.find((item) => item.userId === assignment?.assignedTo);
             return (
               <article className="master-task-row" key={task.id}>
                 <strong>{task.title}</strong>
-                <span>{task.priority} · {assignee ? getUserName(assignee) : "Trainer"} · {assignment?.status ?? "offen"}</span>
+                <span>{trainingTaskTypeLabels[task.taskType]} · {trainingTaskPriorityLabels[task.priority]} · {assignee ? getUserName(assignee) : "Trainer"} · {assignment?.status ?? "offen"}</span>
                 {task.description ? <p>{task.description}</p> : null}
               </article>
             );
@@ -1732,6 +1814,10 @@ function FeedbackSheet({
   presentation?: "modal" | "inline";
 }) {
   const [status, setStatus] = useState<CompletionStatus>("completed");
+  const [rpe, setRpe] = useState(5);
+  const [feeling, setFeeling] = useState(4);
+  const [fatigue, setFatigue] = useState(3);
+  const [motivation, setMotivation] = useState(4);
   const requestCancel = () => {
     if (window.confirm("Feedback verwerfen?")) onCancel();
   };
@@ -1752,12 +1838,12 @@ function FeedbackSheet({
             </button>
           ))}
         </div>
-        <div className="master-form-grid">
-          <label>Ist-Dauer<input name="actualDuration" type="number" min="0" defaultValue={entry.durationMinutes} /></label>
-          <label>RPE<input name="rpe" type="range" min="1" max="10" defaultValue="5" /></label>
-          <label>Gefühl<input name="feeling" type="range" min="1" max="5" defaultValue="4" /></label>
-          <label>Müdigkeit<input name="fatigue" type="range" min="1" max="5" defaultValue="3" /></label>
-          <label>Motivation<input name="motivation" type="range" min="1" max="5" defaultValue="4" /></label>
+        <div className="master-feedback-grid">
+          <label className="master-feedback-duration">Ist-Dauer<input name="actualDuration" type="number" min="0" defaultValue={entry.durationMinutes} /></label>
+          <label className="master-feedback-range"><span>RPE <b>{rpe} / 10</b></span><input name="rpe" type="range" min="1" max="10" value={rpe} onChange={(event) => setRpe(Number(event.currentTarget.value))} /></label>
+          <label className="master-feedback-range"><span>Gefühl <b>{feeling} / 5</b></span><input name="feeling" type="range" min="1" max="5" value={feeling} onChange={(event) => setFeeling(Number(event.currentTarget.value))} /></label>
+          <label className="master-feedback-range"><span>Müdigkeit <b>{fatigue} / 5</b></span><input name="fatigue" type="range" min="1" max="5" value={fatigue} onChange={(event) => setFatigue(Number(event.currentTarget.value))} /></label>
+          <label className="master-feedback-range"><span>Motivation <b>{motivation} / 5</b></span><input name="motivation" type="range" min="1" max="5" value={motivation} onChange={(event) => setMotivation(Number(event.currentTarget.value))} /></label>
         </div>
         <label className="master-full-field">Kurze Notiz<textarea name="note" rows={3} placeholder="Was lief gut? Was soll der Trainer wissen?" /></label>
         <footer>
@@ -1772,6 +1858,54 @@ function FeedbackSheet({
   return (
     <div className="master-modal-backdrop" role="dialog" aria-modal="true" aria-label="Feedback schreiben">
       {form}
+    </div>
+  );
+}
+
+function TrainingTaskSheet({
+  entry,
+  trainers,
+  user,
+  onCancel,
+  onSave,
+}: {
+  entry: PlanEntry;
+  trainers: User[];
+  user: User;
+  onCancel: () => void;
+  onSave: (entry: PlanEntry, formData: FormData) => void;
+}) {
+  const [priority, setPriority] = useState<TeamTaskPriority>("normal");
+  const requestCancel = () => {
+    if (window.confirm("Traineraufgabe verwerfen?")) onCancel();
+  };
+  const swipeHandlers = useMobileSwipeDismiss(requestCancel);
+
+  return (
+    <div className="master-modal-backdrop" role="dialog" aria-modal="true" aria-label="Traineraufgabe erstellen">
+      <form className="master-task-sheet" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); onSave(entry, new FormData(event.currentTarget)); }} {...swipeHandlers}>
+        <header>
+          <div>
+            <p className="po-eyebrow">Traineraufgabe</p>
+            <h2>{entry.title || entry.trainingType}</h2>
+            <span>{fullDateLabel(entry.date)} · {(entry.startTime || entry.time)}-{entry.endTime || addMinutesToTime(entry.startTime || entry.time, entry.durationMinutes)}</span>
+          </div>
+          <button type="button" onClick={requestCancel} aria-label="Schließen">×</button>
+        </header>
+        <div className="master-task-grid">
+          <label className="master-full-field">Titel<input name="title" required placeholder="z. B. Video aufnehmen" /></label>
+          <label>Typ<select name="taskType" defaultValue="training">{trainingTaskTypes.map((taskType) => <option key={taskType} value={taskType}>{trainingTaskTypeLabels[taskType]}</option>)}</select></label>
+          <label>Priorität<select name="priority" value={priority} onChange={(event) => setPriority(event.currentTarget.value as TeamTaskPriority)}>{trainingTaskPriorities.map((item) => <option key={item} value={item}>{trainingTaskPriorityLabels[item]}</option>)}</select></label>
+          <label>Fällig<input name="dueDate" type="date" defaultValue={entry.date} /></label>
+          <label>Trainer<select name="assignedTo" defaultValue={user.userId}>{trainers.map((trainer) => <option key={trainer.userId} value={trainer.userId}>{getUserName(trainer)}</option>)}</select></label>
+        </div>
+        <label className="master-full-field">Beschreibung<textarea name="description" rows={3} placeholder="z. B. Athlet beobachten, Zeiten nehmen, Material prüfen" /></label>
+        <p className={`master-task-priority-hint is-${priority}`}>{trainingTaskPriorityLabels[priority]} · wird direkt mit dieser Einheit verknüpft.</p>
+        <footer>
+          <PaddlioOneButton variant="ghost" onClick={requestCancel}>Abbrechen</PaddlioOneButton>
+          <PaddlioOneButton variant="primary" type="submit">Aufgabe erstellen</PaddlioOneButton>
+        </footer>
+      </form>
     </div>
   );
 }

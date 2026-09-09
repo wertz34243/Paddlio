@@ -23,7 +23,7 @@ async function openCalendar(page: Page) {
 async function openTemplates(page: Page) {
   await closeDetailIfOpen(page);
 
-  const panel = page.locator(".master-template-panel").first();
+  const panel = page.locator(".master-calendar-context .master-template-panel").first();
   if (await panel.isVisible().catch(() => false)) return;
 
   const templateButtons = page.locator(".master-calendar-toolbar").getByRole("button", { name: /^Vorlagen$/i });
@@ -81,12 +81,12 @@ async function closeTabletContextIfOpen(page: Page) {
 
 async function openQuickEdit(page: Page) {
   await openTemplates(page);
-  const templatePanel = page.locator(".master-template-panel").first();
+  const templatePanel = page.locator(".master-calendar-context .master-template-panel").first();
   const trainingTab = templatePanel.locator(".master-template-primary-tabs").getByRole("button", { name: "Training" });
   if (await trainingTab.isVisible().catch(() => false)) {
     await trainingTab.click();
   }
-  const templateButton = page.locator(".master-template-panel").getByRole("button").filter({ hasText: /GA1|GA2|K1|Kraft|Wettkampf/i }).first();
+  const templateButton = page.locator(".master-calendar-context .master-template-panel").getByRole("button").filter({ hasText: /GA1|GA2|K1|Kraft|Wettkampf/i }).first();
   await expect(templateButton).toBeVisible({ timeout: 20_000 });
   await templateButton.click();
   await expect(page.getByRole("region", { name: /Training schnell/i }).or(page.getByRole("dialog", { name: /Training schnell/i })).first()).toBeVisible({ timeout: 20_000 });
@@ -109,9 +109,15 @@ test.describe("tablet trainer workspace 4", () => {
 
     await openTemplates(page);
     await page.screenshot({ path: join(screenshotDir, "landscape-02-templates.png"), fullPage: true });
-    await page.locator(".master-template-panel .master-template-primary-tabs").getByRole("button", { name: "Woche" }).click();
+    await page.evaluate(() => window.scrollTo(0, 0));
+    const weekTemplateButton = page.locator(".master-calendar-context").getByRole("button", { name: /^Woche$/ });
+    await weekTemplateButton.scrollIntoViewIfNeeded();
+    await weekTemplateButton.click();
     await page.screenshot({ path: join(screenshotDir, "landscape-03-week-templates.png"), fullPage: true });
-    await page.locator(".master-template-panel .master-template-primary-tabs").getByRole("button", { name: "Saison" }).click();
+    await page.evaluate(() => window.scrollTo(0, 0));
+    const seasonTemplateButton = page.locator(".master-calendar-context").getByRole("button", { name: /^Saison$/ });
+    await seasonTemplateButton.scrollIntoViewIfNeeded();
+    await seasonTemplateButton.click();
     await page.screenshot({ path: join(screenshotDir, "landscape-04-season-blocks.png"), fullPage: true });
 
     await openFirstTrainingDetail(page);

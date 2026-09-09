@@ -30,8 +30,8 @@
   gap: var(--po-gap-lg, 18px);
 }
 
-.master-calendar-workspace.is-tablet,
-.master-calendar-workspace.is-desktop {
+.master-calendar-workspace.is-tablet.has-context,
+.master-calendar-workspace.is-desktop.has-context {
   grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
   align-items: start;
 }
@@ -627,6 +627,220 @@
   width: min(100%, 900px);
 }
 
+.master-feedback-sheet {
+  display: grid;
+  gap: 16px;
+  width: min(100%, 640px);
+  max-height: min(88dvh, 760px);
+  overflow: auto;
+  border: 1px solid var(--po-border, rgba(255, 255, 255, 0.14));
+  border-radius: 24px;
+  background: rgba(7, 15, 26, 0.98);
+  padding: 18px;
+  box-shadow: 0 26px 72px rgba(0, 0, 0, 0.38);
+}
+
+.master-feedback-sheet > header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  align-items: start;
+  gap: 12px;
+}
+
+.master-feedback-sheet > header h2 {
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: var(--po-text-strong, #f7fbff);
+  font-size: 1.45rem;
+  line-height: 1.12;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.master-feedback-sheet > header button {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  min-height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--po-cyan, #52e8ff);
+  font: inherit;
+  font-weight: 900;
+}
+
+.master-feedback-grid {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.72fr) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.master-feedback-duration,
+.master-feedback-range,
+.master-feedback-sheet .master-full-field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  color: var(--po-text-muted, #a8b3c7);
+  font-size: 0.86rem;
+  font-weight: 850;
+}
+
+.master-feedback-duration input,
+.master-feedback-sheet textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid var(--po-border, rgba(255, 255, 255, 0.14));
+  border-radius: 14px;
+  background: rgba(2, 8, 23, 0.74);
+  color: var(--po-text-strong, #f7fbff);
+  padding: 10px 12px;
+}
+
+.master-feedback-range span {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.master-feedback-range b {
+  flex: 0 0 auto;
+  color: var(--po-cyan, #52e8ff);
+}
+
+.master-feedback-range input[type="range"] {
+  width: 100%;
+  min-height: 44px;
+  accent-color: var(--po-cyan, #52e8ff);
+}
+
+.master-feedback-sheet footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.planning-task-sheet {
+  width: min(100%, 640px);
+  max-height: min(88dvh, 760px);
+  overflow: auto;
+}
+
+.master-task-sheet {
+  display: grid;
+  gap: 16px;
+  width: min(100%, 640px);
+  max-height: min(88dvh, 760px);
+  overflow: auto;
+  border: 1px solid var(--po-border, rgba(255, 255, 255, 0.14));
+  border-radius: 24px;
+  background: rgba(7, 15, 26, 0.98);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+  padding: clamp(16px, 2.2vw, 24px);
+}
+
+.master-task-sheet > header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  align-items: start;
+  gap: 12px;
+}
+
+.master-task-sheet > header h2 {
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: var(--po-text-strong, #f7fbff);
+  font-size: 1.45rem;
+  line-height: 1.12;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.master-task-sheet > header span {
+  display: block;
+  overflow: hidden;
+  color: var(--po-text-muted, #a8b3c7);
+  font-size: 0.88rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.master-task-sheet > header button {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  min-height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--po-cyan, #52e8ff);
+  font-size: 1.15rem;
+}
+
+.master-task-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.master-task-grid label,
+.master-task-sheet .master-full-field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  color: var(--po-text-muted, #a8b3c7);
+  font-size: 0.86rem;
+  font-weight: 850;
+}
+
+.master-task-grid .master-full-field,
+.master-task-sheet .master-full-field {
+  grid-column: 1 / -1;
+}
+
+.master-task-grid input,
+.master-task-grid select,
+.master-task-sheet textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid var(--po-border, rgba(255, 255, 255, 0.14));
+  border-radius: 14px;
+  background: rgba(2, 8, 23, 0.74);
+  color: var(--po-text-strong, #f7fbff);
+  padding: 10px 12px;
+  font: inherit;
+}
+
+.master-task-priority-hint {
+  margin: 0;
+  border: 1px solid rgba(82, 232, 255, 0.2);
+  border-radius: 14px;
+  background: rgba(82, 232, 255, 0.08);
+  color: var(--po-text-muted, #a8b3c7);
+  padding: 10px 12px;
+  font-weight: 800;
+}
+
+.master-task-priority-hint.is-urgent {
+  border-color: rgba(248, 113, 113, 0.28);
+  background: rgba(248, 113, 113, 0.1);
+}
+
+.master-task-priority-hint.is-important {
+  border-color: rgba(251, 191, 36, 0.3);
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.master-task-sheet footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .master-live-timer {
   color: var(--po-text-strong);
   font-size: clamp(2.2rem, 8vw, 5.6rem);
@@ -689,7 +903,12 @@
 
 @media (min-width: 1024px) and (max-width: 1439px) {
   .master-calendar-workspace.is-tablet:not(.is-context-overlay) {
-    grid-template-columns: minmax(0, 1fr) clamp(260px, 29vw, 320px);
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .master-calendar-workspace.is-tablet.has-context:not(.is-context-overlay) {
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 30vw, 360px);
     gap: 12px;
   }
 
@@ -713,7 +932,7 @@
 
   .master-calendar-tablet .master-calendar-toolbar {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: auto minmax(260px, 1fr);
     gap: 8px;
     padding: 8px;
   }
@@ -731,7 +950,7 @@
   .master-calendar-tablet .master-calendar-toolbar-group:last-child {
     grid-column: 1 / -1;
     justify-content: flex-end;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
   }
 
   .master-calendar-tablet .master-calendar-overflow-select {
@@ -761,9 +980,14 @@
   }
 
   .master-calendar-tablet .master-calendar-week-grid {
-    gap: 7px;
-    grid-template-columns: repeat(7, minmax(148px, 1fr));
-    min-width: calc(7 * 148px + 6 * 7px);
+    gap: 8px;
+    grid-template-columns: repeat(7, minmax(118px, 1fr));
+    min-width: 0;
+  }
+
+  .master-calendar-tablet.has-context .master-calendar-week-grid {
+    grid-template-columns: repeat(7, minmax(136px, 1fr));
+    min-width: calc(7 * 136px + 6 * 8px);
   }
 
   .master-calendar-tablet .master-week-calendar-card.is-compact .master-calendar-week-grid {
@@ -7890,12 +8114,20 @@ body {
 
 @media (min-width: 768px) {
   .master-calendar-workspace.master-calendar-tablet {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .master-calendar-workspace.master-calendar-tablet.has-context:not(.is-context-overlay) {
     grid-template-columns: minmax(0, 1fr) minmax(260px, 0.34fr);
   }
 }
 
 @media (min-width: 1200px) {
   .master-calendar-workspace.master-calendar-desktop {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .master-calendar-workspace.master-calendar-desktop.has-context {
     grid-template-columns: minmax(0, 1fr) minmax(300px, 0.26fr);
   }
 
@@ -13025,8 +13257,12 @@ body,
 
 @media (min-width: 1024px) and (max-width: 1199px) {
   .master-calendar-workspace.master-calendar-tablet {
-    grid-template-columns: minmax(0, 1fr) minmax(300px, 32%);
+    grid-template-columns: minmax(0, 1fr);
     gap: 14px;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet.has-context {
+    grid-template-columns: minmax(0, 1fr) clamp(260px, 28vw, 300px);
   }
 
   .master-calendar-context {
@@ -13046,9 +13282,14 @@ body,
   }
 
   .master-calendar-workspace.master-calendar-tablet .master-calendar-week-grid {
-    grid-template-columns: repeat(7, minmax(150px, 1fr));
+    grid-template-columns: repeat(7, minmax(118px, 1fr));
     gap: 8px;
-    min-width: calc(7 * 150px + 6 * 8px);
+    min-width: 0;
+  }
+
+  .master-calendar-workspace.master-calendar-tablet.has-context .master-calendar-week-grid {
+    grid-template-columns: repeat(7, minmax(92px, 1fr));
+    min-width: 0;
   }
 
   .master-calendar-workspace.master-calendar-tablet .master-calendar-week-day {
