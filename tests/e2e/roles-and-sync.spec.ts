@@ -112,6 +112,7 @@ async function createTrainingFromCalendarTemplate(page: Page, marker: string, ru
   await quickEdit.getByLabel("Dauer").fill("55");
   await quickEdit.getByLabel("Zuweisung").selectOption("athlete");
   await selectOptionMatching(quickEdit.getByLabel("Ziel"), seededAthletePattern(athleteEmail));
+  await quickEdit.getByText("Weitere Details").click();
   await quickEdit.getByLabel("Individuelle Anpassung").fill(marker);
   await quickEdit.getByRole("button", { name: /Einf.*gen/i }).click();
   await expect(quickEdit).not.toBeVisible({ timeout: 20_000 });

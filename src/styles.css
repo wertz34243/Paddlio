@@ -13369,6 +13369,414 @@ body,
   }
 }
 
+/* Tablet calendar touch polish: direct manipulation and compact inspectors. */
+@media (min-width: 1024px) and (max-width: 1365px) {
+  .master-calendar-workspace.master-calendar-tablet {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .master-calendar-workspace.master-calendar-tablet.has-context:not(.is-context-overlay) {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, clamp(300px, 27vw, 360px));
+  }
+
+  .master-calendar-workspace.master-calendar-tablet.has-context .master-calendar-week-grid {
+    grid-template-columns: repeat(7, minmax(132px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+}
+
+.master-selection-bar {
+  position: sticky;
+  top: 8px;
+  z-index: 9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-color: rgba(82, 232, 255, 0.36);
+  background: rgba(5, 16, 25, 0.94);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+}
+
+.master-selection-bar strong {
+  color: var(--po-text-strong, #f7fbff);
+  font-size: 0.92rem;
+  white-space: nowrap;
+}
+
+.master-selection-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.master-selection-actions .po-button,
+.master-selection-close,
+.master-selection-more summary {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.master-selection-close,
+.master-selection-more summary {
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--po-border, rgba(255, 255, 255, 0.14));
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--po-text-strong, #f7fbff);
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.master-selection-more {
+  position: relative;
+}
+
+.master-selection-more summary {
+  list-style: none;
+}
+
+.master-selection-more summary::-webkit-details-marker {
+  display: none;
+}
+
+.master-selection-more div {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 20;
+  display: grid;
+  min-width: 190px;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--po-border, rgba(255, 255, 255, 0.14));
+  border-radius: 14px;
+  background: rgba(7, 14, 23, 0.98);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.36);
+}
+
+.master-selection-more button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--po-text, #e5edf7);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+  text-align: left;
+  padding: 8px 10px;
+}
+
+.master-selection-more button:hover,
+.master-selection-more button:focus-visible {
+  background: rgba(82, 232, 255, 0.12);
+}
+
+.master-selection-more button.is-danger {
+  color: #ff9aa7;
+}
+
+.master-training-block.is-selected,
+.master-training-pill.is-selected {
+  border-color: rgba(82, 232, 255, 0.78) !important;
+  box-shadow: 0 0 0 2px rgba(82, 232, 255, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.master-training-block.is-selected {
+  background: rgba(82, 232, 255, 0.1);
+}
+
+.master-training-select {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  accent-color: var(--po-accent, #52e8ff);
+}
+
+.master-training-block.is-tablet-compact {
+  position: relative;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.master-training-block.is-tablet-compact .master-training-block-main strong {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.12;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+.master-training-block.is-tablet-compact .master-training-time,
+.master-training-block.is-tablet-compact .master-training-summary-meta {
+  white-space: nowrap;
+}
+
+.master-context-section .master-quick-edit {
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  padding: 16px;
+}
+
+.master-context-section .master-quick-edit header,
+.master-quick-edit header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+}
+
+.master-quick-edit-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.master-quick-edit-header-actions > button,
+.master-quick-edit-header-actions summary {
+  display: grid;
+  place-items: center;
+  min-width: 38px;
+  min-height: 38px;
+  border: 1px solid var(--po-border, rgba(255, 255, 255, 0.14));
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--po-text-strong, #f7fbff);
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.master-quick-edit-header-actions details {
+  position: relative;
+}
+
+.master-quick-edit-header-actions summary {
+  list-style: none;
+}
+
+.master-quick-edit-header-actions summary::-webkit-details-marker {
+  display: none;
+}
+
+.master-quick-edit-header-actions details div {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 16;
+  display: grid;
+  min-width: 190px;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--po-border, rgba(255, 255, 255, 0.14));
+  border-radius: 14px;
+  background: rgba(7, 14, 23, 0.98);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.36);
+}
+
+.master-quick-edit-header-actions details button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--po-text, #e5edf7);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.master-quick-status-row,
+.master-quick-inline-list label {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--po-text-muted, #a8b3c7);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.master-quick-inline-list {
+  display: grid;
+  gap: 0;
+}
+
+.master-quick-status-row select,
+.master-quick-inline-list input,
+.master-quick-inline-list select {
+  min-height: 36px !important;
+  border-radius: 10px !important;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.master-duration-inline > span {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 6px;
+}
+
+.master-duration-inline button {
+  min-width: 44px;
+  min-height: 36px;
+  border: 1px solid var(--po-border, rgba(255, 255, 255, 0.14));
+  border-radius: 10px;
+  background: rgba(82, 232, 255, 0.1);
+  color: var(--po-text-strong, #f7fbff);
+  font: inherit;
+  font-weight: 900;
+}
+
+.master-duration-inline input {
+  text-align: center;
+}
+
+.master-quick-more {
+  border: 1px solid var(--po-border, rgba(255, 255, 255, 0.1));
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.035);
+  padding: 4px;
+}
+
+.master-quick-more summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  color: var(--po-accent, #52e8ff);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.master-quick-more .master-form-grid {
+  padding: 6px;
+}
+
+.master-calendar-context .master-quick-edit footer {
+  position: sticky;
+  bottom: -16px;
+  grid-template-columns: 1fr 1fr;
+  margin: 0 -16px -16px;
+  padding: 12px 16px 16px;
+  background: linear-gradient(180deg, rgba(7, 14, 23, 0.72), rgba(7, 14, 23, 0.98) 38%);
+  backdrop-filter: blur(12px);
+}
+
+.master-template-picker-card {
+  padding: 14px;
+}
+
+.master-template-search {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0;
+  color: var(--po-text-muted, #a8b3c7);
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.master-template-search input {
+  width: 100%;
+}
+
+.master-template-category-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin: 0 0 10px;
+  scrollbar-width: thin;
+}
+
+.master-template-category-tabs button {
+  flex: 0 0 auto;
+  min-height: 34px;
+  border: 1px solid var(--po-border, rgba(255, 255, 255, 0.1));
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--po-text-muted, #a8b3c7);
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 900;
+  padding: 6px 9px;
+}
+
+.master-template-category-tabs button.is-active {
+  border-color: rgba(82, 232, 255, 0.36);
+  background: rgba(82, 232, 255, 0.12);
+  color: var(--po-text-strong, #f7fbff);
+}
+
+.master-template-empty {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  color: var(--po-text-muted, #a8b3c7);
+}
+
+.master-template-empty button {
+  min-height: 40px;
+  border: 1px solid rgba(82, 232, 255, 0.28);
+  border-radius: 12px;
+  background: rgba(82, 232, 255, 0.08);
+  color: var(--po-text-strong, #f7fbff);
+  font: inherit;
+  font-weight: 900;
+}
+
+.master-calendar-context .master-template-card {
+  min-height: 68px;
+  border-left: 3px solid currentColor;
+}
+
+.master-calendar-context .master-template-icon {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 16px currentColor;
+}
+
+.master-calendar-context .master-template-card small {
+  margin-top: 3px;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) and (orientation: portrait) {
+  .master-calendar-context.is-overlay {
+    top: auto;
+    right: max(10px, env(safe-area-inset-right));
+    bottom: max(10px, env(safe-area-inset-bottom));
+    left: max(10px, env(safe-area-inset-left));
+    width: auto;
+    max-width: none;
+    max-height: min(75vh, 720px);
+    border-radius: 22px;
+  }
+
+  .master-selection-bar {
+    flex-wrap: wrap;
+  }
+}
+
 /* Phone final: compact global shell and single-layer mobile training flow. */
 .app-shell-phone {
   --phone-top-gap: calc(6px + env(safe-area-inset-top));

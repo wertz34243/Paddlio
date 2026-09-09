@@ -86,7 +86,7 @@ async function openQuickEdit(page: Page) {
   if (await trainingTab.isVisible().catch(() => false)) {
     await trainingTab.click();
   }
-  const templateButton = page.locator(".master-calendar-context .master-template-panel").getByRole("button").filter({ hasText: /GA1|GA2|K1|Kraft|Wettkampf/i }).first();
+  const templateButton = page.locator(".master-calendar-context .master-template-card button").filter({ hasText: /GA1|GA2|K1|Kraft|Wettkampf/i }).first();
   await expect(templateButton).toBeVisible({ timeout: 20_000 });
   await templateButton.click();
   await expect(page.getByRole("region", { name: /Training schnell/i }).or(page.getByRole("dialog", { name: /Training schnell/i })).first()).toBeVisible({ timeout: 20_000 });
@@ -110,12 +110,13 @@ test.describe("tablet trainer workspace 4", () => {
     await openTemplates(page);
     await page.screenshot({ path: join(screenshotDir, "landscape-02-templates.png"), fullPage: true });
     await page.evaluate(() => window.scrollTo(0, 0));
-    const weekTemplateButton = page.locator(".master-calendar-context").getByRole("button", { name: /^Woche$/ });
+    const weekTemplateButton = page.locator(".master-calendar-context .master-template-primary-tabs").getByRole("button", { name: /^Woche$/ });
     await weekTemplateButton.scrollIntoViewIfNeeded();
     await weekTemplateButton.click();
     await page.screenshot({ path: join(screenshotDir, "landscape-03-week-templates.png"), fullPage: true });
     await page.evaluate(() => window.scrollTo(0, 0));
-    const seasonTemplateButton = page.locator(".master-calendar-context").getByRole("button", { name: /^Saison$/ });
+    await openTemplates(page);
+    const seasonTemplateButton = page.locator(".master-calendar-context .master-template-primary-tabs").getByRole("button", { name: /^Saison$/ });
     await seasonTemplateButton.scrollIntoViewIfNeeded();
     await seasonTemplateButton.click();
     await page.screenshot({ path: join(screenshotDir, "landscape-04-season-blocks.png"), fullPage: true });

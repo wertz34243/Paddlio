@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent, type ReactNode, type TouchEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent, type MouseEvent, type ReactNode, type TouchEvent } from "react";
 import {
   addCalendarDays,
   expandTrainingRepeatDates,
@@ -58,6 +58,8 @@ type FeedbackDraft = Omit<TrainingFeedback, "id" | "completedAt"> & { id?: strin
 
 type QuickEditState = {
   template: TrainingTemplate;
+  entryId?: string;
+  status?: PlanStatus;
   date: string;
   startTime: string;
   durationMinutes: number;
@@ -510,12 +512,31 @@ export function TrainingCalendarView({
     setFeedbackEntry(null);
     setTaskEntry(null);
     setLiveTraining(null);
-    if (usesOverlayContext) setShowTemplates(false);
+    setShowTemplates(false);
     setContextMode("quickEdit");
     setQuickEdit(createQuickEdit(template, date, user));
   };
 
+  const openEntryQuickEdit = (entry: PlanEntry) => {
+    if (quickEdit?.entryId === entry.id) {
+      setQuickEdit(null);
+      setContextMode("detail");
+      return;
+    }
+    setSelectedEntryId(null);
+    setFeedbackEntry(null);
+    setTaskEntry(null);
+    setLiveTraining(null);
+    setShowTemplates(false);
+    setContextMode("quickEdit");
+    setQuickEdit(createEntryQuickEdit(entry));
+  };
+
   const openEntryDetail = (id: string) => {
+    if (selectionMode) {
+      updateSelection(id, !selectedIds.includes(id));
+      return;
+    }
     setQuickEdit(null);
     setFeedbackEntry(null);
     setTaskEntry(null);
@@ -558,6 +579,40 @@ export function TrainingCalendarView({
     const assignedAthleteIds = state.assignedType === "athlete" || state.assignedType === "self" ? [targetId].filter(Boolean) : [];
     const assignedGroupIds = state.assignedType === "group" ? [targetId].filter(Boolean) : [];
     const repeatMaxCount = typeof state.repeatMaxCount === "number" ? state.repeatMaxCount : undefined;
+
+    if (state.entryId) {
+      const existing = entries.find((entry) => entry.id === state.entryId);
+      if (!existing || !onSave) return;
+      const { athleteId: _athleteId, createdAt: _createdAt, updatedAt: _updatedAt, createdByUserId: _createdByUserId, ...draftBase } = existing;
+      onSave({
+        ...draftBase,
+        id: existing.id,
+        assignedType: state.assignedType,
+        assignedAthleteIds,
+        assignedGroupIds,
+        assignedAthleteId: state.assignedType === "athlete" || state.assignedType === "self" ? targetId : "",
+        assignedGroupId: state.assignedType === "group" ? targetId : "",
+        date: state.date,
+        weekday: getWeekdayFromDate(state.date),
+        time: state.startTime,
+        startTime: state.startTime,
+        endTime: addMinutesToTime(state.startTime, duration),
+        durationMinutes: duration,
+        boatClass: state.boatClass,
+        note: state.place ? `Ort: ${state.place}` : existing.note,
+        status: state.status || existing.status,
+        repeat: state.repeat,
+        repeatUntil: state.repeatUntil,
+        repeatMaxCount,
+        feedbackNote: state.individualNote,
+      });
+      setFocusDate(state.date);
+      setQuickEdit(null);
+      setContextMode("detail");
+      setSelectedEntryId(existing.id);
+      return;
+    }
+
     const draft: PlanEntryDraft = {
       ownerUserId: user?.userId ?? targetId,
       clubId: clubId ?? user?.profile.club ?? "",
@@ -611,15 +666,53 @@ export function TrainingCalendarView({
     setWeekCopyOpen(false);
   };
 
-  const deleteSelected = () => {
-    selectedIds.forEach((id) => onDelete?.(id));
+  const clearSelection = () => {
     setSelectedIds([]);
     setSelectionMode(false);
+  };
+
+  const activateSelection = (id: string) => {
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      navigator.vibrate?.(10);
+    }
+    setQuickEdit(null);
+    setSelectedEntryId(null);
+    setShowTemplates(false);
+    setSelectionMode(true);
+    setSelectedIds((current) => current.includes(id) ? current : [...current, id]);
+  };
+
+  const deleteSelected = () => {
+    if (!window.confirm(`${selectedIds.length} Training${selectedIds.length === 1 ? "" : "s"} löschen?`)) return;
+    selectedIds.forEach((id) => onDelete?.(id));
+    clearSelection();
   };
 
   const updateSelection = (id: string, checked: boolean) => {
     setSelectedIds((current) => checked ? [...new Set([...current, id])] : current.filter((item) => item !== id));
   };
+
+  const copySelected = () => {
+    selectedIds
+      .map((id) => entries.find((entry) => entry.id === id))
+      .filter(Boolean)
+      .forEach((entry) => duplicateEntry(entry as PlanEntry));
+    clearSelection();
+  };
+
+  const completeSelected = () => {
+    selectedIds.forEach((id) => onStatusChange(id, "completed"));
+    clearSelection();
+  };
+
+  useEffect(() => {
+    if (!selectionMode) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") clearSelection();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectionMode]);
 
   const applyFeedback = (entry: PlanEntry, completionStatus: CompletionStatus, formData: FormData) => {
     const perceivedExertion = Number(formData.get("rpe") ?? 5);
@@ -831,7 +924,15 @@ export function TrainingCalendarView({
 
   return (
     <div className={`master-calendar-workspace master-calendar-${deviceClass}${hasContextContent ? " has-context" : ""}${isTabletPortrait ? " is-tablet-portrait" : ""}${usesOverlayContext ? " is-context-overlay" : ""}`}>
-      <main className="master-calendar-main">
+      <main
+        className="master-calendar-main"
+        onClick={(event) => {
+          if (!selectionMode) return;
+          const target = event.target as HTMLElement;
+          if (target.closest("button,input,select,textarea,a,.master-training-block,.master-training-pill")) return;
+          clearSelection();
+        }}
+      >
         <PaddlioOnePageHeader
           eyebrow="Kalender"
           title={visibleModeTitle}
@@ -973,27 +1074,36 @@ export function TrainingCalendarView({
         {selectionMode && selectedIds.length > 0 ? (
           <PaddlioOneCard className="master-selection-bar">
             <strong>{selectedIds.length} ausgewählt</strong>
-            <div>
-              <PaddlioOneButton variant="secondary" onClick={() => selectedIds.forEach((id) => onStatusChange(id, "completed"))}>Als erledigt</PaddlioOneButton>
-              <PaddlioOneButton variant="danger" onClick={deleteSelected}>Löschen</PaddlioOneButton>
+            <div className="master-selection-actions" aria-label="Aktionen für markierte Trainings">
+              <PaddlioOneButton variant="secondary" onClick={copySelected}>Kopieren</PaddlioOneButton>
+              <PaddlioOneButton variant="secondary" onClick={completeSelected}>Status</PaddlioOneButton>
+              <details className="master-selection-more">
+                <summary aria-label="Weitere Auswahlaktionen">...</summary>
+                <div>
+                  <button type="button" onClick={copySelected}>Duplizieren</button>
+                  <button type="button" onClick={completeSelected}>Als erledigt markieren</button>
+                  <button className="is-danger" type="button" onClick={deleteSelected}>Löschen</button>
+                </div>
+              </details>
+              <button className="master-selection-close" type="button" onClick={clearSelection} aria-label="Auswahl beenden">×</button>
             </div>
           </PaddlioOneCard>
         ) : null}
 
         {mode === "month" ? (
-        <MonthCalendar days={monthDays} groupedEntries={groupedEntries} focusDate={focusDate} onSelectDate={setFocusDate} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} showDropHint={Boolean(dragTemplateId) && !isPhone} />
+        <MonthCalendar days={monthDays} groupedEntries={groupedEntries} focusDate={focusDate} onSelectDate={setFocusDate} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onQuickEdit={openEntryQuickEdit} onLongPressSelect={activateSelection} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} showDropHint={Boolean(dragTemplateId) && !isPhone} />
         ) : null}
 
         {mode === "week" ? (
-          <WeekCalendar days={weekDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={Boolean(dragTemplateId) && !isPhone} renderEntryPanel={renderPhoneEntryPanel} compactActions={isTabletWorkspace} />
+          <WeekCalendar days={weekDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onQuickEdit={openEntryQuickEdit} onLongPressSelect={activateSelection} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={Boolean(dragTemplateId) && !isPhone} renderEntryPanel={renderPhoneEntryPanel} compactActions={isTabletWorkspace} />
         ) : null}
 
         {mode === "day" ? (
-          <DayCalendar date={focusDate} entries={dayEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={false} renderEntryPanel={renderPhoneEntryPanel} compactActions={isTabletWorkspace} />
+          <DayCalendar date={focusDate} entries={dayEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onQuickEdit={openEntryQuickEdit} onLongPressSelect={activateSelection} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={false} renderEntryPanel={renderPhoneEntryPanel} compactActions={isTabletWorkspace} />
         ) : null}
 
         {mode === "threeDays" ? (
-          <WeekCalendar days={threeDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} compact showDropHint={false} renderEntryPanel={renderPhoneEntryPanel} compactActions={isTabletWorkspace} />
+          <WeekCalendar days={threeDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onQuickEdit={openEntryQuickEdit} onLongPressSelect={activateSelection} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} compact showDropHint={false} renderEntryPanel={renderPhoneEntryPanel} compactActions={isTabletWorkspace} />
         ) : null}
 
         {mode === "list" ? (
@@ -1150,6 +1260,46 @@ function MobileFilterSheet({
   );
 }
 
+function createEntryQuickEdit(entry: PlanEntry): QuickEditState {
+  return {
+    template: {
+      id: entry.templateId || `entry-template-${entry.id}`,
+      ownerUserId: entry.ownerUserId,
+      clubId: entry.clubId,
+      createdByUserId: entry.createdByUserId,
+      title: entry.title || entry.trainingType,
+      category: (entry.area || entry.trainingType) as TrainingTemplate["category"],
+      trainingArea: entry.area,
+      trainingType: entry.trainingType,
+      boatClass: entry.boatClass,
+      defaultDurationMinutes: entry.durationMinutes,
+      defaultIntensity: entry.intensity,
+      focus: entry.focus || entry.goal || "",
+      description: entry.description || "",
+      notes: entry.notes || entry.note || "",
+      tags: [entry.area, entry.trainingType].filter(Boolean),
+      isFavorite: false,
+      visibility: "private",
+      createdAt: entry.createdAt,
+      updatedAt: entry.updatedAt,
+    },
+    entryId: entry.id,
+    status: entry.status,
+    date: entry.date,
+    startTime: entry.startTime || entry.time || "17:30",
+    durationMinutes: entry.durationMinutes,
+    assignedType: entry.assignedType,
+    targetId: entry.assignedGroupId || entry.assignedGroupIds[0] || entry.assignedAthleteId || entry.assignedAthleteIds[0] || entry.ownerUserId,
+    trainerId: entry.createdByUserId,
+    place: entry.note?.startsWith("Ort: ") ? entry.note.slice(5) : "",
+    boatClass: entry.boatClass || "none",
+    repeat: entry.repeat || "none",
+    repeatUntil: entry.repeatUntil || "",
+    repeatMaxCount: entry.repeatMaxCount ?? "",
+    individualNote: entry.feedbackNote || "",
+  };
+}
+
 function CalendarFilterPanel({
   query,
   areaFilter,
@@ -1208,6 +1358,8 @@ function MonthCalendar({
   onDrop,
   onDragOver,
   onOpenEntry,
+  onQuickEdit,
+  onLongPressSelect,
   selectionMode,
   selectedIds,
   onSelect,
@@ -1220,6 +1372,8 @@ function MonthCalendar({
   onDrop: (date: string) => void;
   onDragOver: (event: DragEvent) => void;
   onOpenEntry: (id: string) => void;
+  onQuickEdit: (entry: PlanEntry) => void;
+  onLongPressSelect: (id: string) => void;
   selectionMode: boolean;
   selectedIds: string[];
   onSelect: (id: string, checked: boolean) => void;
@@ -1240,7 +1394,7 @@ function MonthCalendar({
               <strong>{dayNumber(day)}</strong>
               {showDropHint && entries.length === 0 ? <p className="master-calendar-empty-drop is-active">Hier ablegen</p> : null}
               {entries.slice(0, 3).map((entry) => (
-                <TrainingPill entry={entry} key={entry.id} compact onOpen={onOpenEntry} selectionMode={selectionMode} selected={selectedIds.includes(entry.id)} onSelect={onSelect} />
+                <TrainingPill entry={entry} key={entry.id} compact onOpen={onOpenEntry} onQuickEdit={onQuickEdit} onLongPressSelect={onLongPressSelect} selectionMode={selectionMode} selected={selectedIds.includes(entry.id)} onSelect={onSelect} />
               ))}
               {entries.length > 3 ? <small>+{entries.length - 3} weitere</small> : null}
             </button>
@@ -1258,6 +1412,8 @@ function WeekCalendar({
   onDrop,
   onDragOver,
   onOpenEntry,
+  onQuickEdit,
+  onLongPressSelect,
   onStartLive,
   onFeedback,
   onDuplicate,
@@ -1279,6 +1435,8 @@ function WeekCalendar({
   onDrop: (date: string) => void;
   onDragOver: (event: DragEvent) => void;
   onOpenEntry: (id: string) => void;
+  onQuickEdit: (entry: PlanEntry) => void;
+  onLongPressSelect: (id: string) => void;
   onStartLive: (entry: PlanEntry) => void;
   onFeedback: (entry: PlanEntry) => void;
   onDuplicate: (entry: PlanEntry) => void;
@@ -1308,7 +1466,7 @@ function WeekCalendar({
               <div className="master-calendar-entry-stack">
                 {entries.length > 0 ? entries.map((entry) => (
                   <div className="master-calendar-entry-with-panel" data-calendar-entry-id={entry.id} key={entry.id}>
-                    <TrainingBlock entry={entry} onStatusChange={onStatusChange} onOpenEntry={onOpenEntry} onStartLive={onStartLive} onFeedback={onFeedback} onDuplicate={onDuplicate} onDelete={onDelete} selectionMode={selectionMode} selected={selectedIds.includes(entry.id)} onSelect={onSelect} assignedLabel={getAssignedLabel(entry, groups, athletes, users)} compactActions={compactActions} />
+                    <TrainingBlock entry={entry} onStatusChange={onStatusChange} onOpenEntry={onOpenEntry} onQuickEdit={onQuickEdit} onLongPressSelect={onLongPressSelect} onStartLive={onStartLive} onFeedback={onFeedback} onDuplicate={onDuplicate} onDelete={onDelete} selectionMode={selectionMode} selected={selectedIds.includes(entry.id)} onSelect={onSelect} assignedLabel={getAssignedLabel(entry, groups, athletes, users)} compactActions={compactActions} />
                     {renderEntryPanel?.(entry)}
                   </div>
                 )) : <p className="master-calendar-empty-drop">{showDropHint ? "Vorlage hier ablegen" : "Keine Einträge"}</p>}
@@ -1331,6 +1489,8 @@ function TrainingBlock({
   assignedLabel,
   onStatusChange,
   onOpenEntry,
+  onQuickEdit,
+  onLongPressSelect,
   onStartLive,
   onFeedback,
   onDuplicate,
@@ -1344,6 +1504,8 @@ function TrainingBlock({
   assignedLabel: string;
   onStatusChange: (id: string, status: PlanStatus) => void;
   onOpenEntry: (id: string) => void;
+  onQuickEdit: (entry: PlanEntry) => void;
+  onLongPressSelect: (id: string) => void;
   onStartLive: (entry: PlanEntry) => void;
   onFeedback: (entry: PlanEntry) => void;
   onDuplicate: (entry: PlanEntry) => void;
@@ -1356,12 +1518,62 @@ function TrainingBlock({
   const summary = buildCalendarTrainingSummary(entry);
   const tone = summary.tone;
   const timeRange = `${summary.startTime} - ${summary.endTime}`;
+  const pressTimerRef = useRef<number | null>(null);
+  const clickTimerRef = useRef<number | null>(null);
+  const longPressFiredRef = useRef(false);
+  const clearPressTimer = () => {
+    if (pressTimerRef.current) window.clearTimeout(pressTimerRef.current);
+    pressTimerRef.current = null;
+  };
+  const clearClickTimer = () => {
+    if (clickTimerRef.current) window.clearTimeout(clickTimerRef.current);
+    clickTimerRef.current = null;
+  };
+  const startPressTimer = () => {
+    clearPressTimer();
+    longPressFiredRef.current = false;
+    pressTimerRef.current = window.setTimeout(() => {
+      longPressFiredRef.current = true;
+      onLongPressSelect(entry.id);
+    }, 420);
+  };
+  const handleOpen = (event: MouseEvent<HTMLButtonElement>) => {
+    if (longPressFiredRef.current) {
+      longPressFiredRef.current = false;
+      return;
+    }
+    if (selectionMode || event.shiftKey || event.ctrlKey || event.metaKey) {
+      clearClickTimer();
+      onSelect(entry.id, !selected);
+      return;
+    }
+    clearClickTimer();
+    clickTimerRef.current = window.setTimeout(() => onOpenEntry(entry.id), 220);
+  };
   return (
-    <article className={`master-training-block po-tone-${tone}${compactActions ? " is-tablet-compact is-vivendi-summary" : ""}`}>
+    <article className={`master-training-block po-tone-${tone}${compactActions ? " is-tablet-compact is-vivendi-summary" : ""}${selected ? " is-selected" : ""}`}>
       {selectionMode ? (
-        <input aria-label={`${entry.title || entry.trainingType} auswählen`} checked={selected} type="checkbox" onChange={(event) => onSelect(entry.id, event.currentTarget.checked)} />
+        <input className="master-training-select" aria-label={`${entry.title || entry.trainingType} auswählen`} checked={selected} type="checkbox" onChange={(event) => onSelect(entry.id, event.currentTarget.checked)} />
       ) : null}
-      <button className="master-training-block-main" type="button" onClick={() => onOpenEntry(entry.id)} aria-label={`${summary.startTime} bis ${summary.endTime}, ${summary.title}, ${summary.category}`}>
+      <button
+        className="master-training-block-main"
+        type="button"
+        onClick={handleOpen}
+        onDoubleClick={(event) => {
+          event.preventDefault();
+          clearClickTimer();
+          onQuickEdit(entry);
+        }}
+        onPointerDown={startPressTimer}
+        onPointerUp={clearPressTimer}
+        onPointerLeave={clearPressTimer}
+        onPointerCancel={clearPressTimer}
+        onContextMenu={(event) => {
+          event.preventDefault();
+          onLongPressSelect(entry.id);
+        }}
+        aria-label={`${summary.startTime} bis ${summary.endTime}, ${summary.title}, ${summary.category}`}
+      >
         {compactActions ? (
           <>
             <small className="master-training-time">{timeRange}</small>
@@ -1389,7 +1601,7 @@ function TrainingBlock({
           <PaddlioOneStatusChip tone={summary.done ? "success" : summary.skipped ? "danger" : "info"}>{planStatusLabels[entry.status] ?? entry.status}</PaddlioOneStatusChip>
         )}
         {compactActions ? (
-          <button className="master-training-menu-button" type="button" onClick={() => onOpenEntry(entry.id)} aria-label="Training Aktionen öffnen">…</button>
+          <button className="master-training-menu-button" type="button" onClick={() => onOpenEntry(entry.id)} aria-label="Training Aktionen öffnen">...</button>
         ) : (
           <>
             <button type="button" onClick={() => onStartLive(entry)}>Start</button>
@@ -1408,6 +1620,8 @@ function TrainingPill({
   entry,
   compact = false,
   onOpen,
+  onQuickEdit,
+  onLongPressSelect,
   selectionMode,
   selected,
   onSelect,
@@ -1415,14 +1629,68 @@ function TrainingPill({
   entry: PlanEntry;
   compact?: boolean;
   onOpen: (id: string) => void;
+  onQuickEdit: (entry: PlanEntry) => void;
+  onLongPressSelect: (id: string) => void;
   selectionMode: boolean;
   selected: boolean;
   onSelect: (id: string, checked: boolean) => void;
 }) {
+  const pressTimerRef = useRef<number | null>(null);
+  const clickTimerRef = useRef<number | null>(null);
+  const longPressFiredRef = useRef(false);
+  const clearPressTimer = () => {
+    if (pressTimerRef.current) window.clearTimeout(pressTimerRef.current);
+    pressTimerRef.current = null;
+  };
+  const clearClickTimer = () => {
+    if (clickTimerRef.current) window.clearTimeout(clickTimerRef.current);
+    clickTimerRef.current = null;
+  };
+  const startPressTimer = () => {
+    clearPressTimer();
+    longPressFiredRef.current = false;
+    pressTimerRef.current = window.setTimeout(() => {
+      longPressFiredRef.current = true;
+      onLongPressSelect(entry.id);
+    }, 420);
+  };
   return (
-    <span className={`master-training-pill po-tone-${categoryTone(entry.area || entry.trainingType)} ${compact ? "is-compact" : ""}`.trim()}>
+    <span className={`master-training-pill po-tone-${categoryTone(entry.area || entry.trainingType)} ${compact ? "is-compact" : ""} ${selected ? "is-selected" : ""}`.trim()}>
       {selectionMode ? <input aria-label={`${entry.title || entry.trainingType} auswählen`} checked={selected} type="checkbox" onChange={(event) => onSelect(entry.id, event.currentTarget.checked)} onClick={(event) => event.stopPropagation()} /> : null}
-      <span role="button" tabIndex={0} onClick={(event) => { event.stopPropagation(); onOpen(entry.id); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") onOpen(entry.id); }}>
+      <span
+        role="button"
+        tabIndex={0}
+        onClick={(event) => {
+          event.stopPropagation();
+          if (longPressFiredRef.current) {
+            longPressFiredRef.current = false;
+            return;
+          }
+          if (selectionMode) {
+            clearClickTimer();
+            onSelect(entry.id, !selected);
+          } else {
+            clearClickTimer();
+            clickTimerRef.current = window.setTimeout(() => onOpen(entry.id), 220);
+          }
+        }}
+        onDoubleClick={(event) => {
+          event.stopPropagation();
+          clearClickTimer();
+          onQuickEdit(entry);
+        }}
+        onPointerDown={startPressTimer}
+        onPointerUp={clearPressTimer}
+        onPointerLeave={clearPressTimer}
+        onPointerCancel={clearPressTimer}
+        onContextMenu={(event) => {
+          event.preventDefault();
+          onLongPressSelect(entry.id);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") onOpen(entry.id);
+        }}
+      >
         {entry.startTime || entry.time ? `${shortTimeLabel(entry.startTime || entry.time)} · ` : ""}{entry.title || entry.trainingType}
       </span>
     </span>
@@ -1446,6 +1714,8 @@ function TemplatePanel({
   onQuickInsert: (template: TrainingTemplate) => void;
   onOpenPlan: () => void;
 }) {
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const templateMode: "training" | "week" | "season" = scope === "weeks" ? "week" : scope === "season" ? "season" : "training";
   const filteredTemplates = templates.filter((template) => {
     if (scope === "favorites") return template.isFavorite || template.id.startsWith("system-calendar");
@@ -1453,11 +1723,25 @@ function TemplatePanel({
     if (scope === "club") return template.visibility === "club";
     if (scope === "system") return template.ownerUserId === "paddlio-system";
     return true;
+  }).filter((template) => {
+    const haystack = [template.title, template.category, template.trainingArea, template.trainingType, template.focus, ...template.tags].join(" ").toLowerCase();
+    const normalizedCategory = categoryFilter.toLowerCase();
+    const categoryMatch = categoryFilter === "all" || haystack.includes(normalizedCategory) || (categoryFilter === "ga" && /\bga[12]\b/i.test(haystack));
+    const searchMatch = !search.trim() || haystack.includes(search.trim().toLowerCase());
+    return categoryMatch && searchMatch;
   });
+  const categoryFilters = [
+    ["all", "Alle"],
+    ["ga", "GA"],
+    ["technik", "Technik"],
+    ["kraft", "Kraft"],
+    ["wettkampf", "Wettkampf"],
+    ["regeneration", "Regeneration"],
+  ];
 
   return (
     <section className="master-template-panel" aria-label="Vorlagenbibliothek">
-      <PaddlioOneCard>
+      <PaddlioOneCard className="master-template-picker-card">
         <div className="po-card-heading-row">
           <div>
             <p className="po-eyebrow">Vorlagen</p>
@@ -1478,7 +1762,11 @@ function TemplatePanel({
         </div>
         {templateMode === "training" ? (
           <>
-            <div className="master-template-tabs" aria-label="Trainingsvorlagen filtern">
+            <label className="master-template-search">
+              <span>Suche</span>
+              <input value={search} onChange={(event) => setSearch(event.currentTarget.value)} placeholder="Training suchen..." />
+            </label>
+            <div className="master-template-tabs" aria-label="Vorlagenquelle filtern">
               {([
                 ["favorites", "Favoriten"],
                 ["mine", "Meine"],
@@ -1490,12 +1778,24 @@ function TemplatePanel({
                 </button>
               ))}
             </div>
+            <div className="master-template-category-tabs" aria-label="Vorlagenkategorie filtern">
+              {categoryFilters.map(([value, label]) => (
+                <button key={value} className={categoryFilter === value ? "is-active" : ""} type="button" onClick={() => setCategoryFilter(value)}>
+                  {label}
+                </button>
+              ))}
+            </div>
             <div className="master-template-card-list">
               {filteredTemplates.slice(0, 10).map((template) => (
                 <TemplateCard template={template} key={template.id} onDragStart={onDragStart} onDragEnd={onDragEnd} onQuickInsert={onQuickInsert} />
               ))}
+              {filteredTemplates.length === 0 ? (
+                <div className="master-template-empty">
+                  <strong>Keine Vorlagen gefunden.</strong>
+                  <button type="button" onClick={() => { setSearch(""); setCategoryFilter("all"); onScopeChange("favorites"); }}>Filter zurücksetzen</button>
+                </div>
+              ) : null}
             </div>
-            <p className="po-muted master-template-hint">Halten und in den Kalender ziehen. Alternative: Vorlage antippen.</p>
           </>
         ) : null}
         {templateMode === "week" ? (
@@ -1529,12 +1829,12 @@ function TemplateCard({ template, onDragStart, onDragEnd, onQuickInsert }: { tem
   const tone = categoryTone(template.category || template.trainingArea || template.trainingType);
   return (
     <article className={`master-template-card po-tone-${tone}`} draggable onDragStart={() => onDragStart(template.id)} onDragEnd={onDragEnd} aria-label={`${template.title} in Kalender ziehen`}>
-      <span className="master-template-icon">{template.category.slice(0, 1)}</span>
+      <span className="master-template-icon" aria-hidden="true" />
       <button type="button" onClick={() => onQuickInsert(template)}>
         <strong>{template.title}</strong>
         <small>{template.category || template.trainingArea} - {template.defaultDurationMinutes ?? 60} min - {template.defaultIntensity}</small>
       </button>
-      <em>{template.isFavorite ? "*" : ">"}</em>
+      <em aria-label={template.isFavorite ? "Favorit" : "Vorlage verwenden"}>{template.isFavorite ? "*" : ">"}</em>
     </article>
   );
 }
@@ -1591,17 +1891,36 @@ function TrainingQuickEdit({
   };
   const swipeHandlers = useMobileSwipeDismiss(requestCancel);
   const repeatCount = state.repeat === "none" ? 1 : expandTrainingRepeatDates(state.date, state.repeat, state.repeatUntil, typeof state.repeatMaxCount === "number" ? state.repeatMaxCount : undefined).length;
+  const submitLabel = state.entryId ? "Speichern" : "Einfügen";
+  const adjustDuration = (amount: number) => onChange({ ...state, durationMinutes: Math.max(10, Math.min(360, Number(state.durationMinutes) + amount)) });
   const form = (
       <form className="master-quick-edit" onSubmit={(event) => { event.preventDefault(); onSave(state); }} {...swipeHandlers}>
         <header>
-          <p className="po-eyebrow">Quick Edit</p>
-          <h2>{state.template.title}</h2>
-          <button type="button" onClick={requestCancel} aria-label="Schließen">×</button>
+          <div>
+            <p className="po-eyebrow">Quick Edit</p>
+            <h2>{state.template.title}</h2>
+          </div>
+          <div className="master-quick-edit-header-actions">
+            <details>
+              <summary aria-label="Weitere Aktionen">...</summary>
+              <div>
+                <button type="button" onClick={onOpenFullPlan}>Vollständig bearbeiten</button>
+                <button type="button" onClick={onOpenFullPlan}>Als Vorlage speichern</button>
+              </div>
+            </details>
+            <button type="button" onClick={requestCancel} aria-label="Schließen">×</button>
+          </div>
         </header>
-        <div className="master-form-grid">
+        <div className="master-quick-status-row">
+          <span>Status</span>
+          <select aria-label="Status" value={state.status || "planned"} onChange={(event) => onChange({ ...state, status: event.currentTarget.value as PlanStatus })}>
+            {Object.entries(planStatusLabels).slice(0, 6).map(([status, label]) => <option key={status} value={status}>{label}</option>)}
+          </select>
+        </div>
+        <div className="master-quick-inline-list">
           <label>Datum<input type="date" value={state.date} onChange={(event) => onChange({ ...state, date: event.currentTarget.value })} /></label>
           <label>Start<input type="time" value={state.startTime} onChange={(event) => onChange({ ...state, startTime: event.currentTarget.value })} /></label>
-          <label>Dauer<input type="number" min="10" max="360" value={state.durationMinutes} onChange={(event) => onChange({ ...state, durationMinutes: Number(event.currentTarget.value) || 60 })} /></label>
+          <label className="master-duration-inline">Dauer<span><button type="button" onClick={() => adjustDuration(-5)} aria-label="5 Minuten verringern">-5</button><input aria-label="Dauer" type="number" min="10" max="360" value={state.durationMinutes} onChange={(event) => onChange({ ...state, durationMinutes: Number(event.currentTarget.value) || 60 })} /><button type="button" onClick={() => adjustDuration(5)} aria-label="5 Minuten erhöhen">+5</button></span></label>
           <label>Boot<select value={state.boatClass} onChange={(event) => onChange({ ...state, boatClass: event.currentTarget.value as TrainingBoatClass })}><option value="none">Kein Boot</option><option value="K1">K1</option><option value="C1">C1</option><option value="K1+C1">K1+C1</option></select></label>
           <label>Zuweisung<select value={state.assignedType} onChange={(event) => onChange({ ...state, assignedType: event.currentTarget.value as TrainingAssignedType, targetId: "" })}><option value="self">Eigenes Training</option><option value="group">Gruppe</option><option value="athlete">Sportler</option></select></label>
           <label>Ziel<select value={state.targetId} onChange={(event) => onChange({ ...state, targetId: event.currentTarget.value })}>
@@ -1609,18 +1928,22 @@ function TrainingQuickEdit({
             {state.assignedType === "group" ? groups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>) : null}
             {state.assignedType === "athlete" ? athletes.map((athlete) => <option key={athlete.id} value={athlete.id}>{getAthleteName(athlete)}</option>) : null}
           </select></label>
-          <label>Trainer<select value={state.trainerId} onChange={(event) => onChange({ ...state, trainerId: event.currentTarget.value })}>{trainers.map((trainer) => <option key={trainer.userId} value={trainer.userId}>{getUserName(trainer)}</option>)}</select></label>
-          <label>Ort<input value={state.place} onChange={(event) => onChange({ ...state, place: event.currentTarget.value })} placeholder="Strecke, Halle, Kraftraum" /></label>
-          <label>Wiederholung<select value={state.repeat} onChange={(event) => onChange({ ...state, repeat: event.currentTarget.value as TrainingRepeat })}>{Object.entries(repeatLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-          <label>Bis<input type="date" value={state.repeatUntil} disabled={state.repeat === "none"} onChange={(event) => onChange({ ...state, repeatUntil: event.currentTarget.value })} /></label>
-          <label>Anzahl<input type="number" min="1" max="90" value={state.repeatMaxCount} disabled={state.repeat === "none"} onChange={(event) => onChange({ ...state, repeatMaxCount: Number(event.currentTarget.value) || "" })} /></label>
+          <label>Ort<input value={state.place} onChange={(event) => onChange({ ...state, place: event.currentTarget.value })} placeholder="optional" /></label>
         </div>
-        <label className="master-full-field">Individuelle Anpassung<textarea value={state.individualNote} onChange={(event) => onChange({ ...state, individualNote: event.currentTarget.value })} placeholder="z. B. 45 min statt 60 min, Fokus Übergriff" /></label>
+        <details className="master-quick-more">
+          <summary>Weitere Details</summary>
+          <div className="master-form-grid">
+            <label>Trainer<select value={state.trainerId} onChange={(event) => onChange({ ...state, trainerId: event.currentTarget.value })}>{trainers.map((trainer) => <option key={trainer.userId} value={trainer.userId}>{getUserName(trainer)}</option>)}</select></label>
+            <label>Wiederholung<select value={state.repeat} onChange={(event) => onChange({ ...state, repeat: event.currentTarget.value as TrainingRepeat })}>{Object.entries(repeatLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+            <label>Bis<input type="date" value={state.repeatUntil} disabled={state.repeat === "none"} onChange={(event) => onChange({ ...state, repeatUntil: event.currentTarget.value })} /></label>
+            <label>Anzahl<input type="number" min="1" max="90" value={state.repeatMaxCount} disabled={state.repeat === "none"} onChange={(event) => onChange({ ...state, repeatMaxCount: Number(event.currentTarget.value) || "" })} /></label>
+            <label className="master-full-field">Individuelle Anpassung<textarea value={state.individualNote} onChange={(event) => onChange({ ...state, individualNote: event.currentTarget.value })} placeholder="z. B. Fokus, Material, Athlet beachten" /></label>
+          </div>
+        </details>
         {state.repeat !== "none" ? <p className="master-hint">Vorschau: {repeatCount} Termine werden angelegt. Nichts wird überschrieben.</p> : null}
         <footer>
-          <PaddlioOneButton variant="secondary" onClick={onOpenFullPlan}>Weitere Details</PaddlioOneButton>
           <PaddlioOneButton variant="ghost" onClick={requestCancel}>Abbrechen</PaddlioOneButton>
-          <PaddlioOneButton variant="primary" type="submit">Einfügen</PaddlioOneButton>
+          <PaddlioOneButton variant="primary" type="submit">{submitLabel}</PaddlioOneButton>
         </footer>
       </form>
   );
