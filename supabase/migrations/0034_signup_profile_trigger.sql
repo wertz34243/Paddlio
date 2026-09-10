@@ -39,7 +39,6 @@ begin
     last_name,
     display_name,
     club_id,
-    active_club_id,
     roles,
     status,
     boat_classes,
@@ -53,7 +52,6 @@ begin
     nullif(new.raw_user_meta_data ->> 'lastName', ''),
     coalesce(nullif(trim(coalesce(new.raw_user_meta_data ->> 'firstName', '') || ' ' || coalesce(new.raw_user_meta_data ->> 'lastName', '')), ''), normalized_email),
     safe_club_id,
-    safe_club_id,
     target_roles,
     'active',
     array['K1']::text[],
@@ -66,7 +64,6 @@ begin
         last_name = coalesce(nullif(public.profiles.last_name, ''), excluded.last_name),
         display_name = coalesce(nullif(public.profiles.display_name, ''), excluded.display_name, excluded.email),
         club_id = coalesce(public.profiles.club_id, excluded.club_id),
-        active_club_id = coalesce(public.profiles.active_club_id, public.profiles.club_id, excluded.active_club_id),
         roles = case
           when excluded.email = 't.kanu@outlook.com'
             then array(select distinct role_name from unnest(public.profiles.roles || array['Athlete', 'Coach', 'Admin']::text[]) as role_name)
@@ -78,6 +75,67 @@ begin
   return new;
 end;
 $$;
+
+drop trigger if exists paddlio_profiles_role_sync_418 on public.profiles;
+drop trigger if exists paddlio_profiles_role_sync_415 on public.profiles;
+drop trigger if exists paddlio_profiles_role_sync_0034 on public.profiles;
+
+create or replace function public.paddlio_normalize_profile_roles_0034()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  normalized_email text;
+  is_admin_actor boolean;
+begin
+  normalized_email := lower(trim(coalesce(new.email, '')));
+  new.email := normalized_email;
+
+  select exists (
+    select 1
+    from public.profiles p
+    where p.id = auth.uid()
+      and lower(p.email) = 't.kanu@outlook.com'
+      and 'Admin' = any(p.roles)
+      and p.status = 'active'
+  )
+  into is_admin_actor;
+
+  if new.roles is null or array_length(new.roles, 1) is null then
+    new.roles := array['Athlete']::text[];
+  end if;
+
+  if normalized_email = 't.kanu@outlook.com' then
+    new.roles := array(
+      select distinct role_name
+      from unnest(new.roles || array['Athlete', 'Coach', 'Admin']::text[]) as role_name
+      where role_name in ('Athlete', 'Coach', 'TeamAdmin', 'ClubAdmin', 'Admin')
+    );
+  elsif not is_admin_actor then
+    new.roles := array(
+      select distinct role_name
+      from unnest(new.roles || array['Athlete']::text[]) as role_name
+      where role_name in ('Athlete', 'Coach', 'TeamAdmin', 'ClubAdmin')
+    );
+  else
+    new.roles := array(
+      select distinct role_name
+      from unnest(new.roles || array['Athlete']::text[]) as role_name
+      where role_name in ('Athlete', 'Coach', 'TeamAdmin', 'ClubAdmin', 'Admin')
+    );
+  end if;
+
+  new.updated_at := coalesce(new.updated_at, now());
+  return new;
+end;
+$$;
+
+create trigger paddlio_profiles_role_sync_0034
+before insert or update of email, roles, club_id on public.profiles
+for each row
+execute function public.paddlio_normalize_profile_roles_0034();
 
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
@@ -104,7 +162,6 @@ insert into public.profiles (
   last_name,
   display_name,
   club_id,
-  active_club_id,
   roles,
   status,
   boat_classes,
@@ -117,11 +174,6 @@ select
   nullif(u.raw_user_meta_data ->> 'firstName', ''),
   nullif(u.raw_user_meta_data ->> 'lastName', ''),
   coalesce(nullif(trim(coalesce(u.raw_user_meta_data ->> 'firstName', '') || ' ' || coalesce(u.raw_user_meta_data ->> 'lastName', '')), ''), lower(trim(u.email))),
-  case
-    when nullif(u.raw_user_meta_data ->> 'clubId', '') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
-      then nullif(u.raw_user_meta_data ->> 'clubId', '')::uuid
-    else null
-  end,
   case
     when nullif(u.raw_user_meta_data ->> 'clubId', '') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
       then nullif(u.raw_user_meta_data ->> 'clubId', '')::uuid
