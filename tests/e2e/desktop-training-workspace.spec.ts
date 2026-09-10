@@ -49,6 +49,41 @@ async function openTemplatesPanel(page: Page) {
   await expect(panel).toBeVisible({ timeout: 20_000 });
 }
 
+async function expectDesktopWeekUsesViewport(page: Page) {
+  const workspace = page.locator(".master-calendar-workspace.master-calendar-desktop");
+  const grid = page.locator(".master-calendar-week-grid").first();
+  const days = page.locator(".master-calendar-week-day");
+  const controls = page.locator(".master-calendar-controls").first();
+
+  await expect(days).toHaveCount(7);
+  const layout = await page.evaluate(() => {
+    const workspaceEl = document.querySelector<HTMLElement>(".master-calendar-workspace.master-calendar-desktop");
+    const gridEl = document.querySelector<HTMLElement>(".master-calendar-week-grid");
+    const dayEls = Array.from(document.querySelectorAll<HTMLElement>(".master-calendar-week-day"));
+    const controlEls = Array.from(document.querySelectorAll<HTMLElement>(".master-calendar-controls label"));
+    return {
+      workspaceWidth: workspaceEl?.getBoundingClientRect().width ?? 0,
+      gridWidth: gridEl?.getBoundingClientRect().width ?? 0,
+      gridScrollWidth: gridEl?.scrollWidth ?? 0,
+      dayWidths: dayEls.map((item) => item.getBoundingClientRect().width),
+      controlLefts: controlEls.map((item) => item.getBoundingClientRect().left),
+      controlTops: controlEls.map((item) => item.getBoundingClientRect().top),
+    };
+  });
+
+  expect(layout.workspaceWidth).toBeGreaterThan(1000);
+  expect(layout.gridWidth).toBeGreaterThan(1000);
+  expect(layout.gridScrollWidth - layout.gridWidth).toBeLessThanOrEqual(2);
+  expect(Math.min(...layout.dayWidths)).toBeGreaterThan(120);
+  expect(new Set(layout.controlTops.map((top) => Math.round(top))).size).toBe(1);
+  expect(layout.controlLefts[1] - layout.controlLefts[0]).toBeGreaterThan(300);
+  expect(layout.controlLefts[2] - layout.controlLefts[1]).toBeGreaterThan(120);
+
+  await expect(workspace).toBeVisible();
+  await expect(grid).toBeVisible();
+  await expect(controls).toBeVisible();
+}
+
 test.describe("desktop training workspace", () => {
   test.setTimeout(120_000);
   test.skip(!coachEmail || !coachPassword, "Development coach credentials are required for desktop screenshots.");
@@ -63,9 +98,11 @@ test.describe("desktop training workspace", () => {
     await login(page, coachEmail!, coachPassword!);
 
     await openCalendar(page);
+    await expectDesktopWeekUsesViewport(page);
     await capture(page, "01-calendar-1440.png");
 
     await page.setViewportSize({ width: 1920, height: 1080 });
+    await expectDesktopWeekUsesViewport(page);
     await capture(page, "02-calendar-1920.png");
 
     await openTemplatesPanel(page);

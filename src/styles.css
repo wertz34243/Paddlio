@@ -13857,73 +13857,173 @@ body,
 
 /* Desktop training workspace: shared tablet architecture with PC density. */
 @media (min-width: 1280px) {
+  .app-shell-desktop .calendar-category-shell {
+    gap: 10px;
+    width: 100%;
+  }
+
+  .app-shell-desktop .calendar-category-shell .segment-content {
+    width: 100%;
+  }
+
   .master-calendar-workspace.master-calendar-desktop {
     grid-template-columns: minmax(0, 1fr);
-    gap: 16px;
+    gap: 12px;
     transition: grid-template-columns 180ms ease;
   }
 
   .master-calendar-workspace.master-calendar-desktop.has-context {
-    grid-template-columns: minmax(0, 1fr) minmax(320px, clamp(320px, 28vw, 420px));
+    grid-template-columns: minmax(0, 1fr) minmax(320px, clamp(320px, 24vw, 400px));
   }
 
   .master-calendar-workspace.master-calendar-desktop .po-page-header {
-    margin-bottom: 8px;
+    align-items: center;
+    margin: 0 0 4px;
+    max-width: none;
+    width: 100%;
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .po-page-header h1 {
+    font-size: clamp(1.45rem, 1.4vw, 1.85rem);
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .po-page-header p:not(.po-eyebrow) {
+    display: none;
   }
 
   .master-calendar-workspace.master-calendar-desktop .master-calendar-toolbar {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 10px;
+    gap: 12px;
     align-items: center;
+    padding: 8px 10px;
   }
 
   .master-calendar-workspace.master-calendar-desktop .master-segmented-control {
     justify-self: center;
   }
 
+  .master-calendar-workspace.master-calendar-desktop .master-segmented-control button {
+    min-height: 34px;
+    padding: 7px 11px;
+    font-size: 0.82rem;
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .master-calendar-toolbar-group {
+    gap: 7px;
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .master-calendar-toolbar .po-button {
+    min-height: 36px;
+    padding: 7px 10px;
+    font-size: 0.82rem;
+  }
+
   .master-calendar-workspace.master-calendar-desktop .master-calendar-controls {
-    grid-template-columns: minmax(260px, 1fr) repeat(2, minmax(150px, 0.34fr));
-    margin-top: 8px;
+    display: grid;
+    grid-template-columns: minmax(320px, 1fr) minmax(150px, 0.22fr) minmax(150px, 0.22fr);
+    align-items: end;
+    gap: 18px;
+    margin-top: 2px;
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .master-calendar-controls label {
+    min-width: 0;
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .master-calendar-controls input,
+  .master-calendar-workspace.master-calendar-desktop .master-calendar-controls select {
+    min-height: 38px;
+    width: 100%;
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .master-calendar-controls input {
+    min-width: 0;
   }
 
   .master-calendar-workspace.master-calendar-desktop .master-calendar-stats {
     display: none;
   }
 
+  .master-calendar-workspace.master-calendar-desktop .master-week-calendar-card {
+    overflow: hidden;
+  }
+
   .master-calendar-workspace.master-calendar-desktop .master-calendar-week-grid {
-    grid-template-columns: repeat(7, minmax(154px, 1fr));
-    overflow-x: auto;
-    gap: 10px;
-    padding-bottom: 4px;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 8px;
+    overflow: visible;
+    padding-bottom: 0;
+    width: 100%;
   }
 
   .master-calendar-workspace.master-calendar-desktop.has-context .master-calendar-week-grid {
-    grid-template-columns: repeat(7, minmax(142px, 1fr));
+    grid-template-columns: repeat(7, minmax(0, 1fr));
   }
 
   .master-calendar-workspace.master-calendar-desktop .master-calendar-week-day {
-    min-height: 28rem;
-    padding: 10px;
+    min-height: calc(100vh - 290px);
+    padding: 9px;
   }
 
   .master-calendar-workspace.master-calendar-desktop .master-training-block.is-vivendi-summary {
-    min-height: 92px;
-    padding: 10px;
+    min-height: 104px;
+    padding: 10px 10px 9px;
+    width: 100%;
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .master-training-block-main strong,
+  .master-calendar-workspace.master-calendar-desktop .master-training-block-main small,
+  .master-calendar-workspace.master-calendar-desktop .master-training-block-main span {
+    overflow-wrap: normal;
+    word-break: normal;
   }
 
   .master-calendar-workspace.master-calendar-desktop .master-training-block-main strong {
+    -webkit-line-clamp: 3;
     font-size: 0.98rem;
+    line-height: 1.16;
   }
 
   .master-calendar-workspace.master-calendar-desktop .master-training-block-main small,
   .master-calendar-workspace.master-calendar-desktop .master-training-summary-meta {
-    font-size: 0.76rem;
+    font-size: 0.78rem;
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .master-training-block.is-tablet-compact .master-training-block-main small,
+  .master-calendar-workspace.master-calendar-desktop .master-training-block.is-tablet-compact .master-training-block-main span {
+    display: block;
+    overflow: hidden;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .master-training-summary-meta {
+    flex-wrap: wrap;
   }
 
   .master-calendar-workspace.master-calendar-desktop .master-calendar-context {
     width: 100%;
-    max-width: 420px;
+    max-width: 400px;
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .master-calendar-workspace.master-calendar-desktop.has-context {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .master-calendar-week-grid {
+    gap: 6px;
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .master-calendar-week-day {
+    padding: 8px;
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .master-training-block.is-vivendi-summary {
+    min-height: 96px;
+    padding: 9px;
   }
 }
 
