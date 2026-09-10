@@ -882,11 +882,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       return { ok: false, message: error.message };
     }
-    if (result.user) {
+    if (result.session?.user) {
       try {
-        await ensureCloudProfile(result.user);
+        await ensureCloudProfile(result.session.user);
       } catch (error) {
-        console.info("Profil wird nach E-Mail-Bestätigung automatisch erstellt.", error);
+        console.info("Profil wird durch den Auth-Trigger oder beim nächsten Login automatisch erstellt.", error);
       }
     }
     await refreshCloudData();
