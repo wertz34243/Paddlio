@@ -713,7 +713,9 @@ export function TrainingCalendarView({
   };
 
   const updateSelection = (id: string, checked: boolean) => {
-    setSelectedIds((current) => checked ? [...new Set([...current, id])] : current.filter((item) => item !== id));
+    const next = checked ? [...new Set([...selectedIds, id])] : selectedIds.filter((item) => item !== id);
+    setSelectedIds(next);
+    setSelectionMode(next.length > 0);
   };
 
   const copySelected = () => {
@@ -787,7 +789,7 @@ export function TrainingCalendarView({
         event.preventDefault();
         copySelected();
       }
-      if (event.key === "Delete" && selectedIds.length > 0) {
+      if ((event.key === "Delete" || event.key === "Backspace") && selectionMode && selectedIds.length > 0) {
         event.preventDefault();
         deleteSelected();
       }
@@ -1112,8 +1114,15 @@ export function TrainingCalendarView({
                 }}>Filter</PaddlioOneButton>
                 <PaddlioOneButton variant="primary" onClick={onOpenPlan}>+ Training</PaddlioOneButton>
                 <PaddlioOneButton variant="secondary" onClick={() => setWeekCopyOpen(true)}>Aktionen</PaddlioOneButton>
-                <PaddlioOneButton variant={selectionMode ? "primary" : "secondary"} onClick={() => setSelectionMode((value) => !value)}>
-                  Mehrfach
+                <PaddlioOneButton
+                  variant={selectionMode ? "primary" : "secondary"}
+                  onClick={() => {
+                    setSelectionMode((value) => !value);
+                    if (selectionMode) setSelectedIds([]);
+                  }}
+                  aria-pressed={selectionMode}
+                >
+                  Auswählen
                 </PaddlioOneButton>
               </>
             )}
@@ -1172,25 +1181,29 @@ export function TrainingCalendarView({
         </section> : null}
 
         {selectionMode && selectedIds.length > 0 ? (
-          <PaddlioOneCard className="master-selection-bar">
-          <strong>{selectedIds.length} ausgewählt</strong>
-            <div className="master-selection-actions" aria-label="Aktionen für markierte Trainings">
-              <PaddlioOneButton variant="secondary" onClick={openFirstSelectedQuickEdit}>Verschieben</PaddlioOneButton>
-              <PaddlioOneButton variant="secondary" onClick={copySelected}>Kopieren</PaddlioOneButton>
-              <PaddlioOneButton variant="secondary" onClick={completeSelected}>Status</PaddlioOneButton>
-              <PaddlioOneButton variant="secondary" onClick={openFirstSelectedDetail}>Zuweisen</PaddlioOneButton>
-              <PaddlioOneButton variant="danger" onClick={deleteSelected} aria-label={`${selectedIds.length} ausgewählte Trainings löschen`}>
-                Löschen
-              </PaddlioOneButton>
-              <details className="master-selection-more">
-                <summary aria-label="Weitere Auswahlaktionen">...</summary>
-                <div>
-                  <button type="button" onClick={copySelected}>Duplizieren</button>
-                  <button type="button" onClick={completeSelected}>Als erledigt markieren</button>
-                  <button className="is-danger" type="button" onClick={deleteSelected}>Löschen</button>
-                </div>
-              </details>
-              <button className="master-selection-close" type="button" onClick={clearSelection} aria-label="Auswahl beenden">×</button>
+          <PaddlioOneCard
+            className={`master-selection-bar ${isPhone ? "is-phone" : isTabletWorkspace ? "is-tablet" : "is-desktop"}`}
+          >
+            <div className="master-selection-inner" role="region" aria-label="Mehrfachauswahl Kalender" aria-live="polite">
+              <strong>{selectedIds.length} ausgewählt</strong>
+              <div className="master-selection-actions" aria-label="Aktionen für markierte Trainings">
+                {!isPhone ? <PaddlioOneButton variant="secondary" onClick={openFirstSelectedQuickEdit}>Verschieben</PaddlioOneButton> : null}
+                <PaddlioOneButton variant="secondary" onClick={copySelected}>Kopieren</PaddlioOneButton>
+                <PaddlioOneButton variant="secondary" onClick={completeSelected}>Status</PaddlioOneButton>
+                {!isPhone ? <PaddlioOneButton variant="secondary" onClick={openFirstSelectedDetail}>Zuweisen</PaddlioOneButton> : null}
+                <PaddlioOneButton variant="danger" onClick={deleteSelected} aria-label={`${selectedIds.length} ausgewählte Trainings löschen`}>
+                  Löschen
+                </PaddlioOneButton>
+                {!isPhone ? <details className="master-selection-more">
+                  <summary aria-label="Weitere Auswahlaktionen">...</summary>
+                  <div>
+                    <button type="button" onClick={copySelected}>Duplizieren</button>
+                    <button type="button" onClick={completeSelected}>Als erledigt markieren</button>
+                    <button className="is-danger" type="button" onClick={deleteSelected}>Löschen</button>
+                  </div>
+                </details> : null}
+                <button className="master-selection-close" type="button" onClick={clearSelection} aria-label="Auswahl beenden">×</button>
+              </div>
             </div>
           </PaddlioOneCard>
         ) : null}
@@ -1652,7 +1665,11 @@ function TrainingBlock({
     clickTimerRef.current = window.setTimeout(() => onOpenEntry(entry.id), 220);
   };
   return (
-    <article className={`master-training-block po-tone-${tone}${compactActions ? " is-tablet-compact is-vivendi-summary" : ""}${selected ? " is-selected" : ""}`}>
+    <article
+      className={`master-training-block po-tone-${tone}${compactActions ? " is-tablet-compact is-vivendi-summary" : ""}${selected ? " is-selected" : ""}`}
+      role="option"
+      aria-selected={selected}
+    >
       {selectionMode ? (
         <input className="master-training-select" aria-label={`${entry.title || entry.trainingType} auswählen`} checked={selected} type="checkbox" onChange={(event) => onSelect(entry.id, event.currentTarget.checked)} />
       ) : null}
@@ -1769,7 +1786,11 @@ function TrainingPill({
     }, 420);
   };
   return (
-    <span className={`master-training-pill po-tone-${categoryTone(entry.area || entry.trainingType)} ${compact ? "is-compact" : ""} ${selected ? "is-selected" : ""}`.trim()}>
+    <span
+      className={`master-training-pill po-tone-${categoryTone(entry.area || entry.trainingType)} ${compact ? "is-compact" : ""} ${selected ? "is-selected" : ""}`.trim()}
+      role="option"
+      aria-selected={selected}
+    >
       {selectionMode ? <input aria-label={`${entry.title || entry.trainingType} auswählen`} checked={selected} type="checkbox" onChange={(event) => onSelect(entry.id, event.currentTarget.checked)} onClick={(event) => event.stopPropagation()} /> : null}
       <span
         role="button"
@@ -1780,7 +1801,7 @@ function TrainingPill({
             longPressFiredRef.current = false;
             return;
           }
-          if (selectionMode) {
+          if (selectionMode || event.shiftKey || event.ctrlKey || event.metaKey) {
             clearClickTimer();
             onSelect(entry.id, !selected);
           } else {
@@ -1802,7 +1823,11 @@ function TrainingPill({
           onContextMenuEntry(entry, event.clientX, event.clientY);
         }}
         onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") onOpen(entry.id);
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            if (selectionMode) onSelect(entry.id, !selected);
+            else onOpen(entry.id);
+          }
         }}
       >
         {entry.startTime || entry.time ? `${shortTimeLabel(entry.startTime || entry.time)} · ` : ""}{entry.title || entry.trainingType}

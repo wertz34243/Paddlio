@@ -13415,14 +13415,18 @@ body,
   position: sticky;
   top: 8px;
   z-index: 9;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
   padding: 8px 10px;
   border-color: rgba(82, 232, 255, 0.36);
   background: rgba(5, 16, 25, 0.94);
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+}
+
+.master-selection-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
 }
 
 .master-selection-bar strong {
@@ -13501,6 +13505,55 @@ body,
 .master-selection-more button:hover,
 .master-selection-more button:focus-visible {
   background: rgba(82, 232, 255, 0.12);
+}
+
+.master-selection-bar.is-phone {
+  position: fixed;
+  left: max(10px, env(safe-area-inset-left));
+  right: max(10px, env(safe-area-inset-right));
+  bottom: calc(var(--phone-bottom-nav-height, 82px) + env(safe-area-inset-bottom) + 10px);
+  top: auto;
+  z-index: 60;
+  min-height: 52px;
+  padding: 6px 8px;
+  border-radius: 18px;
+}
+
+.master-selection-bar.is-phone .master-selection-inner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+}
+
+.master-selection-bar.is-phone strong {
+  align-self: center;
+  max-width: 108px;
+  overflow: hidden;
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+}
+
+.master-selection-bar.is-phone .master-selection-actions {
+  justify-content: end;
+  gap: 5px;
+}
+
+.master-selection-bar.is-phone .master-selection-actions .po-button,
+.master-selection-bar.is-phone .master-selection-close {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 9px;
+  border-radius: 14px;
+  font-size: 0.74rem;
+  line-height: 1;
+}
+
+.master-selection-bar.is-phone .master-selection-actions .po-button {
+  white-space: nowrap;
+}
+
+.master-selection-bar.is-phone .master-selection-actions .po-button:is(:nth-of-type(1), :nth-of-type(2)) {
+  padding-inline: 8px;
 }
 
 .master-selection-more button.is-danger {

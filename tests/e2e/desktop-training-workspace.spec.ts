@@ -82,7 +82,7 @@ test.describe("desktop training workspace", () => {
     await capture(page, "05-calendar-quick-edit.png");
 
     await page.keyboard.press("Escape");
-    await page.locator(".master-calendar-toolbar").getByRole("button", { name: "Mehrfach" }).click();
+    await page.locator(".master-calendar-toolbar").getByRole("button", { name: "Auswählen" }).click();
     await firstTraining.click();
     const secondTraining = page.locator(".master-training-block-main").nth(1);
     if (await secondTraining.isVisible().catch(() => false)) {
