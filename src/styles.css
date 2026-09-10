@@ -1450,6 +1450,31 @@ button {
   line-height: 1.45;
 }
 
+.password-recovery-card {
+  gap: 20px;
+}
+
+.password-recovery-heading {
+  display: grid;
+  gap: 8px;
+}
+
+.password-recovery-heading h1 {
+  margin: 0;
+  font-size: clamp(1.65rem, 4vw, 2.15rem);
+  line-height: 1.05;
+}
+
+.password-recovery-heading p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.password-visibility-toggle {
+  min-height: 48px;
+}
+
 .auth-tabs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -53,6 +53,7 @@ import { DashboardView, type DashboardMoreTarget, type DashboardQuickAction } fr
 import { EquipmentView } from "./views/EquipmentView";
 import { GoalsView } from "./views/GoalsView";
 import { NotificationsView } from "./views/NotificationsView";
+import { PasswordRecoveryView } from "./views/PasswordRecoveryView";
 import { ProfileView } from "./views/ProfileView";
 import { RecordsView } from "./views/RecordsView";
 import { SeasonView } from "./views/SeasonView";
@@ -265,7 +266,26 @@ function DeviceLimitedPanel({
 }
 
 function AppContent() {
-  const { session, data, setData, profile: cloudProfile, loading, cloudStatus, cloudMessage, syncCount, pendingSyncCount, lastSyncAt, signIn, signUp, signOut, resetPassword, resendConfirmation } = useAuth();
+  const {
+    session,
+    data,
+    setData,
+    profile: cloudProfile,
+    loading,
+    passwordRecovery,
+    cloudStatus,
+    cloudMessage,
+    syncCount,
+    pendingSyncCount,
+    lastSyncAt,
+    signIn,
+    signUp,
+    signOut,
+    resetPassword,
+    updatePassword,
+    cancelPasswordRecovery,
+    resendConfirmation,
+  } = useAuth();
   const [activePage, setActivePage] = useState<PageId>("dashboard");
   const [trainingSegment, setTrainingSegment] = useState<TrainingSegment>("overview");
   const [trainingSwipeStart, setTrainingSwipeStart] = useState<{ x: number; y: number } | null>(null);
@@ -302,6 +322,16 @@ function AppContent() {
 
   if (loading) {
     return <LoadingState />;
+  }
+
+  if (passwordRecovery) {
+    return (
+      <PasswordRecoveryView
+        hasSession={Boolean(session?.user)}
+        onUpdatePassword={updatePassword}
+        onRequestNewLink={cancelPasswordRecovery}
+      />
+    );
   }
 
   if (!session || !data) {

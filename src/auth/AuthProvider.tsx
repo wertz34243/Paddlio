@@ -1,5 +1,5 @@
 ﻿import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type { Session, User as SupabaseUser } from "@supabase/supabase-js";
+import type { AuthChangeEvent, Session, User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase, getSupabaseClient } from "../lib/supabase";
 import { getSupabaseConfigMessage, isSupabaseConfigured } from "../lib/supabaseConfig";
 import {
@@ -90,6 +90,7 @@ export type CloudAuthResult = { ok: true; message?: string } | { ok: false; mess
 type AuthContextValue = {
   session: Session | null;
   currentUser: SupabaseUser | null;
+  passwordRecovery: boolean;
   profile: CloudProfile | null;
   roles: UserRole[];
   club: Club | null;
@@ -105,6 +106,8 @@ type AuthContextValue = {
   signUp: (input: RegisterInput) => Promise<CloudAuthResult>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<CloudAuthResult>;
+  updatePassword: (password: string) => Promise<CloudAuthResult>;
+  cancelPasswordRecovery: () => Promise<void>;
   resendConfirmation: (email: string) => Promise<CloudAuthResult>;
   refreshCloudData: () => Promise<void>;
 };
@@ -142,6 +145,22 @@ const logCloudError = (scope: string, error: unknown) => {
 const getAuthEmailRedirectTo = (): string | undefined => {
   if (typeof window === "undefined") return undefined;
   return `${window.location.origin}${window.location.pathname}`;
+};
+
+const PASSWORD_RECOVERY_STORAGE_KEY = "paddlio-password-recovery";
+
+const hasPasswordRecoveryUrlHint = (): boolean => {
+  if (typeof window === "undefined") return false;
+  const search = new URLSearchParams(window.location.search);
+  const hashValue = window.location.hash.startsWith("#") ? window.location.hash.slice(1) : window.location.hash;
+  const hash = new URLSearchParams(hashValue);
+  return search.get("type") === "recovery" || hash.get("type") === "recovery";
+};
+
+const clearAuthUrlParameters = () => {
+  if (typeof window === "undefined") return;
+  if (!window.location.search && !window.location.hash) return;
+  window.history.replaceState(null, "", window.location.pathname);
 };
 
 let optionalCloudErrorCount = 0;
@@ -442,6 +461,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [club, setClub] = useState<Club | null>(null);
   const [data, setDataState] = useState<PaddleMotionData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [passwordRecovery, setPasswordRecovery] = useState(() => {
+    if (hasPasswordRecoveryUrlHint()) return true;
+    if (typeof window === "undefined") return false;
+    return window.sessionStorage.getItem(PASSWORD_RECOVERY_STORAGE_KEY) === "active";
+  });
   const [cloudStatus, setCloudStatus] = useState<CloudConnectionState>(isSupabaseConfigured ? "syncing" : "disabled");
   const [syncCount, setSyncCount] = useState(0);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
@@ -726,7 +750,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void refreshCloudData();
     if (!supabase) return undefined;
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, nextSession) => {
+      if (event === "PASSWORD_RECOVERY") {
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem(PASSWORD_RECOVERY_STORAGE_KEY, "active");
+        }
+        setPasswordRecovery(true);
+        setSession(nextSession);
+        setCurrentUser(nextSession?.user ?? null);
+        setLoading(false);
+        return;
+      }
+
       setSession(nextSession);
       setCurrentUser(nextSession?.user ?? null);
       void refreshCloudData();
@@ -916,9 +951,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const resetPassword = async (email: string): Promise<CloudAuthResult> => {
     const client = getSupabaseClient();
     if (!client) return { ok: false, message: getSupabaseConfigMessage() };
-    const { error } = await client.auth.resetPasswordForEmail(email.trim().toLowerCase());
+    const redirectTo = getAuthEmailRedirectTo();
+    const { error } = await client.auth.resetPasswordForEmail(
+      email.trim().toLowerCase(),
+      redirectTo ? { redirectTo } : undefined,
+    );
     if (error) return { ok: false, message: error.message };
     return { ok: true, message: "Wenn die E-Mail existiert, wurde ein Link zum Zurücksetzen gesendet." };
+  };
+
+  const cancelPasswordRecovery = async () => {
+    if (typeof window !== "undefined") {
+      window.sessionStorage.removeItem(PASSWORD_RECOVERY_STORAGE_KEY);
+    }
+    setPasswordRecovery(false);
+    clearAuthUrlParameters();
+    if (supabase) await supabase.auth.signOut();
+    clearSession();
+    setSession(null);
+    setCurrentUser(null);
+    setProfile(null);
+    setDataState(null);
+  };
+
+  const updatePassword = async (password: string): Promise<CloudAuthResult> => {
+    const client = getSupabaseClient();
+    if (!client) return { ok: false, message: getSupabaseConfigMessage() };
+
+    const { data: currentSession } = await client.auth.getSession();
+    if (!currentSession.session?.user) {
+      return { ok: false, message: "Dieser Link ist ungültig oder abgelaufen." };
+    }
+
+    const { error } = await client.auth.updateUser({ password });
+    if (error) {
+      const message = error.message.toLowerCase();
+      if (message.includes("weak") || message.includes("password")) {
+        return { ok: false, message: "Das Passwort ist zu schwach. Bitte nutze mindestens 8 Zeichen mit Großbuchstabe, Kleinbuchstabe und Zahl." };
+      }
+      return { ok: false, message: "Das Passwort konnte nicht geändert werden. Bitte fordere einen neuen Link an." };
+    }
+
+    clearAuthUrlParameters();
+    return { ok: true, message: "Dein Passwort wurde erfolgreich geändert." };
   };
 
   const resendConfirmation = async (email: string): Promise<CloudAuthResult> => {
@@ -964,13 +1039,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     pendingSyncCount,
     lastSyncAt,
     cloudMessage,
+    passwordRecovery,
     signIn,
     signUp,
     signOut,
     resetPassword,
+    updatePassword,
+    cancelPasswordRecovery,
     resendConfirmation,
     refreshCloudData,
-  }), [session, currentUser, profile, club, data, loading, cloudStatus, syncCount, pendingSyncCount, lastSyncAt, cloudMessage]);
+  }), [session, currentUser, profile, club, data, loading, cloudStatus, syncCount, pendingSyncCount, lastSyncAt, cloudMessage, passwordRecovery]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
