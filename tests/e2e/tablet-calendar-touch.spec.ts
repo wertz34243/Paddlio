@@ -99,6 +99,7 @@ test.describe("tablet calendar touch interactions", () => {
       await page.getByRole("menu", { name: "Training Kontextmenü" }).getByRole("menuitem", { name: "Auswählen" }).click();
     }
     await expect(selectionBar).toBeVisible({ timeout: 20_000 });
+    await expect(selectionBar.getByRole("button", { name: /Löschen/i })).toBeVisible();
     await page.screenshot({ path: join(screenshotDir, "04-calendar-multi-select.png"), fullPage: true });
     const secondTraining = page.locator(".master-training-block-main").nth(1);
     if (await secondTraining.isVisible().catch(() => false)) {

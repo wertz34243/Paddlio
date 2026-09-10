@@ -89,6 +89,12 @@ test.describe("desktop training workspace", () => {
       await secondTraining.click();
     }
     await expect(page.locator(".master-selection-bar")).toBeVisible({ timeout: 20_000 });
+    await expect(page.locator(".master-selection-bar").getByRole("button", { name: /Löschen/i })).toBeVisible();
+    page.once("dialog", async (dialog) => {
+      expect(dialog.message()).toContain("löschen");
+      await dialog.dismiss();
+    });
+    await page.locator(".master-selection-bar").getByRole("button", { name: /Löschen/i }).click();
     await capture(page, "06-calendar-multiselect.png");
     await page.keyboard.press("Escape");
     await firstTraining.click({ button: "right" });

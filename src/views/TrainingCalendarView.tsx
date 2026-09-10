@@ -692,8 +692,23 @@ export function TrainingCalendarView({
   };
 
   const deleteSelected = () => {
-    if (!window.confirm(`${selectedIds.length} Training${selectedIds.length === 1 ? "" : "s"} löschen?`)) return;
-    selectedIds.forEach((id) => onDelete?.(id));
+    if (!onDelete) return;
+    const selectedEntries = selectedIds
+      .map((id) => entries.find((entry) => entry.id === id))
+      .filter((entry): entry is PlanEntry => Boolean(entry));
+    if (selectedEntries.length === 0) return;
+
+    const containsSeriesEntry = selectedEntries.some((entry) => getTrainingRepeatSeriesEntries(entries, entry).length > 1);
+    const title = selectedEntries.length === 1 ? "Training löschen?" : "Trainings löschen?";
+    const message = selectedEntries.length === 1
+      ? "Möchtest du das ausgewählte Training wirklich löschen?"
+      : `Möchtest du die ${selectedEntries.length} ausgewählten Trainings wirklich löschen?`;
+    const seriesNote = containsSeriesEntry
+      ? "\n\nMindestens ein Training gehört zu einer Wiederholungsserie. Es werden nur die ausgewählten Termine gelöscht, nicht automatisch die komplette Serie."
+      : "";
+
+    if (!window.confirm(`${title}\n\n${message}${seriesNote}`)) return;
+    selectedEntries.forEach((entry) => onDelete(entry.id));
     clearSelection();
   };
 
@@ -1164,6 +1179,9 @@ export function TrainingCalendarView({
               <PaddlioOneButton variant="secondary" onClick={copySelected}>Kopieren</PaddlioOneButton>
               <PaddlioOneButton variant="secondary" onClick={completeSelected}>Status</PaddlioOneButton>
               <PaddlioOneButton variant="secondary" onClick={openFirstSelectedDetail}>Zuweisen</PaddlioOneButton>
+              <PaddlioOneButton variant="danger" onClick={deleteSelected} aria-label={`${selectedIds.length} ausgewählte Trainings löschen`}>
+                Löschen
+              </PaddlioOneButton>
               <details className="master-selection-more">
                 <summary aria-label="Weitere Auswahlaktionen">...</summary>
                 <div>
