@@ -24,3 +24,19 @@ export const getActiveRegistrationClubs = (clubs: Club[]): Club[] =>
   clubs
     .filter((club) => club.status === "active")
     .sort((left, right) => left.name.localeCompare(right.name, "de-DE"));
+
+export const resolveRegistrationClubSelection = (
+  clubs: Club[],
+  clubId: string,
+  fallbackName = "",
+): { clubId: string; club: string; isCanonicalCloudClub: boolean } => {
+  const selectedClub = clubs.find((club) => club.clubId === clubId);
+  const selectedClubId = selectedClub?.clubId ?? clubId.trim();
+  const selectedClubName = selectedClub?.name.trim() || fallbackName.trim();
+
+  return {
+    clubId: selectedClubId,
+    club: selectedClubName,
+    isCanonicalCloudClub: isUuid(selectedClubId),
+  };
+};

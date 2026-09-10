@@ -3,7 +3,7 @@ import { APP_NAME, APP_SLOGAN } from "../brand";
 import { cacheCloudClubs, loadClubs, type LoginInput, type RegisterInput } from "../data/storage";
 import type { CloudAuthResult } from "../auth/AuthProvider";
 import { isUserVisibleLoginMessage } from "../auth/authMessages";
-import { getActiveRegistrationClubs, toRegistrationClub } from "../auth/registrationClubs";
+import { getActiveRegistrationClubs, resolveRegistrationClubSelection, toRegistrationClub } from "../auth/registrationClubs";
 import { listCloudClubs } from "../services/clubService";
 
 type AuthMode = "login" | "register";
@@ -61,14 +61,19 @@ export function AuthView({ onLogin, onRegister, onResetPassword, onResendConfirm
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const email = String(formData.get("email") ?? "");
+    const selectedClub = resolveRegistrationClubSelection(
+      clubs,
+      suggestClub ? "" : String(formData.get("clubId") ?? ""),
+      String(formData.get("club") ?? ""),
+    );
     const result = await onRegister({
       firstName: String(formData.get("firstName") ?? ""),
       lastName: String(formData.get("lastName") ?? ""),
       email,
       password: String(formData.get("password") ?? ""),
       passwordRepeat: String(formData.get("passwordRepeat") ?? ""),
-      clubId: suggestClub ? "" : String(formData.get("clubId") ?? ""),
-      club: String(formData.get("club") ?? ""),
+      clubId: suggestClub ? "" : selectedClub.clubId,
+      club: selectedClub.club,
       suggestClub,
       privacyAccepted: formData.get("privacyAccepted") === "on",
     });
