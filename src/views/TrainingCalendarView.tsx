@@ -406,18 +406,20 @@ export function TrainingCalendarView({
   const [liveTraining, setLiveTraining] = useState<LiveTrainingState | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [contextMenu, setContextMenu] = useState<{ entry: PlanEntry; x: number; y: number } | null>(null);
   const [weekCopyOpen, setWeekCopyOpen] = useState(false);
   const isTablet = deviceClass === "tablet";
   const isTabletPortrait = isTablet && viewport.width < 1024 && viewport.height >= viewport.width;
   const usesOverlayContext = isTablet && viewport.width < 1024;
   const isTabletWorkspace = isTablet && !isPhone;
+  const isWorkspaceDevice = !isPhone;
 
   const availableModes: CalendarMode[] = isPhone
     ? ["day", "threeDays", "week", "list"]
     : isDesktop
       ? ["day", "week", "month", "year", "season", "list"]
       : ["day", "threeDays", "week", "month", "list", "season"];
-  const primaryModes: CalendarMode[] = isTabletWorkspace ? ["day", "threeDays", "week", "month"] : availableModes;
+  const primaryModes: CalendarMode[] = isTabletWorkspace ? ["day", "threeDays", "week", "month"] : isDesktop ? ["day", "threeDays", "week", "month", "year", "list"] : availableModes;
 
   useEffect(() => {
     if (!availableModes.includes(mode)) setMode(availableModes[0]);
@@ -518,6 +520,7 @@ export function TrainingCalendarView({
   };
 
   const openEntryQuickEdit = (entry: PlanEntry) => {
+    setContextMenu(null);
     if (quickEdit?.entryId === entry.id) {
       setQuickEdit(null);
       setContextMode("detail");
@@ -533,6 +536,7 @@ export function TrainingCalendarView({
   };
 
   const openEntryDetail = (id: string) => {
+    setContextMenu(null);
     if (selectionMode) {
       updateSelection(id, !selectedIds.includes(id));
       return;
@@ -669,6 +673,7 @@ export function TrainingCalendarView({
   const clearSelection = () => {
     setSelectedIds([]);
     setSelectionMode(false);
+    setContextMenu(null);
   };
 
   const activateSelection = (id: string) => {
@@ -680,6 +685,10 @@ export function TrainingCalendarView({
     setShowTemplates(false);
     setSelectionMode(true);
     setSelectedIds((current) => current.includes(id) ? current : [...current, id]);
+  };
+
+  const openContextMenu = (entry: PlanEntry, x: number, y: number) => {
+    setContextMenu({ entry, x, y });
   };
 
   const deleteSelected = () => {
@@ -700,6 +709,16 @@ export function TrainingCalendarView({
     clearSelection();
   };
 
+  const openFirstSelectedQuickEdit = () => {
+    const entry = selectedIds.map((id) => entries.find((item) => item.id === id)).find(Boolean);
+    if (entry) openEntryQuickEdit(entry);
+  };
+
+  const openFirstSelectedDetail = () => {
+    const id = selectedIds[0];
+    if (id) openEntryDetail(id);
+  };
+
   const completeSelected = () => {
     selectedIds.forEach((id) => onStatusChange(id, "completed"));
     clearSelection();
@@ -713,6 +732,65 @@ export function TrainingCalendarView({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectionMode]);
+
+  useEffect(() => {
+    if (isPhone) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const isTyping = Boolean(target?.closest("input,textarea,select,[contenteditable='true']"));
+      if (event.key === "Escape") {
+        setContextMenu(null);
+        if (selectionMode) clearSelection();
+        else closeContext();
+        return;
+      }
+      if (isTyping) return;
+      if (event.key.toLowerCase() === "n") {
+        event.preventDefault();
+        onOpenPlan();
+      }
+      if (event.key.toLowerCase() === "f") {
+        event.preventDefault();
+        setQuickEdit(null);
+        setSelectedEntryId(null);
+        setShowTemplates(false);
+        setContextMode("filter");
+      }
+      if (event.key.toLowerCase() === "t") {
+        event.preventDefault();
+        setQuickEdit(null);
+        setSelectedEntryId(null);
+        setContextMode("templates");
+        setShowTemplates((value) => !value);
+      }
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "d") {
+        event.preventDefault();
+        if (selectedEntry) duplicateEntry(selectedEntry);
+        selectedIds.map((id) => entries.find((entry) => entry.id === id)).filter(Boolean).forEach((entry) => duplicateEntry(entry as PlanEntry));
+      }
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "c" && selectedIds.length > 0) {
+        event.preventDefault();
+        copySelected();
+      }
+      if (event.key === "Delete" && selectedIds.length > 0) {
+        event.preventDefault();
+        deleteSelected();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [copySelected, deleteSelected, duplicateEntry, entries, isPhone, onOpenPlan, selectedEntry, selectedIds, selectionMode]);
+
+  useEffect(() => {
+    if (!contextMenu) return;
+    const closeMenu = () => setContextMenu(null);
+    window.addEventListener("click", closeMenu);
+    window.addEventListener("scroll", closeMenu, true);
+    return () => {
+      window.removeEventListener("click", closeMenu);
+      window.removeEventListener("scroll", closeMenu, true);
+    };
+  }, [contextMenu]);
 
   const applyFeedback = (entry: PlanEntry, completionStatus: CompletionStatus, formData: FormData) => {
     const perceivedExertion = Number(formData.get("rpe") ?? 5);
@@ -1008,9 +1086,16 @@ export function TrainingCalendarView({
                 <PaddlioOneButton variant="secondary" onClick={() => {
                   setQuickEdit(null);
                   setSelectedEntryId(null);
+                  setContextMode("templates");
+                  setShowTemplates((value) => !value);
+                }}>Vorlagen</PaddlioOneButton>
+                <PaddlioOneButton variant="secondary" onClick={() => {
+                  setQuickEdit(null);
+                  setSelectedEntryId(null);
                   setShowTemplates(false);
                   setContextMode("filter");
                 }}>Filter</PaddlioOneButton>
+                <PaddlioOneButton variant="primary" onClick={onOpenPlan}>+ Training</PaddlioOneButton>
                 <PaddlioOneButton variant="secondary" onClick={() => setWeekCopyOpen(true)}>Aktionen</PaddlioOneButton>
                 <PaddlioOneButton variant={selectionMode ? "primary" : "secondary"} onClick={() => setSelectionMode((value) => !value)}>
                   Mehrfach
@@ -1073,10 +1158,12 @@ export function TrainingCalendarView({
 
         {selectionMode && selectedIds.length > 0 ? (
           <PaddlioOneCard className="master-selection-bar">
-            <strong>{selectedIds.length} ausgewählt</strong>
+          <strong>{selectedIds.length} ausgewählt</strong>
             <div className="master-selection-actions" aria-label="Aktionen für markierte Trainings">
+              <PaddlioOneButton variant="secondary" onClick={openFirstSelectedQuickEdit}>Verschieben</PaddlioOneButton>
               <PaddlioOneButton variant="secondary" onClick={copySelected}>Kopieren</PaddlioOneButton>
               <PaddlioOneButton variant="secondary" onClick={completeSelected}>Status</PaddlioOneButton>
+              <PaddlioOneButton variant="secondary" onClick={openFirstSelectedDetail}>Zuweisen</PaddlioOneButton>
               <details className="master-selection-more">
                 <summary aria-label="Weitere Auswahlaktionen">...</summary>
                 <div>
@@ -1091,19 +1178,19 @@ export function TrainingCalendarView({
         ) : null}
 
         {mode === "month" ? (
-        <MonthCalendar days={monthDays} groupedEntries={groupedEntries} focusDate={focusDate} onSelectDate={setFocusDate} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onQuickEdit={openEntryQuickEdit} onLongPressSelect={activateSelection} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} showDropHint={Boolean(dragTemplateId) && !isPhone} />
+        <MonthCalendar days={monthDays} groupedEntries={groupedEntries} focusDate={focusDate} onSelectDate={setFocusDate} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onQuickEdit={openEntryQuickEdit} onLongPressSelect={activateSelection} onContextMenuEntry={openContextMenu} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} showDropHint={Boolean(dragTemplateId) && !isPhone} />
         ) : null}
 
         {mode === "week" ? (
-          <WeekCalendar days={weekDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onQuickEdit={openEntryQuickEdit} onLongPressSelect={activateSelection} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={Boolean(dragTemplateId) && !isPhone} renderEntryPanel={renderPhoneEntryPanel} compactActions={isTabletWorkspace} />
+          <WeekCalendar days={weekDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onQuickEdit={openEntryQuickEdit} onLongPressSelect={activateSelection} onContextMenuEntry={openContextMenu} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={Boolean(dragTemplateId) && !isPhone} renderEntryPanel={renderPhoneEntryPanel} compactActions={isWorkspaceDevice} />
         ) : null}
 
         {mode === "day" ? (
-          <DayCalendar date={focusDate} entries={dayEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onQuickEdit={openEntryQuickEdit} onLongPressSelect={activateSelection} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={false} renderEntryPanel={renderPhoneEntryPanel} compactActions={isTabletWorkspace} />
+          <DayCalendar date={focusDate} entries={dayEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onQuickEdit={openEntryQuickEdit} onLongPressSelect={activateSelection} onContextMenuEntry={openContextMenu} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} showDropHint={false} renderEntryPanel={renderPhoneEntryPanel} compactActions={isWorkspaceDevice} />
         ) : null}
 
         {mode === "threeDays" ? (
-          <WeekCalendar days={threeDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onQuickEdit={openEntryQuickEdit} onLongPressSelect={activateSelection} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} compact showDropHint={false} renderEntryPanel={renderPhoneEntryPanel} compactActions={isTabletWorkspace} />
+          <WeekCalendar days={threeDays} groupedEntries={groupedEntries} onStatusChange={onStatusChange} onDrop={handleTemplateDrop} onDragOver={handleDragOver} onOpenEntry={openEntryDetail} onQuickEdit={openEntryQuickEdit} onLongPressSelect={activateSelection} onContextMenuEntry={openContextMenu} onStartLive={startLiveTraining} onFeedback={openFeedback} onDuplicate={duplicateEntry} onDelete={onDelete} selectionMode={selectionMode} selectedIds={selectedIds} onSelect={updateSelection} groups={groupOptions} athletes={athleteOptions} users={data?.users ?? []} compact showDropHint={false} renderEntryPanel={renderPhoneEntryPanel} compactActions={isWorkspaceDevice} />
         ) : null}
 
         {mode === "list" ? (
@@ -1120,6 +1207,19 @@ export function TrainingCalendarView({
 
       </main>
 
+      {contextMenu ? (
+        <div className="master-card-context-menu" style={{ left: contextMenu.x, top: contextMenu.y }} role="menu" aria-label="Training Kontextmenü">
+          <button type="button" role="menuitem" onClick={() => { activateSelection(contextMenu.entry.id); setContextMenu(null); }}>Auswählen</button>
+          <button type="button" role="menuitem" onClick={() => openEntryDetail(contextMenu.entry.id)}>Öffnen</button>
+          <button type="button" role="menuitem" onClick={() => openEntryQuickEdit(contextMenu.entry)}>Bearbeiten</button>
+          <button type="button" role="menuitem" onClick={() => { duplicateEntry(contextMenu.entry); setContextMenu(null); }}>Duplizieren</button>
+          <button type="button" role="menuitem" onClick={() => { onStatusChange(contextMenu.entry.id, "completed"); setContextMenu(null); }}>Status erledigt</button>
+          <button type="button" role="menuitem" onClick={() => { setTaskEntry(contextMenu.entry); setContextMenu(null); }}>Traineraufgabe</button>
+          <button type="button" role="menuitem" onClick={() => openEntryQuickEdit(contextMenu.entry)}>Als Vorlage speichern</button>
+          {onDelete ? <button className="is-danger" type="button" role="menuitem" onClick={() => { if (window.confirm("Training löschen?")) onDelete(contextMenu.entry.id); setContextMenu(null); }}>Löschen</button> : null}
+        </div>
+      ) : null}
+
       {!isPhone && hasContextContent ? (
         <>
           {usesOverlayContext ? <button type="button" className="master-calendar-context-backdrop" aria-label="Kalender-Kontext schliessen" onClick={closeContext} /> : null}
@@ -1133,29 +1233,6 @@ export function TrainingCalendarView({
             {contextContent}
           </aside>
         </>
-      ) : null}
-
-      {!isPhone && !isTabletWorkspace && selectedEntry ? (
-        <TrainingDetailDrawer
-          entry={selectedEntry}
-          journal={journal}
-          feedback={data?.trainingFeedback ?? []}
-          tasks={taskItems}
-          taskAssignments={taskAssignments}
-          groups={groupOptions}
-          athletes={athleteOptions}
-          users={data?.users ?? []}
-          user={user}
-          onClose={() => setSelectedEntryId(null)}
-          onStatusChange={onStatusChange}
-          onStartLive={startLiveTraining}
-          onFeedback={openFeedback}
-          onCreateTask={onDataChange && user ? (entry) => setTaskEntry(entry) : undefined}
-          onDuplicate={duplicateEntry}
-          onDelete={onDelete}
-          onDeleteSeries={onDeleteSeries}
-          entries={entries}
-        />
       ) : null}
 
       {isPhone && quickEdit ? (
@@ -1360,6 +1437,7 @@ function MonthCalendar({
   onOpenEntry,
   onQuickEdit,
   onLongPressSelect,
+  onContextMenuEntry,
   selectionMode,
   selectedIds,
   onSelect,
@@ -1374,6 +1452,7 @@ function MonthCalendar({
   onOpenEntry: (id: string) => void;
   onQuickEdit: (entry: PlanEntry) => void;
   onLongPressSelect: (id: string) => void;
+  onContextMenuEntry: (entry: PlanEntry, x: number, y: number) => void;
   selectionMode: boolean;
   selectedIds: string[];
   onSelect: (id: string, checked: boolean) => void;
@@ -1394,7 +1473,7 @@ function MonthCalendar({
               <strong>{dayNumber(day)}</strong>
               {showDropHint && entries.length === 0 ? <p className="master-calendar-empty-drop is-active">Hier ablegen</p> : null}
               {entries.slice(0, 3).map((entry) => (
-                <TrainingPill entry={entry} key={entry.id} compact onOpen={onOpenEntry} onQuickEdit={onQuickEdit} onLongPressSelect={onLongPressSelect} selectionMode={selectionMode} selected={selectedIds.includes(entry.id)} onSelect={onSelect} />
+                <TrainingPill entry={entry} key={entry.id} compact onOpen={onOpenEntry} onQuickEdit={onQuickEdit} onLongPressSelect={onLongPressSelect} onContextMenuEntry={onContextMenuEntry} selectionMode={selectionMode} selected={selectedIds.includes(entry.id)} onSelect={onSelect} />
               ))}
               {entries.length > 3 ? <small>+{entries.length - 3} weitere</small> : null}
             </button>
@@ -1414,6 +1493,7 @@ function WeekCalendar({
   onOpenEntry,
   onQuickEdit,
   onLongPressSelect,
+  onContextMenuEntry,
   onStartLive,
   onFeedback,
   onDuplicate,
@@ -1437,6 +1517,7 @@ function WeekCalendar({
   onOpenEntry: (id: string) => void;
   onQuickEdit: (entry: PlanEntry) => void;
   onLongPressSelect: (id: string) => void;
+  onContextMenuEntry: (entry: PlanEntry, x: number, y: number) => void;
   onStartLive: (entry: PlanEntry) => void;
   onFeedback: (entry: PlanEntry) => void;
   onDuplicate: (entry: PlanEntry) => void;
@@ -1466,7 +1547,7 @@ function WeekCalendar({
               <div className="master-calendar-entry-stack">
                 {entries.length > 0 ? entries.map((entry) => (
                   <div className="master-calendar-entry-with-panel" data-calendar-entry-id={entry.id} key={entry.id}>
-                    <TrainingBlock entry={entry} onStatusChange={onStatusChange} onOpenEntry={onOpenEntry} onQuickEdit={onQuickEdit} onLongPressSelect={onLongPressSelect} onStartLive={onStartLive} onFeedback={onFeedback} onDuplicate={onDuplicate} onDelete={onDelete} selectionMode={selectionMode} selected={selectedIds.includes(entry.id)} onSelect={onSelect} assignedLabel={getAssignedLabel(entry, groups, athletes, users)} compactActions={compactActions} />
+                    <TrainingBlock entry={entry} onStatusChange={onStatusChange} onOpenEntry={onOpenEntry} onQuickEdit={onQuickEdit} onLongPressSelect={onLongPressSelect} onContextMenuEntry={onContextMenuEntry} onStartLive={onStartLive} onFeedback={onFeedback} onDuplicate={onDuplicate} onDelete={onDelete} selectionMode={selectionMode} selected={selectedIds.includes(entry.id)} onSelect={onSelect} assignedLabel={getAssignedLabel(entry, groups, athletes, users)} compactActions={compactActions} />
                     {renderEntryPanel?.(entry)}
                   </div>
                 )) : <p className="master-calendar-empty-drop">{showDropHint ? "Vorlage hier ablegen" : "Keine Einträge"}</p>}
@@ -1491,6 +1572,7 @@ function TrainingBlock({
   onOpenEntry,
   onQuickEdit,
   onLongPressSelect,
+  onContextMenuEntry,
   onStartLive,
   onFeedback,
   onDuplicate,
@@ -1506,6 +1588,7 @@ function TrainingBlock({
   onOpenEntry: (id: string) => void;
   onQuickEdit: (entry: PlanEntry) => void;
   onLongPressSelect: (id: string) => void;
+  onContextMenuEntry: (entry: PlanEntry, x: number, y: number) => void;
   onStartLive: (entry: PlanEntry) => void;
   onFeedback: (entry: PlanEntry) => void;
   onDuplicate: (entry: PlanEntry) => void;
@@ -1570,7 +1653,7 @@ function TrainingBlock({
         onPointerCancel={clearPressTimer}
         onContextMenu={(event) => {
           event.preventDefault();
-          onLongPressSelect(entry.id);
+          onContextMenuEntry(entry, event.clientX, event.clientY);
         }}
         aria-label={`${summary.startTime} bis ${summary.endTime}, ${summary.title}, ${summary.category}`}
       >
@@ -1601,7 +1684,18 @@ function TrainingBlock({
           <PaddlioOneStatusChip tone={summary.done ? "success" : summary.skipped ? "danger" : "info"}>{planStatusLabels[entry.status] ?? entry.status}</PaddlioOneStatusChip>
         )}
         {compactActions ? (
-          <button className="master-training-menu-button" type="button" onClick={() => onOpenEntry(entry.id)} aria-label="Training Aktionen öffnen">...</button>
+          <button
+            className="master-training-menu-button"
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              const rect = event.currentTarget.getBoundingClientRect();
+              onContextMenuEntry(entry, rect.left, rect.bottom + 6);
+            }}
+            aria-label="Training Aktionen öffnen"
+          >
+            ...
+          </button>
         ) : (
           <>
             <button type="button" onClick={() => onStartLive(entry)}>Start</button>
@@ -1622,6 +1716,7 @@ function TrainingPill({
   onOpen,
   onQuickEdit,
   onLongPressSelect,
+  onContextMenuEntry,
   selectionMode,
   selected,
   onSelect,
@@ -1631,6 +1726,7 @@ function TrainingPill({
   onOpen: (id: string) => void;
   onQuickEdit: (entry: PlanEntry) => void;
   onLongPressSelect: (id: string) => void;
+  onContextMenuEntry: (entry: PlanEntry, x: number, y: number) => void;
   selectionMode: boolean;
   selected: boolean;
   onSelect: (id: string, checked: boolean) => void;
@@ -1685,7 +1781,7 @@ function TrainingPill({
         onPointerCancel={clearPressTimer}
         onContextMenu={(event) => {
           event.preventDefault();
-          onLongPressSelect(entry.id);
+          onContextMenuEntry(entry, event.clientX, event.clientY);
         }}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") onOpen(entry.id);

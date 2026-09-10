@@ -50,6 +50,16 @@ async function longPress(page: Page, locator: Locator) {
   await page.mouse.up();
 }
 
+async function ensureTrainingVisible(page: Page) {
+  const firstTraining = page.locator(".master-training-block-main").first();
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    if (await firstTraining.isVisible().catch(() => false)) return firstTraining;
+    await page.getByRole("button", { name: "Vorheriger Zeitraum" }).click();
+  }
+  await expect(firstTraining).toBeVisible({ timeout: 20_000 });
+  return firstTraining;
+}
+
 test.describe("tablet calendar touch interactions", () => {
   test.skip(!coachEmail || !coachPassword, "Development coach credentials are required for tablet screenshots.");
 
@@ -75,8 +85,7 @@ test.describe("tablet calendar touch interactions", () => {
     await page.screenshot({ path: join(screenshotDir, "06-template-insert.png"), fullPage: true });
     await closeContext(page);
 
-    const firstTraining = page.locator(".master-training-block-main").first();
-    await expect(firstTraining).toBeVisible({ timeout: 20_000 });
+    const firstTraining = await ensureTrainingVisible(page);
     await firstTraining.dblclick();
     await expect(quickEdit).toBeVisible({ timeout: 20_000 });
     await page.screenshot({ path: join(screenshotDir, "03-calendar-quick-edit.png"), fullPage: true });
@@ -86,7 +95,8 @@ test.describe("tablet calendar touch interactions", () => {
     await longPress(page, firstTraining);
     const selectionBar = page.locator(".master-selection-bar");
     if (!await selectionBar.isVisible().catch(() => false)) {
-      await firstTraining.click({ button: "right" });
+      await page.getByRole("button", { name: "Training Aktionen öffnen" }).first().click();
+      await page.getByRole("menu", { name: "Training Kontextmenü" }).getByRole("menuitem", { name: "Auswählen" }).click();
     }
     await expect(selectionBar).toBeVisible({ timeout: 20_000 });
     await page.screenshot({ path: join(screenshotDir, "04-calendar-multi-select.png"), fullPage: true });

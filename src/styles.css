@@ -13777,6 +13777,220 @@ body,
   }
 }
 
+/* Desktop training workspace: shared tablet architecture with PC density. */
+@media (min-width: 1280px) {
+  .master-calendar-workspace.master-calendar-desktop {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    transition: grid-template-columns 180ms ease;
+  }
+
+  .master-calendar-workspace.master-calendar-desktop.has-context {
+    grid-template-columns: minmax(0, 1fr) minmax(320px, clamp(320px, 28vw, 420px));
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .po-page-header {
+    margin-bottom: 8px;
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .master-calendar-toolbar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .master-segmented-control {
+    justify-self: center;
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .master-calendar-controls {
+    grid-template-columns: minmax(260px, 1fr) repeat(2, minmax(150px, 0.34fr));
+    margin-top: 8px;
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .master-calendar-stats {
+    display: none;
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .master-calendar-week-grid {
+    grid-template-columns: repeat(7, minmax(154px, 1fr));
+    overflow-x: auto;
+    gap: 10px;
+    padding-bottom: 4px;
+  }
+
+  .master-calendar-workspace.master-calendar-desktop.has-context .master-calendar-week-grid {
+    grid-template-columns: repeat(7, minmax(142px, 1fr));
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .master-calendar-week-day {
+    min-height: 28rem;
+    padding: 10px;
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .master-training-block.is-vivendi-summary {
+    min-height: 92px;
+    padding: 10px;
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .master-training-block-main strong {
+    font-size: 0.98rem;
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .master-training-block-main small,
+  .master-calendar-workspace.master-calendar-desktop .master-training-summary-meta {
+    font-size: 0.76rem;
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .master-calendar-context {
+    width: 100%;
+    max-width: 420px;
+  }
+}
+
+.master-card-context-menu {
+  position: fixed;
+  z-index: 120;
+  display: grid;
+  min-width: 220px;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--po-border, rgba(255, 255, 255, 0.14));
+  border-radius: 14px;
+  background: rgba(7, 14, 23, 0.98);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.42);
+}
+
+.master-card-context-menu button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--po-text, #e5edf7);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 820;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.master-card-context-menu button:hover,
+.master-card-context-menu button:focus-visible {
+  background: rgba(82, 232, 255, 0.12);
+  outline: none;
+}
+
+.master-card-context-menu button.is-danger {
+  color: #ff9aa7;
+}
+
+@media (min-width: 1280px) {
+  .tablet-training-builder-page,
+  .planning-shell:has(.tablet-training-builder-shell) {
+    max-width: none;
+  }
+
+  .tablet-training-builder-shell {
+    min-width: 0;
+  }
+
+  .tablet-builder-workspace {
+    grid-template-columns: minmax(260px, 23%) minmax(520px, 1fr) minmax(320px, 28%);
+    gap: 14px;
+  }
+
+  .tablet-block-library,
+  .tablet-builder-inspector {
+    max-height: calc(100dvh - 104px);
+    padding: 14px;
+  }
+
+  .tablet-training-timeline {
+    min-height: calc(100dvh - 172px);
+    padding: 16px;
+  }
+
+  .tablet-block-card {
+    min-height: 76px;
+    gap: 6px;
+    padding: 10px 12px;
+  }
+
+  .tablet-block-card small,
+  .tablet-block-card em {
+    display: block;
+  }
+
+  .tablet-timeline-card {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+  }
+
+  .tablet-timeline-card > button {
+    grid-template-columns: 74px minmax(0, 1fr);
+  }
+
+  .tablet-duration-stepper {
+    min-width: 174px;
+  }
+
+  .template-library-redesign-layout.has-detail {
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+  }
+
+  .template-tile-grid {
+    grid-template-columns: repeat(auto-fit, minmax(205px, 1fr));
+  }
+
+  .training-templates-only .template-tile-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
+  .training-journal-only .calendar-list {
+    display: grid;
+    gap: 0;
+    border: 1px solid var(--po-border, rgba(255, 255, 255, 0.12));
+    border-radius: 18px;
+    overflow: hidden;
+  }
+
+  .training-journal-only .calendar-training-card {
+    display: grid;
+    grid-template-columns: minmax(160px, 1.2fr) minmax(220px, 1.6fr) minmax(120px, 0.8fr) minmax(130px, 0.8fr) minmax(200px, 1.4fr);
+    gap: 12px;
+    align-items: center;
+    min-height: 68px;
+    border: 0;
+    border-bottom: 1px solid var(--po-border, rgba(255, 255, 255, 0.08));
+    border-radius: 0;
+    background: rgba(8, 18, 31, 0.64);
+    padding: 10px 14px;
+  }
+
+  .training-journal-only .calendar-training-card .plan-card-head {
+    display: contents;
+  }
+
+  .training-journal-only .calendar-training-card .plan-card-head div {
+    display: grid;
+    gap: 2px;
+  }
+
+  .training-journal-only .calendar-training-card .plan-card-head span,
+  .training-journal-only .calendar-training-card p,
+  .training-journal-only .feedback-list span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .training-journal-only .feedback-list {
+    display: grid;
+    min-width: 0;
+  }
+}
+
 /* Phone final: compact global shell and single-layer mobile training flow. */
 .app-shell-phone {
   --phone-top-gap: calc(6px + env(safe-area-inset-top));

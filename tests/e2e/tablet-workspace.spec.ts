@@ -38,10 +38,19 @@ async function openTemplates(page: Page) {
 }
 
 async function openFirstTrainingDetail(page: Page) {
-  const entry = page.locator(".master-training-block-main, .master-training-pill [role='button'], .master-agenda-row button").first();
-  await expect(entry).toBeVisible({ timeout: 20_000 });
+  const entry = await ensureTrainingVisible(page);
   await entry.click();
   await expect(page.getByTestId("training-detail-panel")).toBeVisible({ timeout: 20_000 });
+}
+
+async function ensureTrainingVisible(page: Page) {
+  const entry = page.locator(".master-training-block-main, .master-training-pill [role='button'], .master-agenda-row button").first();
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    if (await entry.isVisible().catch(() => false)) return entry;
+    await page.getByRole("button", { name: "Vorheriger Zeitraum" }).click();
+  }
+  await expect(entry).toBeVisible({ timeout: 20_000 });
+  return entry;
 }
 
 async function closeDetailIfOpen(page: Page) {
@@ -92,6 +101,15 @@ async function openQuickEdit(page: Page) {
   await expect(page.getByRole("region", { name: /Training schnell/i }).or(page.getByRole("dialog", { name: /Training schnell/i })).first()).toBeVisible({ timeout: 20_000 });
 }
 
+async function openTemplateMode(page: Page, mode: "Training" | "Woche" | "Saison") {
+  await openTemplates(page);
+  const templateTabs = page.locator(".master-calendar-context .master-template-primary-tabs");
+  await expect(templateTabs).toBeVisible({ timeout: 20_000 });
+  const modeButton = templateTabs.getByRole("button", { name: new RegExp(`^${mode}$`) });
+  await expect(modeButton).toBeVisible({ timeout: 20_000 });
+  await modeButton.click();
+}
+
 test.describe("tablet trainer workspace 4", () => {
   test.skip(!coachEmail || !coachPassword, "Development coach credentials are required for tablet screenshots.");
 
@@ -110,15 +128,10 @@ test.describe("tablet trainer workspace 4", () => {
     await openTemplates(page);
     await page.screenshot({ path: join(screenshotDir, "landscape-02-templates.png"), fullPage: true });
     await page.evaluate(() => window.scrollTo(0, 0));
-    const weekTemplateButton = page.locator(".master-calendar-context .master-template-primary-tabs").getByRole("button", { name: /^Woche$/ });
-    await weekTemplateButton.scrollIntoViewIfNeeded();
-    await weekTemplateButton.click();
+    await openTemplateMode(page, "Woche");
     await page.screenshot({ path: join(screenshotDir, "landscape-03-week-templates.png"), fullPage: true });
     await page.evaluate(() => window.scrollTo(0, 0));
-    await openTemplates(page);
-    const seasonTemplateButton = page.locator(".master-calendar-context .master-template-primary-tabs").getByRole("button", { name: /^Saison$/ });
-    await seasonTemplateButton.scrollIntoViewIfNeeded();
-    await seasonTemplateButton.click();
+    await openTemplateMode(page, "Saison");
     await page.screenshot({ path: join(screenshotDir, "landscape-04-season-blocks.png"), fullPage: true });
 
     await openFirstTrainingDetail(page);
@@ -158,6 +171,7 @@ test.describe("tablet trainer workspace 4", () => {
     await openCalendar(page);
     await page.locator(".master-segmented-control").getByRole("button", { name: "Monat" }).click();
     await page.screenshot({ path: join(screenshotDir, "portrait-04-month.png"), fullPage: true });
+    await page.locator(".master-segmented-control").getByRole("button", { name: "3 Tage" }).click();
     await openFirstTrainingDetail(page);
     await page.screenshot({ path: join(screenshotDir, "portrait-05-training-detail-drawer.png"), fullPage: true });
     await closeDetailIfOpen(page);

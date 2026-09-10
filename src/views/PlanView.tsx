@@ -2219,9 +2219,9 @@ export function PlanView({
         </section>
       ) : null}
 
-      {!isSingleWorkspaceMode && isTablet && draft ? renderTabletTrainingBuilder() : null}
+      {!isSingleWorkspaceMode && !isPhone && draft ? renderTabletTrainingBuilder() : null}
 
-      {!isTablet && draft ? (
+      {isPhone && draft ? (
         <section className="section-block planning-side-editor planning-draft-editor">
           <div className="section-heading"><div><p className="eyebrow">Planung</p><h3>{draft.id ? "Training bearbeiten" : "Training planen"}</h3></div></div>
           {formMessage ? <p className="auth-message">{formMessage}</p> : null}
