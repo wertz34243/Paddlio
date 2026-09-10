@@ -2,6 +2,7 @@
 import type { AuthChangeEvent, Session, User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase, getSupabaseClient } from "../lib/supabase";
 import { getSupabaseConfigMessage, isSupabaseConfigured } from "../lib/supabaseConfig";
+import { isDevelopmentEnvironment } from "../lib/appEnvironment";
 import {
   cacheCloudAuthUsers,
   cacheCloudClubRequests,
@@ -144,10 +145,14 @@ const logCloudError = (scope: string, error: unknown) => {
 
 const getAuthEmailRedirectTo = (): string | undefined => {
   if (typeof window === "undefined") return undefined;
+  const configuredRedirect = typeof import.meta.env.VITE_AUTH_REDIRECT_URL === "string" ? import.meta.env.VITE_AUTH_REDIRECT_URL.trim() : "";
+  if (configuredRedirect) return configuredRedirect;
+  if (isDevelopmentEnvironment) return "https://dev.paddlio.de/";
   return `${window.location.origin}${window.location.pathname}`;
 };
 
 const PASSWORD_RECOVERY_STORAGE_KEY = "paddlio-password-recovery";
+const EMAIL_CONFIRMATION_STORAGE_KEY = "paddlio-email-confirmed";
 
 const hasPasswordRecoveryUrlHint = (): boolean => {
   if (typeof window === "undefined") return false;
@@ -155,6 +160,15 @@ const hasPasswordRecoveryUrlHint = (): boolean => {
   const hashValue = window.location.hash.startsWith("#") ? window.location.hash.slice(1) : window.location.hash;
   const hash = new URLSearchParams(hashValue);
   return search.get("type") === "recovery" || hash.get("type") === "recovery";
+};
+
+const hasEmailConfirmationUrlHint = (): boolean => {
+  if (typeof window === "undefined") return false;
+  const search = new URLSearchParams(window.location.search);
+  const hashValue = window.location.hash.startsWith("#") ? window.location.hash.slice(1) : window.location.hash;
+  const hash = new URLSearchParams(hashValue);
+  const type = search.get("type") ?? hash.get("type");
+  return type === "signup" || type === "email_confirmation";
 };
 
 const clearAuthUrlParameters = () => {
@@ -475,6 +489,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const syncRunningRef = useRef(false);
   const latestSyncDataRef = useRef<PaddleMotionData | null>(null);
 
+  const finishEmailConfirmationFlow = async () => {
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem(EMAIL_CONFIRMATION_STORAGE_KEY, "done");
+    }
+    setPasswordRecovery(false);
+    setCloudStatus(isSupabaseConfigured ? "connected" : "disabled");
+    setCloudMessage("E-Mail-Adresse bestätigt. Du kannst dich jetzt anmelden.");
+    clearAuthUrlParameters();
+    if (supabase) await supabase.auth.signOut();
+    clearSession();
+    setSession(null);
+    setCurrentUser(null);
+    setProfile(null);
+    setDataState(null);
+    setLoading(false);
+  };
+
   const refreshCloudData = async () => {
     if (!isSupabaseConfigured || !supabase) {
       setCloudStatus("disabled");
@@ -748,8 +779,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    void refreshCloudData();
-    if (!supabase) return undefined;
+    const startsInEmailConfirmationFlow = hasEmailConfirmationUrlHint();
+    if (!supabase) {
+      if (startsInEmailConfirmationFlow) {
+        void finishEmailConfirmationFlow();
+        return undefined;
+      }
+      void refreshCloudData();
+      return undefined;
+    }
     const { data: listener } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, nextSession) => {
       if (event === "PASSWORD_RECOVERY") {
         if (typeof window !== "undefined") {
@@ -762,10 +800,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      if (event === "SIGNED_IN" && (startsInEmailConfirmationFlow || hasEmailConfirmationUrlHint())) {
+        void finishEmailConfirmationFlow();
+        return;
+      }
+
       setSession(nextSession);
       setCurrentUser(nextSession?.user ?? null);
       void refreshCloudData();
     });
+    if (startsInEmailConfirmationFlow) {
+      void finishEmailConfirmationFlow();
+    } else if (typeof window !== "undefined" && window.sessionStorage.getItem(EMAIL_CONFIRMATION_STORAGE_KEY) === "done") {
+      window.sessionStorage.removeItem(EMAIL_CONFIRMATION_STORAGE_KEY);
+      setCloudMessage("E-Mail-Adresse bestätigt. Du kannst dich jetzt anmelden.");
+      void refreshCloudData();
+    } else {
+      void refreshCloudData();
+    }
     return () => listener.subscription.unsubscribe();
   }, []);
 
