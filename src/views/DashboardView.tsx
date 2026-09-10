@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { APP_SLOGAN, APP_VERSION } from "../brand";
 import {
   PaddlioOneButton,
@@ -48,6 +49,36 @@ const formatDate = (date?: string): string => {
 const formatMinutes = (minutes: number): string => (minutes > 0 ? `${Math.round(minutes)} min` : "--");
 
 const weekDayLabels = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+const PADDLIO_INTRO_DISMISSED_KEY = "paddlio-intro-dismissed";
+
+const introSteps = [
+  {
+    title: "Training planen",
+    text: "Kalender, Vorlagen und Wochenplanung bringen deine Einheiten sauber in den Ablauf.",
+  },
+  {
+    title: "Training durchführen",
+    text: "Öffne Einheiten am Wasser, starte sie direkt und erfasse die tatsächliche Durchführung.",
+  },
+  {
+    title: "Fortschritt analysieren",
+    text: "Soll/Ist, Feedback und Verlauf zeigen dir, wie sich dein Training entwickelt.",
+  },
+  {
+    title: "Gemeinsam trainieren",
+    text: "Athleten, Trainer, Gruppen und Vereine arbeiten mit denselben Trainingsdaten.",
+  },
+];
+
+const readIntroDismissed = (): boolean => {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem(PADDLIO_INTRO_DISMISSED_KEY) === "true";
+};
+
+const writeIntroDismissed = (dismissed: boolean) => {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(PADDLIO_INTRO_DISMISSED_KEY, dismissed ? "true" : "false");
+};
 
 export function DashboardView({
   data,
@@ -56,6 +87,10 @@ export function DashboardView({
   onOpenMoreSegment,
   onQuickAction,
 }: DashboardViewProps) {
+  const [introDismissed, setIntroDismissed] = useState(readIntroDismissed);
+  const [introOpen, setIntroOpen] = useState(false);
+  const [introStep, setIntroStep] = useState(0);
+  const introDialogRef = useRef<HTMLElement | null>(null);
   const displayName = getDisplayName(user.profile);
   const isAdmin = user.role === "admin";
   const isCoachLike = user.role === "coach" || user.role === "teamAdmin" || user.role === "clubAdmin" || user.role === "admin";
@@ -110,6 +145,34 @@ export function DashboardView({
     nextTraining?.goal ||
     nextTraining?.focus ||
     "Nutze den Tag bewusst: locker bewegen, erholen oder die nächste Einheit vorbereiten.";
+  const showIntroCard = !introDismissed && scopedPlan.length < 3;
+  const activeIntroStep = introSteps[introStep] ?? introSteps[0];
+
+  useEffect(() => {
+    if (!introOpen) return undefined;
+    window.setTimeout(() => introDialogRef.current?.focus(), 0);
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIntroOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [introOpen]);
+
+  const dismissIntro = () => {
+    setIntroDismissed(true);
+    writeIntroDismissed(true);
+    setIntroOpen(false);
+  };
+
+  const reopenIntro = () => {
+    setIntroOpen(true);
+    setIntroStep(0);
+  };
+
+  const startFirstTraining = () => {
+    setIntroOpen(false);
+    onNavigate("plan");
+  };
 
   return (
     <div className="po-workspace-dashboard">
@@ -130,6 +193,31 @@ export function DashboardView({
         <PaddlioOneMetricCard label="Aufgaben" value={openTasks} detail="warten" icon="target" tone={openTasks > 0 ? "info" : "muted"} />
         <PaddlioOneMetricCard label="Nächstes" value={nextTraining?.startTime || nextTraining?.time || "--"} detail={nextTraining ? formatDate(nextTraining.date) : "frei"} icon="timer" />
       </section>
+
+      {showIntroCard ? (
+        <PaddlioOneCard className="po-paddlio-intro-card" tone="info">
+          <div className="po-paddlio-intro-copy">
+            <div>
+              <p className="po-eyebrow">Train. Analyze. Improve.</p>
+              <h2>Neu bei Paddlio?</h2>
+              <p>Paddlio verbindet Trainingsplanung, Durchführung und Analyse für Kanuslalom - für Athleten, Trainer und Vereine.</p>
+            </div>
+            <button className="po-intro-dismiss" type="button" onClick={dismissIntro} aria-label="Paddlio-Info ausblenden">×</button>
+          </div>
+          <div className="po-paddlio-intro-points" aria-label="Paddlio Hauptfunktionen">
+            <span><strong>Training planen</strong><small>Plane Einheiten, Wochen und deine Saison.</small></span>
+            <span><strong>Training durchführen</strong><small>Starte Einheiten und erfasse dein tatsächliches Training.</small></span>
+            <span><strong>Fortschritt verstehen</strong><small>Vergleiche Soll und Ist und erkenne deine Entwicklung.</small></span>
+          </div>
+          <div className="po-action-row">
+            <PaddlioOneButton variant="secondary" icon="bolt" onClick={reopenIntro}>Paddlio kennenlernen</PaddlioOneButton>
+          </div>
+        </PaddlioOneCard>
+      ) : (
+        <div className="po-paddlio-intro-link">
+          <button type="button" onClick={reopenIntro} aria-label="Paddlio kennenlernen öffnen">Was ist Paddlio?</button>
+        </div>
+      )}
 
       <section className="po-dashboard-layout" aria-label="Trainingszentrale">
         <div className="po-dashboard-column">
@@ -288,6 +376,57 @@ export function DashboardView({
         {isCoachLike ? <PaddlioOneButton variant="ghost" icon="club" onClick={() => onOpenMoreSegment("coach")}>Coach-Hub</PaddlioOneButton> : null}
         <PaddlioOneButton variant="ghost" icon="more" onClick={() => onOpenMoreSegment("notifications")}>Hinweise</PaddlioOneButton>
       </section>
+
+      {introOpen ? (
+        <div className="po-intro-dialog-backdrop" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setIntroOpen(false);
+        }}>
+          <section
+            className="po-intro-dialog"
+            ref={introDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="paddlio-intro-title"
+            aria-describedby="paddlio-intro-description"
+            tabIndex={-1}
+          >
+            <header>
+              <div>
+                <p className="po-eyebrow">Paddlio kennenlernen</p>
+                <h2 id="paddlio-intro-title">{activeIntroStep.title}</h2>
+              </div>
+              <button className="po-intro-dismiss" type="button" onClick={() => setIntroOpen(false)} aria-label="Intro schließen">×</button>
+            </header>
+            <p id="paddlio-intro-description">{activeIntroStep.text}</p>
+            <div className="po-intro-stepper" aria-label="Intro-Schritte">
+              {introSteps.map((step, index) => (
+                <button
+                  aria-current={index === introStep ? "step" : undefined}
+                  className={index === introStep ? "is-active" : ""}
+                  key={step.title}
+                  type="button"
+                  onClick={() => setIntroStep(index)}
+                >
+                  <span>{index + 1}</span>
+                  <strong>{step.title}</strong>
+                </button>
+              ))}
+            </div>
+            <footer>
+              {introStep === introSteps.length - 1 ? <strong className="po-intro-ready">Bereit?</strong> : null}
+              {introStep > 0 ? <PaddlioOneButton variant="ghost" onClick={() => setIntroStep((current) => Math.max(0, current - 1))}>Zurück</PaddlioOneButton> : null}
+              {introStep < introSteps.length - 1 ? (
+                <PaddlioOneButton variant="secondary" onClick={() => setIntroStep((current) => Math.min(introSteps.length - 1, current + 1))}>Weiter</PaddlioOneButton>
+              ) : (
+                <>
+                  <PaddlioOneButton variant="primary" icon="calendar" onClick={startFirstTraining}>Erstes Training planen</PaddlioOneButton>
+                  <PaddlioOneButton variant="ghost" onClick={dismissIntro}>Schließen</PaddlioOneButton>
+                </>
+              )}
+            </footer>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }
