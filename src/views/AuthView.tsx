@@ -1,8 +1,10 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { APP_NAME, APP_SLOGAN } from "../brand";
-import { loadClubs, type LoginInput, type RegisterInput } from "../data/storage";
+import { cacheCloudClubs, loadClubs, type LoginInput, type RegisterInput } from "../data/storage";
 import type { CloudAuthResult } from "../auth/AuthProvider";
 import { isUserVisibleLoginMessage } from "../auth/authMessages";
+import { getActiveRegistrationClubs, toRegistrationClub } from "../auth/registrationClubs";
+import { listCloudClubs } from "../services/clubService";
 
 type AuthMode = "login" | "register";
 
@@ -16,7 +18,7 @@ type AuthViewProps = {
 
 export function AuthView({ onLogin, onRegister, onResetPassword, onResendConfirmation, cloudMessage }: AuthViewProps) {
   const [mode, setMode] = useState<AuthMode>("login");
-  const [clubs] = useState(() => loadClubs().filter((club) => club.status === "active"));
+  const [clubs, setClubs] = useState(() => getActiveRegistrationClubs(loadClubs()));
   const [suggestClub, setSuggestClub] = useState(false);
   const [message, setMessage] = useState("");
   const [messageOk, setMessageOk] = useState(false);
@@ -24,6 +26,24 @@ export function AuthView({ onLogin, onRegister, onResetPassword, onResendConfirm
   const [resetEmail, setResetEmail] = useState("");
   const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState("");
   const [resendPending, setResendPending] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    void listCloudClubs()
+      .then((cloudClubs) => {
+        const nextClubs = getActiveRegistrationClubs(cloudClubs.map(toRegistrationClub));
+        if (nextClubs.length === 0 || !isMounted) return;
+        cacheCloudClubs(nextClubs);
+        setClubs(nextClubs);
+      })
+      .catch((error) => {
+        console.info("Vereinsliste konnte nicht aus der Cloud geladen werden. Lokaler Cache wird genutzt.", error);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

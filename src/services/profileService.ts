@@ -1,6 +1,7 @@
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { getSupabaseClient } from "../lib/supabase";
 import type { Database, Json, UserRole } from "../lib/database.types";
+import { listCloudClubs } from "./clubService";
 
 export type CloudProfile = Database["public"]["Tables"]["profiles"]["Row"];
 type CloudProfileUpdate = Partial<CloudProfile> & { id: string; profile_data?: Json };
@@ -62,6 +63,40 @@ const createProfileAbort = (timeoutMs = 15000) => {
   };
 };
 
+const normalizeClubLookup = (value: unknown): string =>
+  typeof value === "string"
+    ? value
+        .toLowerCase()
+        .replace(/[^a-z0-9äöüß]+/gi, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+    : "";
+
+const resolveSignupClubId = async (metadata: SupabaseUser["user_metadata"] | null | undefined): Promise<string | null> => {
+  if (!metadata || typeof metadata !== "object") return null;
+  const isUuid = (value: unknown): value is string =>
+    typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+  const rawClubId = isUuid(metadata.clubId) ? metadata.clubId : null;
+  const rawClubName = normalizeClubLookup(metadata.club);
+
+  try {
+    const activeClubs = (await listCloudClubs()).filter((club) => club.status === "active");
+    if (rawClubId && activeClubs.some((club) => club.id === rawClubId)) return rawClubId;
+
+    if (rawClubName) {
+      const matches = activeClubs.filter(
+        (club) => normalizeClubLookup(club.name) === rawClubName || normalizeClubLookup(club.short_name) === rawClubName,
+      );
+      const uniqueIds = Array.from(new Set(matches.map((club) => club.id)));
+      if (uniqueIds.length === 1) return uniqueIds[0];
+    }
+  } catch (error) {
+    console.info("[Paddlio Cloud] Verein konnte beim Profil-Fallback nicht validiert werden.", error);
+  }
+
+  return null;
+};
+
 export const getCloudProfile = async (userId: string): Promise<CloudProfile | null> => {
   const client = getSupabaseClient();
   if (!client) return null;
@@ -85,9 +120,7 @@ export const ensureCloudProfile = async (user: SupabaseUser): Promise<CloudProfi
   const lastName = String(metadata.lastName ?? "");
   const email = normalizeEmail(user.email);
   const roles = buildCloudRoles(email, metadata, ["Athlete"]);
-  const isUuid = (value: unknown): value is string =>
-    typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
-  const metadataClubId = isUuid(metadata.clubId) ? metadata.clubId : null;
+  const metadataClubId = await resolveSignupClubId(metadata);
 
   const existing = await getCloudProfile(user.id);
   if (existing) {
