@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { APP_NAME, APP_SLOGAN } from "../brand";
 import { loadClubs, type LoginInput, type RegisterInput } from "../data/storage";
 import type { CloudAuthResult } from "../auth/AuthProvider";
+import { isUserVisibleLoginMessage } from "../auth/authMessages";
 
 type AuthMode = "login" | "register";
 
@@ -11,11 +12,6 @@ type AuthViewProps = {
   onResetPassword: (email: string) => Promise<CloudAuthResult>;
   onResendConfirmation: (email: string) => Promise<CloudAuthResult>;
   cloudMessage?: string;
-};
-
-const isLoginRelevantCloudMessage = (value = ""): boolean => {
-  if (!value) return false;
-  return !/optionale Module|Zusatzfunktionen/i.test(value);
 };
 
 export function AuthView({ onLogin, onRegister, onResetPassword, onResendConfirmation, cloudMessage }: AuthViewProps) {
@@ -226,7 +222,7 @@ export function AuthView({ onLogin, onRegister, onResetPassword, onResendConfirm
           </form>
         )}
 
-        {isLoginRelevantCloudMessage(cloudMessage) && !message ? <p className="auth-message neutral">{cloudMessage}</p> : null}
+        {isUserVisibleLoginMessage(cloudMessage) && !message ? <p className="auth-message neutral">{cloudMessage}</p> : null}
         {message ? (
           <div className={`auth-message ${messageOk ? "success" : ""}`}>
             <p>{message}</p>

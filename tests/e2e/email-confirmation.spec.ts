@@ -5,6 +5,7 @@ test("email confirmation link returns to login instead of dashboard", async ({ p
 
   await expect(page.getByRole("button", { name: "Einloggen" })).toBeVisible();
   await expect(page.getByText("E-Mail-Adresse bestätigt. Du kannst dich jetzt anmelden.")).toBeVisible();
+  await expect(page.getByText(/Cloud eingeschränkt|Profil-Sync|Supabase|RLS|Rolle ist lokal/i)).not.toBeVisible();
   await expect(page.getByText("Heute")).not.toBeVisible();
   await expect(page.getByTestId("bottom-navigation")).not.toBeVisible();
 });

@@ -3,6 +3,7 @@ import type { AuthChangeEvent, Session, User as SupabaseUser } from "@supabase/s
 import { supabase, getSupabaseClient } from "../lib/supabase";
 import { getSupabaseConfigMessage, isSupabaseConfigured } from "../lib/supabaseConfig";
 import { isDevelopmentEnvironment } from "../lib/appEnvironment";
+import { PROFILE_SYNC_RETRY_MESSAGE } from "./authMessages";
 import {
   cacheCloudAuthUsers,
   cacheCloudClubRequests,
@@ -543,13 +544,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profileIsFallback = true;
         logCloudError("Profil synchronisieren", error);
         nextProfile = createFallbackProfile(activeSession.user);
-        setCloudMessage("Cloud eingeschränkt: Rolle wird lokal abgeleitet und beim nächsten erfolgreichen Profil-Sync überschrieben.");
+        setCloudMessage("");
       }
 
       if (!nextProfile) {
         profileIsFallback = true;
         nextProfile = createFallbackProfile(activeSession.user);
-        setCloudMessage("Cloud eingeschränkt: Rolle wird lokal abgeleitet und beim nächsten erfolgreichen Profil-Sync überschrieben.");
+        setCloudMessage("");
       }
       const clubs = (await loadOptionalCloudData("clubs lesen", listCloudClubs, [])).map(toClub);
       const allProfiles = await loadOptionalCloudData("profiles listen", () => listCloudProfiles(nextProfile), [nextProfile]);
@@ -624,7 +625,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCloudMessage(pendingCount > 0 ? `${pendingCount} Änderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensätze wurden in die Cloud migriert.` : "");
       setCloudStatus(!navigator.onLine ? "offline" : pendingCount > 0 ? "pending" : "connected");
       if (profileIsFallback) {
-        setCloudMessage("Cloud eingeschränkt: Profil konnte nicht bestätigt werden. Die Rolle ist lokal abgeleitet und wird beim nächsten erfolgreichen Profil-Sync überschrieben.");
+        setCloudMessage(navigator.onLine ? PROFILE_SYNC_RETRY_MESSAGE : "Du bist offline. Paddlio nutzt gespeicherte Daten.");
         setCloudStatus(navigator.onLine ? "limited" : "offline");
       } else if (optionalCloudErrorCount > 0) {
         setCloudMessage("Einige Zusatzfunktionen sind momentan nicht verfügbar.");

@@ -143,7 +143,7 @@ function SettingsSyncPanel({ syncStatus }: { syncStatus: NonNullable<SettingsVie
     syncStatus.status === "connected" ? "Synchronisiert" :
       syncStatus.status === "syncing" ? "Sync läuft..." :
         syncStatus.status === "pending" ? "Sync ausstehend" :
-          syncStatus.status === "limited" ? "Cloud eingeschränkt" :
+          syncStatus.status === "limited" ? "Teilweise synchronisiert" :
             syncStatus.status === "offline" ? "Offline" :
               syncStatus.status === "error" ? "Nicht synchronisiert" :
                 "Lokal";

@@ -6,6 +6,7 @@ test("public app shell shows login without exposing private navigation", async (
   await expect(page.getByRole("button", { name: "Einloggen" })).toBeVisible();
   await expect(page.getByText("Konto erstellen")).toBeVisible();
   await expect(page.getByText("Heute")).not.toBeVisible();
+  await expect(page.getByText(/Cloud eingeschränkt|Profil-Sync|Supabase|RLS|Rolle ist lokal/i)).not.toBeVisible();
   await expect(page.getByTestId("bottom-navigation")).not.toBeVisible();
 });
 
