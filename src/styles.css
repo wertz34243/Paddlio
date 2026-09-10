@@ -13687,15 +13687,13 @@ body,
 }
 
 .master-selection-bar.is-phone {
-  position: fixed;
-  left: max(10px, env(safe-area-inset-left));
-  right: max(10px, env(safe-area-inset-right));
-  bottom: calc(var(--phone-bottom-nav-height, 82px) + env(safe-area-inset-bottom) + 10px);
-  top: auto;
-  z-index: 60;
-  min-height: 52px;
+  position: sticky;
+  top: calc(var(--phone-appbar-height, 56px) + env(safe-area-inset-top) + 6px);
+  z-index: 12;
+  width: 100%;
+  min-height: 50px;
   padding: 6px 8px;
-  border-radius: 18px;
+  border-radius: 16px;
 }
 
 .master-selection-bar.is-phone .master-selection-inner {

@@ -40,12 +40,9 @@ async function ensureTrainingVisible(page: Page) {
 }
 
 async function longPress(page: Page, locator: Locator) {
-  const box = await locator.boundingBox();
-  expect(box).toBeTruthy();
-  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
-  await page.mouse.down();
+  await locator.dispatchEvent("pointerdown", { bubbles: true, pointerId: 1, pointerType: "touch", isPrimary: true });
   await page.waitForTimeout(520);
-  await page.mouse.up();
+  await locator.dispatchEvent("pointerup", { bubbles: true, pointerId: 1, pointerType: "touch", isPrimary: true });
 }
 
 test.describe("responsive calendar multi-selection", () => {
@@ -84,5 +81,23 @@ test.describe("responsive calendar multi-selection", () => {
     await expect(selectionBar.getByRole("button", { name: /Status/i })).toBeVisible();
     await expect(selectionBar.getByRole("button", { name: /Löschen/i })).toBeVisible();
     await expect(selectionBar.getByRole("button", { name: "Auswahl beenden" })).toBeVisible();
+
+    const layout = await page.evaluate(() => {
+      const filter = document.querySelector<HTMLElement>(".mobile-calendar-filter-row");
+      const selection = document.querySelector<HTMLElement>(".master-selection-bar.is-phone");
+      const day = document.querySelector<HTMLElement>(".master-calendar-week-day, .master-calendar-day");
+      return {
+        filterBottom: filter?.getBoundingClientRect().bottom ?? 0,
+        selectionTop: selection?.getBoundingClientRect().top ?? 0,
+        selectionBottom: selection?.getBoundingClientRect().bottom ?? 0,
+        dayTop: day?.getBoundingClientRect().top ?? 0,
+        selectionWidth: selection?.getBoundingClientRect().width ?? 0,
+        viewportWidth: window.innerWidth,
+      };
+    });
+
+    expect(layout.selectionTop).toBeGreaterThanOrEqual(layout.filterBottom - 2);
+    expect(layout.selectionBottom).toBeLessThanOrEqual(layout.dayTop + 2);
+    expect(layout.selectionWidth).toBeLessThanOrEqual(layout.viewportWidth);
   });
 });
