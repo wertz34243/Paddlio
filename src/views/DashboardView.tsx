@@ -11,7 +11,7 @@ import { getTrainingsForCurrentUser } from "../domain/accessControl";
 import { getTrainingIntelligence } from "../domain/intelligence";
 import { getLastTrainingSession, getNextPlannedEntry, getWeeklyPlanSummary } from "../domain/metrics";
 import { getDisplayName, getGreeting, getInitials } from "../domain/profile";
-import type { PaddleMotionData, PageId, SmartCoachRecommendation, User } from "../domain/types";
+import type { PaddleMotionData, PageId, PlanEntry, SmartCoachRecommendation, User } from "../domain/types";
 import { dateKeyToLocalDate, todayDateKey } from "../lib/dateOnly";
 
 type DashboardViewProps = {
@@ -27,7 +27,7 @@ type DashboardViewProps = {
   onQuickAction: (action: DashboardQuickAction) => void;
 };
 
-export type DashboardQuickAction = "training" | "competition" | "journal" | "material";
+export type DashboardQuickAction = "individualTraining" | "templatePlanning" | "competition" | "journal" | "material";
 export type DashboardMoreTarget = "beta" | "feedback" | "coach" | "notifications";
 
 const todayText = (): string =>
@@ -50,6 +50,36 @@ const formatMinutes = (minutes: number): string => (minutes > 0 ? `${Math.round(
 
 const weekDayLabels = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 const PADDLIO_INTRO_DISMISSED_KEY = "paddlio-intro-dismissed";
+
+const getEntryTargetLabel = (entry: PlanEntry, data: PaddleMotionData): string => {
+  if (entry.assignedType === "group") {
+    const groupId = entry.assignedGroupId || entry.assignedGroupIds[0];
+    return data.coachGroups.find((group) => group.id === groupId || group.groupId === groupId)?.name ?? "Gruppe";
+  }
+
+  const athleteId = entry.assignedAthleteId || entry.assignedAthleteIds[0];
+  if (entry.assignedType === "athlete" && athleteId) {
+    const athlete = data.coachAthletes.find((item) => item.id === athleteId);
+    return athlete?.name || [athlete?.firstName, athlete?.lastName].filter(Boolean).join(" ") || "Sportler";
+  }
+
+  return "Eigenes Training";
+};
+
+const getEntryPlannerLabel = (entry: PlanEntry, data: PaddleMotionData): string => {
+  const planner = data.users.find((item) => item.userId === entry.createdByUserId || item.id === entry.createdByUserId);
+  const name = planner ? getDisplayName(planner.profile) : "";
+  return name ? `geplant von ${name}` : "geplant";
+};
+
+const getEntryStatusLabel = (status: PlanEntry["status"]): string => {
+  if (status === "completed" || status === "done" || status === "erledigt") return "erledigt";
+  if (status === "skipped" || status === "ausgelassen") return "ausgelassen";
+  if (status === "in_progress") return "läuft";
+  if (status === "cancelled") return "abgesagt";
+  if (status === "partially_completed") return "teilweise";
+  return "geplant";
+};
 
 const introSteps = [
   {
@@ -171,7 +201,7 @@ export function DashboardView({
 
   const startFirstTraining = () => {
     setIntroOpen(false);
-    onNavigate("plan");
+    onQuickAction("individualTraining");
   };
 
   return (
@@ -254,8 +284,8 @@ export function DashboardView({
               </div>
             </div>
             <div className="po-quick-action-grid">
-              <PaddlioOneButton variant="secondary" icon="training" onClick={() => onQuickAction("training")}>Training</PaddlioOneButton>
-              <PaddlioOneButton variant="secondary" icon="calendar" onClick={() => onNavigate("plan")}>Planen</PaddlioOneButton>
+              <PaddlioOneButton variant="secondary" icon="training" onClick={() => onQuickAction("individualTraining")}>Individuelles Training</PaddlioOneButton>
+              <PaddlioOneButton variant="secondary" icon="calendar" onClick={() => onQuickAction("templatePlanning")}>Aus Vorlage planen</PaddlioOneButton>
               <PaddlioOneButton variant="secondary" icon="message" onClick={() => onQuickAction("journal")}>Journal</PaddlioOneButton>
               <PaddlioOneButton variant="secondary" icon="boat" onClick={() => onQuickAction("material")}>Material</PaddlioOneButton>
             </div>
@@ -283,8 +313,12 @@ export function DashboardView({
               {weeklyPlan.entries.slice(0, 7).map((entry) => (
                 <button className="po-week-row" key={entry.id} type="button" onClick={() => onNavigate("plan")}>
                   <strong>{formatDate(entry.date)}</strong>
-                  <span>{entry.title || entry.trainingType}</span>
-                  <em>{entry.startTime || entry.time || "--"}</em>
+                  <span>
+                    <b>{entry.startTime || entry.time || "--"}</b>
+                    <span>{entry.title || entry.trainingType}</span>
+                    <small>{getEntryTargetLabel(entry, data)} · {getEntryPlannerLabel(entry, data)}</small>
+                  </span>
+                  <em>{getEntryStatusLabel(entry.status)}</em>
                 </button>
               ))}
               {weeklyPlan.entries.length === 0 ? <p className="po-muted">Noch keine Einheiten in dieser Woche.</p> : null}

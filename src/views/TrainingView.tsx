@@ -187,14 +187,14 @@ export function TrainingView({
             <p className="eyebrow">Trainingstagebuch</p>
             <h3>Training</h3>
           </div>
-          <button className="primary-button" type="button" onClick={openCreate} aria-label="Training hinzufügen">
+          <button className="primary-button" type="button" onClick={openCreate} aria-label="Individuelles Training hinzufügen">
             +
           </button>
         </div>
 
         <div className="training-journal-actions" aria-label="Training Navigation">
-          <button type="button" className="primary-action compact-action" onClick={openCreate} aria-label="Training erstellen">
-            + Training
+          <button type="button" className="primary-action compact-action" onClick={openCreate} aria-label="Individuelles Training erstellen">
+            Individuelles Training
           </button>
           <button type="button" className="secondary-button" onClick={onOpenPlan} aria-label="Vorlagen öffnen">
             Vorlagen
@@ -225,7 +225,7 @@ export function TrainingView({
           <form className="entry-form training-create-wizard" onSubmit={handleSubmit}>
             <header className="training-create-header">
               <div>
-                <p className="eyebrow">Training erstellen</p>
+                <p className="eyebrow">Individuelles Training</p>
                 <h4>{draft.id ? "Einheit bearbeiten" : "Neue Einheit"}</h4>
               </div>
               <span>Schritt {createStep}/5</span>

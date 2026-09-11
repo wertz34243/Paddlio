@@ -155,7 +155,7 @@ function SettingsSyncPanel({ syncStatus }: { syncStatus: NonNullable<SettingsVie
             syncStatus.status === "error" ? "Profil, Training oder Kernspeicher konnten nicht sicher synchronisiert werden." :
               syncStatus.status === "offline" ? "Du bist offline. Änderungen werden später synchronisiert." :
                 "Lokaler Modus aktiv.";
-  const tone = syncStatus.status === "connected" ? "green" : syncStatus.status === "error" || syncStatus.status === "offline" ? "red" : "yellow";
+  const tone = syncStatus.status === "connected" ? "green" : syncStatus.status === "error" ? "red" : "yellow";
 
   return (
     <section className={`section-block settings-sync-panel ${tone}`}>

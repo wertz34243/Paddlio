@@ -42,6 +42,7 @@ test.describe("dashboard intro", () => {
     await expect(page.getByRole("dialog", { name: "Gemeinsam trainieren" })).toBeVisible();
 
     await page.getByRole("button", { name: "Erstes Training planen" }).click();
-    await expect(page.getByTestId("nav-plan").filter({ visible: true }).first()).toHaveAttribute("aria-current", "page", { timeout: 20_000 });
+    await expect(page.getByTestId("nav-training").filter({ visible: true }).first()).toHaveAttribute("aria-current", "page", { timeout: 20_000 });
+    await expect(page.getByRole("tab", { name: "Individuell" }).first()).toHaveAttribute("aria-selected", "true", { timeout: 20_000 });
   });
 });

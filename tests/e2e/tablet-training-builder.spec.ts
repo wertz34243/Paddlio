@@ -24,7 +24,7 @@ async function clickVisible(page: Page, testId: string) {
 
 async function openTabletBuilder(page: Page) {
   await clickVisible(page, "nav-training");
-  const createTab = page.getByRole("tab", { name: "Erstellen" }).first();
+  const createTab = page.getByRole("tab", { name: "Individuell" }).first();
   await expect(createTab).toBeVisible({ timeout: 20_000 });
   await createTab.click();
   await expect(page.locator(".tablet-training-builder-shell")).toBeVisible({ timeout: 20_000 });

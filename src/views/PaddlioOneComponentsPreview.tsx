@@ -37,7 +37,7 @@ export function PaddlioOneComponentsPreview() {
       <PaddlioOneCard>
         <PaddlioOneSectionHeader title="Buttons" description="Primäre, sekundäre, stille und kritische Aktionen." />
         <div className="po-preview-row">
-          <PaddlioOneButton variant="primary" icon="training">Training hinzufügen</PaddlioOneButton>
+          <PaddlioOneButton variant="primary" icon="training">Individuelles Training</PaddlioOneButton>
           <PaddlioOneButton icon="calendar">Kalender öffnen</PaddlioOneButton>
           <PaddlioOneButton variant="ghost" icon="more">Weitere Optionen</PaddlioOneButton>
           <PaddlioOneButton variant="danger" icon="trophy">Konflikt löschen</PaddlioOneButton>

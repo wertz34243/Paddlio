@@ -43,7 +43,7 @@ async function openCalendarInTraining(page: Page) {
 }
 
 async function openBuilder(page: Page) {
-  await openTrainingTab(page, "Erstellen");
+  await openTrainingTab(page, "Individuell");
   await expect(page.locator(".tablet-training-builder-shell")).toBeVisible({ timeout: 20_000 });
 }
 

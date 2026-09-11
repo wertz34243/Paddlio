@@ -1047,9 +1047,9 @@ export function TrainingCalendarView({
                 icon="training"
                 className={isPhone ? "master-calendar-add-compact" : ""}
                 onClick={onOpenPlan}
-                aria-label="Training hinzufügen"
+                aria-label="Individuelles Training hinzufügen"
               >
-                {isPhone ? "+" : "Training hinzufügen"}
+                {isPhone ? "+" : "Individuelles Training"}
               </PaddlioOneButton> : null}
             </div>
           }
@@ -1083,7 +1083,7 @@ export function TrainingCalendarView({
                   setShowTemplates(false);
                   setContextMode("filter");
                 }}>Filter</PaddlioOneButton>
-                <PaddlioOneButton variant="primary" onClick={onOpenPlan}>+ Training</PaddlioOneButton>
+                <PaddlioOneButton variant="primary" onClick={onOpenPlan}>Individuelles Training</PaddlioOneButton>
                 <select
                   className="master-calendar-overflow-select"
                   aria-label="Weitere Kalenderansichten"
@@ -1112,7 +1112,7 @@ export function TrainingCalendarView({
                   setShowTemplates(false);
                   setContextMode("filter");
                 }}>Filter</PaddlioOneButton>
-                <PaddlioOneButton variant="primary" onClick={onOpenPlan}>+ Training</PaddlioOneButton>
+                <PaddlioOneButton variant="primary" onClick={onOpenPlan}>Individuelles Training</PaddlioOneButton>
                 <PaddlioOneButton variant="secondary" onClick={() => setWeekCopyOpen(true)}>Aktionen</PaddlioOneButton>
                 <PaddlioOneButton
                   variant={selectionMode ? "primary" : "secondary"}

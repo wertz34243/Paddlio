@@ -107,7 +107,7 @@ test.describe("real iPad training polish", () => {
     await expect(page.locator(".template-detail-panel")).toBeVisible({ timeout: 20_000 });
     await capture(page, "09-template-detail.png");
 
-    await openTrainingTab(page, "Erstellen");
+    await openTrainingTab(page, "Individuell");
     await expect(page.locator(".tablet-training-builder-shell")).toBeVisible({ timeout: 20_000 });
     await capture(page, "10-create-builder.png");
 
@@ -124,7 +124,7 @@ test.describe("real iPad training polish", () => {
     await openCalendar(page);
     await capture(page, "12-portrait-calendar.png");
 
-    await openTrainingTab(page, "Erstellen");
+    await openTrainingTab(page, "Individuell");
     await expect(page.locator(".tablet-training-builder-shell")).toBeVisible({ timeout: 20_000 });
     await capture(page, "13-portrait-builder.png");
   });

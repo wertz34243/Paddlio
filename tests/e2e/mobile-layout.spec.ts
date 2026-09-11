@@ -77,7 +77,7 @@ test.describe("mobile layout guards", () => {
     await expectNoHorizontalOverflow(page);
 
     await openBottomNav(page, /Training-Bereich/);
-    await expect(page.getByRole("tab", { name: /Erstellen|Vorlagen|Journal/ }).first()).toBeVisible();
+    await expect(page.getByRole("tab", { name: /Individuell|Vorlagen|Journal/ }).first()).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
     await openBottomNav(page, /Team-Bereich/);

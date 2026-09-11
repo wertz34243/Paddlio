@@ -84,6 +84,7 @@ type PlanViewProps = {
   deviceClass?: DeviceClass;
   tabletBuilderOnly?: boolean;
   initialWorkflowTab?: WorkflowTab;
+  openCreateSignal?: number;
 };
 
 type CalendarView = "day" | "week" | "month" | "year" | "list";
@@ -327,6 +328,7 @@ export function PlanView({
   deviceClass = "desktop",
   tabletBuilderOnly = false,
   initialWorkflowTab = "week",
+  openCreateSignal = 0,
 }: PlanViewProps) {
   const [draft, setDraft] = useState<PlanDraft | null>(null);
   const [templateDraft, setTemplateDraft] = useState<TrainingTemplate | null>(null);
@@ -647,6 +649,14 @@ export function PlanView({
     setSelectedTabletSectionId("");
     setDraft(nextDraft);
   };
+
+  useEffect(() => {
+    if (openCreateSignal > 0) {
+      startCreate();
+    }
+    // startCreate intentionally reads the current user/data snapshot for the new draft.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openCreateSignal]);
 
   const updateDraft = (patch: Partial<PlanDraft>) => {
     setDraft((current) => current ? { ...current, ...patch } : current);
@@ -1498,13 +1508,13 @@ export function PlanView({
     };
 
     return (
-      <section className="tablet-training-builder-shell" aria-label="Training erstellen Tablet">
+      <section className="tablet-training-builder-shell" aria-label="Individuelles Training Tablet">
         <form className="tablet-training-builder" onSubmit={handleSubmit}>
           <header className="tablet-builder-header">
               <button type="button" onClick={() => setDraft(null)}>Zurück</button>
             <div>
               <p className="eyebrow">Training</p>
-              <h2>{draft.id ? "Training bearbeiten" : "Training erstellen"}</h2>
+              <h2>{draft.id ? "Training bearbeiten" : "Individuelles Training"}</h2>
             </div>
             <div className="tablet-builder-actions">
               <button type="button" onClick={saveDraftAsTemplate}>Als Vorlage speichern</button>
@@ -1579,7 +1589,7 @@ export function PlanView({
             <section className="tablet-training-timeline" aria-label="Training Timeline" onDragOver={dragOverTimeline} onDrop={dropTemplateOnTimeline}>
               <div className="tablet-timeline-top">
                 <div>
-                  <p className="eyebrow">Training erstellen</p>
+                  <p className="eyebrow">Individuelles Training</p>
                   <label>Titel<input value={draft.title} onChange={(event) => updateDraft({ title: event.currentTarget.value })} placeholder="K1 Technik - Linienwahl" /></label>
                 </div>
                 <div className="tablet-timeline-meta">
@@ -1669,7 +1679,7 @@ export function PlanView({
                 <>
                   <div className="tablet-panel-heading">
                     <p className="eyebrow">Vorschau</p>
-                    <h3>{draft.title || "Neues Training"}</h3>
+                    <h3>{draft.title || "Individuelles Training"}</h3>
                   </div>
                   <dl>
                     <div><dt>Datum</dt><dd>{draft.date}</dd></div>
@@ -1703,7 +1713,7 @@ export function PlanView({
     defaultGroupIds: string[] = [],
   ) => (
     <>
-      <label>Zuweisung<select name="assignedType" defaultValue={defaultType}><option value="self">Für mich</option>{isCoach ? <option value="athlete">Einzelner Sportler</option> : null}{isCoach ? <option value="group">Trainingsgruppe</option> : null}</select></label>
+      <label>Für wen ist das Training?<select name="assignedType" defaultValue={defaultType}><option value="self">Eigenes Training</option>{isCoach ? <option value="athlete">Einzelne Person</option> : null}{isCoach ? <option value="group">Gruppe</option> : null}</select></label>
       {isCoach ? <div className="choice-group"><span>Sportler</span><div className="tag-row">{visibleAthletes.map((athlete) => <label className="toggle-row" key={athlete.id}><span>{getAthleteName(athlete)}</span><input name="assignedAthleteIds" type="checkbox" value={athlete.id} defaultChecked={defaultAthleteIds.includes(athlete.id)} /></label>)}</div></div> : null}
       {isCoach ? <div className="choice-group"><span>Trainingsgruppen</span><div className="tag-row">{visibleGroups.map((group) => <label className="toggle-row" key={group.id}><span>{group.name}</span><input name="assignedGroupIds" type="checkbox" value={group.id} defaultChecked={defaultGroupIds.includes(group.id)} /></label>)}</div></div> : null}
     </>
@@ -1774,9 +1784,9 @@ export function PlanView({
             <div className="section-heading">
               <div>
                 <p className="eyebrow">Training</p>
-                <h3>Training erstellen</h3>
+                <h3>Individuelles Training</h3>
               </div>
-              <button className="primary-button" type="button" onClick={startCreate}>Training planen</button>
+              <button className="primary-button" type="button" onClick={startCreate}>Individuelles Training planen</button>
             </div>
           </section>
         )}
@@ -2223,7 +2233,7 @@ export function PlanView({
 
       {isPhone && draft ? (
         <section className="section-block planning-side-editor planning-draft-editor">
-          <div className="section-heading"><div><p className="eyebrow">Planung</p><h3>{draft.id ? "Training bearbeiten" : "Training planen"}</h3></div></div>
+          <div className="section-heading"><div><p className="eyebrow">Individuelles Training</p><h3>{draft.id ? "Training bearbeiten" : "Frei planen"}</h3></div></div>
           {formMessage ? <p className="auth-message">{formMessage}</p> : null}
           <form className="entry-form" onSubmit={handleSubmit}>
             <div className="form-grid">
@@ -2233,7 +2243,7 @@ export function PlanView({
               <label>Startzeit<input name="startTime" type="time" defaultValue={draft.startTime || draft.time} /></label>
               <label>Endzeit<input name="endTime" type="time" defaultValue={draft.endTime} /></label>
               <label>Dauer<input name="durationMinutes" type="number" min="0" step="5" defaultValue={draft.durationMinutes} /></label>
-              <label>Zuweisung<select name="assignedType" defaultValue={draft.assignedType}><option value="self">Für mich</option>{isCoach ? <option value="athlete">Einzelner Sportler</option> : null}{isCoach ? <option value="group">Trainingsgruppe</option> : null}</select></label>
+              <label>Für wen ist das Training?<select name="assignedType" defaultValue={draft.assignedType}><option value="self">Eigenes Training</option>{isCoach ? <option value="athlete">Einzelne Person</option> : null}{isCoach ? <option value="group">Gruppe</option> : null}</select></label>
               <label>Trainingsbereich<select name="area" defaultValue={draft.area} onChange={(event) => setSelectedArea(event.currentTarget.value as TrainingArea)}>{trainingAreas.map((area) => <option key={area} value={area}>{area}</option>)}</select></label>
               <label>Trainingsart<select name="trainingType" defaultValue={draft.trainingType}>{trainingTypeGroups[selectedArea].map((trainingType) => <option key={trainingType} value={trainingType}>{trainingType}</option>)}</select></label>
               <label>Bootsklasse<select name="boatClass" defaultValue={draft.boatClass}><option value="K1">K1</option><option value="C1">C1</option><option value="K1+C1">K1+C1</option><option value="none">ohne Boot</option></select></label>

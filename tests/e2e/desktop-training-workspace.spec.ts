@@ -148,7 +148,7 @@ test.describe("desktop training workspace", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await login(page, coachEmail!, coachPassword!);
 
-    await openTrainingTab(page, "Erstellen");
+    await openTrainingTab(page, "Individuell");
     await expect(page.locator(".tablet-training-builder-shell")).toBeVisible({ timeout: 20_000 });
     await capture(page, "09-create-builder.png");
     await page.locator(".tablet-block-card").first().click();

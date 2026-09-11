@@ -61,7 +61,6 @@ import { SettingsView } from "./views/SettingsView";
 import { SmartCoachView } from "./views/SmartCoachView";
 import { TrainingJournalView } from "./views/TrainingJournalView";
 import { TrainingOverviewView } from "./views/TrainingOverviewView";
-import { TrainingView } from "./views/TrainingView";
 const AcademyView = lazy(() => import("./views/AcademyView").then((module) => ({ default: module.AcademyView })));
 const AnalyticsCenterView = lazy(() => import("./views/AnalyticsCenterView").then((module) => ({ default: module.AnalyticsCenterView })));
 const CoachView = lazy(() => import("./views/CoachView").then((module) => ({ default: module.CoachView })));
@@ -111,7 +110,7 @@ const navPageByPage: Partial<Record<PageId, PageId>> = {
 
 const trainingSegments: SegmentItem<TrainingSegment>[] = [
   { id: "overview", label: "Kalender" },
-  { id: "sessions", label: "Erstellen" },
+  { id: "sessions", label: "Individuell" },
   { id: "plan", label: "Vorlagen" },
   { id: "journal", label: "Journal" },
 ];
@@ -293,13 +292,19 @@ function AppContent() {
   const [analysisSegment, setAnalysisSegment] = useState<AnalysisSegment>("overview");
   const [moreSegment, setMoreSegment] = useState<MoreSegment>("profile");
   const [moreHubOpen, setMoreHubOpen] = useState(true);
-  const [mobileTemplateDraft, setMobileTemplateDraft] = useState<{ template: TrainingTemplate; date: string; startTime: string } | null>(null);
+  const [mobileTemplateDraft, setMobileTemplateDraft] = useState<{
+    template: TrainingTemplate;
+    date: string;
+    startTime: string;
+    assignedType: PlanEntry["assignedType"];
+    assignedAthleteId: string;
+    assignedGroupId: string;
+  } | null>(null);
   const { topChromeVisible, bottomNavVisible } = useAppChromeVisibility({ threshold: 8, topOffset: 8, idleMs: 1300 });
   const responsiveCapabilities = useResponsiveCapabilities();
   const currentDeviceClass = responsiveCapabilities.deviceClass;
   const [newTrainingSignal, setNewTrainingSignal] = useState(0);
   const [newCompetitionSignal, setNewCompetitionSignal] = useState(0);
-  const [journalSignal, setJournalSignal] = useState(0);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -413,10 +418,16 @@ function AppContent() {
   };
 
   const handleDashboardQuickAction = (action: DashboardQuickAction) => {
-    if (action === "training") {
+    if (action === "individualTraining") {
       setTrainingSegment("sessions");
       setActivePage("training");
       setNewTrainingSignal((value) => value + 1);
+      return;
+    }
+
+    if (action === "templatePlanning") {
+      setTrainingSegment("plan");
+      setActivePage("training");
       return;
     }
 
@@ -428,9 +439,8 @@ function AppContent() {
     }
 
     if (action === "journal") {
-      setTrainingSegment("sessions");
+      setTrainingSegment("journal");
       setActivePage("training");
-      setJournalSignal((value) => value + 1);
       return;
     }
 
@@ -633,16 +643,24 @@ function AppContent() {
     });
   };
 
-  const insertCalendarTemplate = (template: TrainingTemplate, date: string, startTime = "17:30") => {
+  const insertCalendarTemplate = (
+    template: TrainingTemplate,
+    date: string,
+    startTime = "17:30",
+    target: { assignedType?: PlanEntry["assignedType"]; assignedAthleteIds?: string[]; assignedGroupIds?: string[] } = {},
+  ) => {
     const fallbackTime = startTime || "17:30";
     const durationMinutes = template.defaultDurationMinutes ?? 60;
+    const assignedType = target.assignedType ?? "self";
+    const assignedAthleteIds = assignedType === "athlete" ? target.assignedAthleteIds ?? [] : assignedType === "self" ? [activeUser.userId] : [];
+    const assignedGroupIds = assignedType === "group" ? target.assignedGroupIds ?? [] : [];
 
     upsertPlanEntry({
       ownerUserId: activeUser.userId,
       clubId: cloudProfile?.club_id || activeUser.profile.club,
-      assignedType: "self",
-      assignedAthleteIds: [activeUser.userId],
-      assignedGroupIds: [],
+      assignedType,
+      assignedAthleteIds,
+      assignedGroupIds,
       title: template.title,
       date,
       weekday: getWeekdayFromDate(date),
@@ -662,8 +680,8 @@ function AppContent() {
       status: "planned",
       repeat: "none",
       repeatUntil: "",
-      assignedAthleteId: activeUser.userId,
-      assignedGroupId: "",
+      assignedAthleteId: assignedAthleteIds[0] ?? "",
+      assignedGroupId: assignedGroupIds[0] ?? "",
       feedbackNote: "",
       templateId: template.id,
     });
@@ -872,6 +890,9 @@ function AppContent() {
     const weeklyTemplates = templates
       .filter((template) => [template.title, ...(template.tags ?? [])].some((value) => value.toLowerCase().includes("woche")))
       .slice(0, 3);
+    const canAssignTargets = canUseCoachArea(activeUser.role);
+    const canAssignAthlete = canAssignTargets && activeData.coachAthletes.length > 0;
+    const canAssignGroup = canAssignTargets && activeData.coachGroups.length > 0;
 
     return (
       <section className="mobile-template-flow" aria-label="Trainingsvorlagen">
@@ -883,7 +904,17 @@ function AppContent() {
           {templates.length > 0 ? templates.map((template) => (
             <article className="mobile-template-row" key={template.id}>
               <span className="mobile-template-dot" aria-hidden="true" />
-              <button type="button" onClick={() => setMobileTemplateDraft({ template, date: getTodayKey(), startTime: "17:30" })}>
+              <button
+                type="button"
+                onClick={() => setMobileTemplateDraft({
+                  template,
+                  date: getTodayKey(),
+                  startTime: "17:30",
+                  assignedType: "self",
+                  assignedAthleteId: activeUser.userId,
+                  assignedGroupId: "",
+                })}
+              >
                 <strong>{template.title}</strong>
                 <small>{template.trainingArea} · {template.defaultDurationMinutes ?? 60} min · Intensität {template.defaultIntensity}</small>
               </button>
@@ -911,7 +942,11 @@ function AppContent() {
               data-testid="mobile-template-use-sheet"
               onSubmit={(event) => {
                 event.preventDefault();
-                insertCalendarTemplate(mobileTemplateDraft.template, mobileTemplateDraft.date, mobileTemplateDraft.startTime);
+                insertCalendarTemplate(mobileTemplateDraft.template, mobileTemplateDraft.date, mobileTemplateDraft.startTime, {
+                  assignedType: mobileTemplateDraft.assignedType,
+                  assignedAthleteIds: mobileTemplateDraft.assignedType === "athlete" ? [mobileTemplateDraft.assignedAthleteId].filter(Boolean) : [],
+                  assignedGroupIds: mobileTemplateDraft.assignedType === "group" ? [mobileTemplateDraft.assignedGroupId].filter(Boolean) : [],
+                });
                 setMobileTemplateDraft(null);
                 setActivePage("plan");
               }}
@@ -937,6 +972,54 @@ function AppContent() {
                   required
                 />
               </label>
+              <label>
+                Für wen ist das Training?
+                <select
+                  value={mobileTemplateDraft.assignedType}
+                  onChange={(event) => setMobileTemplateDraft((current) => {
+                    if (!current) return current;
+                    const assignedType = event.currentTarget.value as PlanEntry["assignedType"];
+                    return {
+                      ...current,
+                      assignedType,
+                      assignedAthleteId: assignedType === "athlete" ? activeData.coachAthletes[0]?.id ?? "" : activeUser.userId,
+                      assignedGroupId: assignedType === "group" ? activeData.coachGroups[0]?.id ?? "" : "",
+                    };
+                  })}
+                >
+                  <option value="self">Eigenes Training</option>
+                  {canAssignAthlete ? <option value="athlete">Einzelne Person</option> : null}
+                  {canAssignGroup ? <option value="group">Gruppe</option> : null}
+                </select>
+              </label>
+              {canAssignAthlete && mobileTemplateDraft.assignedType === "athlete" ? (
+                <label>
+                  Person
+                  <select
+                    value={mobileTemplateDraft.assignedAthleteId}
+                    onChange={(event) => setMobileTemplateDraft((current) => current ? { ...current, assignedAthleteId: event.currentTarget.value } : current)}
+                    required
+                  >
+                    {activeData.coachAthletes.map((athlete) => (
+                      <option key={athlete.id} value={athlete.id}>{athlete.name || `${athlete.firstName} ${athlete.lastName}`.trim()}</option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+              {canAssignGroup && mobileTemplateDraft.assignedType === "group" ? (
+                <label>
+                  Gruppe
+                  <select
+                    value={mobileTemplateDraft.assignedGroupId}
+                    onChange={(event) => setMobileTemplateDraft((current) => current ? { ...current, assignedGroupId: event.currentTarget.value } : current)}
+                    required
+                  >
+                    {activeData.coachGroups.map((group) => (
+                      <option key={group.id} value={group.id}>{group.name}</option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
               <label>
                 Uhrzeit
                 <div className="mobile-template-time-control" data-testid="mobile-template-time-control">
@@ -1093,21 +1176,29 @@ function AppContent() {
               onOpenJournal={() => setTrainingSegment("journal")}
               deviceClass={currentDeviceClass}
               tabletBuilderOnly
+              openCreateSignal={newTrainingSignal}
             />
           );
         }
         return (
-          <TrainingView
-            sessions={data.training}
-            journal={data.journal}
-            onSave={upsertTraining}
-            onDelete={deleteTraining}
-            onSaveJournal={upsertJournalEntry}
+          <PlanView
+            data={activeData}
+            entries={activePlanEntries}
+            user={activeUser}
+            onSave={upsertPlanEntry}
+            onDelete={deletePlanEntry}
+            onDeleteSeries={deletePlanEntrySeries}
+            onToggleDone={togglePlanEntryDone}
+            onFeedbackSave={saveTrainingFeedback}
+            onDataChange={updateData}
             onOpenOverview={() => setTrainingSegment("overview")}
-            onOpenPlan={() => setTrainingSegment("plan")}
+            onOpenSessions={() => {
+              setTrainingSegment("sessions");
+              setNewTrainingSignal((value) => value + 1);
+            }}
             onOpenJournal={() => setTrainingSegment("journal")}
-            openNewSignal={newTrainingSignal}
-            openJournalSignal={journalSignal}
+            deviceClass={currentDeviceClass}
+            openCreateSignal={newTrainingSignal}
           />
         );
     }
@@ -1776,7 +1867,7 @@ function AppContent() {
     if (activePage === "training") {
       if (trainingSegment === "plan") return "Vorlagen";
       if (trainingSegment === "journal") return "Journal";
-      if (trainingSegment === "sessions") return "Erstellen";
+      if (trainingSegment === "sessions") return "Individuelles Training";
       return "Training";
     }
 

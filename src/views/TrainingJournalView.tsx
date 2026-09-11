@@ -53,7 +53,7 @@ export function TrainingJournalView({
         description="Ist-Daten, Feedback und Belastung kompakt dokumentieren."
         action={
           <div className="po-action-row po-journal-primary-actions">
-            <PaddlioOneButton variant="primary" icon="training" onClick={onOpenSessions}>+ Training</PaddlioOneButton>
+            <PaddlioOneButton variant="primary" icon="training" onClick={onOpenSessions}>Individuelles Training</PaddlioOneButton>
             <PaddlioOneButton variant="secondary" icon="calendar" onClick={onOpenPlan}>Vorlagen</PaddlioOneButton>
             <PaddlioOneButton variant="secondary" icon="message" onClick={onOpenOverview}>Training</PaddlioOneButton>
           </div>
@@ -109,7 +109,7 @@ export function TrainingJournalView({
           <div className="po-empty-training-day">
             <h2>Keine Journal-Einträge</h2>
             <p>Dauer, Belastung, Gefühl und Notizen nach dem Training festhalten.</p>
-            <PaddlioOneButton variant="primary" icon="training" onClick={onOpenSessions}>+ Training</PaddlioOneButton>
+            <PaddlioOneButton variant="primary" icon="training" onClick={onOpenSessions}>Individuelles Training</PaddlioOneButton>
           </div>
         )}
       </PaddlioOneCard>

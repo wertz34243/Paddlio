@@ -130,7 +130,7 @@ export function BetaReleaseView({ data, user, mode, onDataChange }: BetaReleaseV
         <div className="section-heading"><div><p className="eyebrow">Beta-Test Anleitung</p><h3>Was getestet werden soll</h3></div></div>
         <div className="beta-guide-grid">
           <article className="beta-card"><h4>Tester</h4><ol><li>Einloggen</li><li>Profil prüfen</li><li>Training ansehen</li><li>Anwesenheit setzen</li><li>Aufgabe erledigen</li><li>Nachricht testen</li><li>Ergebnis anschauen</li><li>Feedback senden</li></ol></article>
-          <article className="beta-card"><h4>Trainer</h4><ol><li>Gruppe prüfen</li><li>Training erstellen</li><li>Aufgabe vergeben</li><li>Anwesenheit prüfen</li><li>Nachricht an Gruppe senden</li><li>Ergebnis eintragen</li><li>Feedback ansehen</li></ol></article>
+          <article className="beta-card"><h4>Trainer</h4><ol><li>Gruppe prüfen</li><li>Individuelles Training planen</li><li>Aufgabe vergeben</li><li>Anwesenheit prüfen</li><li>Nachricht an Gruppe senden</li><li>Ergebnis eintragen</li><li>Feedback ansehen</li></ol></article>
           <article className="beta-card"><h4>Admin</h4><ol><li>Nutzer prüfen</li><li>Rollen prüfen</li><li>Verein prüfen</li><li>Beta-Check starten</li><li>Feedback auswerten</li></ol></article>
         </div>
       </section>

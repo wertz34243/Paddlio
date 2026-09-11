@@ -11053,6 +11053,31 @@ body {
   white-space: nowrap;
 }
 
+.po-week-row > span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.po-week-row > span > b,
+.po-week-row > span > span,
+.po-week-row > span > small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.po-week-row > span > b {
+  color: var(--po-accent);
+  font-size: var(--po-font-caption);
+}
+
+.po-week-row > span > small {
+  color: var(--po-text-muted);
+  font-size: var(--po-font-caption);
+}
+
 .po-quick-action-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
