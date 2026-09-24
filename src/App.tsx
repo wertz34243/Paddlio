@@ -36,6 +36,7 @@ import type {
   TrainingTemplate,
   UserProfile,
 } from "./domain/types";
+import { deduplicateTrainingFeedback, getTrainingFeedbackKey } from "./domain/trainingFeedback";
 import { AnalysisView } from "./views/AnalysisView";
 import type { AnalyticsMode } from "./views/AnalyticsCenterView";
 import { AuthView } from "./views/AuthView";
@@ -717,15 +718,15 @@ function AppContent() {
 
   const saveTrainingFeedback = (feedback: Omit<TrainingFeedback, "id" | "completedAt"> & { id?: string }) => {
     const timestamp = getTimestamp();
+    const semanticKey = getTrainingFeedbackKey(feedback);
     const existing = feedback.id
       ? data.trainingFeedback.find((item) => item.id === feedback.id)
-      : data.trainingFeedback.find(
-          (item) => item.trainingId === feedback.trainingId && item.athleteUserId === feedback.athleteUserId,
-        );
+      : data.trainingFeedback.find((item) => getTrainingFeedbackKey(item) === semanticKey);
     const nextFeedback: TrainingFeedback = {
       ...feedback,
-      id: feedback.id ?? createId("feedback"),
-      completedAt: existing?.completedAt ?? timestamp,
+      feedbackType: feedback.feedbackType ?? "athlete",
+      id: feedback.id ?? existing?.id ?? createId("feedback"),
+      completedAt: timestamp,
     };
     const feedbackSummary =
       nextFeedback.comment?.trim() ||
@@ -738,13 +739,18 @@ function AppContent() {
       : null;
 
     updateData((current) => {
-      const currentExisting = current.trainingFeedback.find((item) => item.id === nextFeedback.id);
+      const currentExisting = current.trainingFeedback.find(
+        (item) => item.id === nextFeedback.id || getTrainingFeedbackKey(item) === semanticKey,
+      );
+      const mergedFeedback = currentExisting
+        ? current.trainingFeedback.map((item) =>
+            item.id === currentExisting.id || getTrainingFeedbackKey(item) === semanticKey ? nextFeedback : item,
+          )
+        : [nextFeedback, ...current.trainingFeedback];
 
       return {
         ...current,
-        trainingFeedback: currentExisting
-          ? current.trainingFeedback.map((item) => (item.id === nextFeedback.id ? nextFeedback : item))
-          : [nextFeedback, ...current.trainingFeedback],
+        trainingFeedback: deduplicateTrainingFeedback(mergedFeedback),
         plan: current.plan.map((entry) =>
           entry.id === nextFeedback.trainingId
             ? { ...entry, status: nextFeedback.status, feedbackNote: entry.feedbackNote?.trim() ? entry.feedbackNote : feedbackSummary, updatedAt: timestamp }

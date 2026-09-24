@@ -23,6 +23,7 @@
   -webkit-font-smoothing: antialiased;
 }
 
+
 /* Paddlio One calendar and training workflow */
 .master-calendar-workspace {
   display: grid;
@@ -16874,6 +16875,99 @@ body,
   word-break: normal;
 }
 
+/* Feedback detail navigation stays readable on touch screens. */
+.master-detail-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  gap: 8px;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 8px 0 10px;
+  background: var(--po-surface, #0c1420);
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+}
+
+.master-detail-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.master-detail-tabs button {
+  flex: 0 0 auto;
+  min-width: max-content;
+  min-height: 44px;
+  padding: 8px 14px;
+  white-space: nowrap;
+  scroll-snap-align: start;
+}
+
+.master-feedback-group {
+  display: grid;
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.master-feedback-group-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.master-feedback-group-heading > div {
+  display: grid;
+  gap: 2px;
+}
+
+.master-feedback-group-heading span {
+  color: var(--po-text-muted, #a8b3c7);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.master-trainer-feedback-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.master-trainer-feedback-fields label {
+  display: grid;
+  gap: 6px;
+}
+
+.master-trainer-feedback-fields .master-full-field {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 767px) {
+  .app-shell-phone .master-detail-tabs {
+    margin-inline: -2px;
+    padding-inline: 2px;
+  }
+
+  .app-shell-phone .master-detail-tabs button {
+    min-height: 44px;
+    padding-inline: 13px;
+  }
+
+  .master-feedback-group-heading {
+    align-items: start;
+  }
+
+  .master-trainer-feedback-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .master-trainer-feedback-fields .master-full-field {
+    grid-column: auto;
+  }
+}
+
 /* Training area polish: stepped tablet builder, grouped templates and journal filters. */
 .tablet-builder-stepper {
   display: grid;
@@ -17471,4 +17565,21 @@ body,
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     max-width: 1180px;
   }
+}
+
+/* Final cascade guard for responsive training detail navigation. */
+.master-detail-drawer .master-detail-tabs {
+  display: flex;
+  gap: 8px;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.master-detail-drawer .master-detail-tabs button {
+  flex: 0 0 auto;
+  min-width: max-content;
+  min-height: 44px;
+  padding: 8px 14px;
+  white-space: nowrap;
 }

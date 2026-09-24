@@ -54,6 +54,7 @@ import type {
   UserRole,
   UserStatus,
 } from "../domain/types";
+import { deduplicateTrainingFeedback } from "../domain/trainingFeedback";
 
 const STORAGE_KEY = "paddlemotion:v0.6:data";
 const USERS_KEY = "paddlio_users";
@@ -431,11 +432,13 @@ const normalizeCoachAthletes = (items: Array<Partial<CoachAthlete> & Pick<CoachA
   });
 
 const normalizeTrainingFeedback = (items: Array<Partial<TrainingFeedback> & Pick<TrainingFeedback, "id" | "trainingId">>): TrainingFeedback[] =>
-  items.map((feedback) => ({
+  deduplicateTrainingFeedback(items.map((feedback) => ({
     id: feedback.id,
     trainingId: feedback.trainingId,
     athleteUserId: feedback.athleteUserId ?? "",
     coachUserId: feedback.coachUserId ?? "",
+    feedbackType: feedback.feedbackType ?? "athlete",
+    authorUserId: feedback.authorUserId ?? (feedback.feedbackType === "trainer" ? feedback.coachUserId : feedback.athleteUserId) ?? "",
     status: feedback.status ?? "done",
     feeling: feedback.feeling ?? 7,
     difficulty: feedback.difficulty ?? 5,
@@ -444,8 +447,13 @@ const normalizeTrainingFeedback = (items: Array<Partial<TrainingFeedback> & Pick
     sleep: feedback.sleep ?? 7,
     reason: feedback.reason ?? "",
     comment: feedback.comment ?? "",
+    technicalAssessment: feedback.technicalAssessment ?? "",
+    goalAchievement: feedback.goalAchievement,
+    loadAssessment: feedback.loadAssessment,
+    observation: feedback.observation ?? "",
+    improvementPoint: feedback.improvementPoint ?? "",
     completedAt: feedback.completedAt ?? now(),
-  }));
+  })));
 
 const normalizeTrainingTemplates = (items: Array<Partial<TrainingTemplate> & Pick<TrainingTemplate, "id" | "title">>, userId: string, clubId: string): TrainingTemplate[] =>
   items.map((template) => ({

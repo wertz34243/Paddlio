@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { fromCloudFeedback, fromCloudTraining, toCloudFeedback, toCloudTraining } from "./trainingService";
+import { deduplicateTrainingFeedback, getTrainingFeedbackKey } from "../domain/trainingFeedback";
 
 describe("training feedback cloud mapping", () => {
   it("reads canonical and legacy feedback training ids", () => {
@@ -48,9 +49,51 @@ describe("training feedback cloud mapping", () => {
       training_plan_item_id: "3fa81f64-5717-4562-b3fc-2c963f66afa6",
       athlete_id: "f2d0a338-0ed3-4ab6-93b8-3da2f710a991",
       coach_id: "c4137bc4-bc05-4206-9cf5-95cf2221c01c",
+      feedback_type: "athlete",
+      author_id: "f2d0a338-0ed3-4ab6-93b8-3da2f710a991",
     });
     expect(payload).not.toHaveProperty("training_id");
     expect(payload).not.toHaveProperty("athlete_user_id");
+  });
+
+  it("deduplicates repeated local and realtime copies by semantic identity", () => {
+    const base = {
+      trainingId: "training-1",
+      athleteUserId: "athlete-1",
+      feedbackType: "athlete" as const,
+      status: "done" as const,
+      feeling: 4,
+      difficulty: 5,
+      fatigue: 3,
+      motivation: 4,
+    };
+    const result = deduplicateTrainingFeedback([
+      { ...base, id: "old", comment: "alt", completedAt: "2026-09-10T10:00:00.000Z" },
+      { ...base, id: "new", comment: "aktuell", completedAt: "2026-09-10T10:05:00.000Z" },
+    ]);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ id: "new", comment: "aktuell" });
+    expect(getTrainingFeedbackKey(result[0])).toBe("training-1:athlete-1:athlete");
+  });
+
+  it("keeps athlete and trainer feedback separate", () => {
+    const common = {
+      trainingId: "training-1",
+      athleteUserId: "athlete-1",
+      status: "done" as const,
+      feeling: 4,
+      difficulty: 5,
+      fatigue: 3,
+      motivation: 4,
+      completedAt: "2026-09-10T10:00:00.000Z",
+    };
+    const result = deduplicateTrainingFeedback([
+      { ...common, id: "athlete", feedbackType: "athlete" },
+      { ...common, id: "trainer", feedbackType: "trainer", coachUserId: "coach-1" },
+    ]);
+
+    expect(result).toHaveLength(2);
   });
 });
 

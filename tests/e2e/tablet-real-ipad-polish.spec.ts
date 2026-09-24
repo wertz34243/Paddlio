@@ -77,14 +77,23 @@ test.describe("real iPad training polish", () => {
     await capture(page, "04-calendar-training-inspector.png");
 
     await page.getByTestId("training-detail-panel").getByRole("button", { name: "Feedback" }).click();
-    await page.getByRole("button", { name: "Feedback erfassen" }).click();
+    const detailTabs = page.getByTestId("training-detail-panel").locator(".master-detail-tabs button");
+    await expect(detailTabs).toHaveCount(4);
+    const tabMetrics = await detailTabs.evaluateAll((nodes) => nodes.map((node) => ({
+      height: node.getBoundingClientRect().height,
+      whiteSpace: window.getComputedStyle(node).whiteSpace,
+    })));
+    expect(tabMetrics.every((metric) => metric.height >= 44 && metric.whiteSpace === "nowrap")).toBeTruthy();
+    await expect(page.getByTestId("training-detail-panel").getByText("Athletenfeedback", { exact: true })).toBeVisible();
+    await expect(page.getByTestId("training-detail-panel").getByText("Trainerfeedback", { exact: true })).toBeVisible();
+    await page.getByTestId("training-detail-panel").getByRole("button", { name: "Hinzufügen" }).last().click();
     await expect(page.locator(".master-feedback-sheet")).toBeVisible({ timeout: 20_000 });
+    await expect(page.locator(".master-feedback-sheet").getByText("Trainerfeedback")).toBeVisible();
     await capture(page, "06-feedback-sheet.png");
 
     page.once("dialog", async (dialog) => dialog.accept());
     await page.locator(".master-feedback-sheet").getByRole("button", { name: "Schließen" }).click();
     await expect(page.locator(".master-feedback-sheet")).toHaveCount(0);
-    await page.locator(".master-training-block-main").first().click();
     await expect(page.getByTestId("training-detail-panel")).toBeVisible({ timeout: 20_000 });
     await page.getByTestId("training-detail-panel").getByRole("button", { name: "Aufgaben" }).click();
     await page.getByRole("button", { name: "Traineraufgabe erstellen" }).click();

@@ -3,6 +3,7 @@ import type { PlanEntry, TrainingFeedback } from "../domain/types";
 import { enqueueSyncChange } from "./syncService";
 import { sanitizeCloudPayload, toCloudUuid, toCloudUuidOrNull } from "./cloudIds";
 import { getWeekdayFromDate } from "../domain/trainingPlan";
+import { deduplicateTrainingFeedback, getTrainingFeedbackType } from "../domain/trainingFeedback";
 
 const isMissingColumnError = (error: unknown, columnName: string): boolean =>
   Boolean(
@@ -219,6 +220,8 @@ export const toCloudFeedback = (feedback: TrainingFeedback) => ({
   training_plan_item_id: toCloudUuid(feedback.trainingId),
   athlete_id: toCloudUuidOrNull(feedback.athleteUserId),
   coach_id: toCloudUuidOrNull(feedback.coachUserId),
+  feedback_type: getTrainingFeedbackType(feedback),
+  author_id: toCloudUuidOrNull(feedback.authorUserId || (getTrainingFeedbackType(feedback) === "trainer" ? feedback.coachUserId : feedback.athleteUserId)),
   status: feedback.status,
   feeling: feedback.feeling,
   difficulty: feedback.difficulty,
@@ -227,6 +230,11 @@ export const toCloudFeedback = (feedback: TrainingFeedback) => ({
   sleep: feedback.sleep ?? null,
   reason: feedback.reason ?? null,
   comment: feedback.comment ?? null,
+  technical_assessment: feedback.technicalAssessment ?? null,
+  goal_achievement: feedback.goalAchievement ?? null,
+  load_assessment: feedback.loadAssessment ?? null,
+  observation: feedback.observation ?? null,
+  improvement_point: feedback.improvementPoint ?? null,
 });
 
 export const upsertCloudFeedback = async (feedback: TrainingFeedback): Promise<void> => {
@@ -236,7 +244,25 @@ export const upsertCloudFeedback = async (feedback: TrainingFeedback): Promise<v
     enqueueSyncChange({ tableName: "training_feedback", action: "upsert", payload });
     return;
   }
-  const { error } = await (client.from("training_feedback") as any).upsert(payload, { onConflict: "id" });
+  const { error } = await (client.from("training_feedback") as any).upsert(payload, {
+    onConflict: "training_plan_item_id,athlete_id,feedback_type",
+  });
+  if (error && getTrainingFeedbackType(feedback) === "athlete" && ["42703", "PGRST204", "42P10"].includes(error.code ?? "")) {
+    const legacyPayload = [
+      "feedback_type",
+      "author_id",
+      "technical_assessment",
+      "goal_achievement",
+      "load_assessment",
+      "observation",
+      "improvement_point",
+    ].reduce((current, column) => omitColumn(current, column), payload);
+    const legacyResult = await (client.from("training_feedback") as any).upsert(legacyPayload, {
+      onConflict: "training_plan_item_id,athlete_id",
+    });
+    if (legacyResult.error) throw legacyResult.error;
+    return;
+  }
   if (error) throw error;
 };
 
@@ -245,6 +271,8 @@ export const fromCloudFeedback = (row: any): TrainingFeedback => ({
   trainingId: row.training_plan_item_id ?? row.training_id,
   athleteUserId: row.athlete_id ?? row.athlete_user_id,
   coachUserId: row.coach_id ?? "",
+  feedbackType: row.feedback_type === "trainer" ? "trainer" : "athlete",
+  authorUserId: row.author_id ?? (row.feedback_type === "trainer" ? row.coach_id : row.athlete_id),
   status: row.status ?? "done",
   feeling: row.feeling ?? 7,
   difficulty: row.difficulty ?? 5,
@@ -253,6 +281,11 @@ export const fromCloudFeedback = (row: any): TrainingFeedback => ({
   sleep: row.sleep ?? undefined,
   reason: row.reason ?? "",
   comment: row.comment ?? "",
+  technicalAssessment: row.technical_assessment ?? "",
+  goalAchievement: row.goal_achievement ?? undefined,
+  loadAssessment: row.load_assessment ?? undefined,
+  observation: row.observation ?? "",
+  improvementPoint: row.improvement_point ?? "",
   completedAt: row.updated_at ?? row.created_at,
 });
 
@@ -261,5 +294,5 @@ export const listCloudFeedback = async (): Promise<TrainingFeedback[]> => {
   if (!client) return [];
   const { data, error } = await client.from("training_feedback").select("*").order("updated_at", { ascending: false });
   if (error) throw error;
-  return (data ?? []).map(fromCloudFeedback);
+  return deduplicateTrainingFeedback((data ?? []).map(fromCloudFeedback));
 };

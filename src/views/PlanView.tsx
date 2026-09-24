@@ -28,6 +28,7 @@ import {
   trainingTypeGroups,
   weekdays,
 } from "../domain/trainingPlan";
+import { deduplicateTrainingFeedback, getTrainingFeedbackType } from "../domain/trainingFeedback";
 import {
   buildExerciseDescription,
   createPeriodizationTemplates as createSystemTrainingTemplates,
@@ -479,11 +480,12 @@ export function PlanView({
     () => visibleTemplates.find((template) => template.id === selectedTemplateDetailId) ?? null,
     [selectedTemplateDetailId, visibleTemplates],
   );
+  const uniqueTrainingFeedback = useMemo(() => deduplicateTrainingFeedback(data.trainingFeedback), [data.trainingFeedback]);
   const journalFilteredEntries = useMemo(() => {
     const rangeStart = journalRangeFilter === "all" ? "" : addDays(today, -Number(journalRangeFilter));
     return visibleEntries.filter((entry) => {
       if (rangeStart && entry.date < rangeStart) return false;
-      const entryFeedback = data.trainingFeedback.filter((feedback) => feedback.trainingId === entry.id);
+      const entryFeedback = uniqueTrainingFeedback.filter((feedback) => feedback.trainingId === entry.id);
       if (areaFilter !== "all" && entry.area !== areaFilter) return false;
       if (statusFilter !== "all" && entry.status !== statusFilter) return false;
       if (groupFilter !== "all" && !entry.assignedGroupIds.includes(groupFilter) && entry.assignedGroupId !== groupFilter) return false;
@@ -492,9 +494,9 @@ export function PlanView({
         || entry.assignedAthleteId === journalAthleteFilter
         || entryFeedback.some((feedback) => feedback.athleteUserId === journalAthleteFilter);
     });
-  }, [areaFilter, data.trainingFeedback, groupFilter, journalAthleteFilter, journalRangeFilter, statusFilter, visibleEntries]);
-  const entriesWithFeedback = journalFilteredEntries.filter((entry) => data.trainingFeedback.some((feedback) => feedback.trainingId === entry.id));
-  const openFeedbackEntries = journalFilteredEntries.filter((entry) => isDoneStatus(entry.status) && !data.trainingFeedback.some((feedback) => feedback.trainingId === entry.id));
+  }, [areaFilter, groupFilter, journalAthleteFilter, journalRangeFilter, statusFilter, uniqueTrainingFeedback, visibleEntries]);
+  const entriesWithFeedback = journalFilteredEntries.filter((entry) => uniqueTrainingFeedback.some((feedback) => feedback.trainingId === entry.id));
+  const openFeedbackEntries = journalFilteredEntries.filter((entry) => isDoneStatus(entry.status) && !uniqueTrainingFeedback.some((feedback) => feedback.trainingId === entry.id));
   const openFeedbackCount = openFeedbackEntries.length;
   const nextWeekDates = getWeekDates(addDays(selectedDate, 7));
   const nextWeekCount = visibleEntries.filter((entry) => nextWeekDates.includes(entry.date)).length;
@@ -2195,7 +2197,9 @@ export function PlanView({
               </article>
             )) : null}
             {entriesWithFeedback.length > 0 ? entriesWithFeedback.map((entry) => {
-              const feedbackItems = data.trainingFeedback.filter((feedback) => feedback.trainingId === entry.id);
+              const feedbackItems = uniqueTrainingFeedback.filter((feedback) => feedback.trainingId === entry.id);
+              const athleteFeedbackCount = feedbackItems.filter((feedback) => getTrainingFeedbackType(feedback) === "athlete").length;
+              const trainerFeedbackCount = feedbackItems.filter((feedback) => getTrainingFeedbackType(feedback) === "trainer").length;
               const assignedAthleteIds = Array.from(new Set([...entry.assignedAthleteIds, entry.assignedAthleteId].filter(Boolean)));
               const assignedAthleteNames = assignedAthleteIds.map(getAssignedAthleteName).filter(Boolean);
 
@@ -2210,9 +2214,10 @@ export function PlanView({
                   </div>
                   <p>{entry.focus || entry.goal || "Kein Trainingsfokus hinterlegt."}</p>
                   <div className="feedback-list">
+                    <span>Athletenfeedback {athleteFeedbackCount ? "✓" : "–"} · Trainerfeedback {trainerFeedbackCount ? "✓" : "–"}</span>
                     {feedbackItems.map((feedback) => (
                       <span key={feedback.id}>
-                        {feedback.status === "skipped" ? "Ausgelassen" : "Erledigt"} · Gefühl {feedback.feeling}/10 · Schwierigkeit {feedback.difficulty}/10 · Müdigkeit {feedback.fatigue}/10 · Motivation {feedback.motivation}/10
+                        {getTrainingFeedbackType(feedback) === "trainer" ? "Trainer" : "Athlet"} · {feedback.status === "skipped" ? "Ausgelassen" : "Erledigt"} · Gefühl {feedback.feeling}/10 · Schwierigkeit {feedback.difficulty}/10 · Müdigkeit {feedback.fatigue}/10 · Motivation {feedback.motivation}/10
                         {feedback.sleep ? ` · Schlaf ${feedback.sleep}/10` : ""}
                         {feedback.comment ? ` · Kommentar: ${feedback.comment}` : ""}
                         {feedback.reason ? ` · Grund: ${feedback.reason}` : ""}

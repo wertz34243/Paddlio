@@ -280,7 +280,11 @@ test.describe("two-device training and feedback flow", () => {
     await expect(feedbackSurface).not.toBeVisible({ timeout: 20_000 });
     const savedAthleteDetails = await openTrainingDetailsByMarker(athletePage, marker, trainingStartTime);
     await savedAthleteDetails.getByRole("button", { name: "Feedback" }).click();
-    await expect(savedAthleteDetails.getByText(feedbackComment)).toBeVisible({ timeout: 20_000 });
+    await expect(savedAthleteDetails.getByText(feedbackComment, { exact: true })).toHaveCount(1);
+    await athletePage.reload();
+    const reloadedAthleteDetails = await openTrainingDetailsByMarker(athletePage, marker, trainingStartTime);
+    await reloadedAthleteDetails.getByRole("button", { name: "Feedback" }).click();
+    await expect(reloadedAthleteDetails.getByText(feedbackComment, { exact: true })).toHaveCount(1);
     await athletePage.waitForTimeout(5_000);
 
     await expectFeedbackVisibleAfterSync(coachPage, marker, feedbackComment, trainingStartTime);

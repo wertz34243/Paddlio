@@ -514,6 +514,8 @@ export type TrainingFeedback = {
   trainingId: string;
   athleteUserId: string;
   coachUserId?: string;
+  feedbackType?: "athlete" | "trainer";
+  authorUserId?: string;
   status: "done" | "skipped";
   feeling: number;
   difficulty: number;
@@ -522,6 +524,11 @@ export type TrainingFeedback = {
   sleep?: number;
   reason?: string;
   comment?: string;
+  technicalAssessment?: string;
+  goalAchievement?: "yes" | "partly" | "no";
+  loadAssessment?: "too_low" | "appropriate" | "too_high";
+  observation?: string;
+  improvementPoint?: string;
   completedAt: string;
 };
 

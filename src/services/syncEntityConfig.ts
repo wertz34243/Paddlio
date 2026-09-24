@@ -41,7 +41,7 @@ const syncEntityConfigs: Record<string, SyncEntityConfig> = {
   training_feedback: {
     table: "training_feedback",
     primaryKey: "id",
-    conflictKey: "id",
+    conflictKey: "training_plan_item_id,athlete_id,feedback_type",
     updatedAtField: "updated_at",
     supportsSoftDelete: false,
     ownerField: "athlete_id",

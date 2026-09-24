@@ -37,6 +37,8 @@ import type {
   User,
 } from "../domain/types";
 import type { DeviceClass } from "../lib/deviceCapabilities";
+import { canUseCoachArea } from "../domain/accessControl";
+import { deduplicateTrainingFeedback, getTrainingFeedbackType } from "../domain/trainingFeedback";
 import {
   PaddlioOneButton,
   PaddlioOneCard,
@@ -402,6 +404,7 @@ export function TrainingCalendarView({
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   const [quickEdit, setQuickEdit] = useState<QuickEditState | null>(null);
   const [feedbackEntry, setFeedbackEntry] = useState<PlanEntry | null>(null);
+  const [feedbackMode, setFeedbackMode] = useState<"athlete" | "trainer">("athlete");
   const [taskEntry, setTaskEntry] = useState<PlanEntry | null>(null);
   const [liveTraining, setLiveTraining] = useState<LiveTrainingState | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
@@ -559,10 +562,16 @@ export function TrainingCalendarView({
   };
 
   const openFeedback = (entry: PlanEntry) => {
+    setFeedbackMode("athlete");
     setSelectedEntryId(null);
     setQuickEdit(null);
     setTaskEntry(null);
     setLiveTraining(null);
+    setFeedbackEntry(entry);
+  };
+
+  const openTrainerFeedback = (entry: PlanEntry) => {
+    setFeedbackMode("trainer");
     setFeedbackEntry(entry);
   };
 
@@ -818,10 +827,14 @@ export function TrainingCalendarView({
     const actualDuration = Number(formData.get("actualDuration") ?? entry.durationMinutes) || entry.durationMinutes;
     const feedbackStatus: TrainingFeedback["status"] = completionStatus === "skipped" ? "skipped" : "done";
 
+    const targetAthleteId = entry.assignedAthleteId || entry.assignedAthleteIds[0] || entry.ownerUserId;
+    const isTrainerFeedback = feedbackMode === "trainer";
     onFeedbackSave?.({
       trainingId: entry.id,
-      athleteUserId: user?.userId ?? entry.ownerUserId,
-      coachUserId: entry.createdByUserId || undefined,
+      athleteUserId: isTrainerFeedback ? targetAthleteId : user?.userId ?? targetAthleteId,
+      coachUserId: isTrainerFeedback ? user?.userId : entry.createdByUserId || undefined,
+      feedbackType: feedbackMode,
+      authorUserId: user?.userId,
       status: feedbackStatus,
       feeling,
       difficulty: perceivedExertion,
@@ -830,9 +843,14 @@ export function TrainingCalendarView({
       sleep: 4,
       reason: completionStatus === "skipped" ? note : "",
       comment: note,
+      technicalAssessment: String(formData.get("technicalAssessment") ?? "").trim(),
+      goalAchievement: (String(formData.get("goalAchievement") ?? "") || undefined) as TrainingFeedback["goalAchievement"],
+      loadAssessment: (String(formData.get("loadAssessment") ?? "") || undefined) as TrainingFeedback["loadAssessment"],
+      observation: String(formData.get("observation") ?? "").trim(),
+      improvementPoint: String(formData.get("improvementPoint") ?? "").trim(),
     });
 
-    onSaveJournal?.({
+    if (!isTrainerFeedback) onSaveJournal?.({
       trainingId: entry.id,
       trainingPlanEntryId: entry.id,
       date: entry.date,
@@ -847,7 +865,7 @@ export function TrainingCalendarView({
       notes: note,
     });
 
-    onStatusChange(entry.id, completionStatus);
+    if (!isTrainerFeedback) onStatusChange(entry.id, completionStatus);
     setFeedbackEntry(null);
     setLiveTraining(null);
   };
@@ -939,6 +957,7 @@ export function TrainingCalendarView({
       onStatusChange={onStatusChange}
       onStartLive={startLiveTraining}
       onFeedback={openFeedback}
+      onTrainerFeedback={openTrainerFeedback}
       onCreateTask={onDataChange && user ? (entry) => setTaskEntry(entry) : undefined}
       onDuplicate={duplicateEntry}
       onDelete={onDelete}
@@ -985,7 +1004,7 @@ export function TrainingCalendarView({
     }
 
     if (feedbackEntry?.id === entry.id) {
-      return <FeedbackSheet entry={feedbackEntry} onCancel={() => setFeedbackEntry(null)} onSave={applyFeedback} presentation="inline" />;
+      return <FeedbackSheet entry={feedbackEntry} mode={feedbackMode} onCancel={() => setFeedbackEntry(null)} onSave={applyFeedback} presentation="inline" />;
     }
 
     if (selectedEntryId === entry.id && selectedEntry) {
@@ -1004,6 +1023,7 @@ export function TrainingCalendarView({
           onStatusChange={onStatusChange}
           onStartLive={startLiveTraining}
           onFeedback={openFeedback}
+          onTrainerFeedback={openTrainerFeedback}
           onCreateTask={!isPhone && onDataChange && user ? (entry) => setTaskEntry(entry) : undefined}
           onDuplicate={duplicateEntry}
           onDelete={onDelete}
@@ -1283,7 +1303,7 @@ export function TrainingCalendarView({
       ) : null}
 
       {!isPhone && feedbackEntry ? (
-        <FeedbackSheet entry={feedbackEntry} onCancel={() => setFeedbackEntry(null)} onSave={applyFeedback} />
+        <FeedbackSheet entry={feedbackEntry} mode={feedbackMode} onCancel={() => setFeedbackEntry(null)} onSave={applyFeedback} />
       ) : null}
 
       {!isPhone && taskEntry && onDataChange && user ? (
@@ -2114,6 +2134,7 @@ function TrainingDetailDrawer({
   onStatusChange,
   onStartLive,
   onFeedback,
+  onTrainerFeedback,
   onCreateTask,
   onDuplicate,
   onDelete,
@@ -2134,6 +2155,7 @@ function TrainingDetailDrawer({
   onStatusChange: (id: string, status: PlanStatus) => void;
   onStartLive: (entry: PlanEntry) => void;
   onFeedback: (entry: PlanEntry) => void;
+  onTrainerFeedback: (entry: PlanEntry) => void;
   onCreateTask?: (entry: PlanEntry) => void;
   onDuplicate: (entry: PlanEntry) => void;
   onDelete?: (id: string) => void;
@@ -2144,7 +2166,9 @@ function TrainingDetailDrawer({
   const [tab, setTab] = useState<DetailTab>("planning");
   const [showDescription, setShowDescription] = useState(false);
   const trainingJournal = journal.find((item) => item.trainingPlanEntryId === entry.id || item.trainingId === entry.id);
-  const trainingFeedback = feedback.filter((item) => item.trainingId === entry.id);
+  const trainingFeedback = deduplicateTrainingFeedback(feedback.filter((item) => item.trainingId === entry.id));
+  const athleteFeedback = trainingFeedback.filter((item) => getTrainingFeedbackType(item) === "athlete");
+  const trainerFeedback = trainingFeedback.filter((item) => getTrainingFeedbackType(item) === "trainer");
   const trainingTasks = tasks.filter((task) => task.relatedTrainingId === entry.id && !task.deletedAt);
   const repeatSeriesEntries = getTrainingRepeatSeriesEntries(entries, entry);
   const canDeleteSeries = repeatSeriesEntries.length > 1;
@@ -2154,7 +2178,7 @@ function TrainingDetailDrawer({
   const actualIntensity = trainingJournal?.perceivedExertion;
   const feedbackState = trainingFeedback.length > 0 ? "Gespeichert" : "Offen";
   const assignedLabel = getAssignedLabel(entry, groups, athletes, users);
-  const isCoach = user?.role === "coach" || user?.role === "admin" || user?.role === "clubAdmin";
+  const isCoach = user ? canUseCoachArea(user.role) : false;
   const swipeHandlers = useMobileSwipeDismiss(onClose);
   const startTime = entry.startTime || entry.time;
   const endTime = entry.endTime || addMinutesToTime(startTime, entry.durationMinutes);
@@ -2215,14 +2239,34 @@ function TrainingDetailDrawer({
       ) : null}
       {tab === "feedback" ? (
         <section className="master-detail-section">
-          <PaddlioOneButton variant="primary" onClick={() => onFeedback(entry)}>Feedback erfassen</PaddlioOneButton>
-          {trainingFeedback.length > 0 ? trainingFeedback.map((item) => (
-            <article className="master-feedback-row" key={item.id}>
-              <strong>{item.status === "done" ? "Durchgeführt" : "Übersprungen"}</strong>
-              <span>Gefühl {item.feeling}/5 · Belastung {item.difficulty}/10</span>
-              {item.comment ? <p>{item.comment}</p> : null}
-            </article>
-          )) : <p className="po-muted">Noch kein Feedback gespeichert.</p>}
+          <div className="master-feedback-group">
+            <div className="master-feedback-group-heading">
+              <div><span>Athlet</span><strong>Athletenfeedback</strong></div>
+              {!isCoach ? <PaddlioOneButton variant="primary" onClick={() => onFeedback(entry)}>{athleteFeedback.length ? "Feedback bearbeiten" : "Feedback erfassen"}</PaddlioOneButton> : null}
+            </div>
+            {athleteFeedback.length > 0 ? athleteFeedback.map((item) => (
+              <article className="master-feedback-row" key={item.id}>
+                <strong>{item.status === "done" ? "Durchgeführt" : "Übersprungen"}</strong>
+                <span>Gefühl {item.feeling}/5 · Belastung {item.difficulty}/10 · Müdigkeit {item.fatigue}/5</span>
+                {item.comment ? <p>{item.comment}</p> : null}
+              </article>
+            )) : <p className="po-muted">Noch kein Athletenfeedback gespeichert.</p>}
+          </div>
+          <div className="master-feedback-group">
+            <div className="master-feedback-group-heading">
+              <div><span>Trainer</span><strong>Trainerfeedback</strong></div>
+              {isCoach ? <PaddlioOneButton variant="secondary" onClick={() => onTrainerFeedback(entry)}>{trainerFeedback.length ? "Bearbeiten" : "Hinzufügen"}</PaddlioOneButton> : null}
+            </div>
+            {trainerFeedback.length > 0 ? trainerFeedback.map((item) => (
+              <article className="master-feedback-row" key={item.id}>
+                <strong>{item.goalAchievement === "yes" ? "Ziel erreicht" : item.goalAchievement === "partly" ? "Ziel teilweise erreicht" : item.goalAchievement === "no" ? "Ziel nicht erreicht" : "Trainerbeobachtung"}</strong>
+                {item.technicalAssessment ? <span>Technik: {item.technicalAssessment}</span> : null}
+                {item.observation ? <p>{item.observation}</p> : null}
+                {item.improvementPoint ? <p>Verbesserung: {item.improvementPoint}</p> : null}
+                {item.comment ? <p>{item.comment}</p> : null}
+              </article>
+            )) : <p className="po-muted">Noch kein Trainerfeedback gespeichert.</p>}
+          </div>
           <div className="master-target-actual-summary">
             <InfoRow label="Dauer" value={`Geplant ${plannedDuration} min · Ist ${actualDuration ? `${actualDuration} min` : "offen"}`} />
             <InfoRow label="Intensität" value={`Geplant ${plannedIntensity} · Empfunden ${actualIntensity ? `${actualIntensity}/10` : "offen"}`} />
@@ -2265,11 +2309,13 @@ function InfoRow({ label, value }: { label: string; value: string | number }) {
 
 function FeedbackSheet({
   entry,
+  mode = "athlete",
   onCancel,
   onSave,
   presentation = "modal",
 }: {
   entry: PlanEntry;
+  mode?: "athlete" | "trainer";
   onCancel: () => void;
   onSave: (entry: PlanEntry, status: CompletionStatus, formData: FormData) => void;
   presentation?: "modal" | "inline";
@@ -2287,26 +2333,34 @@ function FeedbackSheet({
       <form className={`master-feedback-sheet ${presentation === "inline" ? "master-feedback-inline-panel" : ""}`.trim()} onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); onSave(entry, status, new FormData(event.currentTarget)); }} {...swipeHandlers}>
         <header>
           <div>
-            <p className="po-eyebrow">Feedback</p>
+            <p className="po-eyebrow">{mode === "trainer" ? "Trainerfeedback" : "Athletenfeedback"}</p>
             <h2>{entry.title || entry.trainingType}</h2>
           </div>
           <button type="button" onClick={requestCancel} aria-label="Schließen">×</button>
         </header>
-        <div className="master-segmented-control">
+        {mode === "athlete" ? <div className="master-segmented-control">
           {(["completed", "partially_completed", "skipped"] as CompletionStatus[]).map((item) => (
             <button key={item} className={status === item ? "is-active" : ""} type="button" onClick={() => setStatus(item)}>
               {item === "completed" ? "Durchgeführt" : item === "partially_completed" ? "Teilweise" : "Übersprungen"}
             </button>
           ))}
-        </div>
-        <div className="master-feedback-grid">
+        </div> : null}
+        {mode === "athlete" ? <div className="master-feedback-grid">
           <label className="master-feedback-duration">Ist-Dauer<input name="actualDuration" type="number" min="0" defaultValue={entry.durationMinutes} /></label>
           <label className="master-feedback-range"><span>RPE <b>{rpe} / 10</b></span><input name="rpe" type="range" min="1" max="10" value={rpe} onChange={(event) => setRpe(Number(event.currentTarget.value))} /></label>
           <label className="master-feedback-range"><span>Gefühl <b>{feeling} / 5</b></span><input name="feeling" type="range" min="1" max="5" value={feeling} onChange={(event) => setFeeling(Number(event.currentTarget.value))} /></label>
           <label className="master-feedback-range"><span>Müdigkeit <b>{fatigue} / 5</b></span><input name="fatigue" type="range" min="1" max="5" value={fatigue} onChange={(event) => setFatigue(Number(event.currentTarget.value))} /></label>
           <label className="master-feedback-range"><span>Motivation <b>{motivation} / 5</b></span><input name="motivation" type="range" min="1" max="5" value={motivation} onChange={(event) => setMotivation(Number(event.currentTarget.value))} /></label>
-        </div>
-        <label className="master-full-field">Kurze Notiz<textarea name="note" rows={3} placeholder="Was lief gut? Was soll der Trainer wissen?" /></label>
+        </div> : (
+          <div className="master-trainer-feedback-fields">
+            <label>Technische Einschätzung<input name="technicalAssessment" placeholder="z. B. stabil, sauber, ausbaufähig" /></label>
+            <label>Ziel erreicht?<select name="goalAchievement" defaultValue="partly"><option value="yes">Ja</option><option value="partly">Teilweise</option><option value="no">Nein</option></select></label>
+            <label>Belastung passend?<select name="loadAssessment" defaultValue="appropriate"><option value="too_low">Zu niedrig</option><option value="appropriate">Passend</option><option value="too_high">Zu hoch</option></select></label>
+            <label className="master-full-field">Beobachtung<textarea name="observation" rows={3} placeholder="Was ist im Training aufgefallen?" /></label>
+            <label className="master-full-field">Verbesserungspunkt<textarea name="improvementPoint" rows={2} placeholder="Konkreter nächster Schwerpunkt" /></label>
+          </div>
+        )}
+        <label className="master-full-field">{mode === "trainer" ? "Trainerhinweis" : "Kurze Notiz"}<textarea name="note" rows={3} placeholder={mode === "trainer" ? "Hinweis für Athlet und Trainingsplanung" : "Was lief gut? Was soll der Trainer wissen?"} /></label>
         <footer>
           <PaddlioOneButton variant="ghost" onClick={requestCancel}>Abbrechen</PaddlioOneButton>
           <PaddlioOneButton variant="primary" type="submit">Speichern</PaddlioOneButton>
