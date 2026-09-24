@@ -48,7 +48,7 @@ export type OfflineQueueDiagnostic = {
 const SYNC_QUEUE_KEY = "paddlio_sync_queue";
 const QUARANTINE_QUEUE_KEY = `${SYNC_QUEUE_KEY}:unscoped`;
 const MAX_RETRY_COUNT = 5;
-const QUEUE_REPAIR_VERSION = 3;
+const QUEUE_REPAIR_VERSION = 4;
 let activeQueueUserId = "";
 
 const queueKey = (userId: string): string => `${SYNC_QUEUE_KEY}:${userId}`;
@@ -82,7 +82,15 @@ const normalizeQueueItem = (item: any, scopedUserId = ""): OfflineQueueItem => {
   const needsPlanRepair = isTrainingPlan && item.repairVersion !== QUEUE_REPAIR_VERSION;
   const needsFeedbackPolicyRetry = table === "training_feedback"
     && item.repairVersion !== QUEUE_REPAIR_VERSION
-    && (feedbackRepair.repaired || inferStoredErrorCode(item) === "42501");
+    && (
+      feedbackRepair.repaired
+      || (
+        inferStoredErrorCode(item) === "42501"
+        && feedbackRepair.repairDecision === "retry_as_trainer"
+        && feedbackRepair.payload.author_id === (item.userId || scopedUserId)
+        && feedbackRepair.payload.coach_id === (item.userId || scopedUserId)
+      )
+    );
   const needsTransientRepair = item.status === "failed" && item.repairVersion !== QUEUE_REPAIR_VERSION && storedErrorKind !== "non-retryable";
   const needsRepair = needsPlanRepair || needsFeedbackPolicyRetry || needsTransientRepair;
   return {
@@ -174,9 +182,6 @@ export const getOfflineQueueDiagnostics = (): OfflineQueueDiagnostic[] =>
       const feedbackDiagnostic = item.table === "training_feedback"
         ? diagnoseTrainingFeedbackPayload(item.payload, item.userId)
         : null;
-      const identitiesAreTrainerSelf = feedbackDiagnostic?.feedbackType === "trainer"
-        && feedbackDiagnostic.authorMatchesCurrentUser === true
-        && feedbackDiagnostic.coachMatchesCurrentUser === true;
       return {
         table: item.table,
         operation: item.operation,
@@ -192,7 +197,7 @@ export const getOfflineQueueDiagnostics = (): OfflineQueueDiagnostic[] =>
           athleteMatchesCurrentUser: feedbackDiagnostic.athleteMatchesCurrentUser,
           authorMatchesCurrentUser: feedbackDiagnostic.authorMatchesCurrentUser,
           coachMatchesCurrentUser: feedbackDiagnostic.coachMatchesCurrentUser,
-          hasTrainingAccess: identitiesAreTrainerSelf && item.lastErrorCode === "42501" ? false : "unknown",
+          hasTrainingAccess: "unknown",
           legacyPayload: item.legacyPayload ?? feedbackDiagnostic.legacyPayload,
           repairDecision: item.feedbackRepairDecision ?? feedbackDiagnostic.repairDecision,
         } : {}),
