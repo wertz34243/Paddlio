@@ -3,7 +3,7 @@ import { sanitizeCloudPayload } from "./cloudIds";
 import { getSyncEntityConfig, toSoftDeletePayload, type SyncPriority } from "./syncEntityConfig";
 import { normalizeTrainingPlanQueuePayload } from "../domain/trainingPlanStatus";
 import { classifySyncWriteError } from "./syncErrorPolicy";
-import { normalizeTrainingFeedbackQueuePayload } from "../domain/trainingFeedbackSync";
+import { diagnoseTrainingFeedbackPayload, normalizeTrainingFeedbackQueuePayload, type FeedbackRepairDecision } from "../domain/trainingFeedbackSync";
 
 export type OfflineQueueOperation = "insert" | "update" | "upsert" | "delete";
 export type OfflineQueueStatus = "pending" | "failed";
@@ -20,6 +20,8 @@ export type OfflineQueueItem = {
   lastErrorCode?: string;
   errorKind?: "retryable" | "non-retryable";
   repairVersion?: number;
+  legacyPayload?: boolean;
+  feedbackRepairDecision?: FeedbackRepairDecision;
   userId: string;
 };
 
@@ -33,6 +35,14 @@ export type OfflineQueueDiagnostic = {
   retryCount: number;
   userScope: string;
   createdAt: string;
+  feedbackType?: "athlete" | "trainer" | "missing";
+  athleteMatchesCurrentUser?: boolean | null;
+  authorMatchesCurrentUser?: boolean | null;
+  coachMatchesCurrentUser?: boolean | null;
+  hasTrainingAccess?: boolean | "unknown";
+  legacyPayload?: boolean;
+  repairDecision?: FeedbackRepairDecision;
+  queueItemId: string;
 };
 
 const SYNC_QUEUE_KEY = "paddlio_sync_queue";
@@ -64,7 +74,7 @@ const normalizeQueueItem = (item: any, scopedUserId = ""): OfflineQueueItem => {
   const isTrainingPlan = table === "training_plan_items";
   const feedbackRepair = table === "training_feedback"
     ? normalizeTrainingFeedbackQueuePayload(rawPayload, item.userId || scopedUserId || inferQueueOwner(item))
-    : { payload: rawPayload, repaired: false };
+    : { payload: rawPayload, repaired: false, legacyPayload: false, repairDecision: undefined };
   const payload = isTrainingPlan ? normalizeTrainingPlanQueuePayload(rawPayload) : feedbackRepair.payload;
   const storedErrorKind = item.errorKind ?? (item.lastError
     ? classifySyncWriteError({ code: inferStoredErrorCode(item), message: item.lastError })
@@ -87,6 +97,8 @@ const normalizeQueueItem = (item: any, scopedUserId = ""): OfflineQueueItem => {
   lastErrorCode: needsRepair ? undefined : inferStoredErrorCode(item),
   errorKind: needsRepair ? undefined : storedErrorKind,
   repairVersion: QUEUE_REPAIR_VERSION,
+  legacyPayload: item.legacyPayload ?? feedbackRepair.legacyPayload,
+  feedbackRepairDecision: item.feedbackRepairDecision ?? feedbackRepair.repairDecision,
   userId: item.userId || scopedUserId || inferQueueOwner(item),
   };
 };
@@ -159,6 +171,12 @@ export const getOfflineQueueDiagnostics = (): OfflineQueueDiagnostic[] =>
     .map((item) => {
       const config = getSyncEntityConfig(item.table);
       const rawId = String(item.payload[config.primaryKey] ?? item.payload.id ?? "unbekannt");
+      const feedbackDiagnostic = item.table === "training_feedback"
+        ? diagnoseTrainingFeedbackPayload(item.payload, item.userId)
+        : null;
+      const identitiesAreTrainerSelf = feedbackDiagnostic?.feedbackType === "trainer"
+        && feedbackDiagnostic.authorMatchesCurrentUser === true
+        && feedbackDiagnostic.coachMatchesCurrentUser === true;
       return {
         table: item.table,
         operation: item.operation,
@@ -168,8 +186,26 @@ export const getOfflineQueueDiagnostics = (): OfflineQueueDiagnostic[] =>
         retryCount: item.retryCount,
         userScope: item.userId ? `${item.userId.slice(0, 8)}...` : "unscoped",
         createdAt: item.createdAt,
+        queueItemId: item.id,
+        ...(feedbackDiagnostic ? {
+          feedbackType: feedbackDiagnostic.feedbackType,
+          athleteMatchesCurrentUser: feedbackDiagnostic.athleteMatchesCurrentUser,
+          authorMatchesCurrentUser: feedbackDiagnostic.authorMatchesCurrentUser,
+          coachMatchesCurrentUser: feedbackDiagnostic.coachMatchesCurrentUser,
+          hasTrainingAccess: identitiesAreTrainerSelf && item.lastErrorCode === "42501" ? false : "unknown",
+          legacyPayload: item.legacyPayload ?? feedbackDiagnostic.legacyPayload,
+          repairDecision: item.feedbackRepairDecision ?? feedbackDiagnostic.repairDecision,
+        } : {}),
       };
     });
+
+export const discardOfflineQueueItem = (queueItemId: string): boolean => {
+  const queue = readOfflineQueue();
+  const item = queue.find((candidate) => candidate.id === queueItemId);
+  if (!item || item.status !== "failed") return false;
+  writeOfflineQueue(queue.filter((candidate) => candidate.id !== queueItemId));
+  return true;
+};
 
 export const enqueueOfflineChange = (
   item: Omit<OfflineQueueItem, "id" | "createdAt" | "retryCount" | "status" | "userId"> & { userId?: string },

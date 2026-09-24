@@ -1,7 +1,7 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { getInitials } from "../domain/profile";
 import type { AppLanguage, MeasurementUnit, User, UserProfile } from "../domain/types";
-import { getOfflineQueueDiagnostics } from "../services/offlineQueueService";
+import { discardOfflineQueueItem, getOfflineQueueDiagnostics } from "../services/offlineQueueService";
 
 type SettingsViewProps = {
   user: User;
@@ -138,7 +138,14 @@ export function SettingsView({ user, syncStatus, onSave, onLogout }: SettingsVie
 }
 
 function SettingsSyncPanel({ syncStatus }: { syncStatus: NonNullable<SettingsViewProps["syncStatus"]> }) {
+  const [diagnosticRevision, setDiagnosticRevision] = useState(0);
   const diagnostics = syncStatus.isAdmin ? getOfflineQueueDiagnostics() : [];
+  void diagnosticRevision;
+  const formatMatch = (value: boolean | null | undefined) => value === true ? "true" : value === false ? "false" : "null";
+  const discardLegacyItem = (queueItemId: string) => {
+    if (!window.confirm("Lokalen Legacy-Eintrag verwerfen? Dadurch wird nur dieser lokale Queue-Eintrag entfernt. Training und Cloud-Feedback bleiben unverändert.")) return;
+    if (discardOfflineQueueItem(queueItemId)) setDiagnosticRevision((value) => value + 1);
+  };
   const syncLabel = syncStatus.lastSyncAt
     ? new Date(syncStatus.lastSyncAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
     : "";
@@ -187,6 +194,19 @@ function SettingsSyncPanel({ syncStatus }: { syncStatus: NonNullable<SettingsVie
               <li key={`${item.table}-${item.entityId}-${index}`}>
                 <code>{item.table}</code> · {item.operation} · {item.entityId} · {item.errorCode} · {item.errorKind}
                 <br />Scope {item.userScope} · {new Date(item.createdAt).toLocaleString("de-DE")}
+                {item.table === "training_feedback" ? (
+                  <>
+                    <br />Typ {item.feedbackType} · Athlete aktuell: {formatMatch(item.athleteMatchesCurrentUser)}
+                    <br />Autor aktuell: {formatMatch(item.authorMatchesCurrentUser)} · Coach aktuell: {formatMatch(item.coachMatchesCurrentUser)}
+                    <br />Trainingszugriff: {String(item.hasTrainingAccess ?? "unknown")} · Legacy: {String(item.legacyPayload ?? false)}
+                    <br />Entscheidung: <code>{item.repairDecision}</code>
+                    {item.repairDecision === "cannot_reconstruct" || item.repairDecision === "invalid_foreign_identity" ? (
+                      <button className="danger-button" type="button" onClick={() => discardLegacyItem(item.queueItemId)}>
+                        Lokalen Legacy-Eintrag verwerfen
+                      </button>
+                    ) : null}
+                  </>
+                ) : null}
               </li>
             ))}
           </ul>

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getSupabaseClient } from "../lib/supabase";
 import { buildNextDeltaCursor, isAfterDeltaCursor } from "./deltaSyncService";
-import { enqueueOfflineChange, flushOfflineQueue, getOfflineQueueDiagnostics, getOfflineQueueStats, readOfflineQueue, setOfflineQueueUser, writeOfflineQueue } from "./offlineQueueService";
+import { discardOfflineQueueItem, enqueueOfflineChange, flushOfflineQueue, getOfflineQueueDiagnostics, getOfflineQueueStats, readOfflineQueue, setOfflineQueueUser, writeOfflineQueue } from "./offlineQueueService";
 import { getSyncEntityConfig, toSoftDeletePayload } from "./syncEntityConfig";
 import { cloudValueOrCached, markCloudReadFailed } from "./cloudReadState";
 import { classifySyncWriteError } from "./syncErrorPolicy";
@@ -220,6 +220,36 @@ describe("offline queue", () => {
     expect(readOfflineQueue()[0]).toMatchObject({ status: "failed", retryCount: 5, repairVersion: 3 });
     expect(readOfflineQueue()[0].payload).not.toHaveProperty("author_id");
     expect(readOfflineQueue()[0].payload).not.toHaveProperty("feedback_type");
+  });
+
+  it("reports safe feedback identity diagnostics without exposing full ids", () => {
+    window.localStorage.setItem(`paddlio_sync_queue:${USER_ID}`, JSON.stringify([{
+      id: "queue-feedback", table: "training_feedback", operation: "upsert",
+      payload: { id: PLAN_ID, feedback_type: "athlete", athlete_id: ATHLETE_ID },
+      retryCount: 5, status: "failed", lastError: "RLS", lastErrorCode: "42501",
+      errorKind: "non-retryable", repairVersion: 3, userId: USER_ID,
+    }]));
+
+    expect(getOfflineQueueDiagnostics()[0]).toMatchObject({
+      entityId: "11111111...",
+      feedbackType: "athlete",
+      athleteMatchesCurrentUser: false,
+      authorMatchesCurrentUser: null,
+      coachMatchesCurrentUser: null,
+      hasTrainingAccess: "unknown",
+      legacyPayload: true,
+      repairDecision: "invalid_foreign_identity",
+    });
+  });
+
+  it("discards only the selected failed local queue entry", () => {
+    writeOfflineQueue([
+      { id: "remove-me", table: "training_feedback", operation: "upsert", payload: { id: PLAN_ID }, createdAt: new Date().toISOString(), retryCount: 5, status: "failed", errorKind: "non-retryable", repairVersion: 3, userId: USER_ID },
+      { id: "keep-me", table: "materials", operation: "upsert", payload: { id: ATHLETE_ID }, createdAt: new Date().toISOString(), retryCount: 0, status: "pending", userId: USER_ID },
+    ]);
+
+    expect(discardOfflineQueueItem("remove-me")).toBe(true);
+    expect(readOfflineQueue()).toEqual([expect.objectContaining({ id: "keep-me" })]);
   });
 
   it("isolates queue entries by account and restores them after switching back", () => {
