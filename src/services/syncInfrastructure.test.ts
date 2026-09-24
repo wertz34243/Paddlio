@@ -5,6 +5,7 @@ import { discardOfflineQueueItem, enqueueOfflineChange, flushOfflineQueue, getOf
 import { getSyncEntityConfig, toSoftDeletePayload } from "./syncEntityConfig";
 import { cloudValueOrCached, markCloudReadFailed } from "./cloudReadState";
 import { classifySyncWriteError } from "./syncErrorPolicy";
+import { classifyOptionalSyncError } from "./syncStatus";
 import { runCloudWrite } from "./cloudWriteService";
 
 vi.mock("../lib/supabase", () => ({ getSupabaseClient: vi.fn() }));
@@ -306,5 +307,17 @@ describe("sync write error policy", () => {
       error: { code: "42501", message: "permission denied" },
     }))).rejects.toMatchObject({ code: "42501" });
     expect(readOfflineQueue()).toEqual([]);
+  });
+});
+
+describe("profile sync health", () => {
+  it("keeps a profile-directory failure separate from the own-profile fetch", () => {
+    expect(classifyOptionalSyncError("Profilverzeichnis lesen", { code: "42501" }, "supplemental_sync_error"))
+      .toBe("supplemental_sync_error");
+  });
+
+  it("still classifies a real own-profile fetch failure as a profile error", () => {
+    expect(classifyOptionalSyncError("Profil laden", { code: "42501" }))
+      .toBe("profile_sync_error");
   });
 });

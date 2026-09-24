@@ -50,7 +50,7 @@ import { getSyncQueueStats } from "../services/syncService";
 import { getOfflineQueueDiagnostics, setOfflineQueueUser } from "../services/offlineQueueService";
 import { cloudValueOrCached, didCloudReadFail, mapCloudRead, markCloudReadFailed } from "../services/cloudReadState";
 import { backgroundSyncEngine } from "../services/backgroundSyncService";
-import { classifySyncError, getFailedSyncMessage, getSyncErrorMessage, type SyncErrorCategory } from "../services/syncStatus";
+import { classifyOptionalSyncError, classifySyncError, getFailedSyncMessage, getSyncErrorMessage, type SyncErrorCategory } from "../services/syncStatus";
 import { listCloudNotifications } from "../services/notificationService";
 import { listCloudSmartCoachRecommendations } from "../services/smartCoachService";
 import {
@@ -198,12 +198,17 @@ const withTimeout = async <T,>(scope: string, promise: Promise<T>, timeoutMs = 1
   }
 };
 
-const loadOptionalCloudData = async <T,>(scope: string, loader: () => Promise<T>, fallback: T): Promise<T> => {
+const loadOptionalCloudData = async <T,>(
+  scope: string,
+  loader: () => Promise<T>,
+  fallback: T,
+  categoryOverride?: SyncErrorCategory,
+): Promise<T> => {
   try {
     return await withTimeout(scope, loader(), 12000);
   } catch (error) {
     optionalCloudErrorCount += 1;
-    optionalCloudErrorCategories.add(classifySyncError(scope, error));
+    optionalCloudErrorCategories.add(classifyOptionalSyncError(scope, error, categoryOverride));
     logCloudError(scope, error);
     return markCloudReadFailed(fallback);
   }
@@ -504,6 +509,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const syncRunningRef = useRef(false);
   const latestSyncDataRef = useRef<PaddleMotionData | null>(null);
+  const refreshGenerationRef = useRef(0);
+  const cloudRefreshRunningRef = useRef(false);
 
   const finishEmailConfirmationFlow = async () => {
     if (typeof window !== "undefined") {
@@ -523,14 +530,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshCloudData = async () => {
+    if (cloudRefreshRunningRef.current) return;
+    cloudRefreshRunningRef.current = true;
+    const refreshGeneration = ++refreshGenerationRef.current;
     if (!isSupabaseConfigured || !supabase) {
       setCloudStatus("disabled");
       setCloudMessage(getSupabaseConfigMessage());
       setLoading(false);
+      cloudRefreshRunningRef.current = false;
       return;
     }
 
-    const activeSession = (await withTimeout("Supabase Session laden", supabase.auth.getSession(), 12000)).data.session;
+    let activeSession: Session | null;
+    try {
+      activeSession = (await withTimeout("Supabase Session laden", supabase.auth.getSession(), 12000)).data.session;
+    } catch (error) {
+      cloudRefreshRunningRef.current = false;
+      throw error;
+    }
     if (!activeSession?.user) {
       setOfflineQueueUser(null);
       setSession(null);
@@ -538,6 +555,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(null);
       setDataState(null);
       setLoading(false);
+      cloudRefreshRunningRef.current = false;
       return;
     }
 
@@ -571,7 +589,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setCloudMessage("");
       }
       const clubs = mapCloudRead(await loadOptionalCloudData("clubs lesen", listCloudClubs, []), toClub);
-      const allProfiles = await loadOptionalCloudData("profiles listen", () => listCloudProfiles(nextProfile), [nextProfile]);
+      const allProfiles = await loadOptionalCloudData(
+        "Profilverzeichnis lesen",
+        () => listCloudProfiles(nextProfile),
+        [nextProfile],
+        "supplemental_sync_error",
+      );
       const requests = mapCloudRead(await loadOptionalCloudData("trainer_requests lesen", listCloudTrainerRequests, []), toTrainerRequest);
       const clubRequests = mapCloudRead(await loadOptionalCloudData("club_requests lesen", listCloudClubRequests, []), toClubRequest);
       const groups = await loadOptionalCloudData("training_groups lesen", listCloudTrainingGroups, []);
@@ -634,6 +657,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       const queueStats = getSyncQueueStats();
       const pendingCount = queueStats.pending;
+      if (refreshGeneration !== refreshGenerationRef.current) return;
       setProfile(nextProfile);
       setClub(clubs.find((item) => item.clubId === nextProfile.club_id) ?? null);
       setDataState(nextData);
@@ -717,7 +741,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           if (!supabase) return;
           const latestSession = (await supabase.auth.getSession()).data.session;
-          if (latestSession?.user.id !== activeSession.user.id) return;
+          if (latestSession?.user.id !== activeSession.user.id || refreshGeneration !== refreshGenerationRef.current) return;
 
           const optionalData = mergeCloudData(activeSession.user.id, nextProfile, clubs, allProfiles.length > 0 ? allProfiles : [nextProfile], groups, groupMembers, {
             personalBests: cloudPersonalBests,
@@ -796,6 +820,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setCloudStatus(navigator.onLine && category === "profile_sync_error" ? "error" : navigator.onLine ? "limited" : "offline");
     } finally {
+      cloudRefreshRunningRef.current = false;
       setLoading(false);
     }
   };

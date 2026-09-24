@@ -23,6 +23,12 @@ export const classifySyncError = (scope: string, error?: unknown): SyncErrorCate
   return "supplemental_sync_error";
 };
 
+export const classifyOptionalSyncError = (
+  scope: string,
+  error?: unknown,
+  categoryOverride?: SyncErrorCategory,
+): SyncErrorCategory => categoryOverride ?? classifySyncError(scope, error);
+
 export const getSyncErrorMessage = (categories: Iterable<SyncErrorCategory>): string => {
   const errors = new Set(categories);
   if (errors.has("profile_sync_error")) {
