@@ -1,6 +1,6 @@
 import type { NotificationItem } from "../domain/types";
 import { getSupabaseClient } from "../lib/supabase";
-import { enqueueOfflineChange } from "./offlineQueueService";
+import { runCloudWrite } from "./cloudWriteService";
 
 type NotificationInput = {
   userId: string;
@@ -48,35 +48,19 @@ export const createCloudNotification = async (input: NotificationInput): Promise
     related_entity_type: input.relatedEntityType ?? null,
     related_entity_id: input.relatedEntityId ?? null,
   };
-  const client = getSupabaseClient();
-  if (!client || !navigator.onLine) {
-    enqueueOfflineChange({ table: "notifications", operation: "insert", payload });
-    return;
-  }
-  const { error } = await (client.from("notifications") as any).insert(payload);
-  if (error) throw error;
+  await runCloudWrite("notifications", "insert", payload, (client) =>
+    (client.from("notifications") as any).insert(payload));
 };
 
 export const markCloudNotificationRead = async (id: string): Promise<void> => {
   const payload = { id, read: true, read_at: new Date().toISOString() };
-  const client = getSupabaseClient();
-  if (!client || !navigator.onLine) {
-    enqueueOfflineChange({ table: "notifications", operation: "update", payload });
-    return;
-  }
-
-  const { error } = await (client.from("notifications") as any).update(payload).eq("id", id);
-  if (error) throw error;
+  await runCloudWrite("notifications", "update", payload, (client) =>
+    (client.from("notifications") as any).update(payload).eq("id", id));
 };
 
 export const markAllCloudNotificationsRead = async (userId: string): Promise<void> => {
   const payload = { read: true, read_at: new Date().toISOString() };
-  const client = getSupabaseClient();
-  if (!client || !navigator.onLine) {
-    enqueueOfflineChange({ table: "notifications", operation: "update", payload: { ...payload, user_id: userId } });
-    return;
-  }
-
-  const { error } = await (client.from("notifications") as any).update(payload).eq("user_id", userId).is("read_at", null);
-  if (error) throw error;
+  const scopedPayload = { ...payload, user_id: userId };
+  await runCloudWrite("notifications", "update", scopedPayload, (client) =>
+    (client.from("notifications") as any).update(payload).eq("user_id", userId).is("read_at", null));
 };

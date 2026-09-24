@@ -1,7 +1,7 @@
 import type { TrainingJournalEntry } from "../domain/types";
 import { getSupabaseClient } from "../lib/supabase";
 import { sanitizeCloudPayload, toCloudUuid } from "./cloudIds";
-import { enqueueSyncChange } from "./syncService";
+import { runCloudWrite } from "./cloudWriteService";
 
 const toCloudJournalEntry = (entry: TrainingJournalEntry) => sanitizeCloudPayload({
   id: entry.id,
@@ -60,12 +60,10 @@ export const listCloudJournalEntries = async (): Promise<TrainingJournalEntry[]>
 
 export const upsertCloudJournalEntry = async (entry: TrainingJournalEntry): Promise<void> => {
   const payload = toCloudJournalEntry(entry);
-  const client = getSupabaseClient();
-  if (!client || !navigator.onLine) {
-    enqueueSyncChange({ tableName: "training_journal_entries", action: "upsert", payload });
-    return;
-  }
-
-  const { error } = await (client.from("training_journal_entries") as any).upsert(payload, { onConflict: entry.trainingPlanEntryId ? "athlete_id,training_plan_entry_id" : "id" });
-  if (error) throw error;
+  await runCloudWrite("training_journal_entries", "upsert", payload, (client) =>
+    (client.from("training_journal_entries") as any).upsert(payload, { onConflict: entry.trainingPlanEntryId ? "athlete_id,training_plan_entry_id" : "id" }));
 };
+
+export const deleteCloudJournalEntry = async (id: string): Promise<void> =>
+  runCloudWrite("training_journal_entries", "delete", { id }, (client) =>
+    (client.from("training_journal_entries") as any).delete().eq("id", id));

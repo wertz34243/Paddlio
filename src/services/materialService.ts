@@ -1,7 +1,7 @@
 import { getSupabaseClient } from "../lib/supabase";
 import type { MaterialItem } from "../domain/types";
-import { enqueueSyncChange } from "./syncService";
 import { sanitizeCloudPayload } from "./cloudIds";
+import { runCloudWrite } from "./cloudWriteService";
 
 export const upsertCloudMaterial = async (item: MaterialItem): Promise<void> => {
   const payload = sanitizeCloudPayload({
@@ -16,13 +16,8 @@ export const upsertCloudMaterial = async (item: MaterialItem): Promise<void> => 
     image_url: item.imageDataUrl || null,
     notes: item.note,
   });
-  const client = getSupabaseClient();
-  if (!client || !navigator.onLine) {
-    enqueueSyncChange({ tableName: "materials", action: "upsert", payload });
-    return;
-  }
-  const { error } = await (client.from("materials") as any).upsert(payload, { onConflict: "id" });
-  if (error) throw error;
+  await runCloudWrite("materials", "upsert", payload, (client) =>
+    (client.from("materials") as any).upsert(payload, { onConflict: "id" }));
 };
 
 export const listCloudMaterials = async (): Promise<MaterialItem[]> => {
@@ -45,3 +40,7 @@ export const listCloudMaterials = async (): Promise<MaterialItem[]> => {
     updatedAt: row.updated_at,
   }));
 };
+
+export const deleteCloudMaterial = async (id: string): Promise<void> =>
+  runCloudWrite("materials", "delete", { id }, (client) =>
+    (client.from("materials") as any).delete().eq("id", id));

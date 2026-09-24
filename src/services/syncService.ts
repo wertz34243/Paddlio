@@ -1,4 +1,4 @@
-import { enqueueOfflineChange, flushOfflineQueue, getOfflineQueueStats } from "./offlineQueueService";
+import { enqueueOfflineChange, flushOfflineQueue, getOfflineQueueStats, getOfflineQueueUser } from "./offlineQueueService";
 import type { SyncPriority } from "./syncEntityConfig";
 
 export type SyncQueueItem = {
@@ -19,6 +19,7 @@ export const enqueueSyncChange = (item: Omit<SyncQueueItem, "id" | "createdAt" |
     table: item.tableName,
     operation: item.action,
     payload: item.payload,
+    userId: getOfflineQueueUser(),
   });
 };
 

@@ -15,7 +15,7 @@ import type {
 } from "../domain/types";
 import { getSupabaseClient } from "../lib/supabase";
 import { sanitizeCloudPayload } from "./cloudIds";
-import { enqueueSyncChange } from "./syncService";
+import { runCloudWrite } from "./cloudWriteService";
 
 const toCloudProgress = (progress: AcademyProgress) => sanitizeCloudPayload({
   id: progress.id,
@@ -244,14 +244,8 @@ export const listCloudAcademyFavorites = () => listTable("academy_favorites", fr
 export const listCloudAcademyMedia = () => listTable("academy_media", fromMedia);
 
 const upsertCloudRow = async (tableName: string, payload: Record<string, unknown>, onConflict: string): Promise<void> => {
-  const client = getSupabaseClient();
-  if (!client || !navigator.onLine) {
-    enqueueSyncChange({ tableName, action: "upsert", payload });
-    return;
-  }
-
-  const { error } = await (client.from(tableName) as any).upsert(payload, { onConflict });
-  if (error) throw error;
+  await runCloudWrite(tableName, "upsert", payload, (client) =>
+    (client.from(tableName) as any).upsert(payload, { onConflict }));
 };
 
 export const upsertCloudAcademyProgress = async (progress: AcademyProgress): Promise<void> =>
@@ -261,17 +255,9 @@ export const upsertCloudAcademyFavorite = async (favorite: AcademyFavorite): Pro
   upsertCloudRow("academy_favorites", toCloudFavorite(favorite), "user_id,lesson_id");
 
 export const deleteCloudAcademyFavorite = async (favorite: AcademyFavorite): Promise<void> => {
-  const client = getSupabaseClient();
-  if (!client || !navigator.onLine) {
-    enqueueSyncChange({ tableName: "academy_favorites", action: "delete", payload: toCloudFavorite(favorite) });
-    return;
-  }
-
-  const { error } = await (client.from("academy_favorites") as any)
-    .delete()
-    .eq("user_id", favorite.userId)
-    .eq("lesson_id", favorite.lessonId);
-  if (error) throw error;
+  const payload = toCloudFavorite(favorite);
+  await runCloudWrite("academy_favorites", "delete", payload, (client) =>
+    (client.from("academy_favorites") as any).delete().eq("user_id", favorite.userId).eq("lesson_id", favorite.lessonId));
 };
 
 export const upsertCloudAcademyAssignment = async (assignment: AcademyAssignment): Promise<void> =>

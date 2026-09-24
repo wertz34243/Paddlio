@@ -1,7 +1,7 @@
 import { getSupabaseClient } from "../lib/supabase";
 import type { TrainingTemplate } from "../domain/types";
-import { enqueueSyncChange } from "./syncService";
 import { sanitizeCloudPayload } from "./cloudIds";
+import { runCloudWrite } from "./cloudWriteService";
 
 const toCloudTemplate = (template: TrainingTemplate) => ({
   id: template.id,
@@ -55,11 +55,10 @@ export const listCloudTrainingTemplates = async (): Promise<TrainingTemplate[]> 
 
 export const upsertCloudTrainingTemplate = async (template: TrainingTemplate): Promise<void> => {
   const payload = sanitizeCloudPayload(toCloudTemplate(template));
-  const client = getSupabaseClient();
-  if (!client || !navigator.onLine) {
-    enqueueSyncChange({ tableName: "training_templates", action: "upsert", payload });
-    return;
-  }
-  const { error } = await (client.from("training_templates") as any).upsert(payload, { onConflict: "id" });
-  if (error) throw error;
+  await runCloudWrite("training_templates", "upsert", payload, (client) =>
+    (client.from("training_templates") as any).upsert(payload, { onConflict: "id" }));
 };
+
+export const deleteCloudTrainingTemplate = async (id: string): Promise<void> =>
+  runCloudWrite("training_templates", "delete", { id }, (client) =>
+    (client.from("training_templates") as any).delete().eq("id", id));

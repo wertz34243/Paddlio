@@ -17,7 +17,9 @@ import { APP_ENVIRONMENT_LABEL, isDevelopmentEnvironment, isProductionEnvironmen
 import type { Json } from "./lib/database.types";
 import { updateCloudProfile } from "./services/profileService";
 import { createCloudNotification, markAllCloudNotificationsRead, markCloudNotificationRead } from "./services/notificationService";
-import { upsertCloudJournalEntry } from "./services/journalService";
+import { deleteCloudJournalEntry, upsertCloudJournalEntry } from "./services/journalService";
+import { deleteCloudCompetition } from "./services/competitionService";
+import { deleteCloudMaterial } from "./services/materialService";
 import { deleteCloudTraining, upsertCloudFeedback, upsertCloudTraining } from "./services/trainingService";
 import { upsertCloudSmartCoachRecommendation } from "./services/smartCoachService";
 import { upsertSmartCoachStatus } from "./domain/smartCoach";
@@ -488,6 +490,7 @@ function AppContent() {
       ...current,
       competitions: current.competitions.filter((competition) => competition.id !== id),
     }));
+    void deleteCloudCompetition(id).catch((error) => console.error("Wettkampf konnte nicht aus der Cloud entfernt werden", error));
   };
 
   const upsertTraining = (session: Omit<TrainingSession, "id" | "athleteId" | "createdAt" | "updatedAt"> & { id?: string }) => {
@@ -513,11 +516,15 @@ function AppContent() {
   };
 
   const deleteTraining = (id: string) => {
+    const journalIds = data.journal.filter((entry) => entry.trainingId === id).map((entry) => entry.id);
     updateData((current) => ({
       ...current,
       training: current.training.filter((session) => session.id !== id),
       journal: current.journal.filter((entry) => entry.trainingId !== id),
     }));
+    journalIds.forEach((journalId) => {
+      void deleteCloudJournalEntry(journalId).catch((error) => console.error("Trainingstagebuch konnte nicht aus der Cloud entfernt werden", error));
+    });
   };
 
   const upsertJournalEntry = (
@@ -580,6 +587,7 @@ function AppContent() {
       ...current,
       material: current.material.filter((item) => item.id !== id),
     }));
+    void deleteCloudMaterial(id).catch((error) => console.error("Material konnte nicht aus der Cloud entfernt werden", error));
   };
 
   const upsertPlanEntry = (

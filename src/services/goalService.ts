@@ -1,7 +1,7 @@
 import { getSupabaseClient } from "../lib/supabase";
 import type { SeasonGoal } from "../domain/types";
-import { enqueueSyncChange } from "./syncService";
 import { sanitizeCloudPayload } from "./cloudIds";
+import { runCloudWrite } from "./cloudWriteService";
 
 const toCloudGoal = (goal: SeasonGoal) => ({
   id: goal.id,
@@ -50,11 +50,6 @@ export const listCloudGoals = async (): Promise<SeasonGoal[]> => {
 
 export const upsertCloudGoal = async (goal: SeasonGoal): Promise<void> => {
   const payload = sanitizeCloudPayload(toCloudGoal(goal));
-  const client = getSupabaseClient();
-  if (!client || !navigator.onLine) {
-    enqueueSyncChange({ tableName: "season_goals", action: "upsert", payload });
-    return;
-  }
-  const { error } = await (client.from("season_goals") as any).upsert(payload, { onConflict: "id" });
-  if (error) throw error;
+  await runCloudWrite("season_goals", "upsert", payload, (client) =>
+    (client.from("season_goals") as any).upsert(payload, { onConflict: "id" }));
 };

@@ -1,7 +1,7 @@
 import type { SmartCoachRecommendation } from "../domain/types";
 import { getSupabaseClient } from "../lib/supabase";
-import { enqueueSyncChange } from "./syncService";
 import { sanitizeCloudPayload } from "./cloudIds";
+import { runCloudWrite } from "./cloudWriteService";
 
 const toCloudRecommendation = (recommendation: SmartCoachRecommendation) => ({
   id: recommendation.id,
@@ -55,12 +55,6 @@ export const listCloudSmartCoachRecommendations = async (): Promise<SmartCoachRe
 
 export const upsertCloudSmartCoachRecommendation = async (recommendation: SmartCoachRecommendation): Promise<void> => {
   const payload = sanitizeCloudPayload(toCloudRecommendation(recommendation));
-  const client = getSupabaseClient();
-  if (!client || !navigator.onLine) {
-    enqueueSyncChange({ tableName: "smart_coach_recommendations", action: "upsert", payload });
-    return;
-  }
-
-  const { error } = await (client.from("smart_coach_recommendations") as any).upsert(payload, { onConflict: "id" });
-  if (error) throw error;
+  await runCloudWrite("smart_coach_recommendations", "upsert", payload, (client) =>
+    (client.from("smart_coach_recommendations") as any).upsert(payload, { onConflict: "id" }));
 };

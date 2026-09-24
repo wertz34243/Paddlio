@@ -9,20 +9,15 @@ import type {
 } from "../domain/types";
 import { getSupabaseClient } from "../lib/supabase";
 import { todayDateKey } from "../lib/dateOnly";
-import { enqueueSyncChange } from "./syncService";
 import { sanitizeCloudPayload } from "./cloudIds";
+import { runCloudWrite } from "./cloudWriteService";
 
 const today = todayDateKey;
 
 const tableUpsert = async (tableName: string, payload: Record<string, unknown>): Promise<void> => {
   const cloudPayload = sanitizeCloudPayload(payload);
-  const client = getSupabaseClient();
-  if (!client || !navigator.onLine) {
-    enqueueSyncChange({ tableName, action: "upsert", payload: cloudPayload });
-    return;
-  }
-  const { error } = await (client.from(tableName) as any).upsert(cloudPayload, { onConflict: "id" });
-  if (error) throw error;
+  await runCloudWrite(tableName, "upsert", cloudPayload, (client) =>
+    (client.from(tableName) as any).upsert(cloudPayload, { onConflict: "id" }));
 };
 
 const tableList = async <T,>(tableName: string, mapper: (row: any) => T): Promise<T[]> => {

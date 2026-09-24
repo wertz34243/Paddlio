@@ -2,6 +2,7 @@ import { getSupabaseClient } from "../lib/supabase";
 import { sanitizeCloudPayload } from "./cloudIds";
 import { getSyncEntityConfig, toSoftDeletePayload, type SyncPriority } from "./syncEntityConfig";
 import { normalizeTrainingPlanQueuePayload } from "../domain/trainingPlanStatus";
+import { classifySyncWriteError } from "./syncErrorPolicy";
 
 export type OfflineQueueOperation = "insert" | "update" | "upsert" | "delete";
 export type OfflineQueueStatus = "pending" | "failed";
@@ -16,17 +17,29 @@ export type OfflineQueueItem = {
   status: OfflineQueueStatus;
   lastError?: string;
   repairVersion?: number;
+  userId: string;
 };
 
 export type OfflineQueueStats = { pending: number; failed: number; total: number };
 
 const SYNC_QUEUE_KEY = "paddlio_sync_queue";
+const QUARANTINE_QUEUE_KEY = `${SYNC_QUEUE_KEY}:unscoped`;
 const MAX_RETRY_COUNT = 5;
 const TRAINING_PLAN_REPAIR_VERSION = 1;
+let activeQueueUserId = "";
+
+const queueKey = (userId: string): string => `${SYNC_QUEUE_KEY}:${userId}`;
+
+const inferQueueOwner = (item: any): string => {
+  const payload = item?.payload ?? {};
+  const candidates = [item?.userId, payload.user_id, payload.owner_id, payload.athlete_id, payload.created_by_user_id]
+    .filter((value): value is string => typeof value === "string" && value.length > 0);
+  return candidates.length > 0 && candidates.every((value) => value === candidates[0]) ? candidates[0] : "";
+};
 
 const isOnline = (): boolean => typeof navigator === "undefined" || navigator.onLine;
 
-const normalizeQueueItem = (item: any): OfflineQueueItem => {
+const normalizeQueueItem = (item: any, scopedUserId = ""): OfflineQueueItem => {
   const table = item.table ?? item.tableName;
   const rawPayload = sanitizeCloudPayload(item.payload ?? {});
   const isTrainingPlan = table === "training_plan_items";
@@ -42,23 +55,53 @@ const normalizeQueueItem = (item: any): OfflineQueueItem => {
   status: needsPlanRepair ? "pending" : item.status === "failed" ? "failed" : "pending",
   lastError: needsPlanRepair ? undefined : item.lastError,
   repairVersion: isTrainingPlan ? TRAINING_PLAN_REPAIR_VERSION : item.repairVersion,
+  userId: item.userId || scopedUserId || inferQueueOwner(item),
   };
 };
 
-export const readOfflineQueue = (): OfflineQueueItem[] => {
+const parseQueue = (raw: string | null, scopedUserId = ""): OfflineQueueItem[] => {
   try {
-    const raw = window.localStorage.getItem(SYNC_QUEUE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.map(normalizeQueueItem).filter((item) => item.table) : [];
+    return Array.isArray(parsed) ? parsed.map((item) => normalizeQueueItem(item, scopedUserId)).filter((item) => item.table) : [];
   } catch {
     return [];
   }
 };
 
+const migrateLegacyQueue = (userId: string): void => {
+  const raw = window.localStorage.getItem(SYNC_QUEUE_KEY);
+  if (!raw) return;
+  const legacy = parseQueue(raw);
+  const canAssign = legacy.length > 0 && legacy.every((item) => item.userId === userId);
+  if (canAssign) {
+    const existing = parseQueue(window.localStorage.getItem(queueKey(userId)), userId);
+    window.localStorage.setItem(queueKey(userId), JSON.stringify([...existing, ...legacy.map((item) => ({ ...item, userId }))]));
+  } else {
+    window.localStorage.setItem(QUARANTINE_QUEUE_KEY, raw);
+  }
+  window.localStorage.removeItem(SYNC_QUEUE_KEY);
+};
+
+export const setOfflineQueueUser = (userId: string | null): void => {
+  activeQueueUserId = userId ?? "";
+  if (activeQueueUserId) migrateLegacyQueue(activeQueueUserId);
+  window.dispatchEvent(new CustomEvent("paddlio-sync-queue-changed", { detail: { userId: activeQueueUserId } }));
+};
+
+export const getOfflineQueueUser = (): string => activeQueueUserId;
+
+export const readOfflineQueue = (): OfflineQueueItem[] => {
+  if (!activeQueueUserId) return [];
+  return parseQueue(window.localStorage.getItem(queueKey(activeQueueUserId)), activeQueueUserId)
+    .filter((item) => item.userId === activeQueueUserId);
+};
+
 export const writeOfflineQueue = (items: OfflineQueueItem[]): void => {
+  if (!activeQueueUserId) return;
   try {
-    window.localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(items));
-    window.dispatchEvent(new CustomEvent("paddlio-sync-queue-changed", { detail: { count: items.length } }));
+    const ownItems = items.filter((item) => item.userId === activeQueueUserId);
+    window.localStorage.setItem(queueKey(activeQueueUserId), JSON.stringify(ownItems));
+    window.dispatchEvent(new CustomEvent("paddlio-sync-queue-changed", { detail: { count: ownItems.length, userId: activeQueueUserId } }));
   } catch {
     // Local queue stays best-effort if browser storage is unavailable.
   }
@@ -72,7 +115,14 @@ export const getOfflineQueueStats = (): OfflineQueueStats => {
   return { pending: queue.length - failed, failed, total: queue.length };
 };
 
-export const enqueueOfflineChange = (item: Omit<OfflineQueueItem, "id" | "createdAt" | "retryCount" | "status">): void => {
+export const enqueueOfflineChange = (
+  item: Omit<OfflineQueueItem, "id" | "createdAt" | "retryCount" | "status" | "userId"> & { userId?: string },
+): void => {
+  const itemUserId = item.userId || activeQueueUserId;
+  if (!activeQueueUserId || itemUserId !== activeQueueUserId) {
+    console.error("[Paddlio Sync] Änderung ohne passenden Account-Kontext wurde nicht in eine fremde Queue geschrieben.");
+    return;
+  }
   const config = getSyncEntityConfig(item.table);
   const rawPayload = item.operation === "delete" ? toSoftDeletePayload(item.table, item.payload) : item.payload;
   const payload = item.table === "training_plan_items" ? normalizeTrainingPlanQueuePayload(rawPayload) : rawPayload;
@@ -86,6 +136,7 @@ export const enqueueOfflineChange = (item: Omit<OfflineQueueItem, "id" | "create
     createdAt: new Date().toISOString(),
     retryCount: 0,
     status: "pending",
+    userId: itemUserId,
     repairVersion: item.table === "training_plan_items" ? TRAINING_PLAN_REPAIR_VERSION : undefined,
   };
 
@@ -172,7 +223,13 @@ export const flushOfflineQueue = async (priority?: SyncPriority): Promise<number
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unbekannter Sync-Fehler.";
       console.error(`[Paddlio Sync] Offline-Queue für ${item.table} konnte nicht synchronisiert werden.`, error);
-      failed.push({ ...item, retryCount: item.retryCount + 1, status: "failed", lastError: message });
+      const retryable = classifySyncWriteError(error) === "retryable";
+      failed.push({
+        ...item,
+        retryCount: retryable ? item.retryCount + 1 : MAX_RETRY_COUNT,
+        status: "failed",
+        lastError: message,
+      });
     }
   }
 

@@ -47,6 +47,8 @@ import {
 import { listCloudBetaFeedback, listCloudBetaTesters } from "../services/betaService";
 import { listCloudMaterials } from "../services/materialService";
 import { getSyncQueueStats } from "../services/syncService";
+import { setOfflineQueueUser } from "../services/offlineQueueService";
+import { cloudValueOrCached, didCloudReadFail, mapCloudRead, markCloudReadFailed } from "../services/cloudReadState";
 import { backgroundSyncEngine } from "../services/backgroundSyncService";
 import { classifySyncError, getSyncErrorMessage, type SyncErrorCategory } from "../services/syncStatus";
 import { listCloudNotifications } from "../services/notificationService";
@@ -203,7 +205,7 @@ const loadOptionalCloudData = async <T,>(scope: string, loader: () => Promise<T>
     optionalCloudErrorCount += 1;
     optionalCloudErrorCategories.add(classifySyncError(scope, error));
     logCloudError(scope, error);
-    return fallback;
+    return markCloudReadFailed(fallback);
   }
 };
 
@@ -389,6 +391,7 @@ const mergeCloudData = (
   const activeGroups = groups.filter((group) => group.status !== "inactive");
   const activeGroupIds = new Set(activeGroups.map((group) => group.id));
   const activeMembers = members.filter((member) => activeGroupIds.has(member.group_id));
+  const groupCloudReadFailed = didCloudReadFail(groups) || didCloudReadFail(members);
   const cloudBoatClasses = cloudTruthProfile.boat_classes.filter((boat): boat is "K1" | "C1" => boat === "K1" || boat === "C1");
   const cloudPaddleSide = cloudTruthProfile.paddle_side === "Links" ? "links" : cloudTruthProfile.paddle_side === "Rechts" ? "rechts" : undefined;
   const cloudProfileData = getCloudProfileData(cloudTruthProfile);
@@ -423,50 +426,52 @@ const mergeCloudData = (
       name: cloudDisplayName,
       club: club?.name ?? localUser.profile.club,
     },
-    coachAthletes: profiles.filter((item) => item.roles.includes("Athlete")).map((item) => toCoachAthlete(item, clubs.find((clubItem) => clubItem.clubId === item.club_id)?.name ?? "", activeMembers)),
-    coachGroups: activeGroups.map((group) => toCoachGroup(group, activeMembers)),
-    plan: cloudData?.plan && cloudData.plan.length > 0 ? cloudData.plan : cached.plan,
-    trainingTemplates: cloudData?.trainingTemplates && cloudData.trainingTemplates.length > 0 ? cloudData.trainingTemplates : cached.trainingTemplates,
-    trainingFeedback: cloudData?.trainingFeedback && cloudData.trainingFeedback.length > 0 ? cloudData.trainingFeedback : cached.trainingFeedback,
-    journal: cloudData?.journal && cloudData.journal.length > 0 ? cloudData.journal : cached.journal,
-    goals: cloudData?.goals && cloudData.goals.length > 0 ? cloudData.goals : cached.goals,
-    personalBests: cloudData?.personalBests ?? cached.personalBests ?? [],
-    resultImports: cloudData?.resultImports ?? cached.resultImports ?? [],
-    externalConnections: cloudData?.externalConnections ?? cached.externalConnections ?? [],
-    externalTrainingSessions: cloudData?.externalTrainingSessions ?? cached.externalTrainingSessions ?? [],
-    betaReadinessChecks: cloudData?.betaReadinessChecks ?? cached.betaReadinessChecks ?? [],
-    betaFeedback: cloudData?.betaFeedback ?? cached.betaFeedback ?? [],
-    betaTesters: cloudData?.betaTesters ?? cached.betaTesters ?? [],
-    competitions: cloudData?.competitions && cloudData.competitions.length > 0 ? cloudData.competitions : cached.competitions,
-    material: cloudData?.material && cloudData.material.length > 0 ? cloudData.material : cached.material,
-    notifications: cloudData?.notifications ?? cached.notifications ?? [],
-    smartCoachRecommendations: cloudData?.smartCoachRecommendations ?? cached.smartCoachRecommendations ?? [],
-    clubMaterial: cloudData?.clubMaterial ?? cached.clubMaterial ?? [],
-    clubBoats: cloudData?.clubBoats ?? cached.clubBoats ?? [],
-    clubEvents: cloudData?.clubEvents ?? cached.clubEvents ?? [],
-    clubDocuments: cloudData?.clubDocuments ?? cached.clubDocuments ?? [],
-    clubMessages: cloudData?.clubMessages ?? cached.clubMessages ?? [],
-    clubSettings: cloudData?.clubSettings ?? cached.clubSettings ?? [],
-    directMessages: cloudData?.directMessages ?? cached.directMessages ?? [],
-    groupMessages: cloudData?.groupMessages ?? cached.groupMessages ?? [],
-    clubPosts: cloudData?.clubPosts ?? cached.clubPosts ?? [],
-    tasks: cloudData?.tasks ?? cached.tasks ?? [],
-    taskAssignments: cloudData?.taskAssignments ?? cached.taskAssignments ?? [],
-    trainingAttendance: cloudData?.trainingAttendance ?? cached.trainingAttendance ?? [],
-    fileAttachments: cloudData?.fileAttachments ?? cached.fileAttachments ?? [],
-    academyCategories: cloudData?.academyCategories && cloudData.academyCategories.length > 0 ? cloudData.academyCategories : cached.academyCategories,
-    academyCourses: cloudData?.academyCourses && cloudData.academyCourses.length > 0 ? cloudData.academyCourses : cached.academyCourses,
-    academyLessons: cloudData?.academyLessons && cloudData.academyLessons.length > 0 ? cloudData.academyLessons : cached.academyLessons,
-    academyContentBlocks: cloudData?.academyContentBlocks && cloudData.academyContentBlocks.length > 0 ? cloudData.academyContentBlocks : cached.academyContentBlocks,
-    academyLearningPaths: cloudData?.academyLearningPaths && cloudData.academyLearningPaths.length > 0 ? cloudData.academyLearningPaths : cached.academyLearningPaths,
-    academyLearningPathItems: cloudData?.academyLearningPathItems && cloudData.academyLearningPathItems.length > 0 ? cloudData.academyLearningPathItems : cached.academyLearningPathItems,
-    academyProgress: cloudData?.academyProgress ?? cached.academyProgress ?? [],
-    academyAssignments: cloudData?.academyAssignments ?? cached.academyAssignments ?? [],
-    academyQuizzes: cloudData?.academyQuizzes && cloudData.academyQuizzes.length > 0 ? cloudData.academyQuizzes : cached.academyQuizzes,
-    academyQuizQuestions: cloudData?.academyQuizQuestions && cloudData.academyQuizQuestions.length > 0 ? cloudData.academyQuizQuestions : cached.academyQuizQuestions,
-    academyQuizAttempts: cloudData?.academyQuizAttempts ?? cached.academyQuizAttempts ?? [],
-    academyFavorites: cloudData?.academyFavorites ?? cached.academyFavorites ?? [],
-    academyMedia: cloudData?.academyMedia ?? cached.academyMedia ?? [],
+    coachAthletes: groupCloudReadFailed
+      ? cached.coachAthletes
+      : profiles.filter((item) => item.roles.includes("Athlete")).map((item) => toCoachAthlete(item, clubs.find((clubItem) => clubItem.clubId === item.club_id)?.name ?? "", activeMembers)),
+    coachGroups: groupCloudReadFailed ? cached.coachGroups : activeGroups.map((group) => toCoachGroup(group, activeMembers)),
+    plan: cloudValueOrCached(cloudData?.plan, cached.plan),
+    trainingTemplates: cloudValueOrCached(cloudData?.trainingTemplates, cached.trainingTemplates),
+    trainingFeedback: cloudValueOrCached(cloudData?.trainingFeedback, cached.trainingFeedback),
+    journal: cloudValueOrCached(cloudData?.journal, cached.journal),
+    goals: cloudValueOrCached(cloudData?.goals, cached.goals),
+    personalBests: cloudValueOrCached(cloudData?.personalBests, cached.personalBests ?? []),
+    resultImports: cloudValueOrCached(cloudData?.resultImports, cached.resultImports ?? []),
+    externalConnections: cloudValueOrCached(cloudData?.externalConnections, cached.externalConnections ?? []),
+    externalTrainingSessions: cloudValueOrCached(cloudData?.externalTrainingSessions, cached.externalTrainingSessions ?? []),
+    betaReadinessChecks: cloudValueOrCached(cloudData?.betaReadinessChecks, cached.betaReadinessChecks ?? []),
+    betaFeedback: cloudValueOrCached(cloudData?.betaFeedback, cached.betaFeedback ?? []),
+    betaTesters: cloudValueOrCached(cloudData?.betaTesters, cached.betaTesters ?? []),
+    competitions: cloudValueOrCached(cloudData?.competitions, cached.competitions),
+    material: cloudValueOrCached(cloudData?.material, cached.material),
+    notifications: cloudValueOrCached(cloudData?.notifications, cached.notifications ?? []),
+    smartCoachRecommendations: cloudValueOrCached(cloudData?.smartCoachRecommendations, cached.smartCoachRecommendations ?? []),
+    clubMaterial: cloudValueOrCached(cloudData?.clubMaterial, cached.clubMaterial ?? []),
+    clubBoats: cloudValueOrCached(cloudData?.clubBoats, cached.clubBoats ?? []),
+    clubEvents: cloudValueOrCached(cloudData?.clubEvents, cached.clubEvents ?? []),
+    clubDocuments: cloudValueOrCached(cloudData?.clubDocuments, cached.clubDocuments ?? []),
+    clubMessages: cloudValueOrCached(cloudData?.clubMessages, cached.clubMessages ?? []),
+    clubSettings: cloudValueOrCached(cloudData?.clubSettings, cached.clubSettings ?? []),
+    directMessages: cloudValueOrCached(cloudData?.directMessages, cached.directMessages ?? []),
+    groupMessages: cloudValueOrCached(cloudData?.groupMessages, cached.groupMessages ?? []),
+    clubPosts: cloudValueOrCached(cloudData?.clubPosts, cached.clubPosts ?? []),
+    tasks: cloudValueOrCached(cloudData?.tasks, cached.tasks ?? []),
+    taskAssignments: cloudValueOrCached(cloudData?.taskAssignments, cached.taskAssignments ?? []),
+    trainingAttendance: cloudValueOrCached(cloudData?.trainingAttendance, cached.trainingAttendance ?? []),
+    fileAttachments: cloudValueOrCached(cloudData?.fileAttachments, cached.fileAttachments ?? []),
+    academyCategories: cloudValueOrCached(cloudData?.academyCategories, cached.academyCategories),
+    academyCourses: cloudValueOrCached(cloudData?.academyCourses, cached.academyCourses),
+    academyLessons: cloudValueOrCached(cloudData?.academyLessons, cached.academyLessons),
+    academyContentBlocks: cloudValueOrCached(cloudData?.academyContentBlocks, cached.academyContentBlocks),
+    academyLearningPaths: cloudValueOrCached(cloudData?.academyLearningPaths, cached.academyLearningPaths),
+    academyLearningPathItems: cloudValueOrCached(cloudData?.academyLearningPathItems, cached.academyLearningPathItems),
+    academyProgress: cloudValueOrCached(cloudData?.academyProgress, cached.academyProgress ?? []),
+    academyAssignments: cloudValueOrCached(cloudData?.academyAssignments, cached.academyAssignments ?? []),
+    academyQuizzes: cloudValueOrCached(cloudData?.academyQuizzes, cached.academyQuizzes),
+    academyQuizQuestions: cloudValueOrCached(cloudData?.academyQuizQuestions, cached.academyQuizQuestions),
+    academyQuizAttempts: cloudValueOrCached(cloudData?.academyQuizAttempts, cached.academyQuizAttempts ?? []),
+    academyFavorites: cloudValueOrCached(cloudData?.academyFavorites, cached.academyFavorites ?? []),
+    academyMedia: cloudValueOrCached(cloudData?.academyMedia, cached.academyMedia ?? []),
   };
 
   saveData(userId, nextData);
@@ -522,6 +527,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const activeSession = (await withTimeout("Supabase Session laden", supabase.auth.getSession(), 12000)).data.session;
     if (!activeSession?.user) {
+      setOfflineQueueUser(null);
       setSession(null);
       setCurrentUser(null);
       setProfile(null);
@@ -531,6 +537,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      setOfflineQueueUser(activeSession.user.id);
       optionalCloudErrorCount = 0;
       optionalCloudErrorCategories = new Set<SyncErrorCategory>();
       setCloudStatus(navigator.onLine ? "syncing" : "offline");
@@ -558,10 +565,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         nextProfile = createFallbackProfile(activeSession.user);
         setCloudMessage("");
       }
-      const clubs = (await loadOptionalCloudData("clubs lesen", listCloudClubs, [])).map(toClub);
+      const clubs = mapCloudRead(await loadOptionalCloudData("clubs lesen", listCloudClubs, []), toClub);
       const allProfiles = await loadOptionalCloudData("profiles listen", () => listCloudProfiles(nextProfile), [nextProfile]);
-      const requests = (await loadOptionalCloudData("trainer_requests lesen", listCloudTrainerRequests, [])).map(toTrainerRequest);
-      const clubRequests = (await loadOptionalCloudData("club_requests lesen", listCloudClubRequests, [])).map(toClubRequest);
+      const requests = mapCloudRead(await loadOptionalCloudData("trainer_requests lesen", listCloudTrainerRequests, []), toTrainerRequest);
+      const clubRequests = mapCloudRead(await loadOptionalCloudData("club_requests lesen", listCloudClubRequests, []), toClubRequest);
       const groups = await loadOptionalCloudData("training_groups lesen", listCloudTrainingGroups, []);
       const groupMembers = await loadOptionalCloudData("group_members lesen", listCloudGroupMembers, []);
       cacheCloudTrainerRequests(requests);
@@ -817,6 +824,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setSession(nextSession);
       setCurrentUser(nextSession?.user ?? null);
+      setOfflineQueueUser(nextSession?.user.id ?? null);
       void refreshCloudData();
     });
     if (startsInEmailConfirmationFlow) {
@@ -1044,6 +1052,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setPasswordRecovery(false);
     clearAuthUrlParameters();
     if (supabase) await supabase.auth.signOut();
+    setOfflineQueueUser(null);
     clearSession();
     setSession(null);
     setCurrentUser(null);

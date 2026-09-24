@@ -10,6 +10,8 @@ import type {
 import { getSupabaseClient } from "../lib/supabase";
 import { enqueueSyncChange } from "./syncService";
 import { sanitizeCloudPayload } from "./cloudIds";
+import { runCloudWrite } from "./cloudWriteService";
+import { classifySyncWriteError } from "./syncErrorPolicy";
 
 const mapDirect = (row: any): DirectMessage => ({
   id: row.id,
@@ -202,13 +204,8 @@ const listTable = async <T,>(table: string, mapper: (row: any) => T): Promise<T[
 
 const upsertTable = async (table: string, payload: Record<string, unknown>): Promise<void> => {
   const cloudPayload = sanitizeCloudPayload(payload);
-  const client = getSupabaseClient();
-  if (!client || !navigator.onLine) {
-    enqueueSyncChange({ tableName: table, action: "upsert", payload: cloudPayload });
-    return;
-  }
-  const { error } = await (client.from(table) as any).upsert(cloudPayload, { onConflict: "id" });
-  if (error) throw error;
+  await runCloudWrite(table, "upsert", cloudPayload, (client) =>
+    (client.from(table) as any).upsert(cloudPayload, { onConflict: "id" }));
 };
 
 export const listCloudDirectMessages = () => listTable("direct_messages", mapDirect);
@@ -234,7 +231,9 @@ export const deleteCloudTrainingAttendance = async (trainingId: string, answers:
 
   const { error } = await (client.from("training_attendance") as any).delete().eq("training_id", trainingId);
   if (error) {
-    answers.forEach((answer) => enqueueSyncChange({ tableName: "training_attendance", action: "delete", payload: { id: answer.id } }));
+    if (classifySyncWriteError(error) === "retryable") {
+      answers.forEach((answer) => enqueueSyncChange({ tableName: "training_attendance", action: "delete", payload: { id: answer.id } }));
+    }
     throw error;
   }
 };

@@ -43,6 +43,7 @@ import {
   type WeeklyPlanningTemplate,
   type WeeklyPlanningTemplateItem,
 } from "../features/training/templates/planningBlocks";
+import { deleteCloudTrainingTemplate } from "../services/trainingTemplateService";
 import type {
   BoatClass,
   CoachAthlete,
@@ -953,6 +954,7 @@ export function PlanView({
       ...current,
       trainingTemplates: current.trainingTemplates.filter((item) => item.id !== template.id),
     }));
+    void deleteCloudTrainingTemplate(template.id).catch((error) => console.error("Vorlage konnte nicht aus der Cloud entfernt werden", error));
     setFormMessage("Vorlage gelöscht.");
   };
 

@@ -1,12 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getSupabaseClient } from "../lib/supabase";
 import { buildNextDeltaCursor, isAfterDeltaCursor } from "./deltaSyncService";
-import { enqueueOfflineChange, flushOfflineQueue, getOfflineQueueStats, readOfflineQueue, writeOfflineQueue } from "./offlineQueueService";
+import { enqueueOfflineChange, flushOfflineQueue, getOfflineQueueStats, readOfflineQueue, setOfflineQueueUser, writeOfflineQueue } from "./offlineQueueService";
 import { getSyncEntityConfig, toSoftDeletePayload } from "./syncEntityConfig";
+import { cloudValueOrCached, markCloudReadFailed } from "./cloudReadState";
+import { classifySyncWriteError } from "./syncErrorPolicy";
+import { runCloudWrite } from "./cloudWriteService";
 
 vi.mock("../lib/supabase", () => ({ getSupabaseClient: vi.fn() }));
 
 const PLAN_ID = "11111111-1111-4111-8111-111111111111";
+const USER_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 
 const localStorageMock = () => {
   const store = new Map<string, string>();
@@ -35,6 +39,7 @@ beforeEach(() => {
   });
   vi.stubGlobal("navigator", { onLine: true });
   vi.mocked(getSupabaseClient).mockReset();
+  setOfflineQueueUser(USER_ID);
   writeOfflineQueue([]);
 });
 
@@ -124,7 +129,7 @@ describe("offline queue", () => {
     ["cancelled", "cancelled"],
     ["legacy_unknown", "planned"],
   ])("repairs queued status %s to %s", (input, expected) => {
-    window.localStorage.setItem("paddlio_sync_queue", JSON.stringify([{
+    window.localStorage.setItem(`paddlio_sync_queue:${USER_ID}`, JSON.stringify([{
       id: "legacy-queue", table: "training_plan_items", operation: "upsert",
       payload: { id: PLAN_ID, status: input }, retryCount: 5, status: "failed", lastError: "23514",
     }]));
@@ -139,7 +144,7 @@ describe("offline queue", () => {
   it("retries a repaired failed plan item and sends only a compatible status", async () => {
     const upsert = vi.fn().mockResolvedValue({ error: null });
     vi.mocked(getSupabaseClient).mockReturnValue({ from: vi.fn(() => ({ upsert })) } as never);
-    window.localStorage.setItem("paddlio_sync_queue", JSON.stringify([{
+    window.localStorage.setItem(`paddlio_sync_queue:${USER_ID}`, JSON.stringify([{
       id: "legacy-failed", table: "training_plan_items", operation: "upsert",
       payload: { id: PLAN_ID, status: "partially_completed", title: "Altbestand" },
       retryCount: 5, status: "failed", lastError: "23514 status check",
@@ -148,5 +153,61 @@ describe("offline queue", () => {
     await expect(flushOfflineQueue()).resolves.toBe(1);
     expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ status: "done" }), { onConflict: "id" });
     expect(getOfflineQueueStats()).toEqual({ pending: 0, failed: 0, total: 0 });
+  });
+
+  it("isolates queue entries by account and restores them after switching back", () => {
+    enqueueOfflineChange({ table: "training_plan_items", operation: "upsert", payload: { id: PLAN_ID }, userId: USER_ID });
+    setOfflineQueueUser("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb");
+    expect(readOfflineQueue()).toEqual([]);
+    setOfflineQueueUser(USER_ID);
+    expect(readOfflineQueue()).toHaveLength(1);
+  });
+
+  it("quarantines legacy entries that cannot be assigned safely", () => {
+    setOfflineQueueUser(null);
+    window.localStorage.setItem("paddlio_sync_queue", JSON.stringify([{
+      id: "legacy-unknown", table: "materials", operation: "upsert", payload: { id: PLAN_ID },
+    }]));
+    setOfflineQueueUser(USER_ID);
+    expect(readOfflineQueue()).toEqual([]);
+    expect(window.localStorage.getItem("paddlio_sync_queue:unscoped")).toContain("legacy-unknown");
+  });
+});
+
+describe("cloud read semantics", () => {
+  it("accepts a successful empty cloud collection as the source of truth", () => {
+    expect(cloudValueOrCached([], [{ id: "cached" }])).toEqual([]);
+  });
+
+  it("uses cached data only when the cloud read failed", () => {
+    expect(cloudValueOrCached(markCloudReadFailed([]), [{ id: "cached" }])).toEqual([{ id: "cached" }]);
+  });
+});
+
+describe("sync write error policy", () => {
+  it("retries network and server failures", () => {
+    expect(classifySyncWriteError(new Error("Failed to fetch"))).toBe("retryable");
+    expect(classifySyncWriteError({ status: 503, message: "Service unavailable" })).toBe("retryable");
+  });
+
+  it("does not retry authorization or invalid-data failures", () => {
+    expect(classifySyncWriteError({ code: "42501", message: "RLS violation" })).toBe("non-retryable");
+    expect(classifySyncWriteError({ code: "23514", message: "check constraint" })).toBe("non-retryable");
+  });
+
+  it("queues a transient online write failure for the active account", async () => {
+    vi.mocked(getSupabaseClient).mockReturnValue({ from: vi.fn() } as never);
+    await runCloudWrite("materials", "upsert", { id: PLAN_ID }, async () => ({ error: new Error("Failed to fetch") }));
+    expect(readOfflineQueue()).toEqual([
+      expect.objectContaining({ table: "materials", userId: USER_ID, status: "pending" }),
+    ]);
+  });
+
+  it("surfaces a non-retryable write without poisoning the retry queue", async () => {
+    vi.mocked(getSupabaseClient).mockReturnValue({ from: vi.fn() } as never);
+    await expect(runCloudWrite("materials", "upsert", { id: PLAN_ID }, async () => ({
+      error: { code: "42501", message: "permission denied" },
+    }))).rejects.toMatchObject({ code: "42501" });
+    expect(readOfflineQueue()).toEqual([]);
   });
 });

@@ -5,6 +5,7 @@ import { sanitizeCloudPayload, toCloudUuid, toCloudUuidOrNull } from "./cloudIds
 import { getWeekdayFromDate } from "../domain/trainingPlan";
 import { normalizePlanStatus, normalizeTrainingPlanQueuePayload, toCompatibleCloudPlanStatus } from "../domain/trainingPlanStatus";
 import { deduplicateTrainingFeedback, getTrainingFeedbackType } from "../domain/trainingFeedback";
+import { classifySyncWriteError } from "./syncErrorPolicy";
 
 const isMissingColumnError = (error: unknown, columnName: string): boolean =>
   Boolean(
@@ -188,7 +189,9 @@ export const upsertCloudTraining = async (entry: PlanEntry): Promise<void> => {
       (columnName) => !omittedColumns.has(columnName) && isMissingColumnError(error, columnName),
     );
     if (!missingOptionalColumn) {
-      enqueueSyncChange({ tableName: "training_plan_items", action: "upsert", payload: cloudPayload });
+      if (classifySyncWriteError(error) === "retryable") {
+        enqueueSyncChange({ tableName: "training_plan_items", action: "upsert", payload: cloudPayload });
+      }
       throw error;
     }
 
@@ -215,10 +218,20 @@ export const deleteCloudTraining = async (id: string, deletedAt = new Date().toI
     .eq("id", cloudId);
   if (error && isMissingColumnError(error, "deleted_at")) {
     const fallback = await client.from("training_plan_items").delete().eq("id", cloudId);
-    if (fallback.error) throw fallback.error;
+    if (fallback.error) {
+      if (classifySyncWriteError(fallback.error) === "retryable") {
+        enqueueSyncChange({ tableName: "training_plan_items", action: "update", payload });
+      }
+      throw fallback.error;
+    }
     return;
   }
-  if (error) throw error;
+  if (error) {
+    if (classifySyncWriteError(error) === "retryable") {
+      enqueueSyncChange({ tableName: "training_plan_items", action: "update", payload });
+    }
+    throw error;
+  }
 };
 
 export const toCloudFeedback = (feedback: TrainingFeedback) => ({
@@ -266,10 +279,20 @@ export const upsertCloudFeedback = async (feedback: TrainingFeedback): Promise<v
     const legacyResult = await (client.from("training_feedback") as any).upsert(legacyPayload, {
       onConflict: "training_plan_item_id,athlete_id",
     });
-    if (legacyResult.error) throw legacyResult.error;
+    if (legacyResult.error) {
+      if (classifySyncWriteError(legacyResult.error) === "retryable") {
+        enqueueSyncChange({ tableName: "training_feedback", action: "upsert", payload: legacyPayload });
+      }
+      throw legacyResult.error;
+    }
     return;
   }
-  if (error) throw error;
+  if (error) {
+    if (classifySyncWriteError(error) === "retryable") {
+      enqueueSyncChange({ tableName: "training_feedback", action: "upsert", payload });
+    }
+    throw error;
+  }
 };
 
 export const fromCloudFeedback = (row: any): TrainingFeedback => ({

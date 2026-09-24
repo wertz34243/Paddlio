@@ -1,6 +1,7 @@
 import { getSupabaseClient } from "../lib/supabase";
 import type { Competition } from "../domain/types";
 import { enqueueSyncChange } from "./syncService";
+import { runCloudWrite } from "./cloudWriteService";
 import { calculatePersonalBests, upsertCloudPersonalBest } from "./resultsReadinessService";
 import { sanitizeCloudPayload, toCloudUuid, toCloudUuidOrNull } from "./cloudIds";
 import { calculateCompetitionTotalTime, normalizeCompetitionLevel } from "../domain/competition";
@@ -131,3 +132,7 @@ export const listCloudCompetitions = async (): Promise<Competition[]> => {
     updatedAt: row.updated_at,
   }));
 };
+
+export const deleteCloudCompetition = async (id: string): Promise<void> =>
+  runCloudWrite("competitions", "delete", { id }, (client) =>
+    (client.from("competitions") as any).delete().eq("id", id));

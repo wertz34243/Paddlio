@@ -7,7 +7,16 @@
 - **C - Nur lokal:** Daten werden im lokalen `PaddleMotionData`/Local Storage gehalten, ohne verlässliche Cloud-Persistenz.
 - **D - Nicht implementiert/unklar:** Kein belastbarer vollständiger Produktpfad erkennbar.
 
-Eine Supabase-Tabelle allein zählt nicht als vollständiger Sync. Der echte öffentliche Develop-Build war bei der Prüfung noch nicht auf Commit `fa6be9e`; echte physische Mehrgerätetests bleiben deshalb offen.
+Eine Supabase-Tabelle allein zählt nicht als vollständiger Sync. Der öffentliche Develop-Build liefert den Status-Fix `fa6be9e` und den Service Worker `paddlio-shell-v5.0.1-sync-fix`; echte physische Mehrgerätetests bleiben offen.
+
+## P0-Härtung vom 24.09.2026
+
+- Cloud-Leseergebnisse unterscheiden jetzt **erfolgreich leer** von **fehlgeschlagen**. Erfolgreich leere Listen ersetzen den lokalen Cache; nur ein markierter Ladefehler verwendet den Cache als Fallback.
+- Offline-Queues liegen unter `paddlio_sync_queue:<userId>`. Flush, Zähler und Status berücksichtigen ausschließlich den aktiven Nutzer.
+- Alte globale Queue-Einträge werden nur migriert, wenn ihre Eigentümerschaft eindeutig dem aktiven Nutzer entspricht. Nicht eindeutig zuordenbare Einträge bleiben verlustfrei unter `paddlio_sync_queue:unscoped` quarantänisiert und werden nie unter einem fremden Konto gesendet.
+- Der zentrale Cloud-Write-Wrapper queued Offline-, Netzwerk-, Timeout- und temporäre Serverfehler. RLS-, Auth-, Foreign-Key-, Validierungs- und Constraintfehler werden als nicht retrybar beendet.
+- Explizite Cloud-Deletes wurden für Trainingsvorlagen, Journal, Material und Wettkämpfe ergänzt. Trainings verwenden weiterhin Tombstones, Anwesenheit und Academy-Favoriten ihre fachlichen Deletes.
+- Automatisiert bestätigt: Account-Isolation, Rückkehr zur ursprünglichen Queue, Legacy-Quarantäne, Cloud-empty, Cloud-failure-Fallback, transienter Online-Write und nicht retrybarer Write.
 
 ## A. Aktueller Fehler `training_plan_items`
 
@@ -39,21 +48,21 @@ Die App kennt die Statuswerte `completed`, `partially_completed` und `in_progres
 | Profil/Einstellungen | `PaddleMotionData`, Local Storage | `profiles`, `profile_data` | Profil für Nutzer/Club abonniert | Profiländerungen nicht konsequent queued | kein Profil-Delete | Codepfad; echter Offline-Test offen | **B** |
 | Rollen/Verein | lokaler User wird aus Cloudprofil aufgebaut | `profiles`, `club_memberships`, `clubs` | Profile/Club teilweise | Admin-Zuweisungen direkt, nicht vollständig queued | Status statt vollständigem Delete | Rollen-E2E vorhanden | **B** |
 | Geplante Trainings/Kalender | `data.plan` | `training_plan_items` | Nutzer- und Club-Abos | ja, inklusive Statusreparatur | Tombstone vorhanden | Zwei-Rollen-E2E vorhanden; Live-Deploy offen | **B** |
-| Trainingsvorlagen | `trainingTemplates` | `training_templates` | kein aktives Abo | Upsert ja | kein Delete-Pfad | Reload ja, Live-Realtime offen | **B** |
+| Trainingsvorlagen | `trainingTemplates` | `training_templates` | kein aktives Abo | Upsert/Delete accountgebunden | Hard Delete vorhanden | Reload/Empty-Cloud automatisiert; Live-Realtime offen | **B** |
 | Wochen-/Saisonvorlagen | statische Programmbausteine | keine eigene Persistenz | nein | nein | nicht relevant | erzeugte Trainings synchronisieren | **D** |
 | Zuweisung/Planner | Planfelder + Metadaten in Notes | Plan-Spalten und Metadaten | über Trainingsabo | über Plan-Queue | mit Training | Coach→Athlete E2E vorhanden | **B** |
 | Durchführung | Legacy `data.training`; Ist-Daten auch Journal | Legacy Sessions nicht vollständig; Journal vorhanden | Journal nur Nutzerabo | Journal-Upsert ja | kein vollständiger Delete | Teilfluss getestet | **B/C** |
 | Athleten-/Trainerfeedback | `trainingFeedback` | `training_feedback` | Nutzer und Club | Upsert ja | kein fachlicher Delete | Coach/Athlete-E2E und Dedupe-Test | **A** |
-| Journal | `journal` | `training_journal_entries` | Nutzerabo, Coach-Club unvollständig | Upsert ja | kein Delete | Reload-Codepfad; Rollen-Live offen | **B** |
+| Journal | `journal` | `training_journal_entries` | Nutzerabo, Coach-Club unvollständig | Upsert/Delete accountgebunden | Hard Delete vorhanden | Reload/Empty-Cloud automatisiert; Rollen-Live offen | **B** |
 | Gruppen/Mitglieder | `coachGroups`, `coachAthletes` | `training_groups`, `group_members`, `group_memberships` | teilweise | direkte Mutationen nicht queued | direkte Deletes | Rollen-E2E, Offline offen | **B** |
 | Nachrichten | lokale Threads | `direct_messages`, `group_messages`, `club_messages` | Direct/Group teilweise | Upserts ja | Soft-Delete-Konfiguration, UI unvollständig | kein vollständiger E2E | **B** |
 | Aufgaben | lokale Tasks/Assignments | `tasks`, `task_assignments` | Club/User teilweise | Upserts ja | Task Tombstone konfiguriert, UI unvollständig | offen | **B** |
 | Anwesenheit | `trainingAttendance` | `training_attendance` | Nutzer/Club | Upsert/Delete ja | Hard Delete mit Rollen-/Endzeit-RLS | Code-/Unit-Test, echtes Gerät offen | **B** |
 | Club/Vereinsportal | lokale Clublisten | Club-, Boat-, Event-, Document-, Settings-Tabellen | nur Teilmengen | Upsert ja | überwiegend kein Delete | offen | **B** |
-| Persönliches Material | `material` | `materials` | nein | Upsert ja | kein Delete | offen | **B** |
+| Persönliches Material | `material` | `materials` | nein | Upsert/Delete accountgebunden | Hard Delete vorhanden | Empty-Cloud automatisiert; echtes Gerät offen | **B** |
 | Vereinsmaterial/Boote | `clubMaterial`, `clubBoats` | `club_material`, `boats` | nein | Upsert ja | kein Delete | offen | **B** |
 | Polar | lokaler Spiegel | Server-API + External-/Polar-Tabellen | Funktionen vorhanden, nicht im AuthProvider aktiviert | Teilpfade | Disconnect serverseitig | echte Polar-Umgebung offen | **B** |
-| Wettkampf/Ergebnisse/Bestzeiten | lokale Listen | `competitions`, `competition_results`, `personal_bests` | Analyse-Abo vorhanden, nicht aktiviert | Upserts ja | kein vollständiger Delete | offen | **B** |
+| Wettkampf/Ergebnisse/Bestzeiten | lokale Listen | `competitions`, `competition_results`, `personal_bests` | Analyse-Abo vorhanden, nicht aktiviert | Upserts/Delete accountgebunden | Wettkampf-Delete vorhanden; Ergebnis-Nebenpfade teilweise | Empty-Cloud automatisiert; echtes Gerät offen | **B** |
 | Academy | Inhalte und Nutzerzustände lokal gespiegelt | Academy-Tabellen | Funktion vorhanden, nicht aktiviert | Fortschritt/Favoriten/Versuche ja | Favorit Delete ja | offen | **B** |
 | Import/Export | Importergebnis zunächst lokal | Jobs/Profile/Rows/Exports Cloud | nein | Metadaten ja | nein | importierte Zieldaten nur über nachfolgenden Snapshot | **B** |
 | Benachrichtigungen | lokale Liste | `notifications` | aktives Nutzerabo | Insert/Read ja | kein Delete | Codepfad, E2E offen | **B** |
@@ -68,11 +77,11 @@ Die App speichert einen vollständigen Snapshot pro Nutzer in Local Storage. Das
 
 ### Cloud Merge
 
-Bei `plan`, Vorlagen, Feedback, Journal, Wettkämpfen und Material wird eine leere Cloud-Liste teilweise durch die lokale Liste ersetzt. Damit ist „Cloud leer“ nicht von „Cloud konnte nicht geladen werden“ unterscheidbar. Nach Cloud-Delete kann ein lokaler Datensatz erneut erscheinen oder erneut hochgeladen werden.
+Cloud-Collections verwenden eine gemeinsame Read-Semantik. Ein erfolgreiches `[]` ist die Cloud-Wahrheit und leert den lokalen Spiegel. Nur ein explizit als fehlgeschlagen markiertes Ergebnis greift auf den lokalen Cache zurück.
 
 ### Offline Queue
 
-Viele Services queue-en nur, wenn `navigator.onLine === false`. Fehler bei einem Online-Write werden außerhalb des Trainingspfads häufig nur geworfen; die Änderung wird dann nicht zuverlässig nachqueued. Die Queue liegt unter einem globalen Storage-Key und ist nicht explizit nach Account partitioniert.
+Die Queue ist pro Account partitioniert. Zentrale Write-Pfade für Training, Vorlagen, Journal, Material, Kommunikation, Clubportal, Academy, Import/Export, Benachrichtigungen, Ziele, Ergebnisdaten, Beta und Smart Coach verwenden den gemeinsamen Retry-Wrapper oder einen gehärteten fachlichen Pfad. Direkte administrative Mehrtabellen-Operationen bleiben als P1 separat zu vereinheitlichen.
 
 ### Realtime
 
@@ -89,11 +98,7 @@ Training, Feedback, Benachrichtigungen und Teile des Team-Bereichs sind aktiv ab
 
 ### P0 - kritisch
 
-1. **Cloud-Leerstand respektieren:** Erfolgreich geladene leere Listen dürfen nicht auf lokale Altbestände zurückfallen. Ladefehler müssen separat vom leeren Ergebnis behandelt werden.
-2. **Queue nach Nutzer partitionieren:** Queue-Einträge müssen einen Account besitzen und nur in dessen Sitzung geflusht/gezählt werden. Sonst kann ein Kontowechsel falsche Fehlanzeigen oder RLS-Fehler erzeugen.
-3. **Online-Write-Fallback vereinheitlichen:** Jeder fehlgeschlagene Cloud-Upsert muss sicher queued werden, nicht nur Writes bei erkanntem Offlinezustand.
-4. **Delete-Abdeckung:** Für Vorlagen, Journal, Material, Wettkampf und mehrere Clubdaten fehlen konsistente Tombstone-/Delete-Pfade; sonst können Einträge zurückkehren.
-5. **Develop deployen und echten Queue-Retry prüfen:** Der öffentliche Build war bei der Prüfung noch älter als `fa6be9e`.
+Die im Audit identifizierten Code-P0-Punkte sind geschlossen. Vor einer Freigabe bleibt als operatives Gate ein echter Accountwechsel- und Multi-Gerät-Test mit Dev-Cloud auf iPhone/iPad/Desktop. Das ist kein bekannter offener Codepfad, aber ein noch ausstehender Nachweis unter realer Browser-, PWA- und Realtime-Umgebung.
 
 ### P1 - wichtig
 
