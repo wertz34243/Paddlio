@@ -277,6 +277,7 @@ function AppContent() {
     passwordRecovery,
     cloudStatus,
     cloudMessage,
+    profileSyncDiagnostics,
     syncCount,
     pendingSyncCount,
     failedSyncCount,
@@ -1587,6 +1588,7 @@ function AppContent() {
               lastSyncAt,
               message: cloudMessage,
               isAdmin: activeUser.role === "admin",
+              profileSyncDiagnostics,
             }}
             onSave={updateProfileSettings}
             onLogout={handleLogout}

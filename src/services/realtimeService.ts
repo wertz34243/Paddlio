@@ -2,6 +2,7 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 import { getSupabaseClient } from "../lib/supabase";
 
 type RealtimeHandler = (payload?: unknown) => void;
+export type RealtimeConnectionState = "connected" | "reconnecting" | "failed";
 type RealtimeTable = {
   table: string;
   filter?: string;
@@ -51,7 +52,12 @@ const createDedupedHandler = (scopeKey: string, onChange: RealtimeHandler): Real
   onChange(payload);
 };
 
-const subscribeToTables = (scopeKey: string, tables: RealtimeTable[], onChange: RealtimeHandler): (() => void) => {
+const subscribeToTables = (
+  scopeKey: string,
+  tables: RealtimeTable[],
+  onChange: RealtimeHandler,
+  onStatus?: (state: RealtimeConnectionState) => void,
+): (() => void) => {
   const client = getSupabaseClient();
   if (!client || tables.length === 0) return () => undefined;
 
@@ -75,7 +81,11 @@ const subscribeToTables = (scopeKey: string, tables: RealtimeTable[], onChange: 
       handler,
     );
   }
-  channel.subscribe();
+  channel.subscribe((status) => {
+    if (status === "SUBSCRIBED") onStatus?.("connected");
+    else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") onStatus?.("failed");
+    else if (status === "CLOSED") onStatus?.("reconnecting");
+  });
   channels.set(scopeKey, channel);
 
   return () => {
@@ -98,7 +108,11 @@ export const unsubscribeAll = (): void => {
   recentEvents.clear();
 };
 
-export const subscribeToUserTrainings = (userId: string, onChange: RealtimeHandler): (() => void) => {
+export const subscribeToUserTrainings = (
+  userId: string,
+  onChange: RealtimeHandler,
+  onStatus?: (state: RealtimeConnectionState) => void,
+): (() => void) => {
   if (!userId) return () => undefined;
 
   return subscribeToTables(
@@ -117,6 +131,7 @@ export const subscribeToUserTrainings = (userId: string, onChange: RealtimeHandl
       { table: "task_assignments", filter: `assigned_to=eq.${userId}` },
     ],
     onChange,
+    onStatus,
   );
 };
 

@@ -86,7 +86,7 @@ import {
   listCloudAcademyQuizzes,
 } from "../services/academyService";
 import { migrateLocalDataToCloud, syncDataSnapshotToCloud } from "../services/migrationService";
-import { subscribeToCoachClub, subscribeToNotifications, subscribeToUserTrainings, unsubscribeAll } from "../services/realtimeService";
+import { subscribeToCoachClub, subscribeToNotifications, subscribeToUserTrainings, unsubscribeAll, type RealtimeConnectionState } from "../services/realtimeService";
 
 export type CloudConnectionState = "connected" | "syncing" | "offline" | "pending" | "limited" | "disabled" | "error";
 
@@ -108,6 +108,7 @@ type AuthContextValue = {
   failedSyncCount: number;
   lastSyncAt: string;
   cloudMessage: string;
+  profileSyncDiagnostics: ProfileSyncDiagnostics;
   signIn: (input: LoginInput) => Promise<CloudAuthResult>;
   signUp: (input: RegisterInput) => Promise<CloudAuthResult>;
   signOut: () => Promise<void>;
@@ -116,6 +117,23 @@ type AuthContextValue = {
   cancelPasswordRecovery: () => Promise<void>;
   resendConfirmation: (email: string) => Promise<CloudAuthResult>;
   refreshCloudData: () => Promise<void>;
+};
+
+export type ProfileSyncDiagnostics = {
+  ownProfileFetch: "idle" | "ok" | "failed";
+  profileDirectoryFetch: "idle" | "ok" | "failed";
+  realtime: "idle" | RealtimeConnectionState;
+  profileRowPresent: boolean;
+  roleLoaded: boolean;
+  clubLoaded: boolean;
+  activeClubLoaded: boolean;
+  profileWarningReason: string;
+  partialSyncReason: string;
+  lastErrorCode: string;
+  lastErrorScope: string;
+  lastErrorMessage: string;
+  lastErrorStatus: string;
+  lastSuccessAt: string;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -184,6 +202,47 @@ const clearAuthUrlParameters = () => {
 
 let optionalCloudErrorCount = 0;
 let optionalCloudErrorCategories = new Set<SyncErrorCategory>();
+type SyncDiagnosticError = {
+  scope: string;
+  code: string;
+  message: string;
+  status: string;
+  occurredAt: string;
+};
+
+let optionalCloudErrors: SyncDiagnosticError[] = [];
+
+const getSafeErrorCode = (error: unknown): string => {
+  if (!error || typeof error !== "object") return "unknown";
+  const value = error as { code?: string | number; status?: string | number };
+  return String(value.code ?? value.status ?? "unknown");
+};
+
+const redactDiagnosticText = (value: string): string => value
+  .replace(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g, "[email]")
+  .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/gi, "[id]")
+  .slice(0, 240);
+
+const getSafeErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) return redactDiagnosticText(error.message);
+  if (!error || typeof error !== "object") return redactDiagnosticText(String(error ?? ""));
+  const value = error as { message?: unknown; details?: unknown; hint?: unknown };
+  return redactDiagnosticText([value.message, value.details, value.hint].filter(Boolean).join(" "));
+};
+
+const getSafeErrorStatus = (error: unknown): string => {
+  if (!error || typeof error !== "object") return "";
+  const value = error as { status?: string | number; statusCode?: string | number };
+  return String(value.status ?? value.statusCode ?? "");
+};
+
+const toSyncDiagnosticError = (scope: string, error: unknown): SyncDiagnosticError => ({
+  scope,
+  code: getSafeErrorCode(error),
+  message: getSafeErrorMessage(error),
+  status: getSafeErrorStatus(error),
+  occurredAt: new Date().toISOString(),
+});
 
 const withTimeout = async <T,>(scope: string, promise: Promise<T>, timeoutMs = 15000): Promise<T> => {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -209,6 +268,7 @@ const loadOptionalCloudData = async <T,>(
   } catch (error) {
     optionalCloudErrorCount += 1;
     optionalCloudErrorCategories.add(classifyOptionalSyncError(scope, error, categoryOverride));
+    optionalCloudErrors.push(toSyncDiagnosticError(scope, error));
     logCloudError(scope, error);
     return markCloudReadFailed(fallback);
   }
@@ -506,6 +566,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [failedSyncCount, setFailedSyncCount] = useState(0);
   const [lastSyncAt, setLastSyncAt] = useState("");
   const [cloudMessage, setCloudMessage] = useState("");
+  const [profileSyncDiagnostics, setProfileSyncDiagnostics] = useState<ProfileSyncDiagnostics>({
+    ownProfileFetch: "idle",
+    profileDirectoryFetch: "idle",
+    realtime: "idle",
+    profileRowPresent: false,
+    roleLoaded: false,
+    clubLoaded: false,
+    activeClubLoaded: false,
+    profileWarningReason: "",
+    partialSyncReason: "",
+    lastErrorCode: "",
+    lastErrorScope: "",
+    lastErrorMessage: "",
+    lastErrorStatus: "",
+    lastSuccessAt: "",
+  });
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const syncRunningRef = useRef(false);
   const latestSyncDataRef = useRef<PaddleMotionData | null>(null);
@@ -563,6 +639,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setOfflineQueueUser(activeSession.user.id);
       optionalCloudErrorCount = 0;
       optionalCloudErrorCategories = new Set<SyncErrorCategory>();
+      optionalCloudErrors = [];
       setCloudStatus(navigator.onLine ? "syncing" : "offline");
       setSession(activeSession);
       setCurrentUser(activeSession.user);
@@ -576,11 +653,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       try {
         nextProfile = (await ensureCloudProfile(activeSession.user)) ?? (await withTimeout("Profil laden", getCloudProfile(activeSession.user.id), 15000));
+        setProfileSyncDiagnostics((current) => ({
+          ...current,
+          ownProfileFetch: nextProfile ? "ok" : "failed",
+          profileRowPresent: Boolean(nextProfile),
+          roleLoaded: Boolean(nextProfile?.roles?.length),
+          clubLoaded: Boolean(nextProfile?.club_id),
+          activeClubLoaded: Boolean((nextProfile as CloudProfile & { active_club_id?: string | null } | null)?.active_club_id),
+          profileWarningReason: nextProfile ? "" : "own_profile_missing",
+          lastErrorCode: nextProfile ? "" : "PROFILE_MISSING",
+          lastErrorScope: nextProfile ? "" : "Profil laden",
+          lastErrorMessage: nextProfile ? "" : "Es wurde keine eigene Profilzeile gefunden.",
+          lastErrorStatus: "",
+          lastSuccessAt: nextProfile ? new Date().toISOString() : current.lastSuccessAt,
+        }));
       } catch (error) {
         profileIsFallback = true;
         logCloudError("Profil synchronisieren", error);
         nextProfile = createFallbackProfile(activeSession.user);
         setCloudMessage("");
+        setProfileSyncDiagnostics((current) => ({
+          ...current,
+          ownProfileFetch: "failed",
+          profileRowPresent: false,
+          profileWarningReason: "own_profile_fetch_failed",
+          lastErrorCode: getSafeErrorCode(error),
+          lastErrorScope: "Profil synchronisieren",
+          lastErrorMessage: getSafeErrorMessage(error),
+          lastErrorStatus: getSafeErrorStatus(error),
+        }));
       }
 
       if (!nextProfile) {
@@ -595,6 +696,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         [nextProfile],
         "supplemental_sync_error",
       );
+      const directoryError = optionalCloudErrors.find((error) => error.scope === "Profilverzeichnis lesen");
+      setProfileSyncDiagnostics((current) => ({
+        ...current,
+        profileDirectoryFetch: directoryError ? "failed" : "ok",
+        ...(directoryError ? {
+          lastErrorCode: directoryError.code,
+          lastErrorScope: directoryError.scope,
+          lastErrorMessage: directoryError.message,
+          lastErrorStatus: directoryError.status,
+        } : {}),
+      }));
       const requests = mapCloudRead(await loadOptionalCloudData("trainer_requests lesen", listCloudTrainerRequests, []), toTrainerRequest);
       const clubRequests = mapCloudRead(await loadOptionalCloudData("club_requests lesen", listCloudClubRequests, []), toClubRequest);
       const groups = await loadOptionalCloudData("training_groups lesen", listCloudTrainingGroups, []);
@@ -677,6 +789,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setCloudMessage(queueStats.failed > 0 ? getQueueFailureMessage() : pendingCount > 0 ? `${pendingCount} Änderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensätze wurden in die Cloud migriert.` : "");
       }
+      const optionalProfileError = optionalCloudErrorCategories.has("profile_sync_error")
+        ? optionalCloudErrors.find((error) => classifySyncError(error.scope, { code: error.code, message: error.message }) === "profile_sync_error")
+        : undefined;
+      const latestOptionalError = optionalCloudErrors.slice(-1)[0];
+      setProfileSyncDiagnostics((current) => ({
+        ...current,
+        profileWarningReason: profileIsFallback
+          ? "own_profile_fetch_failed"
+          : optionalProfileError
+            ? `optional_profile_error:${optionalProfileError.scope}`
+            : "",
+        partialSyncReason: profileIsFallback
+          ? "own_profile_fallback"
+          : queueStats.failed > 0
+            ? "failed_queue"
+            : pendingCount > 0
+              ? "pending_queue"
+              : optionalCloudErrors.map((error) => `${error.scope}:${error.code}`).join(", "),
+        ...(latestOptionalError ? {
+          lastErrorCode: latestOptionalError.code,
+          lastErrorScope: latestOptionalError.scope,
+          lastErrorMessage: latestOptionalError.message,
+          lastErrorStatus: latestOptionalError.status,
+        } : {}),
+      }));
 
       window.setTimeout(() => {
         void (async () => {
@@ -806,8 +943,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           );
 
           if (!profileIsFallback && optionalCloudErrorCount > optionalErrorsBefore) {
+            const latestDeferredError = optionalCloudErrors.slice(-1)[0];
             setCloudStatus(navigator.onLine ? "limited" : "offline");
             setCloudMessage(getSyncErrorMessage(optionalCloudErrorCategories));
+            setProfileSyncDiagnostics((current) => ({
+              ...current,
+              profileWarningReason: optionalCloudErrorCategories.has("profile_sync_error")
+                ? `deferred_profile_error:${latestDeferredError?.scope ?? "unknown"}`
+                : current.profileWarningReason,
+              partialSyncReason: optionalCloudErrors.map((error) => `${error.scope}:${error.code}`).join(", "),
+              lastErrorCode: latestDeferredError?.code ?? current.lastErrorCode,
+              lastErrorScope: latestDeferredError?.scope ?? current.lastErrorScope,
+              lastErrorMessage: latestDeferredError?.message ?? current.lastErrorMessage,
+              lastErrorStatus: latestDeferredError?.status ?? current.lastErrorStatus,
+            }));
           }
         })();
       }, 0);
@@ -819,6 +968,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setDataState(loadData(activeSession.user.id));
       }
       setCloudStatus(navigator.onLine && category === "profile_sync_error" ? "error" : navigator.onLine ? "limited" : "offline");
+      setProfileSyncDiagnostics((current) => ({
+        ...current,
+        profileWarningReason: category === "profile_sync_error" ? "aggregate_login_sync_error" : current.profileWarningReason,
+        partialSyncReason: `Login-Synchronisation:${getSafeErrorCode(error)}`,
+        lastErrorCode: getSafeErrorCode(error),
+        lastErrorScope: "Login-Synchronisation",
+        lastErrorMessage: getSafeErrorMessage(error),
+        lastErrorStatus: getSafeErrorStatus(error),
+      }));
     } finally {
       cloudRefreshRunningRef.current = false;
       setLoading(false);
@@ -983,7 +1141,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       void refreshCloudData().then(() => setCloudMessage("Daten wurden zwischen Geräten synchronisiert."));
     };
     const unsubscribers = [
-      subscribeToUserTrainings(session.user.id, handleRealtimeChange),
+      subscribeToUserTrainings(session.user.id, handleRealtimeChange, (realtime) => {
+        setProfileSyncDiagnostics((current) => ({ ...current, realtime }));
+      }),
       subscribeToNotifications(session.user.id, handleRealtimeChange),
     ];
 
@@ -1156,6 +1316,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     failedSyncCount,
     lastSyncAt,
     cloudMessage,
+    profileSyncDiagnostics,
     passwordRecovery,
     signIn,
     signUp,
@@ -1165,7 +1326,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     cancelPasswordRecovery,
     resendConfirmation,
     refreshCloudData,
-  }), [session, currentUser, profile, club, data, loading, cloudStatus, syncCount, pendingSyncCount, failedSyncCount, lastSyncAt, cloudMessage, passwordRecovery]);
+  }), [session, currentUser, profile, club, data, loading, cloudStatus, syncCount, pendingSyncCount, failedSyncCount, lastSyncAt, cloudMessage, profileSyncDiagnostics, passwordRecovery]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

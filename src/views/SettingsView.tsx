@@ -1,6 +1,7 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { getInitials } from "../domain/profile";
 import type { AppLanguage, MeasurementUnit, User, UserProfile } from "../domain/types";
+import type { ProfileSyncDiagnostics } from "../auth/AuthProvider";
 import { discardOfflineQueueItem, getOfflineQueueDiagnostics } from "../services/offlineQueueService";
 
 type SettingsViewProps = {
@@ -13,6 +14,7 @@ type SettingsViewProps = {
     lastSyncAt: string;
     message: string;
     isAdmin: boolean;
+    profileSyncDiagnostics: ProfileSyncDiagnostics;
   };
   onSave: (settings: Pick<UserProfile, "profileImageDataUrl" | "darkMode" | "measurementUnit" | "language">) => void;
   onLogout: () => void;
@@ -209,6 +211,26 @@ function SettingsSyncPanel({ syncStatus }: { syncStatus: NonNullable<SettingsVie
                 ) : null}
               </li>
             ))}
+          </ul>
+        </details>
+      ) : null}
+      {syncStatus.isAdmin ? (
+        <details className="settings-sync-diagnostics">
+          <summary>Profil-Sync-Diagnose</summary>
+          <ul>
+            <li>Eigenes Profil: {syncStatus.profileSyncDiagnostics.ownProfileFetch}</li>
+            <li>Profilverzeichnis: {syncStatus.profileSyncDiagnostics.profileDirectoryFetch}</li>
+            <li>Realtime: {syncStatus.profileSyncDiagnostics.realtime}</li>
+            <li>Profilzeile vorhanden: {String(syncStatus.profileSyncDiagnostics.profileRowPresent)}</li>
+            <li>Rolle geladen: {String(syncStatus.profileSyncDiagnostics.roleLoaded)}</li>
+            <li>Verein geladen: {String(syncStatus.profileSyncDiagnostics.clubLoaded)}</li>
+            <li>Aktiver Verein geladen: {String(syncStatus.profileSyncDiagnostics.activeClubLoaded)}</li>
+            <li>Profilwarnung: {syncStatus.profileSyncDiagnostics.profileWarningReason || "keine"}</li>
+            <li>Teilstatus: {syncStatus.profileSyncDiagnostics.partialSyncReason || "keiner"}</li>
+            <li>Letzter Fehler: {syncStatus.profileSyncDiagnostics.lastErrorScope || "keiner"} · {syncStatus.profileSyncDiagnostics.lastErrorCode || "-"}</li>
+            <li>HTTP-Status: {syncStatus.profileSyncDiagnostics.lastErrorStatus || "-"}</li>
+            <li>Fehlerdetail: {syncStatus.profileSyncDiagnostics.lastErrorMessage || "-"}</li>
+            <li>Letzter Profilerfolg: {syncStatus.profileSyncDiagnostics.lastSuccessAt ? new Date(syncStatus.profileSyncDiagnostics.lastSuccessAt).toLocaleString("de-DE") : "-"}</li>
           </ul>
         </details>
       ) : null}
