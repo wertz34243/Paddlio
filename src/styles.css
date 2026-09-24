@@ -4008,6 +4008,37 @@ p {
   font-weight: 800;
 }
 
+.attendance-card-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.danger-text-button {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid rgba(248, 113, 113, 0.38);
+  border-radius: 8px;
+  background: transparent;
+  color: #fca5a5;
+  font: inherit;
+  font-weight: 800;
+}
+
+.danger-text-button:focus-visible {
+  outline: 3px solid rgba(103, 232, 249, 0.55);
+  outline-offset: 2px;
+}
+
+@media (max-width: 767px) {
+  .attendance-card-actions {
+    justify-content: stretch;
+  }
+
+  .attendance-card-actions .danger-text-button {
+    width: 100%;
+  }
+}
+
 .placeholder-card {
   display: grid;
   gap: 8px;

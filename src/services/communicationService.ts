@@ -225,4 +225,17 @@ export const upsertCloudClubPost = (item: ClubPost) => upsertTable("club_posts",
 export const upsertCloudTask = (item: TeamTask) => upsertTable("tasks", toTask(item));
 export const upsertCloudTaskAssignment = (item: TeamTaskAssignment) => upsertTable("task_assignments", toAssignment(item));
 export const upsertCloudTrainingAttendance = (item: TrainingAttendance) => upsertTable("training_attendance", toAttendance(item));
+export const deleteCloudTrainingAttendance = async (trainingId: string, answers: TrainingAttendance[]): Promise<void> => {
+  const client = getSupabaseClient();
+  if (!client || !navigator.onLine) {
+    answers.forEach((answer) => enqueueSyncChange({ tableName: "training_attendance", action: "delete", payload: { id: answer.id } }));
+    return;
+  }
+
+  const { error } = await (client.from("training_attendance") as any).delete().eq("training_id", trainingId);
+  if (error) {
+    answers.forEach((answer) => enqueueSyncChange({ tableName: "training_attendance", action: "delete", payload: { id: answer.id } }));
+    throw error;
+  }
+};
 export const upsertCloudFileAttachment = (item: FileAttachment) => upsertTable("file_attachments", toAttachment(item));

@@ -3,6 +3,7 @@ import { APP_VERSION } from "../brand";
 import { SegmentNav, type SegmentItem } from "../components/SegmentNav";
 import { createId } from "../data/storage";
 import { canManageAdminArea, canUseCoachArea, getAthletesForCurrentUser, getGroupsForCurrentUser, getTrainingsForCurrentUser } from "../domain/accessControl";
+import { canDeleteTrainingAttendance, getAttendanceTrainings, hasTrainingEnded } from "../domain/trainingAttendance";
 import type {
   ClubPost,
   ClubPostCategory,
@@ -23,6 +24,7 @@ import type {
   User,
 } from "../domain/types";
 import {
+  deleteCloudTrainingAttendance,
   upsertCloudClubPost,
   upsertCloudDirectMessage,
   upsertCloudFileAttachment,
@@ -165,10 +167,11 @@ export function CommunicationView({ data, user, onDataChange }: CommunicationVie
   const visibleTasks = data.tasks.filter((task) => !task.deletedAt && (isAdmin || clubIds.includes(task.clubId) || data.taskAssignments.some((assignment) => assignment.taskId === task.id && assignment.assignedTo === user.userId)));
   const myAssignments = data.taskAssignments.filter((assignment) => assignment.assignedTo === user.userId || isCoachLike || isAdmin);
   const attendance = data.trainingAttendance;
+  const attendanceTrainings = useMemo(() => getAttendanceTrainings(trainings, attendance), [attendance, trainings]);
   const unreadDirect = visibleDirectMessages.filter((item) => item.receiverId === user.userId && !item.isRead).length;
   const unreadGroups = data.groupMessages.filter((item) => item.senderId !== user.userId && groups.some((group) => group.id === item.groupId) && !item.deletedAt).length;
   const openTasks = data.taskAssignments.filter((item) => item.assignedTo === user.userId && item.status !== "done").length;
-  const pendingAttendance = trainings.filter((entry) => !attendance.some((item) => item.trainingId === entry.id && item.athleteId === user.userId)).length;
+  const pendingAttendance = attendanceTrainings.filter((entry) => !hasTrainingEnded(entry) && !attendance.some((item) => item.trainingId === entry.id && item.athleteId === user.userId)).length;
 
   const saveLocalAndCloud = <T,>(success: string, update: (current: PaddleMotionData) => PaddleMotionData, cloudAction: () => Promise<T>) => {
     onDataChange(update);
@@ -313,6 +316,17 @@ export function CommunicationView({ data, user, onDataChange }: CommunicationVie
     }), () => upsertCloudTrainingAttendance(next));
   };
 
+  const removeAttendance = (trainingId: string) => {
+    const training = trainings.find((item) => item.id === trainingId);
+    if (!training || !canDeleteTrainingAttendance(user.role, training)) return;
+    if (!window.confirm("Anwesenheit löschen?\n\nDie Anwesenheitsantworten zu diesem Training werden entfernt. Das Training selbst bleibt erhalten.")) return;
+    const answers = attendance.filter((item) => item.trainingId === trainingId);
+    saveLocalAndCloud("Anwesenheit gelöscht", (current) => ({
+      ...current,
+      trainingAttendance: current.trainingAttendance.filter((item) => item.trainingId !== trainingId),
+    }), () => deleteCloudTrainingAttendance(trainingId, answers));
+  };
+
   const createAttachment = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -381,10 +395,12 @@ export function CommunicationView({ data, user, onDataChange }: CommunicationVie
   const attendanceView = (
     <section className="section-block">
       <div className="section-heading"><div><p className="eyebrow">Anwesenheit</p><h3>{pendingAttendance} offene Antworten</h3></div></div>
-      <div className="club-card-list">{trainings.length ? trainings.map((training) => {
+      <div className="club-card-list">{attendanceTrainings.length ? attendanceTrainings.map((training) => {
         const current = attendance.find((item) => item.trainingId === training.id && item.athleteId === user.userId);
         const groupAttendance = attendance.filter((item) => item.trainingId === training.id);
-        return <article className="attendance-card" key={training.id}><div className="plan-card-head"><div><span>{training.date} {training.time}</span><h4>{training.title || training.trainingType}</h4></div><b className="status-pill planned">{current ? statusLabel[current.status] : "offen"}</b></div><div className="smart-detail-grid"><span>Dabei {groupAttendance.filter((item) => item.status === "attending").length}</span><span>Nicht dabei {groupAttendance.filter((item) => item.status === "not_attending").length}</span><span>Unsicher {groupAttendance.filter((item) => item.status === "unsure").length}</span></div><div className="attendance-actions">{attendanceStatuses.map((status) => <button type="button" key={status} onClick={() => setAttendance(training.id, status, "", "")} aria-label={`Für Training ${training.title || training.trainingType} am ${training.date} als ${statusLabel[status]} melden`}>{statusLabel[status]}</button>)}</div></article>;
+        const ended = hasTrainingEnded(training);
+        const canDelete = canDeleteTrainingAttendance(user.role, training);
+        return <article className="attendance-card" key={training.id}><div className="plan-card-head"><div><span>{training.date} {training.time}</span><h4>{training.title || training.trainingType}</h4></div><b className="status-pill planned">{ended ? "beendet" : current ? statusLabel[current.status] : "offen"}</b></div><div className="smart-detail-grid"><span>Dabei {groupAttendance.filter((item) => item.status === "attending").length}</span><span>Nicht dabei {groupAttendance.filter((item) => item.status === "not_attending").length}</span><span>Unsicher {groupAttendance.filter((item) => item.status === "unsure").length}</span></div>{!ended ? <div className="attendance-actions">{attendanceStatuses.map((status) => <button type="button" key={status} onClick={() => setAttendance(training.id, status, "", "")} aria-label={`Für Training ${training.title || training.trainingType} am ${training.date} als ${statusLabel[status]} melden`}>{statusLabel[status]}</button>)}</div> : null}{canDelete ? <div className="attendance-card-actions"><button className="danger-text-button" type="button" onClick={() => removeAttendance(training.id)} aria-label={`Anwesenheit für ${training.title || training.trainingType} löschen`}>Anwesenheit löschen</button></div> : null}</article>;
       }) : <p className="empty-state">Noch kein Training für Anwesenheit gefunden.</p>}</div>
     </section>
   );
