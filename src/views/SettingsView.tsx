@@ -1,6 +1,7 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { getInitials } from "../domain/profile";
 import type { AppLanguage, MeasurementUnit, User, UserProfile } from "../domain/types";
+import { getOfflineQueueDiagnostics } from "../services/offlineQueueService";
 
 type SettingsViewProps = {
   user: User;
@@ -137,6 +138,7 @@ export function SettingsView({ user, syncStatus, onSave, onLogout }: SettingsVie
 }
 
 function SettingsSyncPanel({ syncStatus }: { syncStatus: NonNullable<SettingsViewProps["syncStatus"]> }) {
+  const diagnostics = syncStatus.isAdmin ? getOfflineQueueDiagnostics() : [];
   const syncLabel = syncStatus.lastSyncAt
     ? new Date(syncStatus.lastSyncAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
     : "";
@@ -176,6 +178,18 @@ function SettingsSyncPanel({ syncStatus }: { syncStatus: NonNullable<SettingsVie
       </div>
       {syncStatus.message && syncStatus.status !== "connected" ? (
         <p className="settings-sync-detail">{syncStatus.message}</p>
+      ) : null}
+      {diagnostics.length > 0 ? (
+        <details className="settings-sync-diagnostics">
+          <summary>Technische Sync-Diagnose</summary>
+          <ul>
+            {diagnostics.map((item, index) => (
+              <li key={`${item.table}-${item.entityId}-${index}`}>
+                <code>{item.table}</code> · {item.operation} · {item.entityId} · {item.errorCode} · {item.errorKind}
+              </li>
+            ))}
+          </ul>
+        </details>
       ) : null}
     </section>
   );

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifySyncError, getSyncErrorMessage } from "./syncStatus";
+import { classifySyncError, getFailedSyncMessage, getSyncErrorMessage } from "./syncStatus";
 
 describe("sync status classification", () => {
   it("classifies planning constraint errors without exposing SQL", () => {
@@ -15,5 +15,13 @@ describe("sync status classification", () => {
 
   it("treats profile failures as their own core category", () => {
     expect(classifySyncError("Profil synchronisieren")).toBe("profile_sync_error");
+  });
+});
+
+describe("failed queue messages", () => {
+  it("names the affected areas instead of blaming the profile", () => {
+    expect(getFailedSyncMessage(["materials", "training_templates"], 2)).toBe(
+      "2 Datensätze konnten noch nicht synchronisiert werden. Betroffen: Material, Vorlagen.",
+    );
   });
 });

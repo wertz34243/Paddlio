@@ -155,6 +155,22 @@ describe("offline queue", () => {
     expect(getOfflineQueueStats()).toEqual({ pending: 0, failed: 0, total: 0 });
   });
 
+  it("retries a legacy transient failure exactly once after the queue upgrade", () => {
+    window.localStorage.setItem(`paddlio_sync_queue:${USER_ID}`, JSON.stringify([{
+      id: "legacy-network", table: "materials", operation: "upsert", payload: { id: PLAN_ID },
+      retryCount: 5, status: "failed", lastError: "Failed to fetch", repairVersion: 1,
+    }]));
+    expect(readOfflineQueue()[0]).toMatchObject({ status: "pending", retryCount: 0, repairVersion: 2 });
+  });
+
+  it("does not reactivate a legacy non-retryable constraint failure", () => {
+    window.localStorage.setItem(`paddlio_sync_queue:${USER_ID}`, JSON.stringify([{
+      id: "legacy-constraint", table: "materials", operation: "upsert", payload: { id: PLAN_ID },
+      retryCount: 5, status: "failed", lastError: "23514 check constraint", repairVersion: 1,
+    }]));
+    expect(readOfflineQueue()[0]).toMatchObject({ status: "failed", retryCount: 5, repairVersion: 2, errorKind: "non-retryable" });
+  });
+
   it("isolates queue entries by account and restores them after switching back", () => {
     enqueueOfflineChange({ table: "training_plan_items", operation: "upsert", payload: { id: PLAN_ID }, userId: USER_ID });
     setOfflineQueueUser("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb");

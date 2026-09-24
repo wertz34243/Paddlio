@@ -47,10 +47,10 @@ import {
 import { listCloudBetaFeedback, listCloudBetaTesters } from "../services/betaService";
 import { listCloudMaterials } from "../services/materialService";
 import { getSyncQueueStats } from "../services/syncService";
-import { setOfflineQueueUser } from "../services/offlineQueueService";
+import { getOfflineQueueDiagnostics, setOfflineQueueUser } from "../services/offlineQueueService";
 import { cloudValueOrCached, didCloudReadFail, mapCloudRead, markCloudReadFailed } from "../services/cloudReadState";
 import { backgroundSyncEngine } from "../services/backgroundSyncService";
-import { classifySyncError, getSyncErrorMessage, type SyncErrorCategory } from "../services/syncStatus";
+import { classifySyncError, getFailedSyncMessage, getSyncErrorMessage, type SyncErrorCategory } from "../services/syncStatus";
 import { listCloudNotifications } from "../services/notificationService";
 import { listCloudSmartCoachRecommendations } from "../services/smartCoachService";
 import {
@@ -362,6 +362,11 @@ const toCoachAthlete = (profile: CloudProfile, clubName = "", members: CloudGrou
   };
 };
 
+const getQueueFailureMessage = (): string => {
+  const diagnostics = getOfflineQueueDiagnostics();
+  return getFailedSyncMessage(diagnostics.map((item) => item.table), diagnostics.length);
+};
+
 const getCloudProfileData = (profile: CloudProfile): Partial<UserProfile> => {
   const value = profile.profile_data;
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
@@ -637,16 +642,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLastSyncAt(new Date().toISOString());
       const coreSyncCount = allProfiles.length + clubs.length + requests.length + clubRequests.length + groups.length + groupMembers.length + cloudPlan.length + cloudFeedback.length + cloudJournal.length + cloudTemplates.length + cloudGoals.length + cloudCompetitions.length + cloudMaterials.length + cloudNotifications.length + cloudSmartCoach.length + cloudClubMessages.length + cloudDirectMessages.length + cloudGroupMessages.length + cloudTasks.length + cloudTaskAssignments.length + cloudTrainingAttendance.length;
       setSyncCount(coreSyncCount);
-      setCloudMessage(queueStats.failed > 0 ? "Einige Daten konnten noch nicht synchronisiert werden. Paddlio versucht es automatisch erneut." : pendingCount > 0 ? `${pendingCount} Änderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensätze wurden in die Cloud migriert.` : "");
+      setCloudMessage(queueStats.failed > 0 ? getQueueFailureMessage() : pendingCount > 0 ? `${pendingCount} Änderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensätze wurden in die Cloud migriert.` : "");
       setCloudStatus(!navigator.onLine ? "offline" : queueStats.failed > 0 ? "limited" : pendingCount > 0 ? "pending" : "connected");
       if (profileIsFallback) {
-        setCloudMessage(navigator.onLine ? PROFILE_SYNC_RETRY_MESSAGE : "Du bist offline. Paddlio nutzt gespeicherte Daten.");
+        setCloudMessage(navigator.onLine ? `${PROFILE_SYNC_RETRY_MESSAGE}${queueStats.failed > 0 ? ` ${getQueueFailureMessage()}` : ""}` : "Du bist offline. Paddlio nutzt gespeicherte Daten.");
         setCloudStatus(navigator.onLine ? "limited" : "offline");
       } else if (optionalCloudErrorCount > 0) {
-        setCloudMessage(getSyncErrorMessage(optionalCloudErrorCategories));
+        setCloudMessage(`${getSyncErrorMessage(optionalCloudErrorCategories)}${queueStats.failed > 0 ? ` ${getQueueFailureMessage()}` : ""}`);
         setCloudStatus(navigator.onLine ? "limited" : "offline");
       } else {
-        setCloudMessage(queueStats.failed > 0 ? "Einige Daten konnten noch nicht synchronisiert werden. Paddlio versucht es automatisch erneut." : pendingCount > 0 ? `${pendingCount} Änderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensätze wurden in die Cloud migriert.` : "");
+        setCloudMessage(queueStats.failed > 0 ? getQueueFailureMessage() : pendingCount > 0 ? `${pendingCount} Änderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensätze wurden in die Cloud migriert.` : "");
       }
 
       window.setTimeout(() => {
@@ -847,7 +852,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setPendingSyncCount(stats.pending);
         setFailedSyncCount(stats.failed);
         setCloudStatus(stats.failed > 0 ? "limited" : stats.pending > 0 ? "pending" : "connected");
-        setCloudMessage(stats.failed > 0 ? "Einige Daten konnten noch nicht synchronisiert werden. Paddlio versucht es automatisch erneut." : synced > 0 ? `${synced} wartende Änderungen wurden synchronisiert.` : "Synchronisiert.");
+        setCloudMessage(stats.failed > 0 ? getQueueFailureMessage() : synced > 0 ? `${synced} wartende Änderungen wurden synchronisiert.` : "Synchronisiert.");
         void refreshCloudData();
       });
     };
@@ -859,7 +864,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (stats.total > 0) {
         backgroundSyncEngine.markLocalChange();
         setCloudStatus(!navigator.onLine ? "offline" : stats.failed > 0 ? "limited" : "pending");
-        setCloudMessage(stats.failed > 0 ? "Einige Daten konnten noch nicht synchronisiert werden. Paddlio versucht es automatisch erneut." : `${stats.pending} Änderungen warten auf Synchronisation.`);
+        setCloudMessage(stats.failed > 0 ? getQueueFailureMessage() : `${stats.pending} Änderungen warten auf Synchronisation.`);
       }
     };
     window.addEventListener("online", handleOnline);
@@ -873,7 +878,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setPendingSyncCount(stats.pending);
         setFailedSyncCount(stats.failed);
         setCloudStatus(stats.failed > 0 ? "limited" : stats.pending > 0 ? "pending" : "connected");
-        setCloudMessage(stats.failed > 0 ? "Einige Daten konnten noch nicht synchronisiert werden. Paddlio versucht es automatisch erneut." : synced > 0 ? `${synced} Änderungen wurden nachgeholt.` : "Synchronisiert.");
+        setCloudMessage(stats.failed > 0 ? getQueueFailureMessage() : synced > 0 ? `${synced} Änderungen wurden nachgeholt.` : "Synchronisiert.");
       });
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -910,7 +915,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setLastSyncAt(new Date().toISOString());
           setSyncCount(count);
           setCloudStatus(nextStats.failed > 0 ? "limited" : nextPending > 0 ? "pending" : "connected");
-          setCloudMessage(nextStats.failed > 0 ? "Einige Daten konnten noch nicht synchronisiert werden. Paddlio versucht es automatisch erneut." : nextPending > 0 ? `${nextPending} Änderungen warten auf Synchronisation.` : "Gespeichert und synchronisiert.");
+          setCloudMessage(nextStats.failed > 0 ? getQueueFailureMessage() : nextPending > 0 ? `${nextPending} Änderungen warten auf Synchronisation.` : "Gespeichert und synchronisiert.");
         })
         .catch((error) => {
           logCloudError("Änderungen speichern", error);

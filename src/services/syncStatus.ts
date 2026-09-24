@@ -39,3 +39,22 @@ export const getSyncErrorMessage = (categories: Iterable<SyncErrorCategory>): st
   }
   return "Einige Zusatzbereiche konnten nicht synchronisiert werden. Die App bleibt nutzbar.";
 };
+
+const SYNC_TABLE_LABELS: Record<string, string> = {
+  profiles: "Profil",
+  training_plan_items: "Trainingsplanung",
+  training_templates: "Vorlagen",
+  training_feedback: "Feedback",
+  training_journal_entries: "Journal",
+  materials: "Material",
+  notifications: "Benachrichtigungen",
+  training_groups: "Gruppen",
+  group_members: "Gruppen",
+  group_memberships: "Gruppen",
+};
+
+export const getFailedSyncMessage = (tables: string[], count: number): string => {
+  const areas = Array.from(new Set(tables.map((table) => SYNC_TABLE_LABELS[table] ?? "Zusatzdaten")));
+  const affected = areas.length > 0 ? ` Betroffen: ${areas.slice(0, 3).join(", ")}.` : "";
+  return `${count} ${count === 1 ? "Datensatz konnte" : "Datensätze konnten"} noch nicht synchronisiert werden.${affected}`;
+};

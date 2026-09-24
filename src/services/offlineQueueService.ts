@@ -16,16 +16,26 @@ export type OfflineQueueItem = {
   retryCount: number;
   status: OfflineQueueStatus;
   lastError?: string;
+  lastErrorCode?: string;
+  errorKind?: "retryable" | "non-retryable";
   repairVersion?: number;
   userId: string;
 };
 
 export type OfflineQueueStats = { pending: number; failed: number; total: number };
+export type OfflineQueueDiagnostic = {
+  table: string;
+  operation: OfflineQueueOperation;
+  entityId: string;
+  errorCode: string;
+  errorKind: "retryable" | "non-retryable" | "unknown";
+  retryCount: number;
+};
 
 const SYNC_QUEUE_KEY = "paddlio_sync_queue";
 const QUARANTINE_QUEUE_KEY = `${SYNC_QUEUE_KEY}:unscoped`;
 const MAX_RETRY_COUNT = 5;
-const TRAINING_PLAN_REPAIR_VERSION = 1;
+const QUEUE_REPAIR_VERSION = 2;
 let activeQueueUserId = "";
 
 const queueKey = (userId: string): string => `${SYNC_QUEUE_KEY}:${userId}`;
@@ -37,6 +47,12 @@ const inferQueueOwner = (item: any): string => {
   return candidates.length > 0 && candidates.every((value) => value === candidates[0]) ? candidates[0] : "";
 };
 
+const inferStoredErrorCode = (item: any): string | undefined => {
+  if (item.lastErrorCode) return String(item.lastErrorCode);
+  const match = String(item.lastError ?? "").match(/\b(?:PGRST\d{3}|\d{5}|4\d{2}|5\d{2})\b/i);
+  return match?.[0];
+};
+
 const isOnline = (): boolean => typeof navigator === "undefined" || navigator.onLine;
 
 const normalizeQueueItem = (item: any, scopedUserId = ""): OfflineQueueItem => {
@@ -44,17 +60,22 @@ const normalizeQueueItem = (item: any, scopedUserId = ""): OfflineQueueItem => {
   const rawPayload = sanitizeCloudPayload(item.payload ?? {});
   const isTrainingPlan = table === "training_plan_items";
   const payload = isTrainingPlan ? normalizeTrainingPlanQueuePayload(rawPayload) : rawPayload;
-  const needsPlanRepair = isTrainingPlan && item.repairVersion !== TRAINING_PLAN_REPAIR_VERSION;
+  const storedErrorKind = item.errorKind ?? (item.lastError ? classifySyncWriteError(item.lastError) : undefined);
+  const needsPlanRepair = isTrainingPlan && item.repairVersion !== QUEUE_REPAIR_VERSION;
+  const needsTransientRepair = item.status === "failed" && item.repairVersion !== QUEUE_REPAIR_VERSION && storedErrorKind !== "non-retryable";
+  const needsRepair = needsPlanRepair || needsTransientRepair;
   return {
   id: item.id ?? `sync-${crypto.randomUUID()}`,
   table,
   operation: item.operation ?? (item.action === "delete" ? "delete" : "upsert"),
   payload,
   createdAt: item.createdAt ?? new Date().toISOString(),
-  retryCount: needsPlanRepair ? 0 : item.retryCount ?? item.attempts ?? 0,
-  status: needsPlanRepair ? "pending" : item.status === "failed" ? "failed" : "pending",
-  lastError: needsPlanRepair ? undefined : item.lastError,
-  repairVersion: isTrainingPlan ? TRAINING_PLAN_REPAIR_VERSION : item.repairVersion,
+  retryCount: needsRepair ? 0 : item.retryCount ?? item.attempts ?? 0,
+  status: needsRepair ? "pending" : item.status === "failed" ? "failed" : "pending",
+  lastError: needsRepair ? undefined : item.lastError,
+  lastErrorCode: needsRepair ? undefined : inferStoredErrorCode(item),
+  errorKind: needsRepair ? undefined : storedErrorKind,
+  repairVersion: QUEUE_REPAIR_VERSION,
   userId: item.userId || scopedUserId || inferQueueOwner(item),
   };
 };
@@ -115,6 +136,28 @@ export const getOfflineQueueStats = (): OfflineQueueStats => {
   return { pending: queue.length - failed, failed, total: queue.length };
 };
 
+const getErrorCode = (error: unknown): string => {
+  if (!error || typeof error !== "object" || !("code" in error || "status" in error)) return "";
+  const value = error as { code?: string | number; status?: number };
+  return String(value.code ?? value.status ?? "");
+};
+
+export const getOfflineQueueDiagnostics = (): OfflineQueueDiagnostic[] =>
+  readOfflineQueue()
+    .filter((item) => item.status === "failed")
+    .map((item) => {
+      const config = getSyncEntityConfig(item.table);
+      const rawId = String(item.payload[config.primaryKey] ?? item.payload.id ?? "unbekannt");
+      return {
+        table: item.table,
+        operation: item.operation,
+        entityId: rawId === "unbekannt" ? rawId : `${rawId.slice(0, 8)}...`,
+        errorCode: item.lastErrorCode ?? "unbekannt",
+        errorKind: item.errorKind ?? (item.lastError ? classifySyncWriteError(item.lastError) : "unknown"),
+        retryCount: item.retryCount,
+      };
+    });
+
 export const enqueueOfflineChange = (
   item: Omit<OfflineQueueItem, "id" | "createdAt" | "retryCount" | "status" | "userId"> & { userId?: string },
 ): void => {
@@ -137,7 +180,7 @@ export const enqueueOfflineChange = (
     retryCount: 0,
     status: "pending",
     userId: itemUserId,
-    repairVersion: item.table === "training_plan_items" ? TRAINING_PLAN_REPAIR_VERSION : undefined,
+    repairVersion: QUEUE_REPAIR_VERSION,
   };
 
   const queue = readOfflineQueue();
@@ -221,7 +264,8 @@ export const flushOfflineQueue = async (priority?: SyncPriority): Promise<number
       await flushQueueItem(item);
       synced += 1;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unbekannter Sync-Fehler.";
+      const record = error && typeof error === "object" ? error as { message?: string; details?: string } : null;
+      const message = error instanceof Error ? error.message : record?.message ?? record?.details ?? "Unbekannter Sync-Fehler.";
       console.error(`[Paddlio Sync] Offline-Queue für ${item.table} konnte nicht synchronisiert werden.`, error);
       const retryable = classifySyncWriteError(error) === "retryable";
       failed.push({
@@ -229,6 +273,8 @@ export const flushOfflineQueue = async (priority?: SyncPriority): Promise<number
         retryCount: retryable ? item.retryCount + 1 : MAX_RETRY_COUNT,
         status: "failed",
         lastError: message,
+        lastErrorCode: getErrorCode(error),
+        errorKind: retryable ? "retryable" : "non-retryable",
       });
     }
   }
