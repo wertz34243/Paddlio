@@ -48,6 +48,7 @@ import { listCloudBetaFeedback, listCloudBetaTesters } from "../services/betaSer
 import { listCloudMaterials } from "../services/materialService";
 import { getPendingSyncCount } from "../services/syncService";
 import { backgroundSyncEngine } from "../services/backgroundSyncService";
+import { classifySyncError, getSyncErrorMessage, type SyncErrorCategory } from "../services/syncStatus";
 import { listCloudNotifications } from "../services/notificationService";
 import { listCloudSmartCoachRecommendations } from "../services/smartCoachService";
 import {
@@ -179,6 +180,7 @@ const clearAuthUrlParameters = () => {
 };
 
 let optionalCloudErrorCount = 0;
+let optionalCloudErrorCategories = new Set<SyncErrorCategory>();
 
 const withTimeout = async <T,>(scope: string, promise: Promise<T>, timeoutMs = 15000): Promise<T> => {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -198,6 +200,7 @@ const loadOptionalCloudData = async <T,>(scope: string, loader: () => Promise<T>
     return await withTimeout(scope, loader(), 12000);
   } catch (error) {
     optionalCloudErrorCount += 1;
+    optionalCloudErrorCategories.add(classifySyncError(scope, error));
     logCloudError(scope, error);
     return fallback;
   }
@@ -527,6 +530,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       optionalCloudErrorCount = 0;
+      optionalCloudErrorCategories = new Set<SyncErrorCategory>();
       setCloudStatus(navigator.onLine ? "syncing" : "offline");
       setSession(activeSession);
       setCurrentUser(activeSession.user);
@@ -620,7 +624,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setDataState(nextData);
       setPendingSyncCount(pendingCount);
       setLastSyncAt(new Date().toISOString());
-      const coreSyncCount = allProfiles.length + clubs.length + requests.length + clubRequests.length + groups.length + groupMembers.length + cloudPlan.length + cloudFeedback.length + cloudJournal.length + cloudTemplates.length + cloudGoals.length + cloudCompetitions.length + cloudMaterials.length + cloudNotifications.length + cloudSmartCoach.length + cloudClubMessages.length + cloudDirectMessages.length + cloudGroupMessages.length + cloudTasks.length + cloudTaskAssignments.length + cloudTrainingAttendance.length + pendingCount;
+      const coreSyncCount = allProfiles.length + clubs.length + requests.length + clubRequests.length + groups.length + groupMembers.length + cloudPlan.length + cloudFeedback.length + cloudJournal.length + cloudTemplates.length + cloudGoals.length + cloudCompetitions.length + cloudMaterials.length + cloudNotifications.length + cloudSmartCoach.length + cloudClubMessages.length + cloudDirectMessages.length + cloudGroupMessages.length + cloudTasks.length + cloudTaskAssignments.length + cloudTrainingAttendance.length;
       setSyncCount(coreSyncCount);
       setCloudMessage(pendingCount > 0 ? `${pendingCount} Änderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensätze wurden in die Cloud migriert.` : "");
       setCloudStatus(!navigator.onLine ? "offline" : pendingCount > 0 ? "pending" : "connected");
@@ -628,7 +632,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setCloudMessage(navigator.onLine ? PROFILE_SYNC_RETRY_MESSAGE : "Du bist offline. Paddlio nutzt gespeicherte Daten.");
         setCloudStatus(navigator.onLine ? "limited" : "offline");
       } else if (optionalCloudErrorCount > 0) {
-        setCloudMessage("Einige Zusatzfunktionen sind momentan nicht verfügbar.");
+        setCloudMessage(getSyncErrorMessage(optionalCloudErrorCategories));
         setCloudStatus(navigator.onLine ? "limited" : "offline");
       } else {
         setCloudMessage(pendingCount > 0 ? `${pendingCount} Änderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensätze wurden in die Cloud migriert.` : "");
@@ -763,17 +767,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           if (!profileIsFallback && optionalCloudErrorCount > optionalErrorsBefore) {
             setCloudStatus(navigator.onLine ? "limited" : "offline");
-            setCloudMessage("Einige Zusatzfunktionen sind momentan nicht verfügbar.");
+            setCloudMessage(getSyncErrorMessage(optionalCloudErrorCategories));
           }
         })();
       }, 0);
     } catch (error) {
       logCloudError("Login-Synchronisation", error);
-      setCloudMessage(`Cloud-Synchronisation ist fehlgeschlagen. Lokaler Cache wird verwendet. ${describeCloudError(error)}`);
+      const category = classifySyncError("Login-Synchronisation", error);
+      setCloudMessage(getSyncErrorMessage([category]));
       if (activeSession.user) {
         setDataState(loadData(activeSession.user.id));
       }
-      setCloudStatus(navigator.onLine ? "error" : "offline");
+      setCloudStatus(navigator.onLine && category === "profile_sync_error" ? "error" : navigator.onLine ? "limited" : "offline");
     } finally {
       setLoading(false);
     }
@@ -881,14 +886,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const nextPending = getPendingSyncCount();
           setPendingSyncCount(nextPending);
           setLastSyncAt(new Date().toISOString());
-          setSyncCount(count + nextPending);
+          setSyncCount(count);
           setCloudStatus(nextPending > 0 ? "pending" : "connected");
           setCloudMessage(nextPending > 0 ? `${nextPending} Änderungen warten auf Synchronisation.` : "Gespeichert und synchronisiert.");
         })
         .catch((error) => {
           logCloudError("Änderungen speichern", error);
-          setCloudStatus(navigator.onLine ? "error" : "offline");
-          setCloudMessage(`Änderungen wurden lokal gespeichert und werden später synchronisiert. ${describeCloudError(error)}`);
+          const category = classifySyncError("Planungsdaten speichern", error);
+          const nextPending = getPendingSyncCount();
+          setPendingSyncCount(nextPending);
+          setCloudStatus(navigator.onLine ? "limited" : "offline");
+          setCloudMessage(navigator.onLine ? getSyncErrorMessage([category]) : "Du bist offline. Änderungen werden später synchronisiert.");
         })
         .finally(() => {
           syncRunningRef.current = false;

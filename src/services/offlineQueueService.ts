@@ -1,6 +1,7 @@
 import { getSupabaseClient } from "../lib/supabase";
 import { sanitizeCloudPayload } from "./cloudIds";
 import { getSyncEntityConfig, toSoftDeletePayload, type SyncPriority } from "./syncEntityConfig";
+import { normalizeTrainingPlanQueuePayload } from "../domain/trainingPlanStatus";
 
 export type OfflineQueueOperation = "insert" | "update" | "upsert" | "delete";
 export type OfflineQueueStatus = "pending" | "failed";
@@ -21,16 +22,20 @@ const MAX_RETRY_COUNT = 5;
 
 const isOnline = (): boolean => typeof navigator === "undefined" || navigator.onLine;
 
-const normalizeQueueItem = (item: any): OfflineQueueItem => ({
+const normalizeQueueItem = (item: any): OfflineQueueItem => {
+  const table = item.table ?? item.tableName;
+  const rawPayload = sanitizeCloudPayload(item.payload ?? {});
+  return {
   id: item.id ?? `sync-${crypto.randomUUID()}`,
-  table: item.table ?? item.tableName,
+  table,
   operation: item.operation ?? (item.action === "delete" ? "delete" : "upsert"),
-  payload: sanitizeCloudPayload(item.payload ?? {}),
+  payload: table === "training_plan_items" ? normalizeTrainingPlanQueuePayload(rawPayload) : rawPayload,
   createdAt: item.createdAt ?? new Date().toISOString(),
   retryCount: item.retryCount ?? item.attempts ?? 0,
   status: item.status === "failed" ? "failed" : "pending",
   lastError: item.lastError,
-});
+  };
+};
 
 export const readOfflineQueue = (): OfflineQueueItem[] => {
   try {

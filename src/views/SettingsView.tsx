@@ -140,9 +140,9 @@ function SettingsSyncPanel({ syncStatus }: { syncStatus: NonNullable<SettingsVie
     ? new Date(syncStatus.lastSyncAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
     : "";
   const label =
-    syncStatus.status === "connected" ? "Synchronisiert" :
+    syncStatus.status === "connected" ? "Vollständig synchronisiert" :
       syncStatus.status === "syncing" ? "Sync läuft..." :
-        syncStatus.status === "pending" ? "Sync ausstehend" :
+          syncStatus.status === "pending" ? "Synchronisierung ausstehend" :
           syncStatus.status === "limited" ? "Teilweise synchronisiert" :
             syncStatus.status === "offline" ? "Offline" :
               syncStatus.status === "error" ? "Nicht synchronisiert" :
@@ -172,7 +172,7 @@ function SettingsSyncPanel({ syncStatus }: { syncStatus: NonNullable<SettingsVie
         <span>{syncStatus.pendingSyncCount} ausstehend</span>
         {syncLabel ? <span>Letzter Sync {syncLabel}</span> : null}
       </div>
-      {syncStatus.message && (syncStatus.isAdmin || syncStatus.status === "error") ? (
+      {syncStatus.message && syncStatus.status !== "connected" ? (
         <p className="settings-sync-detail">{syncStatus.message}</p>
       ) : null}
     </section>

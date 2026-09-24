@@ -3,6 +3,7 @@ import type { PlanEntry, TrainingFeedback } from "../domain/types";
 import { enqueueSyncChange } from "./syncService";
 import { sanitizeCloudPayload, toCloudUuid, toCloudUuidOrNull } from "./cloudIds";
 import { getWeekdayFromDate } from "../domain/trainingPlan";
+import { normalizePlanStatus, toCompatibleCloudPlanStatus } from "../domain/trainingPlanStatus";
 import { deduplicateTrainingFeedback, getTrainingFeedbackType } from "../domain/trainingFeedback";
 
 const isMissingColumnError = (error: unknown, columnName: string): boolean =>
@@ -26,6 +27,7 @@ const optionalTrainingPlanColumns = ["repeat_series_id", "deleted_at"] as const;
 const trainingPlanMetaPrefix = "\n\n[PaddlioTrainingMeta]";
 
 type TrainingPlanCloudMeta = {
+  status?: PlanEntry["status"];
   assignedType?: PlanEntry["assignedType"];
   assignedAthleteIds?: string[];
   assignedGroupIds?: string[];
@@ -54,6 +56,7 @@ const parseTrainingPlanMeta = (notes: string): TrainingPlanCloudMeta => {
 const buildTrainingPlanNotes = (entry: PlanEntry): string => {
   const baseNotes = stripTrainingPlanMeta(entry.notes || entry.note || "");
   const meta: TrainingPlanCloudMeta = {
+    status: entry.status,
     assignedType: entry.assignedType,
     assignedAthleteIds: entry.assignedAthleteIds,
     assignedGroupIds: entry.assignedGroupIds,
@@ -86,18 +89,7 @@ export const toCloudTraining = (entry: PlanEntry) => ({
   boat_class: entry.boatClass,
   goal: entry.focus || entry.goal,
   intensity: entry.intensity,
-  status:
-    entry.status === "done" || entry.status === "erledigt" || entry.status === "completed"
-      ? "completed"
-      : entry.status === "partially_completed"
-        ? "partially_completed"
-        : entry.status === "in_progress"
-          ? "in_progress"
-          : entry.status === "skipped" || entry.status === "ausgelassen"
-            ? "skipped"
-            : entry.status === "cancelled"
-              ? "cancelled"
-              : "planned",
+  status: toCompatibleCloudPlanStatus(entry.status),
   repeat_rule: entry.repeat === "none" ? null : entry.repeat,
   repeat_series_id: entry.repeatSeriesId || null,
   notes: buildTrainingPlanNotes(entry),
@@ -140,7 +132,7 @@ export const fromCloudTraining = (row: any, athleteId: string): PlanEntry => {
     intensity: row.intensity ?? "mittel",
     note: notes,
     notes,
-    status: row.status ?? "planned",
+    status: normalizePlanStatus(meta.status ?? row.status),
     repeat: row.repeat_rule ?? "none",
     repeatUntil: meta.repeatUntil ?? "",
     repeatMaxCount: meta.repeatMaxCount,
@@ -186,11 +178,16 @@ export const upsertCloudTraining = async (entry: PlanEntry): Promise<void> => {
     const missingOptionalColumn = optionalTrainingPlanColumns.find(
       (columnName) => !omittedColumns.has(columnName) && isMissingColumnError(error, columnName),
     );
-    if (!missingOptionalColumn) throw error;
+    if (!missingOptionalColumn) {
+      enqueueSyncChange({ tableName: "training_plan_items", action: "upsert", payload: cloudPayload });
+      throw error;
+    }
 
     omittedColumns.add(missingOptionalColumn);
     cloudPayload = omitColumn(cloudPayload, missingOptionalColumn);
   }
+
+  enqueueSyncChange({ tableName: "training_plan_items", action: "upsert", payload: cloudPayload });
 };
 
 export const deleteCloudTraining = async (id: string, deletedAt = new Date().toISOString()): Promise<void> => {

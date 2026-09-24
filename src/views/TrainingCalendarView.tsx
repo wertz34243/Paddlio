@@ -2246,9 +2246,13 @@ function TrainingDetailDrawer({
             </div>
             {athleteFeedback.length > 0 ? athleteFeedback.map((item) => (
               <article className="master-feedback-row" key={item.id}>
-                <strong>{item.status === "done" ? "Durchgeführt" : "Übersprungen"}</strong>
-                <span>Gefühl {item.feeling}/5 · Belastung {item.difficulty}/10 · Müdigkeit {item.fatigue}/5</span>
-                {item.comment ? <p>{item.comment}</p> : null}
+                <dl className="master-feedback-metrics">
+                  <div><dt>Status</dt><dd>{item.status === "done" ? "Durchgeführt" : "Übersprungen"}</dd></div>
+                  <div><dt>Gefühl</dt><dd>{item.feeling}/5</dd></div>
+                  <div><dt>Belastung</dt><dd>{item.difficulty}/10</dd></div>
+                  <div><dt>Müdigkeit</dt><dd>{item.fatigue}/5</dd></div>
+                </dl>
+                {item.comment ? <div className="master-feedback-comment"><span>Kommentar</span><p>{item.comment}</p></div> : null}
               </article>
             )) : <p className="po-muted">Noch kein Athletenfeedback gespeichert.</p>}
           </div>
@@ -2259,11 +2263,13 @@ function TrainingDetailDrawer({
             </div>
             {trainerFeedback.length > 0 ? trainerFeedback.map((item) => (
               <article className="master-feedback-row" key={item.id}>
-                <strong>{item.goalAchievement === "yes" ? "Ziel erreicht" : item.goalAchievement === "partly" ? "Ziel teilweise erreicht" : item.goalAchievement === "no" ? "Ziel nicht erreicht" : "Trainerbeobachtung"}</strong>
-                {item.technicalAssessment ? <span>Technik: {item.technicalAssessment}</span> : null}
-                {item.observation ? <p>{item.observation}</p> : null}
-                {item.improvementPoint ? <p>Verbesserung: {item.improvementPoint}</p> : null}
-                {item.comment ? <p>{item.comment}</p> : null}
+                <dl className="master-feedback-metrics">
+                  <div><dt>Ziel</dt><dd>{item.goalAchievement === "yes" ? "Erreicht" : item.goalAchievement === "partly" ? "Teilweise" : item.goalAchievement === "no" ? "Nicht erreicht" : "Offen"}</dd></div>
+                  {item.technicalAssessment ? <div><dt>Technik</dt><dd>{item.technicalAssessment}</dd></div> : null}
+                </dl>
+                {item.observation ? <div className="master-feedback-comment"><span>Beobachtung</span><p>{item.observation}</p></div> : null}
+                {item.improvementPoint ? <div className="master-feedback-comment"><span>Verbesserung</span><p>{item.improvementPoint}</p></div> : null}
+                {item.comment ? <div className="master-feedback-comment"><span>Trainerhinweis</span><p>{item.comment}</p></div> : null}
               </article>
             )) : <p className="po-muted">Noch kein Trainerfeedback gespeichert.</p>}
           </div>

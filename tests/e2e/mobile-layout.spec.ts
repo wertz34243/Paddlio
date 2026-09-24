@@ -108,4 +108,46 @@ test.describe("mobile layout guards", () => {
     await expect(page.getByTestId("mobile-template-use-sheet")).toBeVisible();
     await expectPhoneChromeUsable(page);
   });
+
+  test("training feedback detail remains readable on a small phone", async ({ page }) => {
+    const email = process.env.PADDLIO_E2E_COACH_EMAIL;
+    const password = process.env.PADDLIO_E2E_COACH_PASSWORD;
+    test.skip(!email || !password, "Set PADDLIO_E2E_COACH_* for mobile feedback checks.");
+
+    await page.setViewportSize({ width: 375, height: 667 });
+    await login(page, email!, password!);
+    await openBottomNav(page, /Kalender/);
+
+    const training = page.locator(".master-training-block-main").first();
+    await expect(training).toBeVisible({ timeout: 20_000 });
+    await training.click();
+    const detail = page.getByTestId("training-detail-panel");
+    await expect(detail).toBeVisible({ timeout: 20_000 });
+    await detail.getByRole("button", { name: "Feedback", exact: true }).click();
+
+    const tabs = detail.locator(".master-detail-tabs button");
+    const layout = await page.evaluate(() => {
+      const panel = document.querySelector<HTMLElement>("[data-testid='training-detail-panel']");
+      const headings = [...document.querySelectorAll<HTMLElement>(".master-feedback-group-heading")];
+      const metrics = [...document.querySelectorAll<HTMLElement>(".master-feedback-metrics > div")];
+      const panelRect = panel?.getBoundingClientRect();
+      return {
+        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        headingsInside: headings.every((node) => {
+          const rect = node.getBoundingClientRect();
+          return !panelRect || (rect.left >= panelRect.left - 1 && rect.right <= panelRect.right + 1);
+        }),
+        metricsInside: metrics.every((node) => {
+          const rect = node.getBoundingClientRect();
+          return !panelRect || (rect.left >= panelRect.left - 1 && rect.right <= panelRect.right + 1);
+        }),
+      };
+    });
+    expect(layout.overflow).toBeLessThanOrEqual(1);
+    expect(layout.headingsInside).toBe(true);
+    expect(layout.metricsInside).toBe(true);
+    await expect(tabs).toHaveCount(4);
+    await expect(detail.getByText("Athletenfeedback", { exact: true })).toBeVisible();
+    await expect(detail.getByText("Trainerfeedback", { exact: true })).toBeVisible();
+  });
 });

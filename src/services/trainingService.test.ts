@@ -98,6 +98,47 @@ describe("training feedback cloud mapping", () => {
 });
 
 describe("training plan cloud mapping", () => {
+  it("writes only status values supported by old and current databases", () => {
+    const base = {
+      id: "3fa81f64-5717-4562-b3fc-2c963f66afa6",
+      ownerUserId: "c4137bc4-bc05-4206-9cf5-95cf2221c01c",
+      athleteId: "athlete-local",
+      clubId: "11111111-1111-4111-8111-111111111111",
+      assignedType: "self" as const,
+      assignedAthleteIds: [],
+      assignedGroupIds: [],
+      title: "Status-Test",
+      date: "2026-09-24",
+      weekday: "Donnerstag" as const,
+      time: "17:30",
+      startTime: "17:30",
+      endTime: "18:30",
+      durationMinutes: 60,
+      area: "Wassertraining" as const,
+      trainingType: "K1 Technik" as const,
+      boatClass: "K1" as const,
+      goal: "",
+      focus: "",
+      description: "",
+      intensity: "mittel" as const,
+      note: "",
+      notes: "",
+      repeat: "none" as const,
+      repeatUntil: "",
+      repeatSeriesId: "",
+      createdByUserId: "c4137bc4-bc05-4206-9cf5-95cf2221c01c",
+      assignedAthleteId: "",
+      assignedGroupId: "",
+      feedbackNote: "",
+      createdAt: "2026-09-24T10:00:00.000Z",
+      updatedAt: "2026-09-24T10:00:00.000Z",
+    };
+
+    expect(toCloudTraining({ ...base, status: "completed" }).status).toBe("done");
+    expect(toCloudTraining({ ...base, status: "partially_completed" }).status).toBe("done");
+    expect(toCloudTraining({ ...base, status: "in_progress" }).status).toBe("planned");
+  });
+
   it("keeps editable planning fields after cloud reload", () => {
     const payload = toCloudTraining({
       id: "3fa81f64-5717-4562-b3fc-2c963f66afa6",
