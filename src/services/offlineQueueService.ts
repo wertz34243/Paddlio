@@ -3,6 +3,7 @@ import { sanitizeCloudPayload } from "./cloudIds";
 import { getSyncEntityConfig, toSoftDeletePayload, type SyncPriority } from "./syncEntityConfig";
 import { normalizeTrainingPlanQueuePayload } from "../domain/trainingPlanStatus";
 import { classifySyncWriteError } from "./syncErrorPolicy";
+import { normalizeTrainingFeedbackQueuePayload } from "../domain/trainingFeedbackSync";
 
 export type OfflineQueueOperation = "insert" | "update" | "upsert" | "delete";
 export type OfflineQueueStatus = "pending" | "failed";
@@ -37,7 +38,7 @@ export type OfflineQueueDiagnostic = {
 const SYNC_QUEUE_KEY = "paddlio_sync_queue";
 const QUARANTINE_QUEUE_KEY = `${SYNC_QUEUE_KEY}:unscoped`;
 const MAX_RETRY_COUNT = 5;
-const QUEUE_REPAIR_VERSION = 2;
+const QUEUE_REPAIR_VERSION = 3;
 let activeQueueUserId = "";
 
 const queueKey = (userId: string): string => `${SYNC_QUEUE_KEY}:${userId}`;
@@ -61,11 +62,19 @@ const normalizeQueueItem = (item: any, scopedUserId = ""): OfflineQueueItem => {
   const table = item.table ?? item.tableName;
   const rawPayload = sanitizeCloudPayload(item.payload ?? {});
   const isTrainingPlan = table === "training_plan_items";
-  const payload = isTrainingPlan ? normalizeTrainingPlanQueuePayload(rawPayload) : rawPayload;
-  const storedErrorKind = item.errorKind ?? (item.lastError ? classifySyncWriteError(item.lastError) : undefined);
+  const feedbackRepair = table === "training_feedback"
+    ? normalizeTrainingFeedbackQueuePayload(rawPayload, item.userId || scopedUserId || inferQueueOwner(item))
+    : { payload: rawPayload, repaired: false };
+  const payload = isTrainingPlan ? normalizeTrainingPlanQueuePayload(rawPayload) : feedbackRepair.payload;
+  const storedErrorKind = item.errorKind ?? (item.lastError
+    ? classifySyncWriteError({ code: inferStoredErrorCode(item), message: item.lastError })
+    : undefined);
   const needsPlanRepair = isTrainingPlan && item.repairVersion !== QUEUE_REPAIR_VERSION;
+  const needsFeedbackPolicyRetry = table === "training_feedback"
+    && item.repairVersion !== QUEUE_REPAIR_VERSION
+    && (feedbackRepair.repaired || inferStoredErrorCode(item) === "42501");
   const needsTransientRepair = item.status === "failed" && item.repairVersion !== QUEUE_REPAIR_VERSION && storedErrorKind !== "non-retryable";
-  const needsRepair = needsPlanRepair || needsTransientRepair;
+  const needsRepair = needsPlanRepair || needsFeedbackPolicyRetry || needsTransientRepair;
   return {
   id: item.id ?? `sync-${crypto.randomUUID()}`,
   table,
@@ -207,7 +216,11 @@ const flushQueueItem = async (item: OfflineQueueItem): Promise<void> => {
   if (!client) return;
 
   const config = getSyncEntityConfig(item.table);
-  const payload = item.table === "training_plan_items" ? normalizeTrainingPlanQueuePayload(item.payload) : item.payload;
+  const payload = item.table === "training_plan_items"
+    ? normalizeTrainingPlanQueuePayload(item.payload)
+    : item.table === "training_feedback"
+      ? normalizeTrainingFeedbackQueuePayload(item.payload, item.userId).payload
+      : item.payload;
   const table = client.from(item.table) as any;
 
   if (item.table === "training_plan_items" && import.meta.env.DEV) {
@@ -215,6 +228,17 @@ const flushQueueItem = async (item: OfflineQueueItem): Promise<void> => {
       id: payload.id,
       appStatus: item.payload.status,
       cloudStatus: payload.status,
+      path: `offline-queue:${item.operation}`,
+    });
+  }
+
+  if (item.table === "training_feedback" && import.meta.env.DEV) {
+    console.debug("[Paddlio Sync] training_feedback write", {
+      id: payload.id,
+      feedbackType: payload.feedback_type,
+      athleteIsCurrentUser: payload.athlete_id === item.userId,
+      coachIsCurrentUser: payload.coach_id === item.userId,
+      authorIsCurrentUser: payload.author_id === item.userId,
       path: `offline-queue:${item.operation}`,
     });
   }

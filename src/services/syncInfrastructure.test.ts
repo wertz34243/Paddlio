@@ -11,6 +11,7 @@ vi.mock("../lib/supabase", () => ({ getSupabaseClient: vi.fn() }));
 
 const PLAN_ID = "11111111-1111-4111-8111-111111111111";
 const USER_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const ATHLETE_ID = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 
 const localStorageMock = () => {
   const store = new Map<string, string>();
@@ -160,7 +161,7 @@ describe("offline queue", () => {
       id: "legacy-network", table: "materials", operation: "upsert", payload: { id: PLAN_ID },
       retryCount: 5, status: "failed", lastError: "Failed to fetch", repairVersion: 1,
     }]));
-    expect(readOfflineQueue()[0]).toMatchObject({ status: "pending", retryCount: 0, repairVersion: 2 });
+    expect(readOfflineQueue()[0]).toMatchObject({ status: "pending", retryCount: 0, repairVersion: 3 });
   });
 
   it("does not reactivate a legacy non-retryable constraint failure", () => {
@@ -168,7 +169,7 @@ describe("offline queue", () => {
       id: "legacy-constraint", table: "materials", operation: "upsert", payload: { id: PLAN_ID },
       retryCount: 5, status: "failed", lastError: "23514 check constraint", repairVersion: 1,
     }]));
-    expect(readOfflineQueue()[0]).toMatchObject({ status: "failed", retryCount: 5, repairVersion: 2, errorKind: "non-retryable" });
+    expect(readOfflineQueue()[0]).toMatchObject({ status: "failed", retryCount: 5, repairVersion: 3, errorKind: "non-retryable" });
     expect(getOfflineQueueDiagnostics()[0]).toMatchObject({
       table: "materials",
       operation: "upsert",
@@ -177,6 +178,48 @@ describe("offline queue", () => {
       userScope: "aaaaaaaa...",
     });
     expect(getOfflineQueueDiagnostics()[0].createdAt).toBeTruthy();
+  });
+
+  it("repairs legacy athlete feedback identity and retries one old RLS failure", () => {
+    window.localStorage.setItem(`paddlio_sync_queue:${USER_ID}`, JSON.stringify([{
+      id: "legacy-athlete-feedback", table: "training_feedback", operation: "upsert",
+      payload: { id: PLAN_ID, training_plan_item_id: PLAN_ID, athlete_id: USER_ID },
+      retryCount: 5, status: "failed", lastError: "42501 RLS", repairVersion: 2,
+    }]));
+
+    expect(readOfflineQueue()[0]).toMatchObject({
+      status: "pending",
+      retryCount: 0,
+      repairVersion: 3,
+      payload: { feedback_type: "athlete", athlete_id: USER_ID, author_id: USER_ID },
+    });
+  });
+
+  it("repairs legacy trainer feedback only when the current author is unambiguous", () => {
+    window.localStorage.setItem(`paddlio_sync_queue:${USER_ID}`, JSON.stringify([{
+      id: "legacy-trainer-feedback", table: "training_feedback", operation: "upsert",
+      payload: { id: PLAN_ID, training_plan_item_id: PLAN_ID, athlete_id: ATHLETE_ID, coach_id: USER_ID },
+      retryCount: 5, status: "failed", lastError: "42501 RLS", repairVersion: 2,
+    }]));
+
+    expect(readOfflineQueue()[0].payload).toMatchObject({
+      feedback_type: "trainer",
+      athlete_id: ATHLETE_ID,
+      coach_id: USER_ID,
+      author_id: USER_ID,
+    });
+  });
+
+  it("does not invent feedback identity for an unrelated legacy payload", () => {
+    window.localStorage.setItem(`paddlio_sync_queue:${USER_ID}`, JSON.stringify([{
+      id: "ambiguous-feedback", table: "training_feedback", operation: "upsert",
+      payload: { id: PLAN_ID, training_plan_item_id: PLAN_ID, athlete_id: ATHLETE_ID },
+      retryCount: 5, status: "failed", lastError: "23514 invalid feedback", repairVersion: 2,
+    }]));
+
+    expect(readOfflineQueue()[0]).toMatchObject({ status: "failed", retryCount: 5, repairVersion: 3 });
+    expect(readOfflineQueue()[0].payload).not.toHaveProperty("author_id");
+    expect(readOfflineQueue()[0].payload).not.toHaveProperty("feedback_type");
   });
 
   it("isolates queue entries by account and restores them after switching back", () => {
