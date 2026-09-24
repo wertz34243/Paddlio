@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getSupabaseClient } from "../lib/supabase";
 import { buildNextDeltaCursor, isAfterDeltaCursor } from "./deltaSyncService";
-import { enqueueOfflineChange, flushOfflineQueue, getOfflineQueueStats, readOfflineQueue, setOfflineQueueUser, writeOfflineQueue } from "./offlineQueueService";
+import { enqueueOfflineChange, flushOfflineQueue, getOfflineQueueDiagnostics, getOfflineQueueStats, readOfflineQueue, setOfflineQueueUser, writeOfflineQueue } from "./offlineQueueService";
 import { getSyncEntityConfig, toSoftDeletePayload } from "./syncEntityConfig";
 import { cloudValueOrCached, markCloudReadFailed } from "./cloudReadState";
 import { classifySyncWriteError } from "./syncErrorPolicy";
@@ -169,6 +169,14 @@ describe("offline queue", () => {
       retryCount: 5, status: "failed", lastError: "23514 check constraint", repairVersion: 1,
     }]));
     expect(readOfflineQueue()[0]).toMatchObject({ status: "failed", retryCount: 5, repairVersion: 2, errorKind: "non-retryable" });
+    expect(getOfflineQueueDiagnostics()[0]).toMatchObject({
+      table: "materials",
+      operation: "upsert",
+      errorCode: "23514",
+      errorKind: "non-retryable",
+      userScope: "aaaaaaaa...",
+    });
+    expect(getOfflineQueueDiagnostics()[0].createdAt).toBeTruthy();
   });
 
   it("isolates queue entries by account and restores them after switching back", () => {

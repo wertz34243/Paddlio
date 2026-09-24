@@ -30,6 +30,8 @@ export type OfflineQueueDiagnostic = {
   errorCode: string;
   errorKind: "retryable" | "non-retryable" | "unknown";
   retryCount: number;
+  userScope: string;
+  createdAt: string;
 };
 
 const SYNC_QUEUE_KEY = "paddlio_sync_queue";
@@ -155,6 +157,8 @@ export const getOfflineQueueDiagnostics = (): OfflineQueueDiagnostic[] =>
         errorCode: item.lastErrorCode ?? "unbekannt",
         errorKind: item.errorKind ?? (item.lastError ? classifySyncWriteError(item.lastError) : "unknown"),
         retryCount: item.retryCount,
+        userScope: item.userId ? `${item.userId.slice(0, 8)}...` : "unscoped",
+        createdAt: item.createdAt,
       };
     });
 

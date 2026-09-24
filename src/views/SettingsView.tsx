@@ -186,6 +186,7 @@ function SettingsSyncPanel({ syncStatus }: { syncStatus: NonNullable<SettingsVie
             {diagnostics.map((item, index) => (
               <li key={`${item.table}-${item.entityId}-${index}`}>
                 <code>{item.table}</code> · {item.operation} · {item.entityId} · {item.errorCode} · {item.errorKind}
+                <br />Scope {item.userScope} · {new Date(item.createdAt).toLocaleString("de-DE")}
               </li>
             ))}
           </ul>
