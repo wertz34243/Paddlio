@@ -3,7 +3,7 @@ import type { PlanEntry, TrainingFeedback } from "../domain/types";
 import { enqueueSyncChange } from "./syncService";
 import { sanitizeCloudPayload, toCloudUuid, toCloudUuidOrNull } from "./cloudIds";
 import { getWeekdayFromDate } from "../domain/trainingPlan";
-import { normalizePlanStatus, toCompatibleCloudPlanStatus } from "../domain/trainingPlanStatus";
+import { normalizePlanStatus, normalizeTrainingPlanQueuePayload, toCompatibleCloudPlanStatus } from "../domain/trainingPlanStatus";
 import { deduplicateTrainingFeedback, getTrainingFeedbackType } from "../domain/trainingFeedback";
 
 const isMissingColumnError = (error: unknown, columnName: string): boolean =>
@@ -162,7 +162,7 @@ export const listCloudTraining = async (athleteId: string): Promise<PlanEntry[]>
 };
 
 export const upsertCloudTraining = async (entry: PlanEntry): Promise<void> => {
-  const payload = sanitizeCloudPayload(toCloudTraining(entry));
+  const payload = normalizeTrainingPlanQueuePayload(sanitizeCloudPayload(toCloudTraining(entry)));
   const client = getSupabaseClient();
   if (!client || !navigator.onLine) {
     enqueueSyncChange({ tableName: "training_plan_items", action: "upsert", payload });
@@ -172,6 +172,15 @@ export const upsertCloudTraining = async (entry: PlanEntry): Promise<void> => {
   const omittedColumns = new Set<string>();
 
   for (let attempt = 0; attempt <= optionalTrainingPlanColumns.length; attempt += 1) {
+    cloudPayload = normalizeTrainingPlanQueuePayload(cloudPayload);
+    if (import.meta.env.DEV) {
+      console.debug("[Paddlio Sync] training_plan_items write", {
+        id: cloudPayload.id,
+        appStatus: entry.status,
+        cloudStatus: cloudPayload.status,
+        path: "training-service:upsert",
+      });
+    }
     const { error } = await (client.from("training_plan_items") as any).upsert(cloudPayload, { onConflict: "id" });
     if (!error) return;
 

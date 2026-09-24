@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getSupabaseClient } from "../lib/supabase";
 import { buildNextDeltaCursor, isAfterDeltaCursor } from "./deltaSyncService";
-import { enqueueOfflineChange, readOfflineQueue, writeOfflineQueue } from "./offlineQueueService";
+import { enqueueOfflineChange, flushOfflineQueue, getOfflineQueueStats, readOfflineQueue, writeOfflineQueue } from "./offlineQueueService";
 import { getSyncEntityConfig, toSoftDeletePayload } from "./syncEntityConfig";
+
+vi.mock("../lib/supabase", () => ({ getSupabaseClient: vi.fn() }));
 
 const PLAN_ID = "11111111-1111-4111-8111-111111111111";
 
@@ -30,6 +33,8 @@ beforeEach(() => {
       this.detail = init?.detail;
     }
   });
+  vi.stubGlobal("navigator", { onLine: true });
+  vi.mocked(getSupabaseClient).mockReset();
   writeOfflineQueue([]);
 });
 
@@ -108,5 +113,40 @@ describe("offline queue", () => {
       },
     });
     expect(readOfflineQueue()[0].payload.deleted_at).toBeTruthy();
+  });
+
+  it.each([
+    ["planned", "planned"],
+    ["done", "done"],
+    ["completed", "done"],
+    ["partially_completed", "done"],
+    ["skipped", "skipped"],
+    ["cancelled", "cancelled"],
+    ["legacy_unknown", "planned"],
+  ])("repairs queued status %s to %s", (input, expected) => {
+    window.localStorage.setItem("paddlio_sync_queue", JSON.stringify([{
+      id: "legacy-queue", table: "training_plan_items", operation: "upsert",
+      payload: { id: PLAN_ID, status: input }, retryCount: 5, status: "failed", lastError: "23514",
+    }]));
+
+    expect(readOfflineQueue()[0]).toMatchObject({
+      retryCount: 0,
+      status: "pending",
+      payload: { status: expected },
+    });
+  });
+
+  it("retries a repaired failed plan item and sends only a compatible status", async () => {
+    const upsert = vi.fn().mockResolvedValue({ error: null });
+    vi.mocked(getSupabaseClient).mockReturnValue({ from: vi.fn(() => ({ upsert })) } as never);
+    window.localStorage.setItem("paddlio_sync_queue", JSON.stringify([{
+      id: "legacy-failed", table: "training_plan_items", operation: "upsert",
+      payload: { id: PLAN_ID, status: "partially_completed", title: "Altbestand" },
+      retryCount: 5, status: "failed", lastError: "23514 status check",
+    }]));
+
+    await expect(flushOfflineQueue()).resolves.toBe(1);
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ status: "done" }), { onConflict: "id" });
+    expect(getOfflineQueueStats()).toEqual({ pending: 0, failed: 0, total: 0 });
   });
 });

@@ -15,25 +15,33 @@ export type OfflineQueueItem = {
   retryCount: number;
   status: OfflineQueueStatus;
   lastError?: string;
+  repairVersion?: number;
 };
+
+export type OfflineQueueStats = { pending: number; failed: number; total: number };
 
 const SYNC_QUEUE_KEY = "paddlio_sync_queue";
 const MAX_RETRY_COUNT = 5;
+const TRAINING_PLAN_REPAIR_VERSION = 1;
 
 const isOnline = (): boolean => typeof navigator === "undefined" || navigator.onLine;
 
 const normalizeQueueItem = (item: any): OfflineQueueItem => {
   const table = item.table ?? item.tableName;
   const rawPayload = sanitizeCloudPayload(item.payload ?? {});
+  const isTrainingPlan = table === "training_plan_items";
+  const payload = isTrainingPlan ? normalizeTrainingPlanQueuePayload(rawPayload) : rawPayload;
+  const needsPlanRepair = isTrainingPlan && item.repairVersion !== TRAINING_PLAN_REPAIR_VERSION;
   return {
   id: item.id ?? `sync-${crypto.randomUUID()}`,
   table,
   operation: item.operation ?? (item.action === "delete" ? "delete" : "upsert"),
-  payload: table === "training_plan_items" ? normalizeTrainingPlanQueuePayload(rawPayload) : rawPayload,
+  payload,
   createdAt: item.createdAt ?? new Date().toISOString(),
-  retryCount: item.retryCount ?? item.attempts ?? 0,
-  status: item.status === "failed" ? "failed" : "pending",
-  lastError: item.lastError,
+  retryCount: needsPlanRepair ? 0 : item.retryCount ?? item.attempts ?? 0,
+  status: needsPlanRepair ? "pending" : item.status === "failed" ? "failed" : "pending",
+  lastError: needsPlanRepair ? undefined : item.lastError,
+  repairVersion: isTrainingPlan ? TRAINING_PLAN_REPAIR_VERSION : item.repairVersion,
   };
 };
 
@@ -58,9 +66,16 @@ export const writeOfflineQueue = (items: OfflineQueueItem[]): void => {
 
 export const getOfflineQueueCount = (): number => readOfflineQueue().length;
 
+export const getOfflineQueueStats = (): OfflineQueueStats => {
+  const queue = readOfflineQueue();
+  const failed = queue.filter((item) => item.status === "failed").length;
+  return { pending: queue.length - failed, failed, total: queue.length };
+};
+
 export const enqueueOfflineChange = (item: Omit<OfflineQueueItem, "id" | "createdAt" | "retryCount" | "status">): void => {
   const config = getSyncEntityConfig(item.table);
-  const payload = item.operation === "delete" ? toSoftDeletePayload(item.table, item.payload) : item.payload;
+  const rawPayload = item.operation === "delete" ? toSoftDeletePayload(item.table, item.payload) : item.payload;
+  const payload = item.table === "training_plan_items" ? normalizeTrainingPlanQueuePayload(rawPayload) : rawPayload;
   const operation = item.operation === "delete" && config.supportsSoftDelete ? "update" : item.operation;
   const entityId = payload[config.primaryKey] ?? payload.id;
   const nextItem: OfflineQueueItem = {
@@ -71,6 +86,7 @@ export const enqueueOfflineChange = (item: Omit<OfflineQueueItem, "id" | "create
     createdAt: new Date().toISOString(),
     retryCount: 0,
     status: "pending",
+    repairVersion: item.table === "training_plan_items" ? TRAINING_PLAN_REPAIR_VERSION : undefined,
   };
 
   const queue = readOfflineQueue();
@@ -93,34 +109,44 @@ const flushQueueItem = async (item: OfflineQueueItem): Promise<void> => {
   if (!client) return;
 
   const config = getSyncEntityConfig(item.table);
+  const payload = item.table === "training_plan_items" ? normalizeTrainingPlanQueuePayload(item.payload) : item.payload;
   const table = client.from(item.table) as any;
 
+  if (item.table === "training_plan_items" && import.meta.env.DEV) {
+    console.debug("[Paddlio Sync] training_plan_items write", {
+      id: payload.id,
+      appStatus: item.payload.status,
+      cloudStatus: payload.status,
+      path: `offline-queue:${item.operation}`,
+    });
+  }
+
   if (item.operation === "delete") {
-    const { error } = await table.delete().eq(config.primaryKey, item.payload[config.primaryKey]);
+    const { error } = await table.delete().eq(config.primaryKey, payload[config.primaryKey]);
     if (error) throw error;
     return;
   }
 
   if (item.operation === "upsert") {
-    const { error } = await table.upsert(item.payload, { onConflict: config.conflictKey });
+    const { error } = await table.upsert(payload, { onConflict: config.conflictKey });
     if (error) throw error;
     return;
   }
 
   if (item.operation === "update") {
-    const payload = config.supportsSoftDelete ? toSoftDeletePayload(item.table, item.payload) : item.payload;
-    const primaryValue = payload[config.primaryKey] ?? payload.id;
-    const query = table.update(payload);
+    const updatePayload = config.supportsSoftDelete ? toSoftDeletePayload(item.table, payload) : payload;
+    const primaryValue = updatePayload[config.primaryKey] ?? updatePayload.id;
+    const query = table.update(updatePayload);
     const { error } = primaryValue
       ? await query.eq(config.primaryKey, primaryValue)
-      : config.ownerField && payload[config.ownerField]
-        ? await query.eq(config.ownerField, payload[config.ownerField])
-        : await query.eq("user_id", payload.user_id);
+      : config.ownerField && updatePayload[config.ownerField]
+        ? await query.eq(config.ownerField, updatePayload[config.ownerField])
+        : await query.eq("user_id", updatePayload.user_id);
     if (error) throw error;
     return;
   }
 
-  const { error } = await table.insert(item.payload);
+  const { error } = await table.insert(payload);
   if (error) throw error;
 };
 

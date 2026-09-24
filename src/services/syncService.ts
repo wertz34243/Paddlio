@@ -1,4 +1,4 @@
-import { enqueueOfflineChange, flushOfflineQueue, getOfflineQueueCount } from "./offlineQueueService";
+import { enqueueOfflineChange, flushOfflineQueue, getOfflineQueueStats } from "./offlineQueueService";
 import type { SyncPriority } from "./syncEntityConfig";
 
 export type SyncQueueItem = {
@@ -10,7 +10,9 @@ export type SyncQueueItem = {
   attempts: number;
 };
 
-export const getPendingSyncCount = (): number => getOfflineQueueCount();
+export const getPendingSyncCount = (): number => getOfflineQueueStats().pending;
+export const getFailedSyncCount = (): number => getOfflineQueueStats().failed;
+export const getSyncQueueStats = () => getOfflineQueueStats();
 
 export const enqueueSyncChange = (item: Omit<SyncQueueItem, "id" | "createdAt" | "attempts">): void => {
   enqueueOfflineChange({

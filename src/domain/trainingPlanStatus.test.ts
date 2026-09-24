@@ -18,5 +18,6 @@ describe("training plan status compatibility", () => {
     expect(normalizePlanStatus("ausgelassen")).toBe("skipped");
     expect(normalizePlanStatus("draft")).toBe("planned");
     expect(normalizeTrainingPlanQueuePayload({ id: "one", status: "active" })).toEqual({ id: "one", status: "planned" });
+    expect(normalizeTrainingPlanQueuePayload({ id: "one", deleted_at: "2026-09-24T10:00:00Z" })).toEqual({ id: "one", deleted_at: "2026-09-24T10:00:00Z" });
   });
 });

@@ -1,4 +1,4 @@
-import { flushOfflineQueue, getOfflineQueueCount } from "./offlineQueueService";
+import { flushOfflineQueue, getOfflineQueueStats } from "./offlineQueueService";
 import type { SyncPriority } from "./syncEntityConfig";
 
 export type NetworkSyncState = "online" | "offline" | "syncing" | "pending" | "error";
@@ -27,7 +27,7 @@ class BackgroundSyncEngine {
   private running = false;
 
   getStatus(): BackgroundSyncStatus {
-    return { ...this.status, pendingChanges: getOfflineQueueCount() };
+    return { ...this.status, pendingChanges: getOfflineQueueStats().pending };
   }
 
   subscribe(listener: BackgroundSyncListener): () => void {
@@ -37,14 +37,14 @@ class BackgroundSyncEngine {
   }
 
   private emit(next: Partial<BackgroundSyncStatus>): void {
-    this.status = { ...this.status, ...next, pendingChanges: getOfflineQueueCount() };
+    this.status = { ...this.status, ...next, pendingChanges: getOfflineQueueStats().pending };
     this.listeners.forEach((listener) => listener(this.getStatus()));
   }
 
   async run(reason: BackgroundSyncReason = "manual", priorities: SyncPriority[] = ["A", "B"]): Promise<number> {
     if (this.running) return 0;
     if (typeof navigator !== "undefined" && !navigator.onLine) {
-      this.emit({ state: "offline", pendingChanges: getOfflineQueueCount() });
+      this.emit({ state: "offline", pendingChanges: getOfflineQueueStats().pending });
       return 0;
     }
 
@@ -58,14 +58,14 @@ class BackgroundSyncEngine {
         synced += await flushOfflineQueue(priority);
       }
 
-      const pending = getOfflineQueueCount();
+      const stats = getOfflineQueueStats();
       this.emit({
-        state: pending > 0 ? "pending" : "online",
-        pendingChanges: pending,
+        state: stats.failed > 0 ? "error" : stats.pending > 0 ? "pending" : "online",
+        pendingChanges: stats.pending,
         lastSuccessfulSync: new Date().toISOString(),
         activePriority: undefined,
       });
-      window.dispatchEvent(new CustomEvent("paddlio-background-sync-completed", { detail: { reason, synced, pending } }));
+      window.dispatchEvent(new CustomEvent("paddlio-background-sync-completed", { detail: { reason, synced, ...stats } }));
       return synced;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Synchronisierung fehlgeschlagen.";

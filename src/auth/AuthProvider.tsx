@@ -46,7 +46,7 @@ import {
 } from "../services/resultsReadinessService";
 import { listCloudBetaFeedback, listCloudBetaTesters } from "../services/betaService";
 import { listCloudMaterials } from "../services/materialService";
-import { getPendingSyncCount } from "../services/syncService";
+import { getSyncQueueStats } from "../services/syncService";
 import { backgroundSyncEngine } from "../services/backgroundSyncService";
 import { classifySyncError, getSyncErrorMessage, type SyncErrorCategory } from "../services/syncStatus";
 import { listCloudNotifications } from "../services/notificationService";
@@ -103,6 +103,7 @@ type AuthContextValue = {
   cloudStatus: CloudConnectionState;
   syncCount: number;
   pendingSyncCount: number;
+  failedSyncCount: number;
   lastSyncAt: string;
   cloudMessage: string;
   signIn: (input: LoginInput) => Promise<CloudAuthResult>;
@@ -487,6 +488,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [cloudStatus, setCloudStatus] = useState<CloudConnectionState>(isSupabaseConfigured ? "syncing" : "disabled");
   const [syncCount, setSyncCount] = useState(0);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
+  const [failedSyncCount, setFailedSyncCount] = useState(0);
   const [lastSyncAt, setLastSyncAt] = useState("");
   const [cloudMessage, setCloudMessage] = useState("");
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -618,16 +620,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         taskAssignments: cloudTaskAssignments,
         trainingAttendance: cloudTrainingAttendance,
       });
-      const pendingCount = getPendingSyncCount();
+      const queueStats = getSyncQueueStats();
+      const pendingCount = queueStats.pending;
       setProfile(nextProfile);
       setClub(clubs.find((item) => item.clubId === nextProfile.club_id) ?? null);
       setDataState(nextData);
       setPendingSyncCount(pendingCount);
+      setFailedSyncCount(queueStats.failed);
       setLastSyncAt(new Date().toISOString());
       const coreSyncCount = allProfiles.length + clubs.length + requests.length + clubRequests.length + groups.length + groupMembers.length + cloudPlan.length + cloudFeedback.length + cloudJournal.length + cloudTemplates.length + cloudGoals.length + cloudCompetitions.length + cloudMaterials.length + cloudNotifications.length + cloudSmartCoach.length + cloudClubMessages.length + cloudDirectMessages.length + cloudGroupMessages.length + cloudTasks.length + cloudTaskAssignments.length + cloudTrainingAttendance.length;
       setSyncCount(coreSyncCount);
-      setCloudMessage(pendingCount > 0 ? `${pendingCount} Änderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensätze wurden in die Cloud migriert.` : "");
-      setCloudStatus(!navigator.onLine ? "offline" : pendingCount > 0 ? "pending" : "connected");
+      setCloudMessage(queueStats.failed > 0 ? "Einige Daten konnten noch nicht synchronisiert werden. Paddlio versucht es automatisch erneut." : pendingCount > 0 ? `${pendingCount} Änderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensätze wurden in die Cloud migriert.` : "");
+      setCloudStatus(!navigator.onLine ? "offline" : queueStats.failed > 0 ? "limited" : pendingCount > 0 ? "pending" : "connected");
       if (profileIsFallback) {
         setCloudMessage(navigator.onLine ? PROFILE_SYNC_RETRY_MESSAGE : "Du bist offline. Paddlio nutzt gespeicherte Daten.");
         setCloudStatus(navigator.onLine ? "limited" : "offline");
@@ -635,7 +639,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setCloudMessage(getSyncErrorMessage(optionalCloudErrorCategories));
         setCloudStatus(navigator.onLine ? "limited" : "offline");
       } else {
-        setCloudMessage(pendingCount > 0 ? `${pendingCount} Änderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensätze wurden in die Cloud migriert.` : "");
+        setCloudMessage(queueStats.failed > 0 ? "Einige Daten konnten noch nicht synchronisiert werden. Paddlio versucht es automatisch erneut." : pendingCount > 0 ? `${pendingCount} Änderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensätze wurden in die Cloud migriert.` : "");
       }
 
       window.setTimeout(() => {
@@ -831,30 +835,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const handleOnline = () => {
       setCloudStatus("syncing");
       void backgroundSyncEngine.run("online", ["A", "B"]).then((synced) => {
-        setPendingSyncCount(getPendingSyncCount());
-        setCloudMessage(synced > 0 ? `${synced} wartende Änderungen wurden synchronisiert.` : "Synchronisiert.");
+        const stats = getSyncQueueStats();
+        setPendingSyncCount(stats.pending);
+        setFailedSyncCount(stats.failed);
+        setCloudStatus(stats.failed > 0 ? "limited" : stats.pending > 0 ? "pending" : "connected");
+        setCloudMessage(stats.failed > 0 ? "Einige Daten konnten noch nicht synchronisiert werden. Paddlio versucht es automatisch erneut." : synced > 0 ? `${synced} wartende Änderungen wurden synchronisiert.` : "Synchronisiert.");
         void refreshCloudData();
       });
     };
     const handleOffline = () => setCloudStatus("offline");
     const handleQueueChange = () => {
-      const pending = getPendingSyncCount();
-      setPendingSyncCount(pending);
-      if (pending > 0) {
+      const stats = getSyncQueueStats();
+      setPendingSyncCount(stats.pending);
+      setFailedSyncCount(stats.failed);
+      if (stats.total > 0) {
         backgroundSyncEngine.markLocalChange();
-        setCloudStatus(navigator.onLine ? "pending" : "offline");
-        setCloudMessage(`${pending} Änderungen warten auf Synchronisation.`);
+        setCloudStatus(!navigator.onLine ? "offline" : stats.failed > 0 ? "limited" : "pending");
+        setCloudMessage(stats.failed > 0 ? "Einige Daten konnten noch nicht synchronisiert werden. Paddlio versucht es automatisch erneut." : `${stats.pending} Änderungen warten auf Synchronisation.`);
       }
     };
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
     window.addEventListener("paddlio-sync-queue-changed", handleQueueChange);
     const handleVisibilityChange = () => {
-      if (document.visibilityState !== "visible" || getPendingSyncCount() === 0) return;
+      if (document.visibilityState !== "visible" || getSyncQueueStats().total === 0) return;
       setCloudStatus("syncing");
       void backgroundSyncEngine.run("foreground", ["A", "B"]).then((synced) => {
-        setPendingSyncCount(getPendingSyncCount());
-        setCloudMessage(synced > 0 ? `${synced} Änderungen wurden nachgeholt.` : "Synchronisiert.");
+        const stats = getSyncQueueStats();
+        setPendingSyncCount(stats.pending);
+        setFailedSyncCount(stats.failed);
+        setCloudStatus(stats.failed > 0 ? "limited" : stats.pending > 0 ? "pending" : "connected");
+        setCloudMessage(stats.failed > 0 ? "Einige Daten konnten noch nicht synchronisiert werden. Paddlio versucht es automatisch erneut." : synced > 0 ? `${synced} Änderungen wurden nachgeholt.` : "Synchronisiert.");
       });
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -870,9 +881,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     latestSyncDataRef.current = next;
     if (syncTimeoutRef.current) window.clearTimeout(syncTimeoutRef.current);
 
-    const pending = getPendingSyncCount();
-    setPendingSyncCount(pending);
-    setCloudStatus(pending > 0 ? "pending" : "syncing");
+    const initialStats = getSyncQueueStats();
+    setPendingSyncCount(initialStats.pending);
+    setFailedSyncCount(initialStats.failed);
+    setCloudStatus(initialStats.failed > 0 ? "limited" : initialStats.pending > 0 ? "pending" : "syncing");
     setCloudMessage("Änderungen lokal gespeichert. Cloud-Sync wird vorbereitet.");
 
     syncTimeoutRef.current = window.setTimeout(() => {
@@ -883,18 +895,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       void syncDataSnapshotToCloud(snapshot, activeProfile, activeProfile.club_id ?? undefined)
         .then((count) => {
-          const nextPending = getPendingSyncCount();
+          const nextStats = getSyncQueueStats();
+          const nextPending = nextStats.pending;
           setPendingSyncCount(nextPending);
+          setFailedSyncCount(nextStats.failed);
           setLastSyncAt(new Date().toISOString());
           setSyncCount(count);
-          setCloudStatus(nextPending > 0 ? "pending" : "connected");
-          setCloudMessage(nextPending > 0 ? `${nextPending} Änderungen warten auf Synchronisation.` : "Gespeichert und synchronisiert.");
+          setCloudStatus(nextStats.failed > 0 ? "limited" : nextPending > 0 ? "pending" : "connected");
+          setCloudMessage(nextStats.failed > 0 ? "Einige Daten konnten noch nicht synchronisiert werden. Paddlio versucht es automatisch erneut." : nextPending > 0 ? `${nextPending} Änderungen warten auf Synchronisation.` : "Gespeichert und synchronisiert.");
         })
         .catch((error) => {
           logCloudError("Änderungen speichern", error);
           const category = classifySyncError("Planungsdaten speichern", error);
-          const nextPending = getPendingSyncCount();
+          const nextStats = getSyncQueueStats();
+          const nextPending = nextStats.pending;
           setPendingSyncCount(nextPending);
+          setFailedSyncCount(nextStats.failed);
           setCloudStatus(navigator.onLine ? "limited" : "offline");
           setCloudMessage(navigator.onLine ? getSyncErrorMessage([category]) : "Du bist offline. Änderungen werden später synchronisiert.");
         })
@@ -1098,6 +1114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     cloudStatus,
     syncCount,
     pendingSyncCount,
+    failedSyncCount,
     lastSyncAt,
     cloudMessage,
     passwordRecovery,
@@ -1109,7 +1126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     cancelPasswordRecovery,
     resendConfirmation,
     refreshCloudData,
-  }), [session, currentUser, profile, club, data, loading, cloudStatus, syncCount, pendingSyncCount, lastSyncAt, cloudMessage, passwordRecovery]);
+  }), [session, currentUser, profile, club, data, loading, cloudStatus, syncCount, pendingSyncCount, failedSyncCount, lastSyncAt, cloudMessage, passwordRecovery]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

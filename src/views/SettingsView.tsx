@@ -8,6 +8,7 @@ type SettingsViewProps = {
     status: string;
     syncCount: number;
     pendingSyncCount: number;
+    failedSyncCount: number;
     lastSyncAt: string;
     message: string;
     isAdmin: boolean;
@@ -170,6 +171,7 @@ function SettingsSyncPanel({ syncStatus }: { syncStatus: NonNullable<SettingsVie
       <div className="settings-sync-facts">
         <span>{syncStatus.syncCount} Datensätze bestätigt</span>
         <span>{syncStatus.pendingSyncCount} ausstehend</span>
+        <span>{syncStatus.failedSyncCount} fehlgeschlagen</span>
         {syncLabel ? <span>Letzter Sync {syncLabel}</span> : null}
       </div>
       {syncStatus.message && syncStatus.status !== "connected" ? (

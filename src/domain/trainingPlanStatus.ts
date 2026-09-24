@@ -26,7 +26,7 @@ export const toCompatibleCloudPlanStatus = (value: unknown): "planned" | "done" 
   return "planned";
 };
 
-export const normalizeTrainingPlanQueuePayload = (payload: Record<string, unknown>): Record<string, unknown> => ({
-  ...payload,
-  status: toCompatibleCloudPlanStatus(payload.status),
-});
+export const normalizeTrainingPlanQueuePayload = (payload: Record<string, unknown>): Record<string, unknown> =>
+  Object.prototype.hasOwnProperty.call(payload, "status")
+    ? { ...payload, status: toCompatibleCloudPlanStatus(payload.status) }
+    : payload;
