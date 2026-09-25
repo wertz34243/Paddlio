@@ -36,7 +36,7 @@ jobs:
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
-          cat > .codex-task.md <<'EOF
+          cat > .codex-task.md <<EOF
           # Paddlio Codex Auftrag
 
           Du arbeitest im Repository Paddlio.
