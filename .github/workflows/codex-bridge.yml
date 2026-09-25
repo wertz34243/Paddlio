@@ -1,0 +1,145 @@
+name: ChatGPT to Codex Worker
+
+on:
+  issues:
+    types: [opened, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  codex:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.issue.user.login == github.repository_owner &&
+        startsWith(github.event.issue.title, 'MK-') &&
+        contains(github.event.issue.body || '', 'Quelle: ChatGPT') &&
+        contains(github.event.issue.body || '', 'Ziel: Codex') &&
+        contains(github.event.issue.body || '', 'Status: NEU')
+      )
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Prepare Codex task
+        shell: bash
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          cat > .codex-task.md <<'EOF'
+          # Paddlio Codex Auftrag
+
+          Du arbeitest im Repository Paddlio.
+
+          Regeln:
+          - Bearbeite nur den beschriebenen Auftrag.
+          - Keine Secrets, API-Keys oder Zugangsdaten lesen oder ausgeben.
+          - Keine Produktionsdaten löschen.
+          - Nicht direkt nach main mergen.
+          - Bestehende Datenstrukturen möglichst kompatibel halten.
+          - Nach der Änderung Tests und Build berücksichtigen.
+
+          ## Auftragstitel
+          $ISSUE_TITLE
+
+          ## Auftrag
+          $ISSUE_BODY
+
+          Implementiere die gewünschte Änderung direkt im aktuellen Checkout.
+          EOF
+
+      - name: Run Codex
+        id: codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          permission-profile: ":workspace"
+          prompt-file: .codex-task.md
+
+      - name: Remove temporary task file
+        if: always()
+        run: rm -f .codex-task.md
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Run build
+        run: npm run build
+
+      - name: Create branch and commit
+        id: changes
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          BRANCH="codex/mk-${{ github.event.issue.number }}-${{ github.run_id }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b "$BRANCH"
+          git add -A
+          git commit -m "Codex: MK issue #${{ github.event.issue.number }}"
+          git push origin "$BRANCH"
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+
+      - name: Create pull request
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          PR_URL=$(gh pr create \
+            --base main \
+            --head "${{ steps.changes.outputs.branch }}" \
+            --title "Codex: ${{ github.event.issue.title }}" \
+            --body "Automatisch durch den ChatGPT → Codex Worker erstellt.
+
+          Quelle: Issue #${{ github.event.issue.number }}
+
+          Der PR wurde nicht automatisch gemerged.
+
+          Codex-Ergebnis:
+          ${{ steps.codex.outputs.final-message }}")
+
+          gh issue comment "${{ github.event.issue.number }}" \
+            --body "Quelle: Codex
+          Ziel: ChatGPT
+          Status: ERLEDIGT
+          Ergebnis: Änderung erstellt und geprüft.
+
+          Pull Request:
+          $PR_URL"
+
+      - name: Report no changes
+        if: steps.changes.outputs.changed == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" \
+            --body "Quelle: Codex
+          Ziel: ChatGPT
+          Status: RÜCKFRAGE
+          Ergebnis: Codex lief durch, hat aber keine Codeänderung erzeugt.
+
+          Codex-Rückmeldung:
+          ${{ steps.codex.outputs.final-message }}"
