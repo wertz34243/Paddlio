@@ -25,6 +25,8 @@ Eine Supabase-Tabelle allein zählt nicht als vollständiger Sync. Der öffentli
 - OAuth-Tokens und OAuth-State bleiben für Browser-Rollen gesperrt. Realtime ist nur für `device_connections`, `polar_sync_jobs` und `polar_training_imports` aktiviert.
 - Die Migration wurde direkt auf Supabase DEV `nlllqsfdhfiwticrcrnp` angewendet. Alle neun REST-Endpunkte antworten danach ohne `PGRST205`; alle neun Tabellen haben RLS aktiviert. Der Supabase Security Advisor meldet für diese Tabellen keine Findings.
 - Ein echter Polar-Provider-Test sowie rollenbezogene Import-/Export-E2E mit realen DEV-Konten bleiben offen. Deshalb bleiben beide Bereiche bis zu diesem Nachweis in Status **B**.
+- Der verbliebene `competitions lesen: 42703` kam nicht aus `competitions`, sondern aus dem nur teilweise rekonstruierten Schema von `competition_results`. `20260925073000_competition_results_schema_reconciliation.sql` ergänzt die zehn vom aktiven Service gelesenen und geschriebenen Spalten für Altersklasse, Ranking, Starterfeld, Abstände, Quelle, Coach-Notiz und Tombstone.
+- Die Migration wurde direkt auf DEV angewendet. Anschließend waren alle 60 aktiven App-Tabellen per PostgREST erreichbar und die reale verschachtelte `competition_results`/`competitions`-Abfrage antwortete mit HTTP 200 statt `42703`.
 
 ## A. Aktueller Fehler `training_plan_items`
 
