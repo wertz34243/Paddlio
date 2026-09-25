@@ -4,6 +4,7 @@ import type { AppLanguage, MeasurementUnit, User, UserProfile } from "../domain/
 import type { ProfileSyncDiagnostics } from "../auth/AuthProvider";
 import { discardOfflineQueueItem, getOfflineQueueDiagnostics } from "../services/offlineQueueService";
 import { validateProfileImage } from "../domain/profileImage";
+import { ACCOUNT_DELETION_CONFIRMATION, deleteOwnAccount, downloadPersonalDataExport } from "../services/accountPrivacyService";
 
 type SettingsViewProps = {
   user: User;
@@ -36,6 +37,10 @@ export function SettingsView({ user, syncStatus, onSave, onLogout }: SettingsVie
   const [profileImageDataUrl, setProfileImageDataUrl] = useState(user.profile.profileImageDataUrl);
   const [savedMessage, setSavedMessage] = useState("");
   const [imageError, setImageError] = useState("");
+  const [privacyAction, setPrivacyAction] = useState<"" | "export" | "delete">("");
+  const [privacyMessage, setPrivacyMessage] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -72,6 +77,31 @@ export function SettingsView({ user, syncStatus, onSave, onLogout }: SettingsVie
 
     setSavedMessage("Einstellungen gespeichert");
     window.setTimeout(() => setSavedMessage(""), 2200);
+  };
+
+  const handleExport = async () => {
+    setPrivacyAction("export");
+    setPrivacyMessage("");
+    try {
+      await downloadPersonalDataExport();
+      setPrivacyMessage("Dein persönlicher Datenexport wurde erstellt.");
+    } catch (error) {
+      setPrivacyMessage(error instanceof Error ? error.message : "Der Export ist fehlgeschlagen.");
+    } finally {
+      setPrivacyAction("");
+    }
+  };
+
+  const handleDelete = async () => {
+    setPrivacyAction("delete");
+    setPrivacyMessage("");
+    try {
+      await deleteOwnAccount(deleteConfirmation, user.userId);
+      onLogout();
+    } catch (error) {
+      setPrivacyMessage(error instanceof Error ? error.message : "Die Kontolöschung ist fehlgeschlagen.");
+      setPrivacyAction("");
+    }
   };
 
   return (
@@ -148,13 +178,51 @@ export function SettingsView({ user, syncStatus, onSave, onLogout }: SettingsVie
           <div className="legal-copy">
             <p>Kontodaten dienen Anmeldung und Berechtigungsprüfung. Trainings-, Feedback-, Team- und Wettkampfdaten werden für Planung, Durchführung und Auswertung verarbeitet. Lokaler Gerätespeicher ermöglicht Offline-Nutzung und Synchronisation.</p>
             <p>Es ist kein Marketing-Tracking im Client eingebaut. Externe Dienste werden nur für ausdrücklich genutzte Funktionen wie Supabase-Cloudspeicherung oder eine verbundene Polar-Integration angesprochen.</p>
-            <p>Eigene Profildaten kannst du im Profil berichtigen. Einen fachlichen Datenexport findest du unter Integrationen. Kontakt, Aufbewahrungsfristen und der verbindliche Löschprozess müssen vor dem offiziellen Release durch den Betreiber ergänzt und rechtlich geprüft werden.</p>
+            <p>Eigene Profildaten kannst du im Profil berichtigen. Über den Auskunftsexport erhältst du eine maschinenlesbare Kopie der Daten deines Kontos. Kontakt und Aufbewahrungsfristen müssen vor dem offiziellen Release durch den Betreiber ergänzt und rechtlich geprüft werden.</p>
           </div>
         </details>
         <details>
           <summary>Impressum</summary>
           <p className="card-note">Die gesetzlich erforderlichen Betreiber- und Kontaktdaten sind vor dem offiziellen Release einzutragen. Diese technische Vorlage ist kein rechtsanwaltlich geprüfter Rechtstext.</p>
         </details>
+        <div className="privacy-actions">
+          <button className="secondary-button" type="button" disabled={privacyAction !== ""} onClick={() => void handleExport()}>
+            {privacyAction === "export" ? "Export wird erstellt..." : "Eigene Daten exportieren"}
+          </button>
+          <p className="card-note">Der JSON-Export wird serverseitig auf dein angemeldetes Konto begrenzt.</p>
+        </div>
+      </section>
+
+      <section className="section-block account-deletion" aria-labelledby="delete-account-heading">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Gefahrenbereich</p>
+            <h3 id="delete-account-heading">Konto und Daten löschen</h3>
+          </div>
+        </div>
+        <p className="card-note">Die Löschung entfernt dein Paddlio-Konto und die zugehörigen persönlichen Daten dauerhaft. Gemeinsame Vereinsinhalte werden entsprechend ihrer fachlichen Zuordnung behandelt.</p>
+        {!deleteOpen ? (
+          <button className="danger-button" type="button" onClick={() => setDeleteOpen(true)}>Kontolöschung vorbereiten</button>
+        ) : (
+          <div className="account-deletion-confirmation">
+            <label htmlFor="account-delete-confirmation">
+              Gib zur Bestätigung <strong>{ACCOUNT_DELETION_CONFIRMATION}</strong> ein.
+            </label>
+            <input
+              id="account-delete-confirmation"
+              autoComplete="off"
+              value={deleteConfirmation}
+              onChange={(event) => setDeleteConfirmation(event.target.value)}
+            />
+            <div className="inline-actions">
+              <button className="secondary-button" type="button" disabled={privacyAction === "delete"} onClick={() => { setDeleteOpen(false); setDeleteConfirmation(""); }}>Abbrechen</button>
+              <button className="danger-button" type="button" disabled={privacyAction === "delete" || deleteConfirmation !== ACCOUNT_DELETION_CONFIRMATION} onClick={() => void handleDelete()}>
+                {privacyAction === "delete" ? "Konto wird gelöscht..." : "Konto endgültig löschen"}
+              </button>
+            </div>
+          </div>
+        )}
+        {privacyMessage ? <p className="settings-sync-detail" role="status">{privacyMessage}</p> : null}
       </section>
 
       <section className="section-block account-actions">

@@ -102,26 +102,21 @@ test.describe("desktop training workspace", () => {
     await expect(page.locator(".template-library-redesign-layout")).toBeVisible({ timeout: 20_000 });
 
     const scrollMetrics = async () => page.evaluate(() => {
-      const scrollable = Array.from(document.querySelectorAll<HTMLElement>("body *"))
-        .filter((element) => element.scrollHeight - element.clientHeight > 100);
+      const scroller = document.scrollingElement;
       return {
-        top: Math.max(window.scrollY, ...scrollable.map((element) => element.scrollTop)),
-        max: Math.max(
-          Math.max(0, document.documentElement.scrollHeight - window.innerHeight),
-          ...scrollable.map((element) => element.scrollHeight - element.clientHeight),
-        ),
+        top: scroller?.scrollTop ?? 0,
+        max: Math.max(0, (scroller?.scrollHeight ?? 0) - window.innerHeight),
       };
     });
 
-    const initial = await scrollMetrics();
-    expect(initial.max).toBeGreaterThan(100);
+    await expect.poll(async () => (await scrollMetrics()).max).toBeGreaterThan(100);
+    await page.evaluate(() => document.scrollingElement?.scrollTo({ top: 0 }));
 
-    await page.locator(".page-content").hover();
-    for (let attempt = 0; attempt < 3 && (await scrollMetrics()).top === 0; attempt += 1) {
-      await page.mouse.wheel(0, 500);
-      await page.waitForTimeout(250);
-    }
-    expect((await scrollMetrics()).top).toBeGreaterThan(0);
+    const contentBox = await page.locator(".page-content").boundingBox();
+    expect(contentBox).not.toBeNull();
+    await page.mouse.move(contentBox!.x + 12, contentBox!.y + Math.min(160, contentBox!.height / 2));
+    await page.mouse.wheel(0, 500);
+    await expect.poll(async () => (await scrollMetrics()).top).toBeGreaterThan(0);
 
     const afterWheel = (await scrollMetrics()).top;
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
@@ -129,8 +124,8 @@ test.describe("desktop training workspace", () => {
     await expect.poll(async () => (await scrollMetrics()).top).toBeGreaterThan(afterWheel);
 
     await page.keyboard.press("PageDown");
+    await expect.poll(async () => (await scrollMetrics()).top).toBeGreaterThan(afterWheel);
     const afterPageDown = (await scrollMetrics()).top;
-    expect(afterPageDown).toBeGreaterThan(afterWheel);
 
     await page.keyboard.press("End");
     await expect.poll(async () => (await scrollMetrics()).top).toBeGreaterThan(afterPageDown);

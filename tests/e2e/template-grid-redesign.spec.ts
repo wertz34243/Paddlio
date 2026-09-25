@@ -23,9 +23,11 @@ async function clickVisible(page: Page, testId: string) {
 }
 
 async function openTrainingTemplates(page: Page) {
-  await clickVisible(page, "nav-training");
+  if (!await page.locator(".training-segment-switcher").isVisible().catch(() => false)) {
+    await clickVisible(page, "nav-training");
+  }
 
-  const templatesTab = page.getByRole("tab", { name: "Vorlagen" }).first();
+  const templatesTab = page.locator(".training-segment-switcher").getByRole("tab", { name: "Vorlagen" });
   await expect(templatesTab).toBeVisible({ timeout: 20_000 });
   await templatesTab.click();
 
@@ -36,11 +38,9 @@ async function openTrainingTemplates(page: Page) {
 async function openTemplateDetail(page: Page) {
   const tile = page.locator(".template-library-tile").first();
   await expect(tile).toBeVisible({ timeout: 20_000 });
-  await tile.scrollIntoViewIfNeeded();
   await tile.click();
   await expect(page.locator(".template-library-redesign-layout.has-detail")).toBeVisible({ timeout: 20_000 });
   await expect(page.locator(".template-detail-panel")).toBeVisible({ timeout: 20_000 });
-  await page.waitForTimeout(300);
 }
 
 test.describe("template grid redesign", () => {

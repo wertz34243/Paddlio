@@ -44,18 +44,19 @@ Die UI trennt Athlete, Coach, TeamAdmin, ClubAdmin und Admin. Client-Gates diene
 
 - Eigene Profildaten können berichtigt werden.
 - Logout löscht Session und aktuellen lokalen Profildaten-Cache.
-- Fachliche CSV-/XLSX-Exporte sind vorhanden, ersetzen aber noch keinen vollständigen DSGVO-Auskunftsexport über alle personenbezogenen Tabellen.
+- Fachliche CSV-/XLSX-Exporte bleiben vorhanden. Zusaetzlich ist ein eigener JSON-Auskunftsexport ueber die authentifizierte Edge Function `account-privacy` vorbereitet; Abfragen sind explizit auf die verifizierte Nutzer-ID begrenzt und Provider-Tokens werden nicht exportiert.
 - Technische Datenschutz-/Impressumsbereiche sind öffentlich bei Registrierung und intern in Einstellungen vorbereitet.
-- Eine serverseitige, überprüfbare Konto- und Gesamtdatenlöschung ist noch nicht implementiert.
+- Eine serverseitige Konto-/Datenloeschung ist als authentifizierte Edge Function implementiert. Der Service-Role-Key bleibt ausschliesslich im Function Runtime Secret; der Client verlangt eine explizite Bestaetigungsphrase und sendet die aktuelle Account-ID als zusaetzliche Verwechslungssperre.
+- Die Function muss vor Freigabe noch auf Supabase DEV deployed und mit einem entbehrlichen DEV-Testkonto Ende-zu-Ende verifiziert werden. Gemeinsame Kommunikationsdaten und Storage-Objekte muessen dabei gegen die vom Betreiber freigegebene Aufbewahrungsregel kontrolliert werden.
 
 ## Manuelle Release-Blocker
 
 1. Verantwortlichen, ladungsfähige Anschrift, Kontakt und gegebenenfalls Datenschutzkontakt festlegen und in Impressum/Datenschutzerklärung eintragen.
 2. Rechtsgrundlagen, Empfänger/Auftragsverarbeiter, Drittlandtransfer, Aufbewahrungs- und Löschfristen rechtlich prüfen lassen.
-3. Prozess für Auskunft, Berichtigung, vollständigen Export und Konto-/Datenlöschung festlegen; anschließend serverseitig mit Auditierbarkeit implementieren.
+3. `account-privacy` ausschliesslich auf Supabase DEV deployen und Export/Loeschung mit Athlete, Coach, Admin sowie einem entbehrlichen Loesch-Testkonto pruefen. Aufbewahrung gemeinsamer Kommunikationsdaten und Storage-Loeschung fachlich freigeben.
 4. Für minderjährige Athleten Alterskonzept, Einwilligung/Sorgeberechtigte, Sichtbarkeit und Aufbewahrung fachlich und rechtlich entscheiden.
-5. Supabase Auth-E-Mail-Templates, Redirect-Allowlist, Passwortregeln, MFA-Entscheidung, Rate Limits, Storage-Buckets und Security Advisor im DEV-Dashboard prüfen.
-6. Vercel-Header am ausgelieferten DEV-Build verifizieren; CSP-Verstöße in Browserkonsole prüfen.
+5. Supabase Auth-E-Mail-Templates, Redirect-Allowlist, Passwortregeln, MFA-Entscheidung, Rate Limits, Storage-Buckets und Security Advisor im DEV-Dashboard anhand `manual-dev-security-check.md` prüfen.
+6. Vercel-Header am ausgelieferten DEV-Build anhand `manual-dev-security-check.md` verifizieren; CSP-Verstöße in Browserkonsole prüfen.
 7. Polar-Auftragsverarbeitung, Scopes, Widerruf/Disconnect und Löschung importierter Daten dokumentieren.
 
-Ohne diese Betreiberangaben und einen belastbaren Lösch-/Auskunftsprozess ist Paddlio technisch gehärtet, aber noch nicht für einen offiziellen öffentlichen Release freigegeben.
+Der Loesch-/Auskunftscode ist vorbereitet, aber ohne DEV-Deploy, Realtest, Betreiberangaben und rechtlich/fachlich freigegebene Aufbewahrungsregeln ist Paddlio noch nicht fuer einen offiziellen oeffentlichen Release freigegeben. Ein manueller technischer Nutzertest kann nach erfolgreichem DEV-Deploy der Function beginnen.

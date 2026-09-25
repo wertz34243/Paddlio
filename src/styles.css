@@ -2171,6 +2171,29 @@ p {
   margin-top: calc(72px + env(safe-area-inset-bottom));
 }
 
+.privacy-actions,
+.account-deletion-confirmation {
+  display: grid;
+  gap: 12px;
+}
+
+.account-deletion-confirmation .inline-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.account-deletion-confirmation .danger-button,
+.account-deletion-confirmation .secondary-button {
+  min-height: 44px;
+}
+
+@media (max-width: 520px) {
+  .account-deletion-confirmation .inline-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
 .page-content,
 .stack,
 .result-list,
