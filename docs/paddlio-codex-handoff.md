@@ -2,89 +2,98 @@
 
 ## Stand
 
-- Datum/Uhrzeit: 2026-09-25 14:54 CEST
-- Aktueller Stabilitaetsblock: Security-, Datenschutz- und Release-Check
-- Status: DONE MIT RELEASE-BLOCKERN
+- Datum/Uhrzeit: 2026-09-25 16:25 CEST
+- Aktueller Stabilitaetsblock: Letzte technische Release-Blocker
+- Status: CODE UND AUTOMATISIERTE TESTS ABGESCHLOSSEN, DEV-PRIVACY-DEPLOY OFFEN
 
 ## Root Cause
 
-Der Client leitete Admin- und Entwicklungsrollen teilweise aus hart codierten E-Mail-Adressen und editierbaren Auth-Metadaten ab. RLS blieb zwar die letzte Cloud-Schranke, aber UI und Profilreparatur konnten dadurch erhoehte Rollen annehmen oder zurueckschreiben. Vercel hatte keine expliziten Security-Header, Profilbilder wurden ohne Typ-/Groessenpruefung als Data-URL gespeichert und Polar-API-Endpunkte gaben interne Fehlertexte an den Client weiter.
+Der intermittierende Desktop-Scroll-E2E ermittelte den groessten Scrollwert aus Dokument und beliebigen verschachtelten Elementen. Gleichzeitig konnte die Vorlagenansicht noch asynchron wachsen. Eingabe und Messung bezogen sich dadurch nicht verlaesslich auf denselben Scroll-Owner. Ein weiterer Vorlagen-Screenshot-Test hielt eine Kachel ueber einen asynchronen Re-Render hinweg fest und verlor das DOM-Element zwischen `scrollIntoView` und Klick.
 
-Datenschutzseitig existierten Profilbearbeitung, Logout und fachliche Exporte, aber keine leicht erreichbare allgemeine Datenschutz-/Impressumsstruktur. Betreiberangaben, vollstaendiger Auskunftsexport und ein serverseitiger Konto-/Datenloeschprozess fehlen weiterhin.
+Datenschutzseitig gab es nur fachliche CSV/XLSX-Exporte. Ein vollstaendiger kontobezogener Auskunftsexport und eine serverseitige Gesamtdatenloeschung fehlten. Eine sichere Loeschung kann nicht im Browser implementiert werden, weil `auth.admin.deleteUser` ausschliesslich serverseitig mit einem geheimen Schluessel ausgefuehrt werden darf.
 
 ## Aenderungen
 
-- Rollenquelle gehaertet: E-Mail und `user_metadata` koennen keine Rolle mehr vergeben; massgeblich ist `public.profiles.roles`.
-- Neue Regressionstests fuer die Rollen-Trust-Boundary.
-- Profilbilder auf JPEG/PNG/WebP und maximal 2 MB begrenzt; SVG wird abgewiesen.
-- Polar-API-Fehlerausgaben auf stabile oeffentliche Codes reduziert; technische Details bleiben Server-Logs.
-- CSP, MIME-Schutz, Referrer-Policy, Permissions-Policy, Frame-Schutz und HSTS in `vercel.json` ergaenzt.
-- Datenschutz-/Impressumsstruktur in Registrierung und Einstellungen ergaenzt, ohne Betreiberdaten zu erfinden.
-- Technisches Audit unter `docs/security/release-audit-2026-09.md` dokumentiert.
-- Kompatible Abhaengigkeitsupdates ohne Force/Major-Zwang; `npm audit` jetzt 0 Findings.
-- Neuer `check:security`, in `check:beta` integriert.
-- React-Workspace-State fuer Vorlagen, Journal und individuelles Training durch eindeutige Keys getrennt.
-- E2E-Screenshot-Tests fuer leere Vorlagenfilter und wechselnde DEV-Testdaten robuster gemacht.
+- Desktop-Scrolltest misst nur noch `document.scrollingElement`, wartet zustandsbasiert auf reale Dokumenthoehe und prueft Mausrad, Pfeiltasten, Page Up/Down sowie Home/End am selben Scroll-Owner.
+- Vorlagen-E2E nutzt die sichtbare Training-Segmentnavigation und einen atomaren Locator-Klick; geteiltes `scrollIntoView` und kuenstlicher Sleep wurden entfernt.
+- Neuer kontobezogener JSON-Auskunftsexport in den Einstellungen.
+- Neue zweistufig bestaetigte Kontoloeschung mit exakter Phrase `KONTO ENDGUELTIG LOESCHEN`.
+- Neue authentifizierte Supabase Edge Function `account-privacy` fuer Export und Loeschung.
+- Exportabfragen sind explizit auf die verifizierte Auth-ID begrenzt; fremde Identitaetsfelder werden maskiert und Polar-Zugangstokens nie exportiert.
+- Service-Role bleibt ausschliesslich in der Edge-Function-Laufzeit. Der Client enthaelt weder Admin-API noch Geheimschluessel.
+- Loeschpfad entfernt eigene Datensaetze in Abhaengigkeitsreihenfolge, trennt personenbezogene Zuordnungen aus gemeinsam verbleibenden Trainings und loescht abschliessend den Auth-Benutzer.
+- DEV-Sicherheitscheck fuer Header, HTTPS, Auth, RLS, Security Advisor, Storage, Redirects, CORS und Edge Function dokumentiert.
+- Technische Einfuegepunkte fuer ein spaeter fachlich/rechtlich beschlossenes Minderjaehrigen- und Einwilligungskonzept dokumentiert; keine Altersgrenze erfunden.
+- Release-Audit und `paddlio-codex-next.md` aktualisiert; Auftrag steht auf `DONE`.
 
 ## Migrationen
 
-- Keine Migration erstellt oder angewendet.
+- Keine Datenbankmigration erforderlich oder angewendet.
+- Neue Edge Function: `supabase/functions/account-privacy/index.ts`.
+- Manuelle DEV-Deploy-Anleitung: `supabase/functions/account-privacy/README.md` und `docs/security/manual-dev-security-check.md`.
 
 ## Supabase DEV Ergebnis
 
-- Zielreferenz vor dem Versuch bestaetigt: `nlllqsfdhfiwticrcrnp`.
-- Keine Datenbankaenderung ausgefuehrt.
-- Ein geplanter read-only `supabase db lint --linked` konnte nicht laufen, weil die Supabase CLI auf diesem Rechner nicht verfuegbar ist.
-- Statischer RLS-Check erfolgreich; Live-Security-Advisor und echte Rollenmatrix bleiben manueller DEV-Release-Schritt.
+- Verbindliches Ziel bleibt ausschliesslich `nlllqsfdhfiwticrcrnp`.
+- `where.exe supabase` bestaetigt: Supabase CLI ist auf diesem Rechner nicht verfuegbar.
+- Deshalb wurde die Edge Function nicht auf DEV deployed und kein echter Export-/Loeschtest behauptet.
+- Es gab keine Datenbankbefehle, keine Datenmutation und keinen Zugriff auf Production.
+- Vor Freigabe der Privacy-Funktionen muss Tobias die Function mit aktivierter JWT-Pruefung auf DEV deployen, `PADDLIO_ALLOWED_ORIGINS=https://dev.paddlio.de` setzen und die Checkliste mit entbehrlichen DEV-Testkonten ausfuehren.
 
 ## Betroffene Tabellen, Policies und Funktionen
 
-- Keine Tabellen, Policies, Trigger oder Daten geaendert.
-- Client-Rollenauflosung in `profileService` und lokalem Storage gehaertet.
-- Serverfunktionen der Polar-Vercel-API geben keine rohen internen Fehler mehr aus.
+- Keine Tabellen, RLS-Policies, Trigger oder Indizes geaendert.
+- Die Edge Function liest ausschliesslich explizit kontobezogene Zeilen aus Profil-, Training-, Feedback-, Journal-, Kommunikation-, Team-, Material-, Academy-, Import- und Polar-Tabellen.
+- Loeschung verwendet eine serverseitige, explizite Tabellenliste. Gemeinsame Trainings bleiben erhalten; persoenliche Athlete-/Coach-Zuordnungen werden getrennt.
+- Private Storage-Objekte sind noch gegen die finale Betreiber-Aufbewahrungsregel zu inventarisieren und im DEV-Loeschtest zu verifizieren.
 
 ## Tests
 
-- `npm ci`: erfolgreich, 0 Audit-Findings.
+- `npm ci`: erfolgreich; 109 Pakete geprueft, 0 Schwachstellen.
 - `npm audit`: 0 bekannte Schwachstellen.
-- `npm test`: 122/122 erfolgreich.
-- `npm run build`: erfolgreich; bestehende Chunk-Warnung ueber 500 kB bleibt.
+- `npm test`: 23 Dateien, 125/125 Tests erfolgreich.
+- `npm run build`: erfolgreich; bekannte nicht blockierende Chunk-Warnung ueber 500 kB bleibt.
 - `npm run check:encoding`: erfolgreich.
 - `npm run check:rls`: erfolgreich.
 - `npm run check:bundle`: erfolgreich.
 - `npm run check:a11y`: erfolgreich.
-- `npm run check:security`: erfolgreich.
-- `npm run check:beta`: erfolgreich.
-- `npm run test:e2e:roles`: 9 erfolgreich, 1 vorgesehener Mobile-Mehrgeraete-Skip.
-- `npm run test:e2e`: ausgefuehrt, aber nicht vollstaendig gruen. Fachtests und Rollenpfade bestanden; der Mausrad-/Keyboard-Scroll-Test blieb in Wiederholungen intermittierend. Betroffene Template-/Workspace-State-Fehler wurden korrigiert und gezielt erfolgreich nachgetestet.
+- `npm run check:beta`: erfolgreich, einschliesslich Security-Check.
+- Desktop-Scroll gezielt: 5/5 Wiederholungen erfolgreich.
+- Desktop-Vorlagenrace gezielt: 3/3 Wiederholungen erfolgreich.
+- `npm run test:e2e`: 41 erfolgreich, 23 vorgesehene projekt-/viewportbezogene Skips, 0 Fehler.
+- `npm run test:e2e:roles`: 9 erfolgreich, 1 vorgesehener Mobile-Mehrgeraete-Skip, 0 Fehler.
+- Neue Unit-Tests pruefen falsche Loeschbestaetigung, Account-ID-Uebergabe und unvollstaendige Exportantworten.
+- Echter Edge-Function-, Storage- und Loeschtest auf Supabase DEV ist noch offen.
 
 ## Commit und Pushstatus
 
-- Implementierungscommit: `89aa075`.
+- Implementierungscommit: `19890db` (`Close technical release blockers`).
 - Pushstatus: erfolgreich auf `origin/develop`.
+- Dieser Handoff wird in einem separaten Dokumentationscommit nachgezogen.
 
-## Offene Fehler und Release-Blocker
+## Offene technische Blocker
 
-- Gesetzlich erforderliche Betreiber-/Kontaktdaten und rechtlich gepruefte Texte fehlen.
-- Kein vollstaendiger DSGVO-Auskunftsexport ueber alle personenbezogenen Tabellen.
-- Kein serverseitiger, nachvollziehbarer Konto-/Gesamtdatenloeschprozess.
-- Minderjaehrigen-/Einwilligungs- und Aufbewahrungskonzept ist eine offene Produkt-/Rechtsentscheidung.
-- Supabase Security Advisor, Auth-/Redirect-/Storage-Konfiguration und Vercel-Header muessen am echten DEV-Deployment manuell verifiziert werden.
-- Der Desktop-Scroll-E2E ist trotz erfolgreicher Einzellaeufe noch nicht wiederholbar stabil und blockiert eine falsche Aussage, die komplette E2E-Suite sei gruen.
+- Edge Function auf DEV deployen und mit Athlete, Coach, Admin sowie einem entbehrlichen Loeschkonto testen.
+- Private Storage-Buckets und zugehoerige Objekte im Loeschprozess pruefen; finaler Umgang haengt von der Betreiber-Aufbewahrungsregel ab.
+- Ausgelieferte Vercel-Header, Supabase Security Advisor, Redirect-Allowlist, CORS und Storage-Policies manuell anhand der Checkliste bestaetigen.
 
-## Naechste sinnvolle Aufgabe
+## Offene organisatorische/rechtliche Punkte
 
-Release-Blocker gemeinsam mit dem Betreiber schliessen: Betreiber- und Datenschutzkontakt bereitstellen, Loesch-/Auskunftsprozess fachlich entscheiden und danach serverseitig implementieren. Parallel den Desktop-Scroll-E2E gegen den tatsaechlichen Scroll-Container stabilisieren und die komplette E2E-Suite erneut gruen ausfuehren.
+- Betreiber-, Impressums- und Datenschutzkontakt bereitstellen.
+- Rechtsgrundlagen, Aufbewahrungsfristen, gemeinsame Kommunikationsdaten und Loeschfolgen rechtlich/fachlich freigeben.
+- Minderjaehrigen-/Einwilligungskonzept entscheiden; technische Einfuegepunkte sind dokumentiert, aber bewusst nicht implementiert.
 
-## Blocker
+## Naechster sinnvoller Stabilitaetsblock
 
-- Betreiberangaben und Datenschutzkontakt muessen von Tobias bereitgestellt werden.
-- Kontoloeschung und Minderjaehrigenkonzept benoetigen eine Produkt-/Rechtsentscheidung.
-- Supabase CLI fehlt lokal; DEV-Dashboard-Pruefungen muessen mit vorhandenem Browserzugang manuell erfolgen.
+DEV-Privacy-Deployment und Realtest: Edge Function ausschliesslich auf `nlllqsfdhfiwticrcrnp` deployen, Exportdaten je Rolle pruefen, ein neu angelegtes entbehrliches DEV-Konto Ende-zu-Ende loeschen und danach Auth-, Tabellen- und Storage-Reste kontrollieren. Parallel die manuelle Hosting-/Supabase-Sicherheitscheckliste protokollieren.
+
+## Manueller Nutzertest
+
+Der allgemeine technische Nutzertest von Paddlio kann beginnen: Build, Unit-, Rollen- und vollstaendige E2E-Suite sind gruen. Die neuen Menuepunkte fuer Auskunftsexport und Kontoloeschung duerfen erst nach dem DEV-Deploy der Edge Function als testbereit oder bestanden bewertet werden. Ein offizieller oeffentlicher Release ist wegen der genannten manuellen und rechtlichen Punkte noch nicht freigegeben.
 
 ## Sicherheitsbestaetigung
 
 - Ausschliesslich Branch `develop` verwendet.
-- Ausschliesslich Supabase DEV `nlllqsfdhfiwticrcrnp` als Ziel geprueft.
+- Ausschliesslich Supabase DEV `nlllqsfdhfiwticrcrnp` als vorgesehenes Ziel dokumentiert.
 - `main` unveraendert.
 - Production Supabase `twlkhfbrrwjwppxinmpn` unveraendert.
