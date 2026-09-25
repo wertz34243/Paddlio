@@ -1335,4 +1335,69 @@ begin
 end $$;
 -- END SOURCE 0021_realtime_publication_full_sync_415.sql
 
+-- Competition columns used by the current read/write service. The legacy 0012
+-- policies are intentionally not replayed because DEV already uses UUID ids.
+alter table public.competitions
+  add column if not exists user_id uuid references public.profiles(id) on delete set null,
+  add column if not exists created_by uuid references public.profiles(id) on delete set null;
+
+alter table public.competition_results
+  add column if not exists club_id uuid references public.clubs(id) on delete set null,
+  add column if not exists competition_name text,
+  add column if not exists competition_date date,
+  add column if not exists location text,
+  add column if not exists course_name text,
+  add column if not exists run1_time numeric,
+  add column if not exists run1_penalties integer default 0,
+  add column if not exists run1_total numeric,
+  add column if not exists run2_time numeric,
+  add column if not exists run2_penalties integer default 0,
+  add column if not exists run2_total numeric,
+  add column if not exists best_total numeric,
+  add column if not exists created_by uuid references public.profiles(id) on delete set null;
+
+create index if not exists idx_competitions_user_start_date_0043
+  on public.competitions(user_id, start_date desc);
+create index if not exists idx_competitions_created_by_0043
+  on public.competitions(created_by);
+
+alter table public.competitions enable row level security;
+alter table public.competition_results enable row level security;
+
+drop policy if exists competitions_select_own_club_admin_0043 on public.competitions;
+create policy competitions_select_own_club_admin_0043 on public.competitions for select to authenticated
+using (
+  user_id = auth.uid() or created_by = auth.uid() or public.paddlio_is_admin_415()
+  or (club_id is not null and public.paddlio_user_has_club_role_0024(club_id, array['Coach','ClubAdmin','Admin']))
+);
+
+drop policy if exists competitions_write_own_club_admin_0043 on public.competitions;
+create policy competitions_write_own_club_admin_0043 on public.competitions for all to authenticated
+using (
+  user_id = auth.uid() or created_by = auth.uid() or public.paddlio_is_admin_415()
+  or (club_id is not null and public.paddlio_user_has_club_role_0024(club_id, array['Coach','ClubAdmin','Admin']))
+)
+with check (
+  user_id = auth.uid() or created_by = auth.uid() or public.paddlio_is_admin_415()
+  or (club_id is not null and public.paddlio_user_has_club_role_0024(club_id, array['Coach','ClubAdmin','Admin']))
+);
+
+drop policy if exists competition_results_select_own_club_admin_0043 on public.competition_results;
+create policy competition_results_select_own_club_admin_0043 on public.competition_results for select to authenticated
+using (
+  athlete_id = auth.uid() or created_by = auth.uid() or public.paddlio_is_admin_415()
+  or (club_id is not null and public.paddlio_user_has_club_role_0024(club_id, array['Coach','ClubAdmin','Admin']))
+);
+
+drop policy if exists competition_results_write_own_club_admin_0043 on public.competition_results;
+create policy competition_results_write_own_club_admin_0043 on public.competition_results for all to authenticated
+using (
+  athlete_id = auth.uid() or created_by = auth.uid() or public.paddlio_is_admin_415()
+  or (club_id is not null and public.paddlio_user_has_club_role_0024(club_id, array['Coach','ClubAdmin','Admin']))
+)
+with check (
+  athlete_id = auth.uid() or created_by = auth.uid() or public.paddlio_is_admin_415()
+  or (club_id is not null and public.paddlio_user_has_club_role_0024(club_id, array['Coach','ClubAdmin','Admin']))
+);
+
 notify pgrst, 'reload schema';
