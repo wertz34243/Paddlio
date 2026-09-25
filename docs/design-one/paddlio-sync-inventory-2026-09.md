@@ -18,6 +18,14 @@ Eine Supabase-Tabelle allein zählt nicht als vollständiger Sync. Der öffentli
 - Explizite Cloud-Deletes wurden für Trainingsvorlagen, Journal, Material und Wettkämpfe ergänzt. Trainings verwenden weiterhin Tombstones, Anwesenheit und Academy-Favoriten ihre fachlichen Deletes.
 - Automatisiert bestätigt: Account-Isolation, Rückkehr zur ursprünglichen Queue, Legacy-Quarantäne, Cloud-empty, Cloud-failure-Fallback, transienter Online-Write und nicht retrybarer Write.
 
+## DEV-Schema-Reconciliation vom 25.09.2026
+
+- Die bereits aktiven Import-/Export- und Polar-Codepfade trafen auf DEV auf neun tatsächlich fehlende Tabellen. Ursache war ein unvollständiger DEV-Migrationsstand für die historischen Migrationen 0027/0028; 0028 konnte wegen einer veralteten, E-Mail-basierten Admin-Helferdefinition nicht unverändert erneut ausgeführt werden.
+- `20260925071005_import_polar_schema_reconciliation.sql` ergänzt additiv `import_jobs`, `import_profiles`, `import_rows`, `export_jobs`, `device_connections`, `polar_accounts`, `polar_oauth_states`, `polar_sync_jobs` und `polar_training_imports` mit aktuellen Fremdschlüsseln, Indizes und rollenbezogenen RLS-Policies.
+- OAuth-Tokens und OAuth-State bleiben für Browser-Rollen gesperrt. Realtime ist nur für `device_connections`, `polar_sync_jobs` und `polar_training_imports` aktiviert.
+- Die Migration wurde direkt auf Supabase DEV `nlllqsfdhfiwticrcrnp` angewendet. Alle neun REST-Endpunkte antworten danach ohne `PGRST205`; alle neun Tabellen haben RLS aktiviert. Der Supabase Security Advisor meldet für diese Tabellen keine Findings.
+- Ein echter Polar-Provider-Test sowie rollenbezogene Import-/Export-E2E mit realen DEV-Konten bleiben offen. Deshalb bleiben beide Bereiche bis zu diesem Nachweis in Status **B**.
+
 ## A. Aktueller Fehler `training_plan_items`
 
 ### Root Cause
