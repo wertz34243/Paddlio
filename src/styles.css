@@ -1409,6 +1409,12 @@ body {
   overscroll-behavior-y: none;
 }
 
+@media (min-width: 900px) {
+  body {
+    overscroll-behavior-y: auto;
+  }
+}
+
 button,
 input,
 select,

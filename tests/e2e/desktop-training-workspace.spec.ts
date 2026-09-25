@@ -92,6 +92,48 @@ test.describe("desktop training workspace", () => {
     mkdirSync(screenshotDir, { recursive: true });
   });
 
+  test("keeps long desktop workspaces scrollable with mouse and keyboard", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "edge", "Desktop scrolling runs only in the edge project.");
+    await page.setViewportSize({ width: 1366, height: 768 });
+    await login(page, coachEmail!, coachPassword!);
+    await openTrainingTab(page, "Vorlagen");
+    await expect(page.locator(".template-library-redesign-layout")).toBeVisible({ timeout: 20_000 });
+
+    const scrollMetrics = async () => page.evaluate(() => ({
+      top: window.scrollY,
+      max: Math.max(0, document.documentElement.scrollHeight - window.innerHeight),
+    }));
+
+    const initial = await scrollMetrics();
+    expect(initial.max).toBeGreaterThan(100);
+
+    await page.mouse.move(700, 600);
+    await page.mouse.wheel(0, 500);
+    await expect.poll(async () => (await scrollMetrics()).top).toBeGreaterThan(0);
+
+    const afterWheel = (await scrollMetrics()).top;
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press("ArrowDown");
+    await expect.poll(async () => (await scrollMetrics()).top).toBeGreaterThan(afterWheel);
+
+    await page.keyboard.press("PageDown");
+    const afterPageDown = (await scrollMetrics()).top;
+    expect(afterPageDown).toBeGreaterThan(afterWheel);
+
+    await page.keyboard.press("End");
+    await expect.poll(async () => {
+      const current = await scrollMetrics();
+      return current.max - current.top;
+    }).toBeLessThan(5);
+
+    await page.keyboard.press("PageUp");
+    const afterPageUp = (await scrollMetrics()).top;
+    expect(afterPageUp).toBeLessThan((await scrollMetrics()).max);
+
+    await page.keyboard.press("Home");
+    await expect.poll(async () => (await scrollMetrics()).top).toBeLessThan(5);
+  });
+
   test("captures desktop calendar interactions", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "edge", "Desktop screenshots run only in the edge project.");
     await page.setViewportSize({ width: 1440, height: 900 });
