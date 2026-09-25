@@ -13,7 +13,8 @@ type SettingsViewProps = {
     failedSyncCount: number;
     lastSyncAt: string;
     message: string;
-    isAdmin: boolean;
+    showDiagnostics: boolean;
+    buildCommit: string;
     profileSyncDiagnostics: ProfileSyncDiagnostics;
   };
   onSave: (settings: Pick<UserProfile, "profileImageDataUrl" | "darkMode" | "measurementUnit" | "language">) => void;
@@ -141,7 +142,7 @@ export function SettingsView({ user, syncStatus, onSave, onLogout }: SettingsVie
 
 function SettingsSyncPanel({ syncStatus }: { syncStatus: NonNullable<SettingsViewProps["syncStatus"]> }) {
   const [diagnosticRevision, setDiagnosticRevision] = useState(0);
-  const diagnostics = syncStatus.isAdmin ? getOfflineQueueDiagnostics() : [];
+  const diagnostics = syncStatus.showDiagnostics ? getOfflineQueueDiagnostics() : [];
   void diagnosticRevision;
   const formatMatch = (value: boolean | null | undefined) => value === true ? "true" : value === false ? "false" : "null";
   const discardLegacyItem = (queueItemId: string) => {
@@ -185,6 +186,7 @@ function SettingsSyncPanel({ syncStatus }: { syncStatus: NonNullable<SettingsVie
         <span>{syncStatus.failedSyncCount} fehlgeschlagen</span>
         {syncLabel ? <span>Letzter Sync {syncLabel}</span> : null}
       </div>
+      {syncStatus.showDiagnostics ? <p className="card-note">DEV Build: {syncStatus.buildCommit}</p> : null}
       {syncStatus.message && syncStatus.status !== "connected" ? (
         <p className="settings-sync-detail">{syncStatus.message}</p>
       ) : null}
@@ -214,7 +216,7 @@ function SettingsSyncPanel({ syncStatus }: { syncStatus: NonNullable<SettingsVie
           </ul>
         </details>
       ) : null}
-      {syncStatus.isAdmin ? (
+      {syncStatus.showDiagnostics ? (
         <details className="settings-sync-diagnostics">
           <summary>Profil-Sync-Diagnose</summary>
           <ul>

@@ -13,7 +13,8 @@ import { expandTrainingRepeatDates, getTodayKey, getTrainingRepeatSeriesEntries,
 import { useAppChromeVisibility } from "./hooks/useAutoHideOnScroll";
 import { useResponsiveCapabilities } from "./hooks/useResponsiveCapabilities";
 import { getFeatureMode, isFeatureAvailable, pageFeatureMap, type FeatureId, type FeatureMode } from "./lib/deviceCapabilities";
-import { APP_ENVIRONMENT_LABEL, isDevelopmentEnvironment, isProductionEnvironment } from "./lib/appEnvironment";
+import { APP_ENVIRONMENT_LABEL, isDevelopmentDeployment, isDevelopmentEnvironment, isProductionEnvironment } from "./lib/appEnvironment";
+import { canViewDevelopmentDiagnostics } from "./domain/diagnosticsAccess";
 import type { Json } from "./lib/database.types";
 import { updateCloudProfile } from "./services/profileService";
 import { createCloudNotification, markAllCloudNotificationsRead, markCloudNotificationRead } from "./services/notificationService";
@@ -1587,7 +1588,8 @@ function AppContent() {
               failedSyncCount,
               lastSyncAt,
               message: cloudMessage,
-              isAdmin: activeUser.role === "admin",
+              showDiagnostics: canViewDevelopmentDiagnostics(activeUser.role, isDevelopmentDeployment),
+              buildCommit: __BUILD_COMMIT__,
               profileSyncDiagnostics,
             }}
             onSave={updateProfileSettings}

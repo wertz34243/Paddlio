@@ -13,5 +13,7 @@ export const APP_ENVIRONMENT: AppEnvironment = normalizeEnvironment(import.meta.
 
 export const isProductionEnvironment = APP_ENVIRONMENT === "production";
 export const isDevelopmentEnvironment = APP_ENVIRONMENT === "development" || APP_ENVIRONMENT === "preview" || APP_ENVIRONMENT === "test";
+export const isDevelopmentDeployment = isDevelopmentEnvironment
+  || (typeof window !== "undefined" && window.location.hostname === "dev.paddlio.de");
 
 export const APP_ENVIRONMENT_LABEL = isProductionEnvironment ? "Production" : APP_ENVIRONMENT.toUpperCase();
