@@ -2,6 +2,8 @@
 
 Status: DONE
 
+Auftragsbasis: Implementierungscommit `89aa075`.
+
 Auftrag:
 - Security-, Datenschutz- und Release-Check durchfuehren.
 - Keine neuen Produktfeatures und keine Production-Aenderungen.

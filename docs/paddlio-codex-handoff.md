@@ -60,8 +60,8 @@ Datenschutzseitig existierten Profilbearbeitung, Logout und fachliche Exporte, a
 
 ## Commit und Pushstatus
 
-- Implementierungscommit: wird nach Erstellung dieses Handoffs eingetragen.
-- Pushstatus: ausstehend bis zum gezielten Commit auf `develop`.
+- Implementierungscommit: `89aa075`.
+- Pushstatus: erfolgreich auf `origin/develop`.
 
 ## Offene Fehler und Release-Blocker
 
