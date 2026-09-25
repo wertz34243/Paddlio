@@ -70,7 +70,7 @@ jobs:
         if: always()
         run: rm -f .codex-task.md
 
-           - name: Install dependencies
+      - name: Install dependencies
         run: npm ci
 
       - name: Run tests
