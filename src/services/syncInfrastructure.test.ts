@@ -320,4 +320,11 @@ describe("profile sync health", () => {
     expect(classifyOptionalSyncError("Profil laden", { code: "42501" }))
       .toBe("profile_sync_error");
   });
+
+  it("does not turn an Academy schema error into a profile error from a PostgREST hint", () => {
+    expect(classifyOptionalSyncError("academy_media lesen", {
+      code: "PGRST205",
+      message: "Could not find academy_media. Perhaps you meant public.profiles",
+    })).toBe("supplemental_sync_error");
+  });
 });

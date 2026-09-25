@@ -25,9 +25,9 @@ export const classifySyncError = (scope: string, error?: unknown): SyncErrorCate
 
 export const classifyOptionalSyncError = (
   scope: string,
-  error?: unknown,
+  _error?: unknown,
   categoryOverride?: SyncErrorCategory,
-): SyncErrorCategory => categoryOverride ?? classifySyncError(scope, error);
+): SyncErrorCategory => categoryOverride ?? classifySyncError(scope);
 
 export const getSyncErrorMessage = (categories: Iterable<SyncErrorCategory>): string => {
   const errors = new Set(categories);
