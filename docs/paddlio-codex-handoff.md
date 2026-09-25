@@ -53,8 +53,9 @@ Der erste vollstaendige E2E-Lauf zeigte ausserdem eine Test-Race-Condition: Nach
 
 ## Commit und Pushstatus
 
-- Implementierungs- und Handoff-Commit: wird mit diesem Bericht erstellt.
-- Ziel: `origin/develop`.
+- Implementierungs- und Ergebniscommit: `f877e1ae6084b311bb1c89ef01f3165e438d6524`.
+- Pushstatus: erfolgreich auf `origin/develop`.
+- Dieser aktualisierte Handoff wird in einem nachfolgenden Dokumentationscommit versioniert.
 
 ## Offene Fehler
 
