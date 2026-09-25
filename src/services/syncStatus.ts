@@ -5,6 +5,28 @@ export type SyncErrorCategory =
   | "feedback_sync_error"
   | "supplemental_sync_error";
 
+export type ResolvedCloudConnectionState = "connected" | "offline" | "pending" | "limited" | "error";
+
+export const resolveCloudConnectionState = ({
+  online,
+  profileReady,
+  pending,
+  failed,
+  readErrors,
+}: {
+  online: boolean;
+  profileReady: boolean;
+  pending: number;
+  failed: number;
+  readErrors: number;
+}): ResolvedCloudConnectionState => {
+  if (!online) return "offline";
+  if (!profileReady) return "error";
+  if (failed > 0 || readErrors > 0) return "limited";
+  if (pending > 0) return "pending";
+  return "connected";
+};
+
 const getErrorText = (error: unknown): string => {
   if (error instanceof Error) return error.message;
   if (error && typeof error === "object") {

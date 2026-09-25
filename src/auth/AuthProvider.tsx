@@ -50,7 +50,7 @@ import { getSyncQueueStats } from "../services/syncService";
 import { getOfflineQueueDiagnostics, setOfflineQueueUser } from "../services/offlineQueueService";
 import { cloudValueOrCached, didCloudReadFail, mapCloudRead, markCloudReadFailed } from "../services/cloudReadState";
 import { backgroundSyncEngine } from "../services/backgroundSyncService";
-import { classifyOptionalSyncError, classifySyncError, getFailedSyncMessage, getSyncErrorMessage, type SyncErrorCategory } from "../services/syncStatus";
+import { classifyOptionalSyncError, classifySyncError, getFailedSyncMessage, getSyncErrorMessage, resolveCloudConnectionState, type SyncErrorCategory } from "../services/syncStatus";
 import { listCloudNotifications } from "../services/notificationService";
 import { listCloudSmartCoachRecommendations } from "../services/smartCoachService";
 import {
@@ -779,7 +779,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const coreSyncCount = allProfiles.length + clubs.length + requests.length + clubRequests.length + groups.length + groupMembers.length + cloudPlan.length + cloudFeedback.length + cloudJournal.length + cloudTemplates.length + cloudGoals.length + cloudCompetitions.length + cloudMaterials.length + cloudNotifications.length + cloudSmartCoach.length + cloudClubMessages.length + cloudDirectMessages.length + cloudGroupMessages.length + cloudTasks.length + cloudTaskAssignments.length + cloudTrainingAttendance.length;
       setSyncCount(coreSyncCount);
       setCloudMessage(queueStats.failed > 0 ? getQueueFailureMessage() : pendingCount > 0 ? `${pendingCount} Änderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensätze wurden in die Cloud migriert.` : "");
-      setCloudStatus(!navigator.onLine ? "offline" : queueStats.failed > 0 ? "limited" : pendingCount > 0 ? "pending" : "connected");
+      setCloudStatus(resolveCloudConnectionState({
+        online: navigator.onLine,
+        profileReady: !profileIsFallback,
+        pending: pendingCount,
+        failed: queueStats.failed,
+        readErrors: optionalCloudErrorCount,
+      }));
       if (profileIsFallback) {
         setCloudMessage(navigator.onLine ? `${PROFILE_SYNC_RETRY_MESSAGE}${queueStats.failed > 0 ? ` ${getQueueFailureMessage()}` : ""}` : "Du bist offline. Paddlio nutzt gespeicherte Daten.");
         setCloudStatus(navigator.onLine ? "limited" : "offline");
@@ -956,6 +962,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               lastErrorScope: latestDeferredError?.scope ?? current.lastErrorScope,
               lastErrorMessage: latestDeferredError?.message ?? current.lastErrorMessage,
               lastErrorStatus: latestDeferredError?.status ?? current.lastErrorStatus,
+            }));
+          } else if (!profileIsFallback && optionalCloudErrorCount === 0) {
+            const latestQueueStats = getSyncQueueStats();
+            setPendingSyncCount(latestQueueStats.pending);
+            setFailedSyncCount(latestQueueStats.failed);
+            setCloudStatus(resolveCloudConnectionState({
+              online: navigator.onLine,
+              profileReady: true,
+              pending: latestQueueStats.pending,
+              failed: latestQueueStats.failed,
+              readErrors: 0,
+            }));
+            setCloudMessage(
+              latestQueueStats.failed > 0
+                ? getQueueFailureMessage()
+                : latestQueueStats.pending > 0
+                  ? `${latestQueueStats.pending} Änderungen warten auf Synchronisation.`
+                  : "",
+            );
+            setProfileSyncDiagnostics((current) => ({
+              ...current,
+              profileWarningReason: "",
+              partialSyncReason: latestQueueStats.failed > 0
+                ? "failed_queue"
+                : latestQueueStats.pending > 0
+                  ? "pending_queue"
+                  : "",
+              lastErrorCode: latestQueueStats.failed > 0 ? current.lastErrorCode : "",
+              lastErrorScope: latestQueueStats.failed > 0 ? current.lastErrorScope : "",
+              lastErrorMessage: latestQueueStats.failed > 0 ? current.lastErrorMessage : "",
+              lastErrorStatus: latestQueueStats.failed > 0 ? current.lastErrorStatus : "",
+              lastSuccessAt: new Date().toISOString(),
             }));
           }
         })();

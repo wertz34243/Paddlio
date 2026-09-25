@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifySyncError, getFailedSyncMessage, getSyncErrorMessage } from "./syncStatus";
+import { classifySyncError, getFailedSyncMessage, getSyncErrorMessage, resolveCloudConnectionState } from "./syncStatus";
 
 describe("sync status classification", () => {
   it("classifies planning constraint errors without exposing SQL", () => {
@@ -23,5 +23,27 @@ describe("failed queue messages", () => {
     expect(getFailedSyncMessage(["materials", "training_templates"], 2)).toBe(
       "2 Datensätze konnten noch nicht synchronisiert werden. Betroffen: Material, Vorlagen.",
     );
+  });
+});
+
+describe("cloud connection state", () => {
+  it("returns to connected after a successful retry cleared every current error", () => {
+    expect(resolveCloudConnectionState({
+      online: true,
+      profileReady: true,
+      pending: 0,
+      failed: 0,
+      readErrors: 0,
+    })).toBe("connected");
+  });
+
+  it("keeps supplemental read failures separate from profile availability", () => {
+    expect(resolveCloudConnectionState({
+      online: true,
+      profileReady: true,
+      pending: 0,
+      failed: 0,
+      readErrors: 1,
+    })).toBe("limited");
   });
 });
