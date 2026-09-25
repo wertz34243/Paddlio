@@ -2,83 +2,78 @@
 
 ## Stand
 
-- Datum/Uhrzeit: 2026-09-25 09:38 CEST
-- Aktueller Stabilitaetsblock: DEV-Schema-Abgleich und Wettbewerbsbereich
-- Status: Block abgeschlossen und auf `develop` gepusht
+- Datum/Uhrzeit: 2026-09-25 11:58 CEST
+- Aktueller Stabilitaetsblock: Vollstaendige Testbereitschaft, Polar-Datum und Desktop-Scroll-E2E
+- Status: DONE
+- Auftragsbasis: Handoff-Commit `bd843946265e46b053f2468206ef622e7c3a9250`
 
 ## Root Cause
 
-Der Fehler `competitions lesen: 42703` entstand nicht in `competitions`, sondern in der verknuepften Tabelle `competition_results`. Die vorherige DEV-Reconciliation 0043 hatte nur einen Teil der historischen Schema-Erweiterungen aus Migration 0012 nachgezogen. Der aktive `competitionService` las und schrieb zehn weitere Spalten, die auf Supabase DEV fehlten.
+Polar AccessLink liefert `start_time` haeufig als lokale Uhrzeit ohne Zeitzonensuffix und den Offset separat als `start_time_utc_offset`. Der Server ignorierte diesen Offset und liess Vercel die lokale Uhrzeit als UTC interpretieren. Ein ungueltiger Polar-Zeitwert konnte zudem durch `toISOString()` den gesamten Import abbrechen.
+
+Der erste vollstaendige E2E-Lauf zeigte ausserdem eine Test-Race-Condition: Nach nativem `PageUp` wurde der Scrollstand sofort gemessen, bevor Edge den Seitensprung verarbeitet hatte. Der eigentliche Dokument-Scroll war nicht blockiert.
 
 ## Aenderungen
 
-- Fehlende Wettbewerbsfelder fuer Altersklasse, Ranking, Starterfeld, Zeitabstaende, Quelle, Coach-Notiz und Tombstone ergaenzt.
-- Index fuer `competition_results.deleted_at` ergaenzt.
-- RLS unveraendert aktiv gelassen.
-- PostgREST-Schema neu geladen.
-- Produktweite Sync-Inventur um den verifizierten Wettbewerbsfix ergaenzt.
-- Alle 60 derzeit verwendeten App-Tabellen per DEV-REST-Smoke-Test geprueft.
+- Offsetbewusste und validierende Polar-Startzeitnormalisierung in `api/_polar.js` eingefuehrt.
+- Bereits zonierte Zeitstempel werden ohne erneute Offsetanwendung normalisiert.
+- Ungueltige oder fehlende Zeitwerte verwenden einen sicheren Fallback und brechen den Sync nicht mehr ab.
+- Drei servernahe Regressionstests fuer Offset, explizite Zeitzone und ungueltiges Datum ergaenzt.
+- Desktop-Scroll-E2E wartet bei `PageUp` zustandsbasiert auf die native Browserreaktion.
+- Keine Produktfeatures, Datenbankobjekte oder Produktionsdaten hinzugefuegt beziehungsweise veraendert.
 
 ## Migrationen
 
-- `supabase/migrations/20260925073000_competition_results_schema_reconciliation.sql`
-- Additiv und idempotent durch `add column if not exists` und `create index if not exists`.
-- Keine Tabellen oder Nutzdaten geloescht.
+- Keine neue Migration erforderlich.
 
 ## Supabase DEV Ergebnis
 
-- Zielprojekt vor jedem Datenbankbefehl verifiziert: `nlllqsfdhfiwticrcrnp`.
-- Migration direkt und erfolgreich auf DEV angewendet.
-- Alle zehn erwarteten Spalten sind vorhanden.
-- RLS auf `competition_results` ist aktiv.
-- Alle 60 aktiven App-Tabellen sind ueber PostgREST erreichbar; keine `PGRST205` im Tabellen-Smoke-Test.
-- Die reale verschachtelte Abfrage `competition_results` mit `competitions(...)` antwortet mit HTTP 200 statt `42703`.
+- Lokaler Projekt-Link weiterhin ausschliesslich `nlllqsfdhfiwticrcrnp`.
+- Fuer diesen Block waren keine Datenbankbefehle oder Schemaaenderungen erforderlich.
+- Vorheriger verifizierter Stand bleibt bestehen: 60 aktive App-Tabellen per PostgREST erreichbar, Wettbewerbsabfrage HTTP 200.
 
 ## Betroffene Tabellen, Policies und Funktionen
 
-- Tabelle: `public.competition_results`
-- Verknuepfte Tabelle: `public.competitions`
-- Bestehende Policies bleiben aktiv:
-  - `competition_results_select_own_club_admin_0043`
-  - `competition_results_write_own_club_admin_0043`
-- Bestehende Rollenhelfer bleiben unveraendert:
-  - `public.paddlio_is_admin_415()`
-  - `public.paddlio_user_has_club_role_0024(...)`
+- Keine Tabellen oder Policies geaendert.
+- Neue/angepasste Serverfunktion: `normalizePolarStartedAt()` in `api/_polar.js`.
+- Aufrufer: `normalizePolarExercise()`.
 
 ## Tests
 
-- `npm.cmd run build`: erfolgreich
-- `npm.cmd run check:beta`: erfolgreich
-- `npm.cmd run test`: 117 von 117 Tests erfolgreich
-- `git diff --check`: erfolgreich
-- DEV-REST-Smoke-Test: 60 Tabellen geprueft, 0 Fehler
-- Verschachtelte Wettbewerbsabfrage: HTTP 200
+- Polar-Zieltests: 9 von 9 erfolgreich.
+- `npm.cmd run build`: erfolgreich.
+- `npm.cmd run check:encoding`: erfolgreich.
+- `npm.cmd run check:rls`: erfolgreich.
+- `npm.cmd run check:a11y`: erfolgreich.
+- `npm.cmd run check:beta`: erfolgreich, inklusive Bundle- und Blocker-Check.
+- `npm.cmd run test`: 120 von 120 erfolgreich.
+- `npm.cmd run test:e2e:roles`: 9 erfolgreich, 1 vorgesehener Mobile-Mehrgeraete-Skip.
+- `npm.cmd run test:e2e`: 41 erfolgreich, 23 vorgesehene projekt-/geraetespezifische Skips, 0 Fehler.
+- Desktop-Scrollpfad bestaetigt: Mausrad, ArrowDown, PageDown, End, PageUp und Home.
 
 ## Commit und Pushstatus
 
-- Implementierungscommit: `d9b95b612522f4eaa277843dc92e044c97f0bc54`
-- Pushstatus: erfolgreich auf `origin/develop`
-- Diese Datei wird in einem separaten Handoff-Commit auf `develop` versioniert.
+- Implementierungs- und Handoff-Commit: wird mit diesem Bericht erstellt.
+- Ziel: `origin/develop`.
 
-## Offene Fehler und Nachweise
+## Offene Fehler
 
-- Keine bekannten verbleibenden `PGRST205` fuer die 60 inventarisierten Tabellen.
-- Kein bekannter verbleibender `42703` im Wettbewerbs-Lesepfad.
-- Rollenbezogene Wettbewerbs-Schreibtests mit echten Admin-, Coach- und Athlete-Sessions stehen noch aus.
-- Echter Multi-Geraete-Test steht noch aus.
-- Die Remote-Migrationshistorie des DEV-Projekts ist fuer aeltere Migrationen nicht vollstaendig gepflegt; das aktive Schema selbst wurde direkt verifiziert.
+- Keine bekannten blockierenden Fehler aus diesem Stabilitaetsblock.
+- Echter Polar-Provider-Sync mit einem real verbundenen Polar-Konto bleibt als manueller DEV-Nachweis offen.
+- Physische iPhone-/iPad-Tests und echter Touchpad-Test bleiben manuell offen; automatisierte Mobile-, Tablet- und Desktop-Suiten sind gruen.
+- Die historische Supabase-DEV-Migrationshistorie ist weiterhin nicht vollstaendig als Remote-Historie erfasst, das aktive Schema wurde jedoch direkt verifiziert.
 
 ## Naechste sinnvolle Aufgabe
 
-Globale Start-Synchronisation rollen- und kontextabhaengig machen. Unnoetige optionale Requests fuer Academy, Beta, Vereinsportal und Analyse reduzieren und danach Realtime-Lebenszyklus sowie Admin-/Coach-/Athlete-Datengrenzen pruefen.
+Rollen- und kontextabhaengige Start-Synchronisation pruefen: optionale Academy-, Beta-, Vereinsportal- und Analyseabfragen nur laden, wenn Rolle oder geoeffnetes Modul sie benoetigt. Danach Realtime-Subscriptions auf Duplikate und sauberes Cleanup bei Accountwechsel pruefen.
 
 ## Blocker
 
-Keine aktuellen technischen Blocker. Fuer echte rollenbezogene Cloud- und Multi-Geraete-Tests werden gueltige DEV-Testkonten beziehungsweise bestehende authentifizierte Sessions benoetigt.
+Keine Codeblocker. Fuer den echten Polar-Ende-zu-Ende-Nachweis ist ein verbundenes DEV-Polar-Konto erforderlich.
 
 ## Sicherheitsbestaetigung
 
 - Ausschliesslich Branch `develop` verwendet.
-- Ausschliesslich Supabase DEV `nlllqsfdhfiwticrcrnp` verwendet.
+- Ausschliesslich Supabase DEV `nlllqsfdhfiwticrcrnp` referenziert.
 - `main` unveraendert.
 - Production Supabase `twlkhfbrrwjwppxinmpn` unveraendert.

@@ -219,6 +219,49 @@ export const parseIsoDurationSeconds = (value) => {
 
 const firstDefined = (...values) => values.find((value) => value !== undefined && value !== null && value !== "");
 
+const POLAR_LOCAL_TIMESTAMP = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?$/;
+const EXPLICIT_TIMEZONE = /(Z|[+-]\d{2}:?\d{2})$/i;
+
+export const normalizePolarStartedAt = (exercise, fallback = new Date().toISOString()) => {
+  const value = firstDefined(
+    exercise.start_time,
+    exercise["start-time"],
+    exercise.started_at,
+    exercise["started-at"],
+  );
+  if (typeof value !== "string" || !value.trim()) return fallback;
+
+  const normalizedValue = value.trim();
+  if (EXPLICIT_TIMEZONE.test(normalizedValue)) {
+    const timestamp = Date.parse(normalizedValue);
+    return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : fallback;
+  }
+
+  const localParts = POLAR_LOCAL_TIMESTAMP.exec(normalizedValue);
+  const offsetMinutes = toNumberOrNull(firstDefined(
+    exercise.start_time_utc_offset,
+    exercise["start-time-utc-offset"],
+    exercise.startTimeUtcOffset,
+  ));
+  if (localParts) {
+    const [, year, month, day, hour, minute, second = "0", milliseconds = "0"] = localParts;
+    const localAsUtc = Date.UTC(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hour),
+      Number(minute),
+      Number(second),
+      Number(milliseconds.padEnd(3, "0")),
+    );
+    const instant = localAsUtc - (offsetMinutes ?? 0) * 60_000;
+    return Number.isFinite(instant) ? new Date(instant).toISOString() : fallback;
+  }
+
+  const timestamp = Date.parse(normalizedValue);
+  return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : fallback;
+};
+
 const toNumberOrNull = (value) => {
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
@@ -333,9 +376,7 @@ export const normalizePolarExercise = (exercise, userId, clubId = "") => {
     provider_activity_id: providerActivityId,
     title,
     sport_type: mapPolarSport(exercise.sport, detailedSport),
-    started_at: firstDefined(exercise.start_time, exercise["start-time"])
-      ? new Date(firstDefined(exercise.start_time, exercise["start-time"])).toISOString()
-      : now,
+    started_at: normalizePolarStartedAt(exercise, now),
     duration_seconds: durationSeconds,
     distance_meters: distanceMeters,
     avg_heart_rate: toRoundedNumberOrNull(firstDefined(heartRate.average, heartRate.avg, heartRate["average"])) || null,

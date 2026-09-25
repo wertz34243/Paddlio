@@ -127,8 +127,10 @@ test.describe("desktop training workspace", () => {
     }).toBeLessThan(5);
 
     await page.keyboard.press("PageUp");
-    const afterPageUp = (await scrollMetrics()).top;
-    expect(afterPageUp).toBeLessThan((await scrollMetrics()).max);
+    await expect.poll(async () => {
+      const current = await scrollMetrics();
+      return current.max - current.top;
+    }).toBeGreaterThan(100);
 
     await page.keyboard.press("Home");
     await expect.poll(async () => (await scrollMetrics()).top).toBeLessThan(5);
