@@ -1,23 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { buildCloudRoles, getCloudRolesFromMetadata, getDevelopmentTestRolesForEmail } from "./profileService";
+import { buildCloudRoles, normalizeCloudRoles } from "./profileService";
 
-describe("profile role normalization", () => {
-  it("reads safe cloud roles from auth metadata", () => {
-    expect(getCloudRolesFromMetadata({ roles: ["Coach", "Invalid", "Athlete"] })).toEqual(["Coach", "Athlete"]);
-    expect(getCloudRolesFromMetadata({ role: "Admin" })).toEqual(["Admin"]);
+describe("cloud role trust boundary", () => {
+  it("does not grant roles from user-editable auth metadata", () => {
+    expect(buildCloudRoles("person@example.test", { roles: ["Admin"] }, ["Athlete"])).toEqual(["Athlete"]);
   });
 
-  it("repairs a coach profile that only has the athlete fallback role", () => {
-    expect(buildCloudRoles("dev.coach@paddlio.test", {}, ["Athlete"])).toEqual(["Athlete", "Coach"]);
-    expect(buildCloudRoles("dev.coach@paddlio.test", { roles: ["Coach"] }, ["Athlete"])).toEqual(["Athlete", "Coach"]);
+  it("does not grant roles from a special email address", () => {
+    expect(buildCloudRoles("dev.admin@paddlio.test", null, ["Athlete"])).toEqual(["Athlete"]);
   });
 
-  it("keeps exact development test accounts role-capable without relying on auth metadata", () => {
-    expect(getDevelopmentTestRolesForEmail("DEV.CLUBADMIN@PADDLIO.TEST")).toEqual(["ClubAdmin"]);
-    expect(buildCloudRoles("dev.clubadmin@paddlio.test", {}, ["Athlete"])).toEqual(["Athlete", "ClubAdmin"]);
-  });
-
-  it("keeps the development admin account admin-capable", () => {
-    expect(buildCloudRoles("dev.admin@paddlio.test", {}, ["Athlete"])).toEqual(["Athlete", "Admin", "Coach"]);
+  it("preserves roles already loaded from the protected profile row", () => {
+    expect(normalizeCloudRoles(["Athlete", "Coach"])).toEqual(["Athlete", "Coach"]);
   });
 });

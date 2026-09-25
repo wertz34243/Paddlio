@@ -2,19 +2,14 @@
 
 Status: DONE
 
-Auftragsbasis:
-- Handoff-Commit `bd843946265e46b053f2468206ef622e7c3a9250`
-
 Auftrag:
-- Bestehenden Code pruefen.
-- Bekannte Fehler beheben.
-- Alle Tests und den Build pruefen.
-- Polar-Datumsfehler beheben.
-- Beta-, RLS-, Encoding- und A11y-Checks ausfuehren.
-- Keine unnoetigen Features oder Production-Aenderungen.
+- Security-, Datenschutz- und Release-Check durchfuehren.
+- Keine neuen Produktfeatures und keine Production-Aenderungen.
 
 Ergebnis:
-- Polar-Zeitstempel werden offsetbewusst und fehlertolerant normalisiert.
-- Desktop-Scroll-E2E ist gegen native Browser-Timing-Schwankungen stabilisiert.
-- Build, Qualitaetschecks, 120 Unit-Tests, Rollen-E2E und vollstaendige E2E-Suite sind gruen.
-- Details stehen in `docs/paddlio-codex-handoff.md`.
+- Client-Rollen-Trust-Boundary, Uploads, API-Fehler und Hosting-Header gehaertet.
+- Datenschutz-/Impressumsstruktur und technisches Release-Audit erstellt.
+- Abhaengigkeiten ohne Force aktualisiert; `npm audit` meldet 0 Findings.
+- Build, Unit-, Beta-, RLS-, Encoding-, Bundle-, A11y-, Security- und Rollenchecks sind gruen.
+- Offizielle Release-Freigabe bleibt wegen Betreiberangaben, Loesch-/Auskunftsprozess, Minderjaehrigenkonzept und instabilem Desktop-Scroll-E2E offen.
+- Details stehen in `docs/paddlio-codex-handoff.md` und `docs/security/release-audit-2026-09.md`.

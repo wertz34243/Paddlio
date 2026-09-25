@@ -1,4 +1,4 @@
-import { requireUser, sendJson } from "../_polar.js";
+import { requireUser, sendJson, sendServerError } from "../_polar.js";
 
 const hasEnv = (...keys) => keys.some((key) => Boolean(process.env[key]));
 
@@ -34,6 +34,6 @@ export default async function handler(req, res) {
       },
     });
   } catch (error) {
-    sendJson(res, 500, { error: error instanceof Error ? error.message : "polar_status_failed" });
+    sendServerError(res, "polar_status_failed", error);
   }
 }

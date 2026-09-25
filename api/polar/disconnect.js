@@ -1,4 +1,4 @@
-import { requirePost, requireUser, sendJson } from "../_polar.js";
+import { requirePost, requireUser, sendJson, sendServerError } from "../_polar.js";
 
 export default async function handler(req, res) {
   try {
@@ -29,6 +29,6 @@ export default async function handler(req, res) {
     }, { onConflict: "id" });
     sendJson(res, 200, { ok: true });
   } catch (error) {
-    sendJson(res, 500, { error: error instanceof Error ? error.message : "polar_disconnect_failed" });
+    sendServerError(res, "polar_disconnect_failed", error);
   }
 }

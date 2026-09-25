@@ -1224,11 +1224,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logCloudError("Registrierung Rate Limit", error);
         return {
           ok: false,
-          message: "Supabase blockiert gerade zu viele Registrierungs- oder E-Mail-Anfragen. Bitte warte ein paar Minuten und versuche es erneut. Ohne serverseitigen Admin-Schluessel kann Paddlio im Browser kein Konto an diesem Limit vorbei anlegen.",
+          message: "Es wurden zu viele Registrierungsanfragen gesendet. Bitte warte ein paar Minuten und versuche es erneut.",
         };
       }
 
-      return { ok: false, message: error.message };
+      logCloudError("Registrierung", error);
+      return { ok: false, message: "Das Konto konnte gerade nicht erstellt werden. Bitte versuche es später erneut." };
     }
     if (result.session?.user) {
       try {
@@ -1269,7 +1270,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email.trim().toLowerCase(),
       redirectTo ? { redirectTo } : undefined,
     );
-    if (error) return { ok: false, message: error.message };
+    if (error) {
+      logCloudError("Passwort-Reset", error);
+      return { ok: false, message: "Der Reset-Link konnte gerade nicht angefordert werden. Bitte versuche es später erneut." };
+    }
     return { ok: true, message: "Wenn die E-Mail existiert, wurde ein Link zum Zurücksetzen gesendet." };
   };
 
@@ -1329,11 +1333,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logCloudError("Bestätigungsmail erneut senden Rate Limit", error);
         return {
           ok: false,
-          message: "Supabase blockiert gerade zu viele E-Mail-Anfragen. Bitte warte ein paar Minuten und versuche es erneut.",
+          message: "Es wurden zu viele E-Mail-Anfragen gesendet. Bitte warte ein paar Minuten und versuche es erneut.",
         };
       }
 
-      return { ok: false, message: error.message };
+      logCloudError("Bestätigungsmail erneut senden", error);
+      return { ok: false, message: "Die Bestätigungsmail konnte gerade nicht gesendet werden. Bitte versuche es später erneut." };
     }
 
     return { ok: true, message: "Bestätigungsmail wurde erneut angefordert. Bitte prüfe auch Spam und Werbung." };

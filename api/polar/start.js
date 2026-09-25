@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { getServerConfig, POLAR_AUTH_URL, requirePost, requireUser, sendJson } from "../_polar.js";
+import { getServerConfig, POLAR_AUTH_URL, requirePost, requireUser, sendJson, sendServerError } from "../_polar.js";
 
 export default async function handler(req, res) {
   try {
@@ -25,6 +25,6 @@ export default async function handler(req, res) {
 
     sendJson(res, 200, { authorizationUrl: url.toString(), expiresAt });
   } catch (error) {
-    sendJson(res, 500, { error: error instanceof Error ? error.message : "polar_start_failed" });
+    sendServerError(res, "polar_start_failed", error);
   }
 }

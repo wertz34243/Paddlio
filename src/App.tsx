@@ -1076,6 +1076,7 @@ function AppContent() {
         }
         return (
           <PlanView
+            key="training-templates"
             data={activeData}
             entries={activePlanEntries}
             user={activeUser}
@@ -1099,6 +1100,7 @@ function AppContent() {
         if (currentDeviceClass !== "phone") {
           return (
             <PlanView
+              key="training-journal"
               data={activeData}
               entries={activePlanEntries}
               user={activeUser}
@@ -1176,6 +1178,7 @@ function AppContent() {
         if (currentDeviceClass !== "phone") {
           return (
             <PlanView
+              key="training-individual"
               data={activeData}
               entries={activePlanEntries}
               user={activeUser}
@@ -1199,6 +1202,7 @@ function AppContent() {
         }
         return (
           <PlanView
+            key="training-individual-phone"
             data={activeData}
             entries={activePlanEntries}
             user={activeUser}

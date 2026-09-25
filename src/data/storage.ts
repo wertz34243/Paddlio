@@ -64,7 +64,6 @@ const INVITATION_CODES_KEY = "paddlio_invitation_codes";
 const TRAINER_REQUESTS_KEY = "paddlio_trainer_requests";
 const CLUBS_KEY = "paddlio_clubs";
 const CLUB_REQUESTS_KEY = "paddlio_club_requests";
-const ADMIN_EMAIL = "t.kanu@outlook.com";
 const LEGACY_V05_STORAGE_KEY = "paddlemotion:v0.5:data";
 const LEGACY_V03_STORAGE_KEY = "paddlemotion:v0.3:data";
 const LEGACY_V02_STORAGE_KEY = "paddlemotion:v0.2:data";
@@ -939,13 +938,11 @@ const splitDisplayName = (displayName: string): { firstName: string; lastName: s
   };
 };
 
-const getRoleForEmail = (email: string, fallback: UserRole = "athlete"): UserRole =>
-  normalizeEmail(email) === ADMIN_EMAIL ? "admin" : fallback;
-
 const uniqueRoles = (roles: UserRole[]): UserRole[] => [...new Set(roles)];
 
-const getRolesForEmail = (email: string, fallback: UserRole[] = ["athlete"]): UserRole[] =>
-  normalizeEmail(email) === ADMIN_EMAIL ? ["admin"] : uniqueRoles(fallback.filter((role) => role !== "admin"));
+const getRoleForEmail = (_email: string, fallback: UserRole = "athlete"): UserRole => fallback;
+
+const getRolesForEmail = (_email: string, fallback: UserRole[] = ["athlete"]): UserRole[] => uniqueRoles(fallback);
 
 const getPrimaryRole = (roles: UserRole[]): UserRole => {
   if (roles.includes("admin")) return "admin";

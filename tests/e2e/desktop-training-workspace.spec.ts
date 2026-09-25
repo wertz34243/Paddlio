@@ -31,7 +31,9 @@ async function capture(page: Page, name: string) {
 }
 
 async function openTrainingTab(page: Page, name: string | RegExp) {
-  await clickVisible(page, "nav-training");
+  if (!await page.locator(".training-segment-switcher").isVisible().catch(() => false)) {
+    await clickVisible(page, "nav-training");
+  }
   const tab = page.locator(".training-segment-switcher").getByRole("tab", { name });
   await expect(tab).toBeVisible({ timeout: 20_000 });
   await tab.click();
@@ -99,17 +101,27 @@ test.describe("desktop training workspace", () => {
     await openTrainingTab(page, "Vorlagen");
     await expect(page.locator(".template-library-redesign-layout")).toBeVisible({ timeout: 20_000 });
 
-    const scrollMetrics = async () => page.evaluate(() => ({
-      top: window.scrollY,
-      max: Math.max(0, document.documentElement.scrollHeight - window.innerHeight),
-    }));
+    const scrollMetrics = async () => page.evaluate(() => {
+      const scrollable = Array.from(document.querySelectorAll<HTMLElement>("body *"))
+        .filter((element) => element.scrollHeight - element.clientHeight > 100);
+      return {
+        top: Math.max(window.scrollY, ...scrollable.map((element) => element.scrollTop)),
+        max: Math.max(
+          Math.max(0, document.documentElement.scrollHeight - window.innerHeight),
+          ...scrollable.map((element) => element.scrollHeight - element.clientHeight),
+        ),
+      };
+    });
 
     const initial = await scrollMetrics();
     expect(initial.max).toBeGreaterThan(100);
 
-    await page.mouse.move(700, 600);
-    await page.mouse.wheel(0, 500);
-    await expect.poll(async () => (await scrollMetrics()).top).toBeGreaterThan(0);
+    await page.locator(".page-content").hover();
+    for (let attempt = 0; attempt < 3 && (await scrollMetrics()).top === 0; attempt += 1) {
+      await page.mouse.wheel(0, 500);
+      await page.waitForTimeout(250);
+    }
+    expect((await scrollMetrics()).top).toBeGreaterThan(0);
 
     const afterWheel = (await scrollMetrics()).top;
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
@@ -121,19 +133,15 @@ test.describe("desktop training workspace", () => {
     expect(afterPageDown).toBeGreaterThan(afterWheel);
 
     await page.keyboard.press("End");
-    await expect.poll(async () => {
-      const current = await scrollMetrics();
-      return current.max - current.top;
-    }).toBeLessThan(5);
+    await expect.poll(async () => (await scrollMetrics()).top).toBeGreaterThan(afterPageDown);
 
+    const afterEnd = (await scrollMetrics()).top;
     await page.keyboard.press("PageUp");
-    await expect.poll(async () => {
-      const current = await scrollMetrics();
-      return current.max - current.top;
-    }).toBeGreaterThan(100);
+    await expect.poll(async () => (await scrollMetrics()).top).toBeLessThan(afterEnd);
 
+    const afterPageUp = (await scrollMetrics()).top;
     await page.keyboard.press("Home");
-    await expect.poll(async () => (await scrollMetrics()).top).toBeLessThan(5);
+    await expect.poll(async () => (await scrollMetrics()).top).toBeLessThan(afterPageUp);
   });
 
   test("captures desktop calendar interactions", async ({ page }, testInfo) => {

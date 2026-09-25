@@ -1,6 +1,7 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { createTrainerRequest, loadTrainerRequests } from "../data/storage";
 import { getAge, getDisplayName, getInitials, getSportProfileSummary } from "../domain/profile";
+import { validateProfileImage } from "../domain/profileImage";
 import type {
   AgeClass,
   AppLanguage,
@@ -76,6 +77,14 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
     if (!file) {
       return;
     }
+
+    const validationError = validateProfileImage(file);
+    if (validationError) {
+      setFormError(validationError);
+      event.target.value = "";
+      return;
+    }
+    setFormError("");
 
     const reader = new FileReader();
     reader.addEventListener("load", () => {
@@ -448,7 +457,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
         </div>
         <label>
           Profilbild
-          <input accept="image/*" type="file" onChange={handleImageChange} />
+          <input accept="image/jpeg,image/png,image/webp" type="file" onChange={handleImageChange} />
         </label>
         <div className="form-grid">
           <label>

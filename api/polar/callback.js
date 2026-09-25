@@ -67,6 +67,7 @@ export default async function handler(req, res) {
     await supabase.from("polar_oauth_states").update({ used_at: now }).eq("state", String(state));
     res.redirect(302, safeReturnUrl("/?polar=connected"));
   } catch (err) {
-    res.redirect(302, safeReturnUrl(`/?polar=error&reason=${encodeURIComponent(err instanceof Error ? err.message : "callback_failed")}`));
+    console.error("[Paddlio API] polar_callback_failed", err);
+    res.redirect(302, safeReturnUrl("/?polar=error&reason=callback_failed"));
   }
 }

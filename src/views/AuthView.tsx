@@ -238,9 +238,14 @@ export function AuthView({ onLogin, onRegister, onResetPassword, onResendConfirm
             </div>
             <p className="card-note">Empfohlen: Großbuchstabe, Kleinbuchstabe und Zahl.</p>
             <label className="toggle-row">
-              <span>Datenschutz akzeptieren</span>
+              <span>Datenschutzhinweise akzeptieren</span>
               <input name="privacyAccepted" type="checkbox" required />
             </label>
+            <details className="auth-legal-info">
+              <summary>Datenschutzhinweise und Impressum</summary>
+              <p>Paddlio verarbeitet Konto-, Profil-, Vereins- und Trainingsdaten zur Bereitstellung der App. Lokaler Gerätespeicher unterstützt Offline-Nutzung und Synchronisation. Es ist kein Marketing-Tracking im Client eingebaut.</p>
+              <p>Die vollständigen Betreiberangaben, Kontaktwege, Aufbewahrungsfristen und der verbindliche Löschprozess werden vor dem offiziellen Release ergänzt. Diese technische Vorlage ist nicht rechtsanwaltlich geprüft.</p>
+            </details>
             <button className="save-button" type="submit">
               Konto erstellen
             </button>

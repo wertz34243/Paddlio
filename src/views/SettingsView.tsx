@@ -3,6 +3,7 @@ import { getInitials } from "../domain/profile";
 import type { AppLanguage, MeasurementUnit, User, UserProfile } from "../domain/types";
 import type { ProfileSyncDiagnostics } from "../auth/AuthProvider";
 import { discardOfflineQueueItem, getOfflineQueueDiagnostics } from "../services/offlineQueueService";
+import { validateProfileImage } from "../domain/profileImage";
 
 type SettingsViewProps = {
   user: User;
@@ -34,6 +35,7 @@ const languages: Array<{ value: AppLanguage; label: string }> = [
 export function SettingsView({ user, syncStatus, onSave, onLogout }: SettingsViewProps) {
   const [profileImageDataUrl, setProfileImageDataUrl] = useState(user.profile.profileImageDataUrl);
   const [savedMessage, setSavedMessage] = useState("");
+  const [imageError, setImageError] = useState("");
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -41,6 +43,14 @@ export function SettingsView({ user, syncStatus, onSave, onLogout }: SettingsVie
     if (!file) {
       return;
     }
+
+    const validationError = validateProfileImage(file);
+    if (validationError) {
+      setImageError(validationError);
+      event.target.value = "";
+      return;
+    }
+    setImageError("");
 
     const reader = new FileReader();
     reader.addEventListener("load", () => {
@@ -87,7 +97,8 @@ export function SettingsView({ user, syncStatus, onSave, onLogout }: SettingsVie
         </div>
         <label>
           Profilbild
-          <input accept="image/*" type="file" onChange={handleImageChange} />
+          <input accept="image/jpeg,image/png,image/webp" type="file" onChange={handleImageChange} />
+          {imageError ? <small className="error-text" role="alert">{imageError}</small> : null}
         </label>
         <div className="form-grid">
           <label>
@@ -123,6 +134,28 @@ export function SettingsView({ user, syncStatus, onSave, onLogout }: SettingsVie
         </button>
         {savedMessage ? <span>{savedMessage}</span> : null}
       </div>
+
+      <section className="section-block" aria-labelledby="privacy-heading">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Datenschutz & Rechtliches</p>
+            <h3 id="privacy-heading">Deine Daten bei Paddlio</h3>
+          </div>
+        </div>
+        <p className="card-note">Paddlio verarbeitet Konto-, Profil-, Vereins-, Trainings-, Wettkampf-, Kommunikations- und Gerätedaten, soweit du die jeweiligen Funktionen nutzt.</p>
+        <details>
+          <summary>Datenschutzhinweise</summary>
+          <div className="legal-copy">
+            <p>Kontodaten dienen Anmeldung und Berechtigungsprüfung. Trainings-, Feedback-, Team- und Wettkampfdaten werden für Planung, Durchführung und Auswertung verarbeitet. Lokaler Gerätespeicher ermöglicht Offline-Nutzung und Synchronisation.</p>
+            <p>Es ist kein Marketing-Tracking im Client eingebaut. Externe Dienste werden nur für ausdrücklich genutzte Funktionen wie Supabase-Cloudspeicherung oder eine verbundene Polar-Integration angesprochen.</p>
+            <p>Eigene Profildaten kannst du im Profil berichtigen. Einen fachlichen Datenexport findest du unter Integrationen. Kontakt, Aufbewahrungsfristen und der verbindliche Löschprozess müssen vor dem offiziellen Release durch den Betreiber ergänzt und rechtlich geprüft werden.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Impressum</summary>
+          <p className="card-note">Die gesetzlich erforderlichen Betreiber- und Kontaktdaten sind vor dem offiziellen Release einzutragen. Diese technische Vorlage ist kein rechtsanwaltlich geprüfter Rechtstext.</p>
+        </details>
+      </section>
 
       <section className="section-block account-actions">
         <div className="section-heading">

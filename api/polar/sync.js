@@ -1,4 +1,4 @@
-import { getValidPolarAccessToken, normalizePolarExercise, polarFetch, requirePost, requireUser, sendJson } from "../_polar.js";
+import { getValidPolarAccessToken, normalizePolarExercise, polarFetch, requirePost, requireUser, sendJson, sendServerError } from "../_polar.js";
 
 const tryRegisterPolarUser = async (accessToken, userId) => {
   try {
@@ -237,6 +237,6 @@ export default async function handler(req, res) {
     } catch {
       // Ignore secondary logging errors.
     }
-    sendJson(res, 500, { error: error instanceof Error ? error.message : "polar_sync_failed" });
+    sendServerError(res, "polar_sync_failed", error);
   }
 }

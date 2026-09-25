@@ -45,6 +45,11 @@ export const sendJson = (res, status, body) => {
   res.end(JSON.stringify(body));
 };
 
+export const sendServerError = (res, publicCode, error) => {
+  console.error(`[Paddlio API] ${publicCode}`, error);
+  sendJson(res, 500, { error: publicCode });
+};
+
 export const requirePost = (req, res) => {
   if (req.method !== "POST") {
     sendJson(res, 405, { error: "method_not_allowed" });

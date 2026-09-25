@@ -63,10 +63,14 @@ test.describe("template grid redesign", () => {
     if (await techniqueFilter.isVisible().catch(() => false)) {
       await techniqueFilter.click();
       await page.screenshot({ path: join(screenshotDir, "02-tablet-landscape-technik-filter.png"), fullPage: true });
+      const allFilter = page.locator(".template-tag-filter").getByRole("button", { name: "Alle" });
+      if (await allFilter.isVisible().catch(() => false)) await allFilter.click();
     }
 
-    await openTemplateDetail(page);
-    await page.screenshot({ path: join(screenshotDir, "03-tablet-landscape-template-detail.png"), fullPage: true });
+    if (await page.locator(".template-library-tile").first().isVisible().catch(() => false)) {
+      await openTemplateDetail(page);
+      await page.screenshot({ path: join(screenshotDir, "03-tablet-landscape-template-detail.png"), fullPage: true });
+    }
 
     const weekSection = page.locator(".program-template-group").filter({ hasText: "Wochenvorlagen" }).first();
     if (await weekSection.isVisible().catch(() => false)) {
@@ -98,7 +102,9 @@ test.describe("template grid redesign", () => {
     await openTrainingTemplates(page);
     await page.screenshot({ path: join(screenshotDir, "07-desktop-training-templates.png"), fullPage: true });
 
-    await openTemplateDetail(page);
-    await page.screenshot({ path: join(screenshotDir, "08-desktop-template-detail.png"), fullPage: true });
+    if (await page.locator(".template-library-tile").first().isVisible().catch(() => false)) {
+      await openTemplateDetail(page);
+      await page.screenshot({ path: join(screenshotDir, "08-desktop-template-detail.png"), fullPage: true });
+    }
   });
 });

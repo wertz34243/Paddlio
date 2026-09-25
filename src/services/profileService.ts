@@ -6,47 +6,18 @@ import { listCloudClubs } from "./clubService";
 export type CloudProfile = Database["public"]["Tables"]["profiles"]["Row"];
 type CloudProfileUpdate = Partial<CloudProfile> & { id: string; profile_data?: Json };
 
-const ADMIN_EMAILS = new Set(["t.kanu@outlook.com", "dev.admin@paddlio.test"]);
-const CLOUD_ROLES: UserRole[] = ["Athlete", "Coach", "TeamAdmin", "ClubAdmin", "Admin"];
-const DEVELOPMENT_TEST_ROLES = new Map<string, UserRole[]>([
-  ["dev.coach@paddlio.test", ["Coach"]],
-  ["dev.clubadmin@paddlio.test", ["ClubAdmin"]],
-  ["dev.admin@paddlio.test", ["Admin"]],
-]);
-
 const normalizeEmail = (email: string): string => email.trim().toLowerCase();
 
-export const getCloudRolesFromMetadata = (metadata: SupabaseUser["user_metadata"] | null | undefined): UserRole[] => {
-  if (!metadata || typeof metadata !== "object") return [];
-  const rawRoles = (metadata as Record<string, unknown>).roles ?? (metadata as Record<string, unknown>).role;
-  const values = Array.isArray(rawRoles) ? rawRoles : rawRoles ? [rawRoles] : [];
-  return values.filter((value): value is UserRole => typeof value === "string" && CLOUD_ROLES.includes(value as UserRole));
-};
+export const normalizeCloudRoles = (roles: UserRole[] = ["Athlete"]): UserRole[] =>
+  Array.from(new Set(roles.length > 0 ? roles : ["Athlete"]));
 
-export const getDevelopmentTestRolesForEmail = (email: string): UserRole[] =>
-  DEVELOPMENT_TEST_ROLES.get(normalizeEmail(email)) ?? [];
-
-export const normalizeCloudRolesForEmail = (email: string, roles: UserRole[] = ["Athlete"]): UserRole[] => {
-  const normalized = normalizeEmail(email);
-  const safeRoles = roles.length > 0 ? roles : ["Athlete"];
-  const nextRoles = ADMIN_EMAILS.has(normalized)
-    ? ([...safeRoles, "Athlete", "Coach", "Admin"] as UserRole[])
-    : ([...safeRoles, "Athlete"] as UserRole[]);
-
-  return Array.from(new Set(nextRoles));
-};
-
-export const buildCloudRoles = (email: string, metadata: SupabaseUser["user_metadata"] | null | undefined, fallback: UserRole[] = ["Athlete"]): UserRole[] =>
-  normalizeCloudRolesForEmail(email, [
-    ...fallback,
-    ...getDevelopmentTestRolesForEmail(email),
-    ...getCloudRolesFromMetadata(metadata),
-  ]);
+export const buildCloudRoles = (_email: string, _metadata: SupabaseUser["user_metadata"] | null | undefined, fallback: UserRole[] = ["Athlete"]): UserRole[] =>
+  normalizeCloudRoles(fallback);
 
 const normalizeCloudProfile = (profile: CloudProfile): CloudProfile => ({
   ...profile,
   email: normalizeEmail(profile.email),
-  roles: normalizeCloudRolesForEmail(profile.email, profile.roles.length > 0 ? profile.roles : ["Athlete"]),
+  roles: normalizeCloudRoles(profile.roles.length > 0 ? profile.roles : ["Athlete"]),
 });
 
 const profileNeedsNormalization = (profile: CloudProfile): boolean => {
@@ -119,19 +90,16 @@ export const ensureCloudProfile = async (user: SupabaseUser): Promise<CloudProfi
   const firstName = String(metadata.firstName ?? "");
   const lastName = String(metadata.lastName ?? "");
   const email = normalizeEmail(user.email);
-  const roles = buildCloudRoles(email, metadata, ["Athlete"]);
   const metadataClubId = await resolveSignupClubId(metadata);
 
   const existing = await getCloudProfile(user.id);
   if (existing) {
-    const nextRoles = buildCloudRoles(email, metadata, existing.roles.length > 0 ? existing.roles : ["Athlete"]);
     const needsProfileRepair =
       profileNeedsNormalization(existing) ||
-      existing.email !== email ||
-      nextRoles.join("|") !== existing.roles.join("|");
+      existing.email !== email;
     if (!needsProfileRepair) return existing;
     const { data, error } = await (client.from("profiles") as any)
-      .update({ email, roles: nextRoles, updated_at: new Date().toISOString() })
+      .update({ email, updated_at: new Date().toISOString() })
       .eq("id", user.id)
       .select("*")
       .maybeSingle();
@@ -184,7 +152,7 @@ export const ensureCloudProfile = async (user: SupabaseUser): Promise<CloudProfi
         last_name: lastName,
         display_name: `${firstName} ${lastName}`.trim() || email,
         club_id: metadataClubId,
-        roles,
+        roles: ["Athlete"],
         status: "active",
         boat_classes: ["K1"],
       })
@@ -302,7 +270,7 @@ export const setCloudUserClubAssignment = async (input: {
 }): Promise<void> => {
   await updateCloudProfileAdminFields(input.userId, {
     club_id: input.status === "inactive" ? null : input.clubId || null,
-    roles: normalizeCloudRolesForEmail("", input.role === "Athlete" ? ["Athlete"] : ["Athlete", input.role]),
+    roles: normalizeCloudRoles(input.role === "Athlete" ? ["Athlete"] : ["Athlete", input.role]),
     status: input.status === "active" || input.status === "pending" ? "active" : "disabled",
   });
 
