@@ -87,7 +87,7 @@ jobs:
         id: changes
         shell: bash
         run: |
-          if git diff --quiet; then
+         if [ -z "$(git status --porcelain)" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
