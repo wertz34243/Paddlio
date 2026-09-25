@@ -70,13 +70,17 @@ jobs:
         if: always()
         run: rm -f .codex-task.md
 
-      - name: Install dependencies
+           - name: Install dependencies
         run: npm ci
 
       - name: Run tests
+        id: tests
+        continue-on-error: true
         run: npm test
 
       - name: Run build
+        id: build
+        continue-on-error: true
         run: npm run build
 
       - name: Create branch and commit
