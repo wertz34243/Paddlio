@@ -62,8 +62,9 @@ Der vorbereitete Datenschutzpfad war noch nicht real deployed. Beim ersten DEV-E
 
 ## Commit und Pushstatus
 
-- Implementierungscommit: wird nach diesem Handoff erstellt.
-- Pushstatus: ausstehend bis Commit-Abschluss.
+- Implementierungscommit: `41517ef` (`Verify DEV privacy and security release checks`).
+- Pushstatus: erfolgreich auf `origin/develop`.
+- Dieser aktualisierte Handoff folgt in einem separaten Dokumentationscommit.
 
 ## Naechste sinnvolle Aufgabe
 
