@@ -14,3 +14,9 @@ Ergebnis:
 - Edge Function muss mangels lokaler Supabase-CLI noch manuell auf DEV deployed und mit entbehrlichen Testkonten verifiziert werden.
 - Details stehen in `docs/paddlio-codex-handoff.md` und `docs/security/manual-dev-security-check.md`.
 - Naechster Auftrag erst wieder mit `Status: READY`.
+
+DEV-Abschluss 26.09.2026:
+- `account-privacy` Version 7 auf DEV deployed und real mit Admin/Coach/Athlete verifiziert.
+- Entbehrliches DEV-Testkonto erfolgreich und isoliert geloescht.
+- Hosting-Header, DB-Lint und Security Advisor real geprueft.
+- Vollstaendige Regression gruen; verbleibende Security-Advisor- und organisatorische Punkte stehen im Handoff.

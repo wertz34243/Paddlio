@@ -1,6 +1,6 @@
 # Paddlio DEV Security Verification
 
-Stand: 25.09.2026
+Stand: 26.09.2026
 
 Diese Checkliste gilt ausschliesslich fuer Supabase DEV `nlllqsfdhfiwticrcrnp` und `https://dev.paddlio.de`. Production `twlkhfbrrwjwppxinmpn` bleibt unangetastet. Keine Schluessel oder personenbezogenen Testdaten in Screenshots oder Tickets aufnehmen.
 
@@ -74,3 +74,23 @@ Noch keine Altersgrenze oder Form der Elternzustimmung festlegen. Vor Umsetzung 
 ## Manuelles Ergebnisprotokoll
 
 Fuer jeden Punkt Datum, pruefende Person, DEV-Build-Commit, Ergebnis und Link zu einem datensparsamen Nachweis festhalten. Ein nicht gepruefter Punkt gilt nicht als bestanden.
+
+## Verifiziert am 26.09.2026
+
+- [x] Zielprojekt vor Deploy: `nlllqsfdhfiwticrcrnp`; Production war nicht verknuepft.
+- [x] Edge Function `account-privacy` Version 7 aktiv, JWT-Pruefung aktiv, erlaubte Origin als DEV-Secret gesetzt.
+- [x] Export mit Admin, Coach und Athlete real bestanden; Fremdidentitaeten maskiert, keine Polar-/Service-Secrets.
+- [x] Ohne JWT HTTP 401; falsche Loeschphrase abgelehnt; fremde authentifizierte Origin HTTP 403.
+- [x] Entbehrliches DEV-Testkonto mit richtiger Phrase geloescht; eigene markierte Daten entfernt, fremde Profile/Clubs unveraendert, Login danach abgelehnt.
+- [x] Storage inventarisiert: 0 Buckets. Aktuell kein Objekt-Loeschtest moeglich oder erforderlich; bei erstem Bucket erneut pruefen.
+- [x] HTTPS und HTTP-Redirect real verifiziert.
+- [x] CSP, HSTS, Frame-, MIME-, Referrer- und Permissions-Header real in der DEV-Response verifiziert.
+- [x] DB-Lint ohne Schemafehler.
+- [x] Security Advisor ausgefuehrt: 51 offene Warnungen dokumentiert.
+
+## Noch manuell im DEV-Dashboard
+
+- [ ] Auth Site URL und Redirect-Allowlist gegen `https://dev.paddlio.de` protokollieren.
+- [ ] Leaked-Password-Protection aktivieren; Passwortregeln, Rate Limits und MFA-Entscheidung dokumentieren.
+- [ ] Die 48 `SECURITY DEFINER`-EXECUTE-Warnungen funktionsweise pruefen, bevor Rechte entzogen werden; mehrere Helper werden von RLS-Policies benoetigt.
+- [ ] `search_path` fuer `public.set_updated_at` und `public.default_roles_for_email` in einer additiven DEV-Migration fixieren.

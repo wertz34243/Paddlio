@@ -1,6 +1,6 @@
 # Paddlio Security- und Datenschutz-Audit
 
-Stand: 25.09.2026
+Stand: 26.09.2026
 
 Dieses Dokument ist eine technische Bestandsaufnahme und kein rechtsanwaltlich geprüfter Rechtstext.
 
@@ -8,7 +8,7 @@ Dieses Dokument ist eine technische Bestandsaufnahme und kein rechtsanwaltlich g
 
 Der Client enthält keine eingecheckten geheimen Schlüssel. Der Supabase-Anon-Key ist als öffentlicher Client-Schlüssel vorgesehen; `service_role`, Polar-Client-Secret und Token-Verschlüsselung bleiben ausschließlich in serverseitigen Vercel-Umgebungsvariablen. Eine frühere clientseitige Rollenhoch stufung anhand bestimmter E-Mail-Adressen beziehungsweise editierbarer Auth-Metadaten wurde entfernt. Rollen aus `public.profiles.roles` und Supabase-RLS sind die Berechtigungsquelle.
 
-Vercel liefert CSP, MIME-Schutz, Referrer-Policy, Permissions-Policy, Frame-Schutz und HSTS aus. Die Header müssen nach dem DEV-Deploy noch am realen HTTPS-Endpunkt kontrolliert werden. Polar-API-Endpunkte geben bei internen Fehlern nur stabile öffentliche Fehlercodes zurück; technische Details bleiben in Server-Logs.
+Vercel liefert CSP, MIME-Schutz, Referrer-Policy, Permissions-Policy, Frame-Schutz und HSTS aus. Diese Header wurden am realen DEV-HTTPS-Endpunkt kontrolliert. Polar-API-Endpunkte geben bei internen Fehlern nur stabile öffentliche Fehlercodes zurück; technische Details bleiben in Server-Logs.
 
 `npm audit` meldet nach kompatiblen Patch-/Minor-Aktualisierungen 0 bekannte Schwachstellen. Es wurden keine erzwungenen Major-Upgrades ausgeführt.
 
@@ -38,7 +38,7 @@ Im Client wurde kein Marketing-Tracking, Werbe-Cookie oder Analytics-SDK gefunde
 
 ## Rollen und RLS
 
-Die UI trennt Athlete, Coach, TeamAdmin, ClubAdmin und Admin. Client-Gates dienen nur der Bedienoberfläche; Datenzugriff wird durch Supabase-RLS abgesichert. Der statische RLS-Check ist grün. Ein Live-Supabase-DB-Lint konnte auf diesem Rechner nicht ausgeführt werden, weil die Supabase CLI nicht installiert/verfügbar ist. Vor dem Release sind deshalb im DEV-Projekt zusätzlich Security Advisor und Rollen-Matrix mit echten Konten zu prüfen.
+Die UI trennt Athlete, Coach, TeamAdmin, ClubAdmin und Admin. Client-Gates dienen nur der Bedienoberfläche; Datenzugriff wird durch Supabase-RLS abgesichert. Der statische RLS-Check, der reale DEV-DB-Lint und die Rollen-E2E-Matrix sind gruen. Die verbleibenden Security-Advisor-Warnungen sind unten dokumentiert und muessen vor dem offiziellen Release gezielt gehaertet werden.
 
 ## Datenschutzfunktionen
 
@@ -47,16 +47,26 @@ Die UI trennt Athlete, Coach, TeamAdmin, ClubAdmin und Admin. Client-Gates diene
 - Fachliche CSV-/XLSX-Exporte bleiben vorhanden. Zusaetzlich ist ein eigener JSON-Auskunftsexport ueber die authentifizierte Edge Function `account-privacy` vorbereitet; Abfragen sind explizit auf die verifizierte Nutzer-ID begrenzt und Provider-Tokens werden nicht exportiert.
 - Technische Datenschutz-/Impressumsbereiche sind öffentlich bei Registrierung und intern in Einstellungen vorbereitet.
 - Eine serverseitige Konto-/Datenloeschung ist als authentifizierte Edge Function implementiert. Der Service-Role-Key bleibt ausschliesslich im Function Runtime Secret; der Client verlangt eine explizite Bestaetigungsphrase und sendet die aktuelle Account-ID als zusaetzliche Verwechslungssperre.
-- Die Function muss vor Freigabe noch auf Supabase DEV deployed und mit einem entbehrlichen DEV-Testkonto Ende-zu-Ende verifiziert werden. Gemeinsame Kommunikationsdaten und Storage-Objekte muessen dabei gegen die vom Betreiber freigegebene Aufbewahrungsregel kontrolliert werden.
+- Die Function ist auf Supabase DEV deployed und mit einem entbehrlichen DEV-Testkonto Ende-zu-Ende verifiziert. Gemeinsame Kommunikationsdaten folgen weiterhin der noch freizugebenden Betreiber-Aufbewahrungsregel. DEV hat aktuell keine Storage-Buckets.
 
 ## Manuelle Release-Blocker
 
 1. Verantwortlichen, ladungsfähige Anschrift, Kontakt und gegebenenfalls Datenschutzkontakt festlegen und in Impressum/Datenschutzerklärung eintragen.
 2. Rechtsgrundlagen, Empfänger/Auftragsverarbeiter, Drittlandtransfer, Aufbewahrungs- und Löschfristen rechtlich prüfen lassen.
-3. `account-privacy` ausschliesslich auf Supabase DEV deployen und Export/Loeschung mit Athlete, Coach, Admin sowie einem entbehrlichen Loesch-Testkonto pruefen. Aufbewahrung gemeinsamer Kommunikationsdaten und Storage-Loeschung fachlich freigeben.
+3. Aufbewahrung gemeinsamer Kommunikationsdaten und die kuenftige Storage-Loeschung fachlich freigeben; der aktuelle DEV-Stand hat keine Storage-Buckets.
 4. Für minderjährige Athleten Alterskonzept, Einwilligung/Sorgeberechtigte, Sichtbarkeit und Aufbewahrung fachlich und rechtlich entscheiden.
 5. Supabase Auth-E-Mail-Templates, Redirect-Allowlist, Passwortregeln, MFA-Entscheidung, Rate Limits, Storage-Buckets und Security Advisor im DEV-Dashboard anhand `manual-dev-security-check.md` prüfen.
-6. Vercel-Header am ausgelieferten DEV-Build anhand `manual-dev-security-check.md` verifizieren; CSP-Verstöße in Browserkonsole prüfen.
+6. CSP-Verstoesse in den relevanten Browserablaeufen kontrollieren; die ausgelieferten Header selbst sind real verifiziert.
 7. Polar-Auftragsverarbeitung, Scopes, Widerruf/Disconnect und Löschung importierter Daten dokumentieren.
 
-Der Loesch-/Auskunftscode ist vorbereitet, aber ohne DEV-Deploy, Realtest, Betreiberangaben und rechtlich/fachlich freigegebene Aufbewahrungsregeln ist Paddlio noch nicht fuer einen offiziellen oeffentlichen Release freigegeben. Ein manueller technischer Nutzertest kann nach erfolgreichem DEV-Deploy der Function beginnen.
+## DEV-Verifikation vom 26.09.2026
+
+- `account-privacy` Version 7 wurde mit aktiver JWT-Pruefung ausschliesslich auf Supabase DEV `nlllqsfdhfiwticrcrnp` deployed.
+- Export wurde real als Admin, Coach und Athlete getestet. Die Antworten waren gueltiges JSON, kontobezogen, ohne Provider-/Service-Secrets und ohne unmaskierte fremde Identitaeten.
+- Ein nicht authentifizierter Aufruf wurde mit HTTP 401 abgelehnt. `dev.paddlio.de` bestand den CORS-Preflight; eine authentifizierte fremde Origin wurde mit HTTP 403 abgelehnt.
+- Die Loeschung wurde mit einem eigens erzeugten entbehrlichen DEV-Testkonto Ende-zu-Ende bestaetigt. Falsche Phrase wurde abgelehnt; Auth-Konto, Profil und markierte eigene Testdaten wurden entfernt, fremde Profile und Clubs blieben unveraendert, erneuter Login schlug fehl.
+- DEV-Storage enthaelt aktuell 0 Buckets. Es gab deshalb keine Storage-Objekte zu loeschen; bei spaeter eingefuehrten Buckets ist die Function zu erweitern.
+- Ausgelieferte DEV-Header wurden real bestaetigt: HTTPS/HTTP-Redirect, CSP, HSTS, MIME-, Frame-, Referrer- und Permissions-Schutz.
+- Supabase DB-Lint meldet keine Schemafehler. Der Security Advisor meldet noch 51 Warnungen: 48 zu direkt aufrufbaren `SECURITY DEFINER`-Hilfsfunktionen, 2 zu mutablem `search_path` und 1 zur deaktivierten Leaked-Password-Protection.
+
+Der vollstaendige manuelle DEV-Nutzertest kann beginnen. Fuer einen offiziellen oeffentlichen Release bleiben die Security-Advisor-Haertung, Auth-Dashboard-Pruefung, Betreiberangaben und rechtlich/fachlich freigegebenen Aufbewahrungsregeln offen.

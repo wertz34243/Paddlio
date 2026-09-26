@@ -24,7 +24,7 @@ const exportSpecs: ExportSpec[] = [
   { table: "notifications", filters: ["user_id"] },
   { table: "smart_coach_recommendations", filters: ["owner_user_id", "created_for_user_id"] },
   { table: "direct_messages", filters: ["sender_id", "receiver_id"] },
-  { table: "group_messages", filters: ["sender_id", "user_id"] },
+  { table: "group_messages", filters: ["sender_id"] },
   { table: "club_messages", filters: ["sender_id", "target_user_id"] },
   { table: "club_posts", filters: ["author_id", "target_user_id"] },
   { table: "tasks", filters: ["user_id", "owner_id", "created_by"] },
@@ -36,11 +36,12 @@ const exportSpecs: ExportSpec[] = [
   { table: "external_connections", filters: ["owner_id", "user_id"] },
   { table: "external_training_sessions", filters: ["owner_id", "user_id"] },
   { table: "beta_readiness_checks", filters: ["user_id"] },
-  { table: "beta_feedback", filters: ["owner_id", "user_id"] },
+  { table: "beta_feedback", filters: ["user_id"] },
   { table: "beta_testers", filters: ["user_id"] },
-  { table: "boats", filters: ["owner_user_id", "user_id"] },
-  { table: "club_material", filters: ["owner_user_id", "user_id"] },
-  { table: "club_events", filters: ["trainer_user_id", "athlete_user_id", "created_by"] },
+  { table: "boats", filters: ["owner_id", "user_id"] },
+  { table: "club_material", filters: ["owner_id", "user_id"] },
+  { table: "club_events", filters: ["user_id", "created_by"] },
+  { table: "club_documents", filters: ["owner_id", "created_by"] },
   { table: "academy_progress", filters: ["user_id"] },
   { table: "academy_courses", filters: ["created_by"] },
   { table: "academy_lessons", filters: ["created_by"] },
@@ -79,7 +80,7 @@ const deleteSpecs: ExportSpec[] = [
   { table: "training_attendance", filters: ["athlete_id", "user_id"] },
   { table: "notifications", filters: ["user_id"] },
   { table: "direct_messages", filters: ["sender_id", "receiver_id"] },
-  { table: "group_messages", filters: ["sender_id", "user_id"] },
+  { table: "group_messages", filters: ["sender_id"] },
   { table: "club_messages", filters: ["sender_id", "target_user_id"] },
   { table: "club_posts", filters: ["author_id", "target_user_id"] },
   { table: "file_attachments", filters: ["owner_id", "user_id"] },
@@ -89,7 +90,7 @@ const deleteSpecs: ExportSpec[] = [
   { table: "external_connections", filters: ["owner_id", "user_id"] },
   { table: "external_training_sessions", filters: ["owner_id", "user_id"] },
   { table: "beta_readiness_checks", filters: ["user_id"] },
-  { table: "beta_feedback", filters: ["owner_id", "user_id"] },
+  { table: "beta_feedback", filters: ["user_id"] },
   { table: "beta_testers", filters: ["user_id"] },
   { table: "competition_results", filters: ["athlete_id", "created_by"] },
   { table: "competitions", filters: ["user_id", "created_by"] },
@@ -98,9 +99,10 @@ const deleteSpecs: ExportSpec[] = [
   { table: "training_templates", filters: ["owner_id", "created_by"] },
   { table: "training_plan_items", filters: ["owner_id"] },
   { table: "smart_coach_recommendations", filters: ["owner_user_id", "created_for_user_id"] },
-  { table: "boats", filters: ["owner_user_id", "user_id"] },
-  { table: "club_material", filters: ["owner_user_id", "user_id"] },
-  { table: "club_events", filters: ["trainer_user_id", "athlete_user_id", "created_by"] },
+  { table: "boats", filters: ["owner_id", "user_id"] },
+  { table: "club_material", filters: ["owner_id", "user_id"] },
+  { table: "club_events", filters: ["user_id", "created_by"] },
+  { table: "club_documents", filters: ["owner_id", "created_by"] },
   { table: "group_members", filters: ["athlete_id"] },
   { table: "group_memberships", filters: ["user_id"] },
   { table: "club_memberships", filters: ["user_id"] },
@@ -161,6 +163,11 @@ Deno.serve(async (req: Request) => {
   if (authError || !authData.user) return response(origin, { error: "not_authenticated" }, 401);
   const user = authData.user;
   const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  const { data: callerProfile } = await admin.from("profiles").select("roles,status").eq("id", user.id).maybeSingle();
+  const canSeeDevelopmentDiagnostics = supabaseUrl.includes("nlllqsfdhfiwticrcrnp")
+    && callerProfile?.status === "active"
+    && Array.isArray(callerProfile.roles)
+    && callerProfile.roles.includes("Admin");
 
   let payload: { action?: string; confirmation?: string; confirmAccountId?: string };
   try {
@@ -175,7 +182,10 @@ Deno.serve(async (req: Request) => {
       const { data, error } = await admin.from(spec.table).select(spec.select ?? "*").or(scopeFilter(spec.filters, user.id));
       if (error) {
         console.error("account_privacy_export_failed", { table: spec.table, code: error.code });
-        return response(origin, { error: "export_failed" }, 500);
+        return response(origin, {
+          error: "export_failed",
+          ...(canSeeDevelopmentDiagnostics ? { diagnostic: { table: spec.table, code: error.code } } : {}),
+        }, 500);
       }
       datasets[spec.table] = redactOtherIdentities(data ?? [], user.id);
     }
@@ -207,7 +217,10 @@ Deno.serve(async (req: Request) => {
       const { error } = await operation;
       if (error) {
         console.error("account_privacy_detach_failed", { code: error.code });
-        return response(origin, { error: "delete_failed" }, 500);
+        return response(origin, {
+          error: "delete_failed",
+          ...(canSeeDevelopmentDiagnostics ? { diagnostic: { table: "shared_identity_detach", code: error.code } } : {}),
+        }, 500);
       }
     }
 
@@ -216,14 +229,20 @@ Deno.serve(async (req: Request) => {
       const { error } = await admin.from(spec.table).delete().or(scopeFilter(spec.filters, user.id));
       if (error) {
         console.error("account_privacy_delete_failed", { table: spec.table, code: error.code });
-        return response(origin, { error: "delete_failed" }, 500);
+        return response(origin, {
+          error: "delete_failed",
+          ...(canSeeDevelopmentDiagnostics ? { diagnostic: { table: spec.table, code: error.code } } : {}),
+        }, 500);
       }
     }
 
     const { error: deleteUserError } = await admin.auth.admin.deleteUser(user.id);
     if (deleteUserError) {
       console.error("account_privacy_auth_delete_failed", { code: deleteUserError.code });
-      return response(origin, { error: "delete_failed" }, 500);
+      return response(origin, {
+        error: "delete_failed",
+        ...(canSeeDevelopmentDiagnostics ? { diagnostic: { table: "auth.users", code: deleteUserError.code } } : {}),
+      }, 500);
     }
     return response(origin, { deleted: true });
   }

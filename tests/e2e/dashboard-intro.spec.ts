@@ -9,7 +9,12 @@ test.describe("dashboard intro", () => {
   test.skip(!coachEmail || !coachPassword, "Development coach credentials are required for dashboard intro tests.");
 
   test("opens, navigates and persists the Paddlio intro entry point", async ({ page }) => {
-    await page.addInitScript((key) => window.localStorage.removeItem(key), introStorageKey);
+    await page.addInitScript((key) => {
+      const resetMarker = `${key}:e2e-reset`;
+      if (window.sessionStorage.getItem(resetMarker) === "true") return;
+      window.localStorage.removeItem(key);
+      window.sessionStorage.setItem(resetMarker, "true");
+    }, introStorageKey);
     await login(page, coachEmail!, coachPassword!);
 
     const introCard = page.locator(".po-paddlio-intro-card");

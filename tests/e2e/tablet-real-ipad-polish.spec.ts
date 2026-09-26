@@ -72,8 +72,21 @@ test.describe("real iPad training polish", () => {
     await expect(page.locator(".master-calendar-context .master-template-card").first()).toBeVisible({ timeout: 20_000 });
     await capture(page, "03-calendar-template-panel.png");
 
-    await page.locator(".master-training-block-main").first().click();
+    const closeCalendarContext = page.getByRole("button", { name: "Kalender-Kontext schliessen" }).last();
+    if (await closeCalendarContext.isVisible().catch(() => false)) {
+      await closeCalendarContext.click();
+    } else if (await page.locator(".master-calendar-context").isVisible().catch(() => false)) {
+      await page.locator(".master-calendar-toolbar").getByRole("button", { name: "Vorlagen" }).click();
+    }
+    await expect(page.locator(".master-calendar-context")).toHaveCount(0);
+
+    const completedTraining = page.getByRole("option").filter({ hasText: "Durchgeführt" }).first().locator(".master-training-block-main");
+    const trainingToInspect = await completedTraining.isVisible().catch(() => false)
+      ? completedTraining
+      : page.locator(".master-training-block-main").first();
+    await trainingToInspect.click();
     await expect(page.getByTestId("training-detail-panel")).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByTestId("training-detail-panel").getByRole("button", { name: "Feedback" })).toBeVisible();
     await capture(page, "04-calendar-training-inspector.png");
 
     await page.getByTestId("training-detail-panel").getByRole("button", { name: "Feedback" }).click();
