@@ -79,5 +79,6 @@
 
 ## Commit und Pushstatus
 
-- Commit: wird nach diesem Handoff erstellt.
-- Pushstatus: ausstehend.
+- Implementierungscommit: `dbc29d8` (`Stabilize realtime content refreshes`).
+- Pushstatus: erfolgreich auf `origin/develop`.
+- Dieser finale Handoff-Stand folgt in einem separaten Dokumentationscommit.
