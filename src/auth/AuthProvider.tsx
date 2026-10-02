@@ -50,7 +50,7 @@ import { listCloudBetaFeedback, listCloudBetaTesters } from "../services/betaSer
 import { listCloudMaterials } from "../services/materialService";
 import { getSyncQueueStats } from "../services/syncService";
 import { getOfflineQueueDiagnostics, setOfflineQueueUser } from "../services/offlineQueueService";
-import { cloudValueOrCached, didCloudReadFail, mapCloudRead, markCloudReadFailed } from "../services/cloudReadState";
+import { cloudValueOrCached, didCloudReadFail, mapCloudRead, markCloudReadFailed, selectRefreshBootstrapData, shouldApplyCloudRefresh } from "../services/cloudReadState";
 import { backgroundSyncEngine } from "../services/backgroundSyncService";
 import { classifyOptionalSyncError, classifySyncError, getFailedSyncMessage, getSyncErrorMessage, resolveCloudConnectionState, type SyncErrorCategory } from "../services/syncStatus";
 import { listCloudNotifications } from "../services/notificationService";
@@ -594,6 +594,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const latestSyncDataRef = useRef<PaddleMotionData | null>(null);
   const refreshGenerationRef = useRef(0);
   const cloudRefreshRunningRef = useRef(false);
+  const cloudRefreshQueuedRef = useRef(false);
+  const dataRevisionRef = useRef(0);
 
   const finishEmailConfirmationFlow = async () => {
     if (typeof window !== "undefined") {
@@ -613,9 +615,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshCloudData = async () => {
-    if (cloudRefreshRunningRef.current) return;
+    if (cloudRefreshRunningRef.current) {
+      cloudRefreshQueuedRef.current = true;
+      return;
+    }
     cloudRefreshRunningRef.current = true;
     const refreshGeneration = ++refreshGenerationRef.current;
+    const dataRevision = dataRevisionRef.current;
     if (!isSupabaseConfigured || !supabase) {
       setCloudStatus("disabled");
       setCloudMessage(getSupabaseConfigMessage());
@@ -651,9 +657,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(activeSession);
       setCurrentUser(activeSession.user);
       const provisionalProfile = createFallbackProfile(activeSession.user);
-      const cachedSnapshot = mergeCloudData(activeSession.user.id, provisionalProfile, [], [provisionalProfile], [], [], []);
+      const cachedSnapshot = loadData(activeSession.user.id);
       setProfile(provisionalProfile);
-      setDataState(cachedSnapshot);
+      setDataState((current) => selectRefreshBootstrapData(current, cachedSnapshot, activeSession.user.id));
       let profileIsFallback = false;
       let nextProfile: CloudProfile | null = null;
 
@@ -696,8 +702,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setCloudMessage("");
       }
       if (refreshGeneration !== refreshGenerationRef.current) return;
+      if (!shouldApplyCloudRefresh(dataRevision, dataRevisionRef.current)) {
+        cloudRefreshQueuedRef.current = true;
+        return;
+      }
       setProfile(nextProfile);
-      setDataState(mergeCloudData(activeSession.user.id, nextProfile, [], [nextProfile], [], [], []));
+      setDataState(mergeCloudData(
+        activeSession.user.id,
+        nextProfile,
+        [],
+        [nextProfile],
+        markCloudReadFailed([] as CloudTrainingGroup[]),
+        markCloudReadFailed([] as CloudGroupMember[]),
+        markCloudReadFailed([] as ImportedClubMember[]),
+      ));
       setLoading(false);
       const clubs = mapCloudRead(await loadOptionalCloudData("clubs lesen", listCloudClubs, []), toClub);
       const allProfiles = await loadOptionalCloudData(
@@ -764,6 +782,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loadOptionalCloudData("task_assignments lesen", listCloudTaskAssignments, []),
         loadOptionalCloudData("training_attendance lesen", listCloudTrainingAttendance, []),
       ]);
+      if (!shouldApplyCloudRefresh(dataRevision, dataRevisionRef.current)) {
+        cloudRefreshQueuedRef.current = true;
+        return;
+      }
       const nextData = mergeCloudData(activeSession.user.id, nextProfile, clubs, allProfiles.length > 0 ? allProfiles : [nextProfile], groups, groupMembers, cloudImportedMembers, {
         plan: cloudPlan,
         trainingFeedback: cloudFeedback,
@@ -900,6 +922,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (!supabase) return;
           const latestSession = (await supabase.auth.getSession()).data.session;
           if (latestSession?.user.id !== activeSession.user.id || refreshGeneration !== refreshGenerationRef.current) return;
+          if (!shouldApplyCloudRefresh(dataRevision, dataRevisionRef.current)) {
+            void refreshCloudData();
+            return;
+          }
 
           const optionalData = mergeCloudData(activeSession.user.id, nextProfile, clubs, allProfiles.length > 0 ? allProfiles : [nextProfile], groups, groupMembers, cloudImportedMembers, {
             personalBests: cloudPersonalBests,
@@ -1033,6 +1059,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       cloudRefreshRunningRef.current = false;
       setLoading(false);
+      if (cloudRefreshQueuedRef.current) {
+        cloudRefreshQueuedRef.current = false;
+        window.setTimeout(() => void refreshCloudData(), 0);
+      }
     }
   };
 
@@ -1175,6 +1205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setData: AuthContextValue["setData"] = (updater) => {
+    dataRevisionRef.current += 1;
     setDataState((current) => {
       const next = typeof updater === "function" ? updater(current) : updater;
       if (next && currentUser) {
@@ -1191,7 +1222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase || !session?.user.id) return undefined;
     const handleRealtimeChange = () => {
       setCloudStatus("syncing");
-      void refreshCloudData().then(() => setCloudMessage("Daten wurden zwischen Geräten synchronisiert."));
+      void refreshCloudData();
     };
     const unsubscribers = [
       subscribeToUserTrainings(session.user.id, handleRealtimeChange, (realtime) => {

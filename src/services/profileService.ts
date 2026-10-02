@@ -5,6 +5,14 @@ import { listCloudClubs } from "./clubService";
 
 export type CloudProfile = Database["public"]["Tables"]["profiles"]["Row"];
 type CloudProfileUpdate = Partial<CloudProfile> & { id: string; profile_data?: Json };
+type VisibleContactProfile = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  display_name: string | null;
+  club_id: string | null;
+  roles: UserRole[] | null;
+};
 
 const normalizeEmail = (email: string): string => email.trim().toLowerCase();
 
@@ -19,6 +27,29 @@ const normalizeCloudProfile = (profile: CloudProfile): CloudProfile => ({
   email: normalizeEmail(profile.email),
   roles: normalizeCloudRoles(profile.roles.length > 0 ? profile.roles : ["Athlete"]),
 });
+
+export const mergeVisibleContactProfiles = (
+  profiles: CloudProfile[],
+  contacts: VisibleContactProfile[],
+  fallback: CloudProfile,
+): CloudProfile[] => {
+  const merged = new Map(profiles.map((profile) => [profile.id, profile]));
+  contacts.forEach((contact) => {
+    if (merged.has(contact.id)) return;
+    merged.set(contact.id, normalizeCloudProfile({
+      ...fallback,
+      id: contact.id,
+      email: "",
+      first_name: contact.first_name,
+      last_name: contact.last_name,
+      display_name: contact.display_name,
+      club_id: contact.club_id,
+      roles: normalizeCloudRoles(contact.roles ?? ["Athlete"]),
+      profile_data: {},
+    }));
+  });
+  return Array.from(merged.values());
+};
 
 const profileNeedsNormalization = (profile: CloudProfile): boolean => {
   const normalized = normalizeCloudProfile(profile);
@@ -293,16 +324,18 @@ export const listCloudProfiles = async (viewer: CloudProfile): Promise<CloudProf
 
   const isAdmin = viewer.roles.includes("Admin");
   const isCoachLike = viewer.roles.some((role) => role === "Coach" || role === "TeamAdmin" || role === "ClubAdmin");
-  if (!isAdmin && !isCoachLike) return [viewer];
+  let profiles: CloudProfile[] = [viewer];
 
-  let query = client.from("profiles").select("*").order("display_name", { ascending: true });
-  if (!isAdmin) {
-    if (!viewer.club_id) return [viewer];
-    query = query.eq("club_id", viewer.club_id);
+  if (isAdmin || (isCoachLike && viewer.club_id)) {
+    let query = client.from("profiles").select("*").order("display_name", { ascending: true });
+    if (!isAdmin) query = query.eq("club_id", viewer.club_id!);
+    const { data, error } = await query;
+    if (error) throw error;
+    profiles = (data ?? []).map(normalizeCloudProfile);
   }
 
-  const { data, error } = await query;
-  if (error) throw error;
-  return data ?? [];
+  const { data: contacts, error: contactError } = await (client as any).rpc("paddlio_visible_contact_profiles_20261002");
+  if (contactError) throw contactError;
+  return mergeVisibleContactProfiles(profiles, (contacts ?? []) as VisibleContactProfile[], viewer);
 };
 

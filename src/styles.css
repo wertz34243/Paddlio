@@ -15830,6 +15830,15 @@ body,
     border-radius: 15px;
   }
 
+  .app-shell-phone .communication-shell .chat-panel {
+    padding-bottom: calc(var(--phone-bottom-nav-height, 66px) + 24px + env(safe-area-inset-bottom));
+  }
+
+  .app-shell-phone .communication-shell .chat-form {
+    bottom: calc(var(--phone-bottom-nav-height, 66px) + 14px + env(safe-area-inset-bottom));
+    z-index: 3;
+  }
+
   .app-shell-phone .more-category-shell {
     gap: 10px;
   }

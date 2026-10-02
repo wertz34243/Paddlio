@@ -3,7 +3,7 @@ import { getSupabaseClient } from "../lib/supabase";
 import { buildNextDeltaCursor, isAfterDeltaCursor } from "./deltaSyncService";
 import { discardOfflineQueueItem, enqueueOfflineChange, flushOfflineQueue, getOfflineQueueDiagnostics, getOfflineQueueStats, readOfflineQueue, setOfflineQueueUser, writeOfflineQueue } from "./offlineQueueService";
 import { getSyncEntityConfig, toSoftDeletePayload } from "./syncEntityConfig";
-import { cloudValueOrCached, markCloudReadFailed } from "./cloudReadState";
+import { cloudValueOrCached, markCloudReadFailed, selectRefreshBootstrapData, shouldApplyCloudRefresh } from "./cloudReadState";
 import { classifySyncWriteError } from "./syncErrorPolicy";
 import { classifyOptionalSyncError } from "./syncStatus";
 import { runCloudWrite } from "./cloudWriteService";
@@ -279,6 +279,23 @@ describe("cloud read semantics", () => {
 
   it("uses cached data only when the cloud read failed", () => {
     expect(cloudValueOrCached(markCloudReadFailed([]), [{ id: "cached" }])).toEqual([{ id: "cached" }]);
+  });
+
+  it("keeps the current account snapshot while a refresh is loading", () => {
+    const current = { activeUserId: USER_ID, messages: ["optimistic"] };
+    const cached = { activeUserId: USER_ID, messages: [] as string[] };
+    expect(selectRefreshBootstrapData(current, cached, USER_ID)).toBe(current);
+  });
+
+  it("uses the scoped cache after an account switch", () => {
+    const current = { activeUserId: "other-user", messages: ["foreign"] };
+    const cached = { activeUserId: USER_ID, messages: ["own"] };
+    expect(selectRefreshBootstrapData(current, cached, USER_ID)).toBe(cached);
+  });
+
+  it("rejects an older cloud response after a local change", () => {
+    expect(shouldApplyCloudRefresh(4, 5)).toBe(false);
+    expect(shouldApplyCloudRefresh(5, 5)).toBe(true);
   });
 });
 

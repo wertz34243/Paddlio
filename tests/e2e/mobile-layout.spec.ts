@@ -115,6 +115,48 @@ test.describe("mobile layout guards", () => {
     await expectPhoneChromeUsable(page);
   });
 
+  test("team messages keep contacts and groups stable across a cloud reload", async ({ page }) => {
+    test.setTimeout(90_000);
+    const email = process.env.PADDLIO_E2E_COACH_EMAIL;
+    const password = process.env.PADDLIO_E2E_COACH_PASSWORD;
+    test.skip(!email || !password, "Set PADDLIO_E2E_COACH_* for authenticated communication checks.");
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await login(page, email!, password!);
+    await openBottomNav(page, /Team-Bereich/);
+
+    const contactNames = page.locator(".communication-layout .communication-contact strong");
+    await expect(contactNames.first()).toBeVisible({ timeout: 20_000 });
+    const namesBefore = await contactNames.allTextContents();
+    expect(namesBefore.every((name) => name.trim() && name.trim() !== "Paddlio Kontakt" && name.trim() !== "Paddlio Nutzer")).toBe(true);
+
+    const chatForm = page.locator(".communication-layout .chat-form").first();
+    await chatForm.scrollIntoViewIfNeeded();
+    const doesNotOverlapNavigation = await page.evaluate(() => {
+      const form = document.querySelector<HTMLElement>(".communication-layout .chat-form");
+      const navigation = document.querySelector<HTMLElement>("[data-testid='bottom-navigation']");
+      if (!form || !navigation) return false;
+      return form.getBoundingClientRect().bottom <= navigation.getBoundingClientRect().top + 1;
+    });
+    expect(doesNotOverlapNavigation).toBe(true);
+
+    await page.reload();
+    await expect(page.getByTestId("authenticated-app")).toBeVisible({ timeout: 20_000 });
+    await openBottomNav(page, /Team-Bereich/);
+    await expect(contactNames.first()).toBeVisible({ timeout: 20_000 });
+    await expect.poll(async () => contactNames.allTextContents()).toEqual(namesBefore);
+
+    await page.getByRole("tab", { name: "Gruppen" }).click();
+    const groupNames = page.locator(".communication-layout .communication-contact strong");
+    await expect(groupNames.first()).toBeVisible({ timeout: 20_000 });
+    const groupsBefore = await groupNames.allTextContents();
+    await page.reload();
+    await openBottomNav(page, /Team-Bereich/);
+    await page.getByRole("tab", { name: "Gruppen" }).click();
+    await expect(groupNames.first()).toBeVisible({ timeout: 20_000 });
+    await expect.poll(async () => groupNames.allTextContents()).toEqual(groupsBefore);
+  });
+
   test("training feedback detail remains readable on a small phone", async ({ page }) => {
     const email = process.env.PADDLIO_E2E_COACH_EMAIL;
     const password = process.env.PADDLIO_E2E_COACH_PASSWORD;

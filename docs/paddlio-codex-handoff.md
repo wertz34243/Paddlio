@@ -2,70 +2,73 @@
 
 ## Stand
 
-- Datum/Uhrzeit: 2026-10-02 07:29 CEST
-- Stabilitaetsblock: Praxistest-Fixes fuer Import/Export, Wettkampf, Trainingsplanung und Kalender-UI
-- Status: IMPLEMENTIERT, DEV-SCHEMA AKTUALISIERT, AUTOMATISIERTE REGRESSION GRUEN
+- Datum/Uhrzeit: 2026-10-02 12:10 CEST
+- Stabilitaetsblock: Stabile Inhalte bei lokalen Aenderungen, Cloud-Refresh und Realtime
+- Status: IMPLEMENTIERT, AUF SUPABASE DEV ANGEWENDET, REGRESSION GRUEN
 
 ## Root Cause
 
-- Sieben Importarten erzeugten teilweise nur lokale Vorschauobjekte oder meldeten Erfolg, ohne den fachlichen Cloud-Zielbereich vollstaendig zu persistieren. Gruppen hatten keinen Write-Pfad; Startlisten wurden faelschlich wie Sportlerdaten behandelt; Wettkampfergebnisse konnten fremde Namen still dem aktuellen Nutzer zuordnen.
-- Mobile Wettkampfergebnisse schrieben die nicht vorhandene DEV-Spalte `competition_results.starter_field`; nur `starter_count` existiert.
-- Das DEV-Schema hatte keine fachliche Startlisten- bzw. Import-Staging-Struktur und dem Journal fehlten aktive Durchfuehrungsfelder.
-- Native `select`-Optionen erbten im Dark Mode helle Browserfarben. Kalenderaktionen konnten bei mittleren Desktopbreiten kollidieren; der Vorlagenkontext hatte keinen verlaesslichen eigenen Scrollbereich.
-- Neue Eintraege verwendeten teils feste Uhrzeiten. Die Rollen-UI wurde vor Abschluss des eigenen Profilabrufs mit einem provisional Athlete-Profil freigegeben.
-- Zwei Playwright-Helfer werteten noch ladende Optionen/Navigation als Endzustand; native Scrollanimationen konnten direkt folgende Tastendruecke verschlucken.
+- `AuthProvider.refreshCloudData()` veroeffentlichte waehrend eines laufenden Cloud-Refreshs zwei unvollstaendige Zwischenstaende. Dabei wurden noch nicht geladene Gruppen, Mitglieder und Nachrichten als erfolgreiche leere Cloud-Antwort behandelt. Sichtbare Daten wechselten deshalb kurzzeitig oder dauerhaft auf leere Zustaende.
+- Realtime-Ereignisse waehrend eines laufenden Refreshs wurden verworfen. Ausserdem konnte eine aeltere asynchrone Cloud-Antwort einen neueren optimistischen lokalen Stand ueberschreiben.
+- Die bestehende `profiles`-RLS liefert nicht fuer jede berechtigte Chatbeziehung ein vollstaendiges Gegenprofil. Nach Verlust des lokalen Identitaetscaches blieb deshalb nur ein generischer Kontaktname.
+- Auf kleinen Phone-Viewports lag die sticky Nachrichtenleiste zu nah an der unteren Navigation.
 
 ## Aenderungen
 
-- Alle acht Importtypen besitzen jetzt einen expliziten Persistenzpfad und Erfolg wird nur nach bestaetigter Speicherung gemeldet.
-- Zielrouten: Trainingsplan -> `training_plan_items`; Trainingseinheiten -> `training_journal_entries`; Wettkampfergebnisse -> `competition_results`; Sportler/Vereinsmitglieder -> `imported_club_members`; Startlisten -> `competition_start_entries`; Gruppen -> `training_groups`; Material -> `materials`.
-- Startlisten werden einem vorhandenen Wettkampf zugeordnet und nicht mehr als neue Auth-Nutzer angelegt. Personenimporte bleiben sichere Vereins-Stagingdaten ohne Rollen- oder Login-Erteilung.
-- Pflichtfelder, Synonyme, Laufzeitfehler, Teilimportzahlen und Duplikatschutz wurden erweitert. Organisationale Imports sind fuer Athletes ausgeblendet.
-- Wettkampf-Writes laufen ueber den Retry-/Offline-Pfad; veraltetes `starter_field` wurde entfernt. Startlisten werden in der Wettkampfansicht angezeigt, mobile Formulare stapeln sauber.
-- Neue Datums-/Zeitfelder verwenden die lokale Geraetezeit; gespeicherte Werte werden beim Bearbeiten nicht ueberschrieben.
-- Athletes koennen eigene Vorlagen sowie Wochen- und Saisonplanung verwenden. Coach/Admin-Zuweisungen bleiben rollenbegrenzt.
-- Quick-Edit-, Filter- und vergleichbare native Selects haben lesbare Dark-/Light-Optionen. Kalenderaktionen umbrechen ohne Ueberlagerung; Liste/Vorlagen sind auf Desktop konsistent; der Vorlagenpicker scrollt per Maus, Touchpad und Touch.
-- Die echte Cloud-Rolle wird vor Freigabe der App-Shell geladen. E2E-Navigation, Tabwechsel und Desktop-Scrollpruefungen sind zustandsbasiert stabilisiert.
-- Offline- und Polar-Grenzen sowie Importziele wurden dokumentiert; DEV-Polar-URLs zeigen auf `https://dev.paddlio.de`.
+- Der bestehende aktuelle Account-Snapshot bleibt sichtbar, bis ein vollstaendiger Refresh vorliegt. Erfolgreich leere Cloud-Antworten bleiben weiterhin gueltige Wahrheit; nur noch nicht geladene bzw. fehlgeschlagene Bereiche verwenden den Cache.
+- Lokale Datenrevisionen verhindern, dass aeltere Cloud-Antworten neuere lokale Aenderungen ueberschreiben.
+- Realtime-Ereignisse waehrend eines Refreshs werden vorgemerkt und unmittelbar danach durch einen neuen Refresh verarbeitet.
+- Ein minimales, autorisiertes Kontaktverzeichnis liefert fuer eigene Chatpartner und gemeinsame Gruppen stabile Namen und Rollen, ohne E-Mail oder erweiterte Profildaten offenzulegen.
+- Die mobile Chatleiste besitzt Safe-Area- und Bottom-Navigation-Abstand.
+- Neue Unit- und E2E-Regressionen pruefen Accountwechsel, konkurrierende lokale/Cloud-Staende, stabile Kontakt-/Gruppennamen nach Reload und die mobile Chatleiste.
 
-## Migrationen
+## Migration
 
-- Neu: `supabase/migrations/20261001131418_competition_start_entries.sql`.
-- Additiv/idempotent: `competition_start_entries`, `imported_club_members`, fehlende Journal-Durchfuehrungsspalten, Indizes, RLS-Policies, Grants, Realtime und PostgREST-Reload.
+- Neu: `supabase/migrations/20261002061219_stable_realtime_content_state.sql`.
+- Erstellt `public.paddlio_visible_contact_profiles_20261002()` als eingeschraenkten `SECURITY DEFINER` RPC mit leerem `search_path`.
+- Ausfuehrung nur fuer `authenticated`; `anon` und `public` sind entzogen.
+- Additiver partieller Index fuer aktive Gruppenmitgliedschaften.
+- PostgREST-Schema-Reload enthalten.
 - Keine Tabellen gedroppt und keine Nutzdaten geloescht.
 
 ## Supabase DEV Ergebnis
 
-- Vor jedem DB-Schritt geprueftes Ziel: ausschliesslich `nlllqsfdhfiwticrcrnp` (DEV); Production `twlkhfbrrwjwppxinmpn` war nicht verknuepft.
-- Migration auf DEV erfolgreich angewendet und idempotent erneut geprueft.
-- Beide neuen Tabellen vorhanden, RLS aktiv, Policies vorhanden und Realtime aktiviert.
-- Fehlende Journalspalten sind vorhanden.
-- Reales DEV-Schema bestaetigt `competition_results.starter_count`; `starter_field` existiert nicht und wird nicht mehr geschrieben.
-- `training_groups.age_range` existiert nicht und wird nicht mehr als Importpayload gesendet.
+- Vor jedem SQL-Schritt geprueftes Ziel: ausschliesslich `nlllqsfdhfiwticrcrnp` (`paddlio-dev`, linked, ACTIVE_HEALTHY).
+- Production `twlkhfbrrwjwppxinmpn` war nicht verknuepft und wurde nicht verwendet.
+- Migration gezielt als einzelne SQL-Datei auf DEV angewendet; kein unsicherer historischer `db push`.
+- Verifiziert: Funktion vorhanden, `SECURITY DEFINER = true`, `search_path = ''`, `authenticated_execute = true`, `anon_execute = false`.
+- Verifiziert: Index `idx_group_memberships_user_group_active_20261002` vorhanden.
+
+## Betroffene Dateien
+
+- `src/auth/AuthProvider.tsx`
+- `src/services/cloudReadState.ts`
+- `src/services/profileService.ts`
+- `src/services/profileService.test.ts`
+- `src/services/syncInfrastructure.test.ts`
+- `src/styles.css`
+- `tests/e2e/mobile-layout.spec.ts`
+- `supabase/migrations/20261002061219_stable_realtime_content_state.sql`
 
 ## Tests
 
-- `npm ci`: erfolgreich, 108 Pakete.
-- `npm audit`: 0 bekannte Schwachstellen.
-- `npm test`: 26 Dateien, 143/143 Tests.
-- Parser: reale CSV-, XLS- und XLSX-Dateien getestet.
-- Import-Engine/Persistenz: alle acht fachlichen Importtypen, Zieltabellen, Teilfehler und Duplikatschutz getestet.
-- `npm run build`: erfolgreich, 186 Module; nur bestehender Chunk-Hinweis.
-- `check:encoding`, `check:rls`, `check:bundle`, `check:a11y`, `check:beta`: erfolgreich.
-- `npm run test:e2e`: 42 bestanden, 24 vorgesehene projekt-/viewportbezogene Skips, 0 Fehler.
-- `npm run test:e2e:roles`: 9 bestanden, 1 vorgesehener Mobile-Mehrgeraete-Skip, 0 Fehler.
-- Zusaetzlich: Desktop-Scrolltest 5 Wiederholungen gruen; Zwei-Geraete-Coach/Athlete-Flow gruen.
+- `npm.cmd run test`: 26 Dateien, 148/148 Tests bestanden.
+- `npm.cmd run build`: erfolgreich, 186 Module; nur bestehender Chunk-Hinweis.
+- `npm.cmd run check:beta`: Encoding, RLS, Security, Bundle, A11y und Beta-Blocker bestanden.
+- Neuer Mobile-Kommunikationstest: bestanden; keine DEV-Daten erzeugt oder geloescht.
+- `npm.cmd run test:e2e`: 43 bestanden, 25 vorgesehene Projekt-/Viewport-Skips, 0 Fehler.
+- `npm.cmd run test:e2e:roles`: 9 bestanden, 1 vorgesehener Mobile-Projekt-Skip, 0 Fehler.
+- Der erste Gesamtlauf hatte einmalig einen bestehenden Tablet-Builder-Screenshot-Timeout. Der isolierte Test und der komplette Wiederholungslauf waren gruen.
 
 ## Offene Punkte
 
-- Polar benoetigt weiterhin die externe Provider-/Vercel-Konfiguration und einen realen OAuth-Providerlauf; keine geheimen Schluessel wurden in den Client aufgenommen.
-- Der abschliessende manuelle Import-Praxistest mit Beispiel-Dateien auf iPhone, iPad und PC ist noch auszufuehren. Die automatisierten Parser-, Persistenz- und Cloud-Schema-Pruefungen sind gruen.
-- Die von E2E-Laeufen aktualisierten Screenshotdateien waren bereits ausserhalb dieses Arbeitsumfangs geaendert und werden nicht mit diesem Block committed.
-- Bestehende organisatorische/rechtliche Releasepunkte aus dem Security-Handoff bleiben unberuehrt.
+- Der konkrete urspruengliche iPhone-Ablauf sollte nach dem DEV-Deploy einmal manuell wiederholt werden: Gruppennachricht senden, Seite offen lassen, Direktkontakte beobachten und anschliessend neu laden.
+- Ein echter Safari-Test auf physischem iPhone/iPad ist automatisiert nicht moeglich; der Playwright-Mobile-Test deckt Layout, Reload und stabilen Datenstand ab.
+- Keine bekannten blockierenden Code-, Schema-, Sync- oder RLS-Fehler aus diesem Block.
 
 ## Naechste sinnvolle Aufgabe
 
-Manueller DEV-Praxistest: je eine fiktive CSV/XLS/XLSX-Datei ueber die UI importieren, Zielbereich nach Reload auf iPhone/iPad/PC kontrollieren und anschliessend den Polar-OAuth-Lauf mit korrekt hinterlegter DEV-Konfiguration pruefen.
+- Manueller DEV-Praxistest auf iPhone und iPad fuer Gruppenchat/Direktnachrichten; danach nur bei einem reproduzierbaren Restbefund weiterarbeiten.
 
 ## Sicherheitsbestaetigung
 
@@ -76,6 +79,5 @@ Manueller DEV-Praxistest: je eine fiktive CSV/XLS/XLSX-Datei ueber die UI import
 
 ## Commit und Pushstatus
 
-- Implementierungscommit: `37eb2fb` (`Fix imports and calendar usability`).
-- Pushstatus: erfolgreich auf `origin/develop`.
-- Dieser abschliessende Handoff-Stand folgt in einem separaten Dokumentationscommit.
+- Commit: wird nach diesem Handoff erstellt.
+- Pushstatus: ausstehend.
