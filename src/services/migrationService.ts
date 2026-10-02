@@ -6,6 +6,7 @@ import { upsertCloudJournalEntry } from "./journalService";
 import { upsertCloudTrainingTemplate } from "./trainingTemplateService";
 import { upsertCloudGoal } from "./goalService";
 import { upsertCloudCompetition } from "./competitionService";
+import { upsertCloudCompetitionStartEntry } from "./competitionStartService";
 import {
   calculatePersonalBests,
   upsertCloudBetaReadinessCheck,
@@ -99,6 +100,10 @@ export const syncDataSnapshotToCloud = async (data: PaddleMotionData, profile: C
       createdBy: competition.createdBy || profile.id,
       clubId: competition.clubId || clubId || "",
     }, clubId);
+    migrated += 1;
+  }
+  for (const entry of data.competitionStartEntries ?? []) {
+    await upsertCloudCompetitionStartEntry(entry);
     migrated += 1;
   }
   const personalBests = data.personalBests.length > 0 ? data.personalBests : calculatePersonalBests(data.competitions);

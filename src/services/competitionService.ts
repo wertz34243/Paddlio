@@ -1,6 +1,5 @@
 import { getSupabaseClient } from "../lib/supabase";
 import type { Competition } from "../domain/types";
-import { enqueueSyncChange } from "./syncService";
 import { runCloudWrite } from "./cloudWriteService";
 import { calculatePersonalBests, upsertCloudPersonalBest } from "./resultsReadinessService";
 import { sanitizeCloudPayload, toCloudUuid, toCloudUuidOrNull } from "./cloudIds";
@@ -60,7 +59,6 @@ export const upsertCloudCompetition = async (competition: Competition, clubId?: 
     ranking: competition.rank,
     rank: competition.rank,
     starter_count: competition.starterField ?? null,
-    starter_field: competition.starterField ?? null,
     gap_to_winner: competition.gapToWinnerSeconds,
     gap_to_winner_seconds: competition.gapToWinnerSeconds,
     gap_to_podium: competition.gapToPodiumSeconds ?? null,
@@ -73,15 +71,11 @@ export const upsertCloudCompetition = async (competition: Competition, clubId?: 
     created_by: toCloudUuidOrNull(competition.createdBy || competition.athleteId),
   });
 
-  if (!client || !navigator.onLine) {
-    enqueueSyncChange({ tableName: "competitions", action: "upsert", payload: competitionPayload });
-    enqueueSyncChange({ tableName: "competition_results", action: "upsert", payload: resultPayload });
-    return;
-  }
-  const { error: competitionError } = await (client.from("competitions") as any).upsert(competitionPayload, { onConflict: "id" });
-  if (competitionError) throw competitionError;
-  const { error: resultError } = await (client.from("competition_results") as any).upsert(resultPayload, { onConflict: "id" });
-  if (resultError) throw resultError;
+  await runCloudWrite("competitions", "upsert", competitionPayload, (activeClient) =>
+    (activeClient.from("competitions") as any).upsert(competitionPayload, { onConflict: "id" }));
+  await runCloudWrite("competition_results", "upsert", resultPayload, (activeClient) =>
+    (activeClient.from("competition_results") as any).upsert(resultPayload, { onConflict: "id" }));
+  if (!client || typeof navigator !== "undefined" && !navigator.onLine) return;
   await Promise.all(calculatePersonalBests([competition]).map(upsertCloudPersonalBest));
 };
 
@@ -134,5 +128,5 @@ export const listCloudCompetitions = async (): Promise<Competition[]> => {
 };
 
 export const deleteCloudCompetition = async (id: string): Promise<void> =>
-  runCloudWrite("competitions", "delete", { id }, (client) =>
-    (client.from("competitions") as any).delete().eq("id", id));
+  runCloudWrite("competitions", "delete", { id: toCloudUuid(id) }, (client) =>
+    (client.from("competitions") as any).delete().eq("id", toCloudUuid(id)));

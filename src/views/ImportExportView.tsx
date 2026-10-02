@@ -7,12 +7,14 @@ import type { ExportJob, ExportType, ImportAnalysis, ImportField, ImportFileForm
 import { requiredFieldsFor, supportedImportTypes, targetFieldLabels } from "../features/importExport/mappings";
 import type { PaddleMotionData, User } from "../domain/types";
 import { listCloudImportJobs, listCloudImportProfiles, upsertCloudExportJob, upsertCloudImportJob, upsertCloudImportProfile, upsertCloudImportRow } from "../services/importExportService";
+import { persistImportedEntities } from "../services/importPersistenceService";
 import { PolarIntegrationView } from "./PolarIntegrationView";
 
 type ImportExportViewProps = {
   data: PaddleMotionData;
   user: User;
   sessionAccessToken?: string;
+  cloudClubId?: string | null;
   onDataChange: (updater: (current: PaddleMotionData) => PaddleMotionData) => void;
 };
 
@@ -36,9 +38,9 @@ const exportTypes: ExportType[] = [
   "academy_progress",
 ];
 
-export function ImportExportView({ data, user, sessionAccessToken, onDataChange }: ImportExportViewProps) {
+export function ImportExportView({ data, user, sessionAccessToken, cloudClubId, onDataChange }: ImportExportViewProps) {
   const [panel, setPanel] = useState<Panel>("polar");
-  const [importType, setImportType] = useState<ImportType>("athletes");
+  const [importType, setImportType] = useState<ImportType>("training_plans");
   const [workbook, setWorkbook] = useState<ParsedWorkbook | null>(null);
   const [analysis, setAnalysis] = useState<ImportAnalysis | null>(null);
   const [sheetName, setSheetName] = useState("");
@@ -52,6 +54,9 @@ export function ImportExportView({ data, user, sessionAccessToken, onDataChange 
   const [exportType, setExportType] = useState<ExportType>("training_plans");
   const [exportFormat, setExportFormat] = useState<Extract<ImportFileFormat, "csv" | "xlsx">>("xlsx");
   const [lastExportRows, setLastExportRows] = useState<number | null>(null);
+  const [importing, setImporting] = useState(false);
+  const canManageOrganisationImports = ["coach", "teamAdmin", "clubAdmin", "admin"].includes(user.role);
+  const visibleImportTypes = supportedImportTypes.filter((type) => canManageOrganisationImports || !["athletes", "club_members", "groups", "start_lists"].includes(type.id));
 
   useEffect(() => {
     void Promise.all([listCloudImportJobs(), listCloudImportProfiles()])
@@ -129,27 +134,30 @@ export function ImportExportView({ data, user, sessionAccessToken, onDataChange 
   };
 
   const runImport = async () => {
-    if (!analysis || criticalErrors > 0 || !confirmed) return;
+    if (!analysis || criticalErrors > 0 || !confirmed || importing) return;
+    setImporting(true);
+    setFileError("");
     const result = executeImport(analysis, data, user);
-    onDataChange(() => result.data);
-    setReport(result.report);
-    setHistory((items) => [result.report, ...items]);
-    await upsertCloudImportJob(result.report).catch((error) => console.warn("Importbericht konnte nicht synchronisiert werden.", error));
-    await Promise.all(
-      analysis.previewRows.slice(0, storableRowLimit).map((row) =>
-        upsertCloudImportRow({
-          id: createId("import-row"),
-          importJobId: result.report.id,
-          rowNumber: row.rowNumber,
-          status: row.status,
-          sourceData: row.original,
-          transformedData: row.transformed,
-          errors: row.issues.filter((issue) => issue.severity === "error"),
-          warnings: row.issues.filter((issue) => issue.severity === "warning"),
-          createdAt: result.report.completedAt,
-        }).catch((error) => console.warn("Importzeile konnte nicht synchronisiert werden.", error)),
-      ),
-    );
+    try {
+      const persistedRows = await persistImportedEntities(analysis.importType, data, result.data, user, cloudClubId);
+      if (result.report.createdRows > 0 && persistedRows !== result.report.createdRows) {
+        throw new Error("Nicht alle importierten Datensätze konnten gespeichert werden.");
+      }
+      onDataChange(() => result.data);
+      setReport(result.report);
+      setHistory((items) => [result.report, ...items]);
+      await upsertCloudImportJob(result.report);
+      await Promise.all(analysis.previewRows.slice(0, storableRowLimit).map((row) => upsertCloudImportRow({
+        id: createId("import-row"), importJobId: result.report.id, rowNumber: row.rowNumber,
+        status: row.status, sourceData: row.original, transformedData: row.transformed,
+        errors: row.issues.filter((issue) => issue.severity === "error"),
+        warnings: row.issues.filter((issue) => issue.severity === "warning"), createdAt: result.report.completedAt,
+      })));
+    } catch (error) {
+      setFileError(error instanceof Error ? error.message : "Der Import konnte nicht gespeichert werden.");
+    } finally {
+      setImporting(false);
+    }
   };
 
   const runExport = async () => {
@@ -214,7 +222,7 @@ export function ImportExportView({ data, user, sessionAccessToken, onDataChange 
                 setImportType(nextType);
                 refreshAnalysis(workbook, nextType, sheetName, headerRow);
               }}>
-                {supportedImportTypes.map((type) => (
+                {visibleImportTypes.map((type) => (
                   <option key={type.id} value={type.id}>{type.label}</option>
                 ))}
               </select>
@@ -332,8 +340,8 @@ export function ImportExportView({ data, user, sessionAccessToken, onDataChange 
                   <input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} disabled={criticalErrors > 0} />
                   Ich habe Vorschau, Warnungen und Konflikte geprüft. Bestehende Daten werden nicht automatisch gelöscht.
                 </label>
-                <button className="primary-action" type="button" onClick={() => void runImport()} disabled={!confirmed || criticalErrors > 0}>
-                  Jetzt importieren
+                <button className="primary-action" type="button" onClick={() => void runImport()} disabled={!confirmed || criticalErrors > 0 || importing}>
+                  {importing ? "Import wird gespeichert..." : "Jetzt importieren"}
                 </button>
                 {report ? <ImportReportSummary report={report} /> : null}
               </section>

@@ -25,6 +25,7 @@ async function openMore(page: Page) {
 }
 
 async function openMainPage(page: Page, label: "Training" | "Kalender") {
+  await expect(page.getByTestId("authenticated-app")).toBeVisible({ timeout: 30_000 });
   const pageId = label === "Kalender" ? "plan" : "training";
   const target = label === "Kalender" ? "Kalender" : "Training";
   const stableNavButtons = page.getByTestId(`nav-${pageId}`);
@@ -63,19 +64,11 @@ async function ensureTemplatePanelVisible(page: Page) {
 }
 
 async function selectOptionMatching(select: Locator, pattern: RegExp) {
-  const options = select.locator("option");
-  await expect(options).not.toHaveCount(0);
-  for (let index = 0; index < await options.count(); index += 1) {
-    const option = options.nth(index);
-    const label = (await option.textContent()) ?? "";
-    if (pattern.test(label)) {
-      const value = await option.getAttribute("value");
-      await select.selectOption(value ?? { label });
-      return;
-    }
-  }
-
-  throw new Error(`No select option matched ${pattern}`);
+  const matchingOption = select.locator("option").filter({ hasText: pattern }).first();
+  await expect(matchingOption).toBeAttached({ timeout: 20_000 });
+  const value = await matchingOption.getAttribute("value");
+  const label = (await matchingOption.textContent())?.trim();
+  await select.selectOption(value ? { value } : { label: label ?? "" });
 }
 
 function dateKeyWithOffset(dayOffset: number) {

@@ -14,12 +14,13 @@ import { useAppChromeVisibility } from "./hooks/useAutoHideOnScroll";
 import { useResponsiveCapabilities } from "./hooks/useResponsiveCapabilities";
 import { getFeatureMode, isFeatureAvailable, pageFeatureMap, type FeatureId, type FeatureMode } from "./lib/deviceCapabilities";
 import { APP_ENVIRONMENT_LABEL, isDevelopmentDeployment, isDevelopmentEnvironment, isProductionEnvironment } from "./lib/appEnvironment";
+import { localTimeInputValue } from "./lib/dateOnly";
 import { canViewDevelopmentDiagnostics } from "./domain/diagnosticsAccess";
 import type { Json } from "./lib/database.types";
 import { updateCloudProfile } from "./services/profileService";
 import { createCloudNotification, markAllCloudNotificationsRead, markCloudNotificationRead } from "./services/notificationService";
 import { deleteCloudJournalEntry, upsertCloudJournalEntry } from "./services/journalService";
-import { deleteCloudCompetition } from "./services/competitionService";
+import { deleteCloudCompetition, upsertCloudCompetition } from "./services/competitionService";
 import { deleteCloudMaterial } from "./services/materialService";
 import { deleteCloudTraining, upsertCloudFeedback, upsertCloudTraining } from "./services/trainingService";
 import { upsertCloudSmartCoachRecommendation } from "./services/smartCoachService";
@@ -463,6 +464,7 @@ function AppContent() {
 
   const upsertCompetition = (competition: Omit<Competition, "id" | "athleteId" | "createdAt" | "updatedAt"> & { id?: string }) => {
     const timestamp = getTimestamp();
+    let savedCompetition: Competition | null = null;
 
     updateData((current) => {
       const existing = competition.id
@@ -477,6 +479,7 @@ function AppContent() {
         createdAt: existing?.createdAt ?? timestamp,
         updatedAt: timestamp,
       };
+      savedCompetition = nextCompetition;
 
       return {
         ...current,
@@ -485,6 +488,12 @@ function AppContent() {
           : [nextCompetition, ...current.competitions],
       };
     });
+
+    const cloudCompetition = savedCompetition as Competition | null;
+    if (cloudCompetition) {
+      void upsertCloudCompetition(cloudCompetition, cloudCompetition.clubId).catch((error) =>
+        console.error("Wettkampf konnte nicht in der Cloud gespeichert werden", error));
+    }
   };
 
   const deleteCompetition = (id: string) => {
@@ -658,10 +667,10 @@ function AppContent() {
   const insertCalendarTemplate = (
     template: TrainingTemplate,
     date: string,
-    startTime = "17:30",
+    startTime = localTimeInputValue(),
     target: { assignedType?: PlanEntry["assignedType"]; assignedAthleteIds?: string[]; assignedGroupIds?: string[] } = {},
   ) => {
-    const fallbackTime = startTime || "17:30";
+    const fallbackTime = startTime || localTimeInputValue();
     const durationMinutes = template.defaultDurationMinutes ?? 60;
     const assignedType = target.assignedType ?? "self";
     const assignedAthleteIds = assignedType === "athlete" ? target.assignedAthleteIds ?? [] : assignedType === "self" ? [activeUser.userId] : [];
@@ -926,7 +935,7 @@ function AppContent() {
                 onClick={() => setMobileTemplateDraft({
                   template,
                   date: getTodayKey(),
-                  startTime: "17:30",
+                  startTime: localTimeInputValue(),
                   assignedType: "self",
                   assignedAthleteId: activeUser.userId,
                   assignedGroupId: "",
@@ -1333,6 +1342,7 @@ function AppContent() {
         return (
           <CompetitionsView
             competitions={data.competitions}
+            startEntries={data.competitionStartEntries}
             onSave={upsertCompetition}
             onDelete={deleteCompetition}
             openNewSignal={newCompetitionSignal}
@@ -1514,7 +1524,7 @@ function AppContent() {
             </div>
           );
         }
-        return <ImportExportView data={activeData} user={activeUser} sessionAccessToken={session?.access_token} onDataChange={updateData} />;
+        return <ImportExportView data={activeData} user={activeUser} sessionAccessToken={session?.access_token} cloudClubId={cloudProfile?.club_id} onDataChange={updateData} />;
       case "feedback":
         return <BetaReleaseView data={activeData} user={activeUser} mode="feedback" onDataChange={updateData} />;
       case "betaGuide":

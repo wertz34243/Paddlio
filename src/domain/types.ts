@@ -267,6 +267,21 @@ export type Competition = {
   updatedAt: string;
 };
 
+export type CompetitionStartEntry = {
+  id: string;
+  competitionId: string;
+  clubId: string;
+  athleteId?: string;
+  createdBy: string;
+  startNumber: number;
+  displayName: string;
+  boatClass: BoatClass;
+  ageClass: string;
+  source: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type PersonalBest = {
   id: string;
   athleteId: string;
@@ -1102,6 +1117,7 @@ export type PaddleMotionData = {
   users: User[];
   athlete: Athlete;
   competitions: Competition[];
+  competitionStartEntries: CompetitionStartEntry[];
   training: TrainingSession[];
   journal: TrainingJournalEntry[];
   material: MaterialItem[];

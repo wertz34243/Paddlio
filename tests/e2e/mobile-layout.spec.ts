@@ -102,9 +102,15 @@ test.describe("mobile layout guards", () => {
     await expect(page.getByLabel("Tag")).toBeVisible();
     await expect(page.getByTestId("mobile-template-time-control")).toBeVisible();
     const timeValue = page.getByTestId("mobile-template-time");
-    await expect(timeValue).toHaveText("17:30");
+    const initialTime = (await timeValue.textContent())?.trim() ?? "";
+    const currentDeviceTime = await page.evaluate(() => {
+      const now = new Date();
+      return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    });
+    expect(initialTime).toMatch(/^\d{2}:\d{2}$/);
+    expect(Math.abs(toMinutes(initialTime) - toMinutes(currentDeviceTime))).toBeLessThanOrEqual(1);
     await page.getByRole("button", { name: "Uhrzeit 15 Minuten spaeter" }).click();
-    await expect(timeValue).toHaveText("17:45");
+    await expect(timeValue).toHaveText(fromMinutes(toMinutes(initialTime) + 15));
     await expect(page.getByTestId("mobile-template-use-sheet")).toBeVisible();
     await expectPhoneChromeUsable(page);
   });
@@ -151,3 +157,13 @@ test.describe("mobile layout guards", () => {
     await expect(detail.getByText("Trainerfeedback", { exact: true })).toBeVisible();
   });
 });
+
+function toMinutes(value: string): number {
+  const [hours, minutes] = value.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function fromMinutes(value: number): string {
+  const normalized = (value + 24 * 60) % (24 * 60);
+  return `${String(Math.floor(normalized / 60)).padStart(2, "0")}:${String(normalized % 60).padStart(2, "0")}`;
+}

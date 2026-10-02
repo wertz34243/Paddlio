@@ -3,13 +3,16 @@ import { formatLocalDateOnly, getWeekdayFromDate, parseLocalDateOnly } from "../
 import type {
   BoatClass,
   CoachAthlete,
+  CoachGroup,
   Competition,
+  CompetitionStartEntry,
   MaterialCategory,
   PaddleMotionData,
   PlanEntry,
   TrainingArea,
   TrainingIntensity,
   TrainingPlanType,
+  TrainingJournalEntry,
   TrainingSession,
   User,
 } from "../../domain/types";
@@ -139,12 +142,14 @@ export function executeImport(analysis: ImportAnalysis, data: PaddleMotionData, 
   let createdRows = 0;
   let skippedRows = 0;
   let nextData = data;
+  const runtimeErrors: ImportIssue[] = [];
 
   validRows.forEach((row) => {
     const result = applyRow(analysis.importType, row, nextData, user, timestamp);
     nextData = result.data;
     if (result.created) createdRows += 1;
     if (result.skipped) skippedRows += 1;
+    if (result.error) runtimeErrors.push(result.error);
   });
 
   return {
@@ -157,15 +162,15 @@ export function executeImport(analysis: ImportAnalysis, data: PaddleMotionData, 
       sourceType: "file",
       fileName: analysis.fileName,
       fileFormat: analysis.fileFormat,
-      status: "imported",
+      status: runtimeErrors.length > 0 && createdRows === 0 ? "failed" : "imported",
       totalRows: analysis.totalRows,
       validRows: analysis.validRows,
       warningRows: analysis.warningRows,
-      errorRows: analysis.errorRows,
+      errorRows: analysis.errorRows + runtimeErrors.length,
       createdRows,
       updatedRows: 0,
       skippedRows,
-      errors: analysis.previewRows.flatMap((row) => row.issues.filter((issue) => issue.severity === "error")),
+      errors: [...analysis.previewRows.flatMap((row) => row.issues.filter((issue) => issue.severity === "error")), ...runtimeErrors],
       warnings: analysis.previewRows.flatMap((row) => row.issues.filter((issue) => issue.severity === "warning")),
       startedAt: timestamp,
       completedAt: new Date().toISOString(),
@@ -173,15 +178,44 @@ export function executeImport(analysis: ImportAnalysis, data: PaddleMotionData, 
   };
 }
 
-function applyRow(importType: ImportType, row: ImportPreviewRow, data: PaddleMotionData, user: User, timestamp: string): { data: PaddleMotionData; created?: boolean; skipped?: boolean } {
+function applyRow(importType: ImportType, row: ImportPreviewRow, data: PaddleMotionData, user: User, timestamp: string): { data: PaddleMotionData; created?: boolean; skipped?: boolean; error?: ImportIssue } {
   const value = row.transformed;
-  if (importType === "athletes" || importType === "club_members" || importType === "start_lists") {
+  if (importType === "start_lists") {
+    const competitionName = String(value.title ?? "").trim().toLowerCase();
+    const competitionDate = String(value.date ?? "");
+    const competition = data.competitions.find((item) =>
+      (item.name || item.location).trim().toLowerCase() === competitionName
+      && (!competitionDate || item.date === competitionDate));
+    if (!competition) return {
+      data,
+      skipped: true,
+      error: { severity: "error", field: "title", message: `Zeile ${row.rowNumber}: Der angegebene Wettkampf wurde nicht gefunden.` },
+    };
+    const startNumber = Number(value.startNumber ?? 0);
+    const boatClass = normalizeBoatClasses(value.boatClass)[0] ?? "K1";
+    const duplicate = data.competitionStartEntries.some((entry) =>
+      entry.competitionId === competition.id && entry.startNumber === startNumber && entry.boatClass === boatClass);
+    if (duplicate) return { data, skipped: true };
+    const displayName = String(value.fullName ?? `${value.firstName ?? ""} ${value.lastName ?? ""}`).trim();
+    const athlete = data.coachAthletes.find((item) => item.invitationStatus === "aktiv" && (
+      (String(value.email ?? "") && item.email.toLowerCase() === String(value.email).toLowerCase())
+      || item.name.trim().toLowerCase() === displayName.toLowerCase()));
+    const entry: CompetitionStartEntry = {
+      id: crypto.randomUUID(), competitionId: competition.id,
+      clubId: competition.clubId || user.profile.club, athleteId: athlete?.id,
+      createdBy: user.userId, startNumber, displayName, boatClass,
+      ageClass: String(value.ageClass ?? ""), source: "file", createdAt: timestamp, updatedAt: timestamp,
+    };
+    return { data: { ...data, competitionStartEntries: [entry, ...data.competitionStartEntries] }, created: true };
+  }
+
+  if (importType === "athletes" || importType === "club_members") {
     const email = String(value.email ?? "").toLowerCase();
     const name = String(value.fullName ?? `${value.firstName ?? ""} ${value.lastName ?? ""}`).trim();
     const exists = data.coachAthletes.some((athlete) => (email && athlete.email.toLowerCase() === email) || athlete.name.toLowerCase() === name.toLowerCase());
     if (exists) return { data, skipped: true };
     const athlete: CoachAthlete = {
-      id: createId("athlete-import"),
+      id: crypto.randomUUID(),
       coachUserId: user.userId,
       clubId: user.profile.club,
       firstName: String(value.firstName ?? ""),
@@ -276,7 +310,13 @@ function applyRow(importType: ImportType, row: ImportPreviewRow, data: PaddleMot
       createdAt: timestamp,
       updatedAt: timestamp,
     };
-    return { data: { ...data, training: [session, ...data.training] }, created: true };
+    const journalEntry: TrainingJournalEntry = {
+      id: createId("journal-import"), athleteId: user.userId, trainingId: session.id, date,
+      completionStatus: "completed", actualDurationMinutes: session.durationMinutes,
+      perceivedExertion: session.rpe, trainingRating: 7, feeling: 7, fatigue: 4,
+      sleep: 7, motivation: 7, notes: session.note, createdAt: timestamp, updatedAt: timestamp,
+    };
+    return { data: { ...data, training: [session, ...data.training], journal: [journalEntry, ...data.journal] }, created: true };
   }
 
   if (importType === "competition_results") {
@@ -284,8 +324,22 @@ function applyRow(importType: ImportType, row: ImportPreviewRow, data: PaddleMot
     const penalty = Math.max(0, Number(value.penaltySeconds ?? 0));
     const date = String(value.date ?? formatLocalDateOnly(new Date()));
     const title = String(value.title ?? "Importiertes Ergebnis");
+    const importedAthleteName = String(value.fullName ?? `${value.firstName ?? ""} ${value.lastName ?? ""}`).trim();
+    const importedEmail = String(value.email ?? "").trim().toLowerCase();
+    const ownName = `${user.profile.firstName ?? ""} ${user.profile.lastName ?? ""}`.trim().toLowerCase();
+    const matchedAthlete = data.coachAthletes.find((item) => item.invitationStatus === "aktiv" && (
+      (importedEmail && item.email.toLowerCase() === importedEmail)
+      || (importedAthleteName && item.name.trim().toLowerCase() === importedAthleteName.toLowerCase())
+    ));
+    const athleteId = matchedAthlete?.id
+      ?? (!importedAthleteName || importedAthleteName.toLowerCase() === ownName ? user.userId : "");
+    if (!athleteId) return {
+      data,
+      skipped: true,
+      error: { severity: "error", field: "fullName", message: `Zeile ${row.rowNumber}: Der Sportler ist keinem aktiven Paddlio-Profil zugeordnet.` },
+    };
     const duplicate = data.competitions.some((competition) =>
-      competition.athleteId === user.userId &&
+      competition.athleteId === athleteId &&
       competition.date === date &&
       competition.run1TimeSeconds === rawTime &&
       competition.run1PenaltySeconds === penalty &&
@@ -294,7 +348,7 @@ function applyRow(importType: ImportType, row: ImportPreviewRow, data: PaddleMot
     if (duplicate) return { data, skipped: true };
     const competition: Competition = {
       id: createId("competition-import"),
-      athleteId: user.userId,
+      athleteId,
       clubId: user.profile.club,
       name: title,
       date,
@@ -333,6 +387,22 @@ function applyRow(importType: ImportType, row: ImportPreviewRow, data: PaddleMot
     );
     if (duplicate) return { data, skipped: true };
     return { data: { ...data, material: [{ id: createId("material-import"), athleteId: user.userId, category, name, weightKg: 0, lengthCm: 0, imageDataUrl: "", status: "pruefen", rating: 3, note: String(value.condition ?? ""), createdAt: timestamp, updatedAt: timestamp }, ...data.material] }, created: true };
+  }
+
+  if (importType === "groups") {
+    const name = String(value.group ?? value.title ?? "").trim();
+    const duplicate = data.coachGroups.some((group) => group.name.trim().toLowerCase() === name.toLowerCase());
+    if (!name || duplicate) return { data, skipped: true };
+    const id = crypto.randomUUID();
+    const group: CoachGroup = {
+      id, groupId: id, clubId: data.coachGroups[0]?.clubId || user.profile.club,
+      coachUserId: user.userId, coachId: user.userId, name,
+      description: String(value.description ?? ""), ageCategory: String(value.ageClass ?? "") as CoachGroup["ageCategory"],
+      ageRange: "", boatClasses: normalizeBoatClasses(value.boatClass),
+      trainingFocus: inferTrainingFocus(String(value.focus ?? value.trainingType ?? "")),
+      color: "#00b4d8", status: "active", athleteIds: [], createdAt: timestamp, updatedAt: timestamp,
+    };
+    return { data: { ...data, coachGroups: [group, ...data.coachGroups] }, created: true };
   }
 
   return { data, skipped: true };
@@ -415,6 +485,16 @@ function inferTrainingType(value: string): TrainingPlanType {
   if (normalized.includes("regeneration")) return "Regeneration";
   if (normalized.includes("wettkampf")) return "Wettkampfsimulation";
   return "K1 Technik";
+}
+
+function inferTrainingFocus(value: string): CoachGroup["trainingFocus"] {
+  const normalized = value.toLowerCase();
+  if (normalized.includes("technik")) return "Technik";
+  if (normalized.includes("kraft")) return "Kraft";
+  if (normalized.includes("ausdauer")) return "Ausdauer";
+  if (normalized.includes("sprint")) return "Sprint";
+  if (normalized.includes("wettkampf")) return "Wettkampf";
+  return "Allgemein";
 }
 
 function inferSessionType(value: string): TrainingSession["type"] {

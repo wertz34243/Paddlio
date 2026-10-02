@@ -2,77 +2,70 @@
 
 ## Stand
 
-- Datum/Uhrzeit: 2026-09-26 09:20 CEST
-- Stabilitaetsblock: DEV-Deploy und Security-Verifikation
-- Status: DEV-PRIVACY-DEPLOY UND TECHNISCHE REGRESSION ABGESCHLOSSEN
+- Datum/Uhrzeit: 2026-10-02 07:29 CEST
+- Stabilitaetsblock: Praxistest-Fixes fuer Import/Export, Wettkampf, Trainingsplanung und Kalender-UI
+- Status: IMPLEMENTIERT, DEV-SCHEMA AKTUALISIERT, AUTOMATISIERTE REGRESSION GRUEN
 
 ## Root Cause
 
-Der vorbereitete Datenschutzpfad war noch nicht real deployed. Beim ersten DEV-Export zeigten reale PostgREST-Fehler, dass mehrere Filterspalten in der Edge Function nicht zum aktuellen DEV-Schema passten (`group_messages.user_id`, `beta_feedback.owner_id`, `boats.owner_user_id` sowie entsprechende Material-/Event-Felder). Zwei Playwright-Tests enthielten ausserdem eigene Zustandsrennen: Der Intro-Test loeschte seinen Persistenzwert bei jedem Reload erneut, und der iPad-Test erwartete ein Overlay-Schliessen auch im festen Side-Panel-Modus.
+- Sieben Importarten erzeugten teilweise nur lokale Vorschauobjekte oder meldeten Erfolg, ohne den fachlichen Cloud-Zielbereich vollstaendig zu persistieren. Gruppen hatten keinen Write-Pfad; Startlisten wurden faelschlich wie Sportlerdaten behandelt; Wettkampfergebnisse konnten fremde Namen still dem aktuellen Nutzer zuordnen.
+- Mobile Wettkampfergebnisse schrieben die nicht vorhandene DEV-Spalte `competition_results.starter_field`; nur `starter_count` existiert.
+- Das DEV-Schema hatte keine fachliche Startlisten- bzw. Import-Staging-Struktur und dem Journal fehlten aktive Durchfuehrungsfelder.
+- Native `select`-Optionen erbten im Dark Mode helle Browserfarben. Kalenderaktionen konnten bei mittleren Desktopbreiten kollidieren; der Vorlagenkontext hatte keinen verlaesslichen eigenen Scrollbereich.
+- Neue Eintraege verwendeten teils feste Uhrzeiten. Die Rollen-UI wurde vor Abschluss des eigenen Profilabrufs mit einem provisional Athlete-Profil freigegeben.
+- Zwei Playwright-Helfer werteten noch ladende Optionen/Navigation als Endzustand; native Scrollanimationen konnten direkt folgende Tastendruecke verschlucken.
 
 ## Aenderungen
 
-- `account-privacy` an die realen DEV-Spalten angepasst und `club_documents` in Export/Loeschung aufgenommen.
-- Datensparsame DEV/Admin-Diagnose fuer fehlgeschlagene Export-/Loeschoperationen ergaenzt; normale Nutzer erhalten weiterhin nur stabile Fehlercodes.
-- Reproduzierbare DEV-Pruefer fuer rollenbezogenen Export/CORS und ein entbehrliches Konto-Loeschszenario hinzugefuegt.
-- Intro-Persistenz- und iPad-Panel-E2E zustandsbasiert stabilisiert.
-- Security-, Hosting-, Storage- und Rollenbefunde dokumentiert.
+- Alle acht Importtypen besitzen jetzt einen expliziten Persistenzpfad und Erfolg wird nur nach bestaetigter Speicherung gemeldet.
+- Zielrouten: Trainingsplan -> `training_plan_items`; Trainingseinheiten -> `training_journal_entries`; Wettkampfergebnisse -> `competition_results`; Sportler/Vereinsmitglieder -> `imported_club_members`; Startlisten -> `competition_start_entries`; Gruppen -> `training_groups`; Material -> `materials`.
+- Startlisten werden einem vorhandenen Wettkampf zugeordnet und nicht mehr als neue Auth-Nutzer angelegt. Personenimporte bleiben sichere Vereins-Stagingdaten ohne Rollen- oder Login-Erteilung.
+- Pflichtfelder, Synonyme, Laufzeitfehler, Teilimportzahlen und Duplikatschutz wurden erweitert. Organisationale Imports sind fuer Athletes ausgeblendet.
+- Wettkampf-Writes laufen ueber den Retry-/Offline-Pfad; veraltetes `starter_field` wurde entfernt. Startlisten werden in der Wettkampfansicht angezeigt, mobile Formulare stapeln sauber.
+- Neue Datums-/Zeitfelder verwenden die lokale Geraetezeit; gespeicherte Werte werden beim Bearbeiten nicht ueberschrieben.
+- Athletes koennen eigene Vorlagen sowie Wochen- und Saisonplanung verwenden. Coach/Admin-Zuweisungen bleiben rollenbegrenzt.
+- Quick-Edit-, Filter- und vergleichbare native Selects haben lesbare Dark-/Light-Optionen. Kalenderaktionen umbrechen ohne Ueberlagerung; Liste/Vorlagen sind auf Desktop konsistent; der Vorlagenpicker scrollt per Maus, Touchpad und Touch.
+- Die echte Cloud-Rolle wird vor Freigabe der App-Shell geladen. E2E-Navigation, Tabwechsel und Desktop-Scrollpruefungen sind zustandsbasiert stabilisiert.
+- Offline- und Polar-Grenzen sowie Importziele wurden dokumentiert; DEV-Polar-URLs zeigen auf `https://dev.paddlio.de`.
 
 ## Migrationen
 
-- Keine Datenbankmigration erstellt oder angewendet.
-- Edge Function `account-privacy` Version 7 ausschliesslich auf Supabase DEV `nlllqsfdhfiwticrcrnp` deployed.
-- Function Secret `PADDLIO_ALLOWED_ORIGINS=https://dev.paddlio.de` ausschliesslich auf DEV gesetzt.
-- JWT-Verifikation ist aktiv.
+- Neu: `supabase/migrations/20261001131418_competition_start_entries.sql`.
+- Additiv/idempotent: `competition_start_entries`, `imported_club_members`, fehlende Journal-Durchfuehrungsspalten, Indizes, RLS-Policies, Grants, Realtime und PostgREST-Reload.
+- Keine Tabellen gedroppt und keine Nutzdaten geloescht.
 
 ## Supabase DEV Ergebnis
 
-- CLI: `2.118.0` via `npm exec`; verknuepftes Projekt eindeutig `nlllqsfdhfiwticrcrnp`, Production nicht verknuepft.
-- Export real mit Admin, Coach und Athlete bestanden: gueltiges JSON, eigenes Konto, keine Provider-/Service-Secrets, keine unmaskierten Fremdidentitaeten.
-- Nicht authentifizierter Function-Aufruf: HTTP 401.
-- Erlaubtes CORS-Preflight fuer `https://dev.paddlio.de`: bestanden; authentifizierte Fremd-Origin: HTTP 403.
-- Falsche Loeschphrase: abgelehnt.
-- Richtig bestaetigte Loeschung eines neu erzeugten, entbehrlichen DEV-Testkontos: Auth-Konto, Profil und markierte eigene Testzeilen entfernt; Club- und fremde Profilanzahl unveraendert; erneuter Login abgelehnt.
-- Storage inventarisiert: 0 Buckets. Aktuell keine Storage-Objekte zu loeschen; bei spaeteren Buckets muss der Loeschpfad erweitert werden.
-- DB-Lint: keine Schemafehler.
-- Security Advisor: 51 Warnungen (48 direkte EXECUTE-Warnungen fuer `SECURITY DEFINER`-Helper, 2 mutable `search_path`, 1 deaktivierter Schutz vor geleakten Passwoertern). Keine Rechte wurden auf Verdacht gelockert.
-
-## Hosting
-
-`https://dev.paddlio.de` wurde real geprueft: HTTPS 200; HTTP 308 auf HTTPS. CSP, HSTS, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` und `Permissions-Policy` kommen in der ausgelieferten Response an.
+- Vor jedem DB-Schritt geprueftes Ziel: ausschliesslich `nlllqsfdhfiwticrcrnp` (DEV); Production `twlkhfbrrwjwppxinmpn` war nicht verknuepft.
+- Migration auf DEV erfolgreich angewendet und idempotent erneut geprueft.
+- Beide neuen Tabellen vorhanden, RLS aktiv, Policies vorhanden und Realtime aktiviert.
+- Fehlende Journalspalten sind vorhanden.
+- Reales DEV-Schema bestaetigt `competition_results.starter_count`; `starter_field` existiert nicht und wird nicht mehr geschrieben.
+- `training_groups.age_range` existiert nicht und wird nicht mehr als Importpayload gesendet.
 
 ## Tests
 
-- `npm ci`: erfolgreich, 109 Pakete.
+- `npm ci`: erfolgreich, 108 Pakete.
 - `npm audit`: 0 bekannte Schwachstellen.
-- `npm test`: 23 Dateien, 125/125 Tests.
-- `npm run build`: erfolgreich.
+- `npm test`: 26 Dateien, 143/143 Tests.
+- Parser: reale CSV-, XLS- und XLSX-Dateien getestet.
+- Import-Engine/Persistenz: alle acht fachlichen Importtypen, Zieltabellen, Teilfehler und Duplikatschutz getestet.
+- `npm run build`: erfolgreich, 186 Module; nur bestehender Chunk-Hinweis.
 - `check:encoding`, `check:rls`, `check:bundle`, `check:a11y`, `check:beta`: erfolgreich.
-- `npm run test:e2e`: 41 bestanden, 23 vorgesehene projekt-/viewportbezogene Skips, 0 Fehler.
+- `npm run test:e2e`: 42 bestanden, 24 vorgesehene projekt-/viewportbezogene Skips, 0 Fehler.
 - `npm run test:e2e:roles`: 9 bestanden, 1 vorgesehener Mobile-Mehrgeraete-Skip, 0 Fehler.
-- Reale DEV-Exportmatrix: Admin/Coach/Athlete bestanden.
-- Reale DEV-Kontoloeschung: bestanden.
+- Zusaetzlich: Desktop-Scrolltest 5 Wiederholungen gruen; Zwei-Geraete-Coach/Athlete-Flow gruen.
 
 ## Offene Punkte
 
-- Vor einem offiziellen Release Security-Advisor-Warnungen einzeln haerten: interne `SECURITY DEFINER`-RPCs aus dem exponierten API-Pfad nehmen beziehungsweise EXECUTE minimalisieren; `search_path` fuer `set_updated_at` und `default_roles_for_email` fixieren.
-- Supabase Auth-Leaked-Password-Protection im DEV-Dashboard aktivieren und Auth Site URL/Redirect-Allowlist, Rate Limits und MFA-Entscheidung manuell protokollieren.
-- Betreiberangaben, Rechtstexte, Aufbewahrungsregeln und Minderjaehrigenkonzept bleiben organisatorisch/rechtlich offen.
-- Bei Einfuehrung von Storage-Buckets kontobezogene Objektloeschung implementieren und testen.
-
-## Commit und Pushstatus
-
-- Implementierungscommit: `41517ef` (`Verify DEV privacy and security release checks`).
-- Pushstatus: erfolgreich auf `origin/develop`.
-- Dieser aktualisierte Handoff folgt in einem separaten Dokumentationscommit.
+- Polar benoetigt weiterhin die externe Provider-/Vercel-Konfiguration und einen realen OAuth-Providerlauf; keine geheimen Schluessel wurden in den Client aufgenommen.
+- Der abschliessende manuelle Import-Praxistest mit Beispiel-Dateien auf iPhone, iPad und PC ist noch auszufuehren. Die automatisierten Parser-, Persistenz- und Cloud-Schema-Pruefungen sind gruen.
+- Die von E2E-Laeufen aktualisierten Screenshotdateien waren bereits ausserhalb dieses Arbeitsumfangs geaendert und werden nicht mit diesem Block committed.
+- Bestehende organisatorische/rechtliche Releasepunkte aus dem Security-Handoff bleiben unberuehrt.
 
 ## Naechste sinnvolle Aufgabe
 
-Security-Advisor-Hardening als eigener, eng begrenzter Block: Funktionsaufrufe aus Policies/Triggern inventarisieren, sichere EXECUTE-Matrix erstellen und erst danach additive Migration fuer `search_path` und nicht oeffentliche interne Helper auf DEV testen.
-
-## Freigabestatus
-
-Der vollstaendige manuelle DEV-Nutzertest kann beginnen. Ein offizieller oeffentlicher Release bleibt wegen Security-Advisor- und organisatorisch/rechtlicher Restpunkte noch gesperrt.
+Manueller DEV-Praxistest: je eine fiktive CSV/XLS/XLSX-Datei ueber die UI importieren, Zielbereich nach Reload auf iPhone/iPad/PC kontrollieren und anschliessend den Polar-OAuth-Lauf mit korrekt hinterlegter DEV-Konfiguration pruefen.
 
 ## Sicherheitsbestaetigung
 
@@ -80,3 +73,8 @@ Der vollstaendige manuelle DEV-Nutzertest kann beginnen. Ein offizieller oeffent
 - Ausschliesslich Supabase DEV `nlllqsfdhfiwticrcrnp` veraendert.
 - `main` unveraendert.
 - Production Supabase `twlkhfbrrwjwppxinmpn` unveraendert.
+
+## Commit und Pushstatus
+
+- Commit: wird nach finaler Diff-Pruefung erstellt.
+- Pushstatus: ausstehend bis zum Commit dieses Blocks.

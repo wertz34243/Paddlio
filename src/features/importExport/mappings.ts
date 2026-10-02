@@ -41,11 +41,11 @@ export const fieldDefinitions: FieldDefinition[] = [
   { field: "date", label: "Datum", synonyms: ["datum", "trainingstag", "wettkampftag", "startdatum", "date", "tag"], requiredFor: ["training_plans", "training_sessions", "competition_results"] },
   { field: "time", label: "Uhrzeit", synonyms: ["uhrzeit", "startzeit", "beginn", "time"], requiredFor: [] },
   { field: "durationMinutes", label: "Dauer in Minuten", synonyms: ["dauer", "minuten", "trainingszeit", "duration", "zeitumfang"], requiredFor: ["training_plans", "training_sessions"] },
-  { field: "title", label: "Titel", synonyms: ["titel", "einheit", "training", "name der einheit", "thema"], requiredFor: ["training_plans"] },
+  { field: "title", label: "Titel", synonyms: ["titel", "einheit", "training", "name der einheit", "thema", "wettkampf", "veranstaltung"], requiredFor: ["training_plans", "start_lists", "competition_results"] },
   { field: "focus", label: "Fokus", synonyms: ["fokus", "schwerpunkt", "trainingsziel", "ziel", "focus"], requiredFor: [] },
   { field: "description", label: "Beschreibung", synonyms: ["beschreibung", "inhalt", "notizen", "notiz", "ablauf", "description"], requiredFor: [] },
   { field: "trainingType", label: "Trainingsart", synonyms: ["trainingsart", "typ", "bereich", "art", "trainingstyp"], requiredFor: [] },
-  { field: "group", label: "Gruppe", synonyms: ["gruppe", "team", "trainingsgruppe"], requiredFor: [] },
+  { field: "group", label: "Gruppe", synonyms: ["gruppe", "team", "trainingsgruppe", "gruppenname"], requiredFor: ["groups"] },
   { field: "athlete", label: "Sportler", synonyms: ["sportler", "athlet", "zuordnung", "athlete"], requiredFor: [] },
   { field: "startNumber", label: "Startnummer", synonyms: ["startnummer", "start-nr.", "stnr", "bib", "nummer"], requiredFor: ["start_lists"] },
   { field: "rank", label: "Platz", synonyms: ["platz", "rang", "position", "rank"], requiredFor: [] },
@@ -97,7 +97,9 @@ export function requiredFieldsFor(importType: ImportType): ImportField[] {
   if (importType === "athletes" || importType === "club_members") return ["fullName"];
   if (importType === "training_plans") return ["date", "durationMinutes"];
   if (importType === "training_sessions") return ["date", "durationMinutes"];
-  if (importType === "competition_results") return ["date", "fullName", "rawTime"];
+  if (importType === "competition_results") return ["date", "fullName", "title", "rawTime"];
+  if (importType === "start_lists") return ["title", "fullName", "startNumber"];
   if (importType === "materials") return ["materialName"];
+  if (importType === "groups") return ["group"];
   return fields;
 }

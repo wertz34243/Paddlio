@@ -37,6 +37,8 @@ import { listCloudJournalEntries } from "../services/journalService";
 import { listCloudTrainingTemplates } from "../services/trainingTemplateService";
 import { listCloudGoals } from "../services/goalService";
 import { listCloudCompetitions } from "../services/competitionService";
+import { listCloudCompetitionStartEntries } from "../services/competitionStartService";
+import { importedMemberToCoachAthlete, listCloudImportedClubMembers, type ImportedClubMember } from "../services/importedClubMemberService";
 import {
   listCloudBetaReadinessChecks,
   listCloudExternalConnections,
@@ -445,6 +447,7 @@ const mergeCloudData = (
   profiles: CloudProfile[],
   groups: CloudTrainingGroup[],
   members: CloudGroupMember[] = [],
+  importedMembers: ImportedClubMember[] = [],
   cloudData?: Partial<PaddleMotionData>,
 ): PaddleMotionData => {
   const club = clubs.find((item) => item.clubId === profile.club_id);
@@ -498,7 +501,10 @@ const mergeCloudData = (
     },
     coachAthletes: groupCloudReadFailed
       ? cached.coachAthletes
-      : profiles.filter((item) => item.roles.includes("Athlete")).map((item) => toCoachAthlete(item, clubs.find((clubItem) => clubItem.clubId === item.club_id)?.name ?? "", activeMembers)),
+      : [
+          ...profiles.filter((item) => item.roles.includes("Athlete")).map((item) => toCoachAthlete(item, clubs.find((clubItem) => clubItem.clubId === item.club_id)?.name ?? "", activeMembers)),
+          ...importedMembers.map((item) => importedMemberToCoachAthlete(item, clubs.find((clubItem) => clubItem.clubId === item.clubId)?.name ?? "")),
+        ].filter((item, index, items) => items.findIndex((known) => known.id === item.id || Boolean(item.email && known.email.toLowerCase() === item.email.toLowerCase())) === index),
     coachGroups: groupCloudReadFailed ? cached.coachGroups : activeGroups.map((group) => toCoachGroup(group, activeMembers)),
     plan: cloudValueOrCached(cloudData?.plan, cached.plan),
     trainingTemplates: cloudValueOrCached(cloudData?.trainingTemplates, cached.trainingTemplates),
@@ -513,6 +519,7 @@ const mergeCloudData = (
     betaFeedback: cloudValueOrCached(cloudData?.betaFeedback, cached.betaFeedback ?? []),
     betaTesters: cloudValueOrCached(cloudData?.betaTesters, cached.betaTesters ?? []),
     competitions: cloudValueOrCached(cloudData?.competitions, cached.competitions),
+    competitionStartEntries: cloudValueOrCached(cloudData?.competitionStartEntries, cached.competitionStartEntries ?? []),
     material: cloudValueOrCached(cloudData?.material, cached.material),
     notifications: cloudValueOrCached(cloudData?.notifications, cached.notifications ?? []),
     smartCoachRecommendations: cloudValueOrCached(cloudData?.smartCoachRecommendations, cached.smartCoachRecommendations ?? []),
@@ -644,10 +651,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(activeSession);
       setCurrentUser(activeSession.user);
       const provisionalProfile = createFallbackProfile(activeSession.user);
-      const cachedSnapshot = mergeCloudData(activeSession.user.id, provisionalProfile, [], [provisionalProfile], [], []);
+      const cachedSnapshot = mergeCloudData(activeSession.user.id, provisionalProfile, [], [provisionalProfile], [], [], []);
       setProfile(provisionalProfile);
       setDataState(cachedSnapshot);
-      setLoading(false);
       let profileIsFallback = false;
       let nextProfile: CloudProfile | null = null;
 
@@ -689,6 +695,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         nextProfile = createFallbackProfile(activeSession.user);
         setCloudMessage("");
       }
+      if (refreshGeneration !== refreshGenerationRef.current) return;
+      setProfile(nextProfile);
+      setDataState(mergeCloudData(activeSession.user.id, nextProfile, [], [nextProfile], [], [], []));
+      setLoading(false);
       const clubs = mapCloudRead(await loadOptionalCloudData("clubs lesen", listCloudClubs, []), toClub);
       const allProfiles = await loadOptionalCloudData(
         "Profilverzeichnis lesen",
@@ -724,6 +734,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         cloudTemplates,
         cloudGoals,
         cloudCompetitions,
+        cloudCompetitionStartEntries,
+        cloudImportedMembers,
         cloudMaterials,
         cloudNotifications,
         cloudSmartCoach,
@@ -740,6 +752,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loadOptionalCloudData("training_templates lesen", listCloudTrainingTemplates, []),
         loadOptionalCloudData("season_goals lesen", listCloudGoals, []),
         loadOptionalCloudData("competitions lesen", listCloudCompetitions, []),
+        loadOptionalCloudData("competition_start_entries lesen", listCloudCompetitionStartEntries, []),
+        loadOptionalCloudData("imported_club_members lesen", listCloudImportedClubMembers, []),
         loadOptionalCloudData("materials lesen", listCloudMaterials, []),
         loadOptionalCloudData("notifications lesen", () => listCloudNotifications(activeSession.user.id), []),
         loadOptionalCloudData("smart_coach_recommendations lesen", listCloudSmartCoachRecommendations, []),
@@ -750,13 +764,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loadOptionalCloudData("task_assignments lesen", listCloudTaskAssignments, []),
         loadOptionalCloudData("training_attendance lesen", listCloudTrainingAttendance, []),
       ]);
-      const nextData = mergeCloudData(activeSession.user.id, nextProfile, clubs, allProfiles.length > 0 ? allProfiles : [nextProfile], groups, groupMembers, {
+      const nextData = mergeCloudData(activeSession.user.id, nextProfile, clubs, allProfiles.length > 0 ? allProfiles : [nextProfile], groups, groupMembers, cloudImportedMembers, {
         plan: cloudPlan,
         trainingFeedback: cloudFeedback,
         journal: cloudJournal,
         trainingTemplates: cloudTemplates,
         goals: cloudGoals,
         competitions: cloudCompetitions,
+        competitionStartEntries: cloudCompetitionStartEntries,
         material: cloudMaterials,
         notifications: cloudNotifications,
         smartCoachRecommendations: cloudSmartCoach,
@@ -776,7 +791,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setPendingSyncCount(pendingCount);
       setFailedSyncCount(queueStats.failed);
       setLastSyncAt(new Date().toISOString());
-      const coreSyncCount = allProfiles.length + clubs.length + requests.length + clubRequests.length + groups.length + groupMembers.length + cloudPlan.length + cloudFeedback.length + cloudJournal.length + cloudTemplates.length + cloudGoals.length + cloudCompetitions.length + cloudMaterials.length + cloudNotifications.length + cloudSmartCoach.length + cloudClubMessages.length + cloudDirectMessages.length + cloudGroupMessages.length + cloudTasks.length + cloudTaskAssignments.length + cloudTrainingAttendance.length;
+      const coreSyncCount = allProfiles.length + clubs.length + requests.length + clubRequests.length + groups.length + groupMembers.length + cloudPlan.length + cloudFeedback.length + cloudJournal.length + cloudTemplates.length + cloudGoals.length + cloudCompetitions.length + cloudCompetitionStartEntries.length + cloudImportedMembers.length + cloudMaterials.length + cloudNotifications.length + cloudSmartCoach.length + cloudClubMessages.length + cloudDirectMessages.length + cloudGroupMessages.length + cloudTasks.length + cloudTaskAssignments.length + cloudTrainingAttendance.length;
       setSyncCount(coreSyncCount);
       setCloudMessage(queueStats.failed > 0 ? getQueueFailureMessage() : pendingCount > 0 ? `${pendingCount} Änderungen warten auf Synchronisation.` : migratedCount > 0 ? `${migratedCount} lokale Datensätze wurden in die Cloud migriert.` : "");
       setCloudStatus(resolveCloudConnectionState({
@@ -886,7 +901,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const latestSession = (await supabase.auth.getSession()).data.session;
           if (latestSession?.user.id !== activeSession.user.id || refreshGeneration !== refreshGenerationRef.current) return;
 
-          const optionalData = mergeCloudData(activeSession.user.id, nextProfile, clubs, allProfiles.length > 0 ? allProfiles : [nextProfile], groups, groupMembers, {
+          const optionalData = mergeCloudData(activeSession.user.id, nextProfile, clubs, allProfiles.length > 0 ? allProfiles : [nextProfile], groups, groupMembers, cloudImportedMembers, {
             personalBests: cloudPersonalBests,
             resultImports: cloudResultImports,
             externalConnections: cloudExternalConnections,

@@ -23,6 +23,21 @@
   -webkit-font-smoothing: antialiased;
 }
 
+select {
+  color-scheme: dark;
+}
+
+select option,
+select optgroup {
+  background: #0b1726;
+  color: #f8fafc;
+}
+
+select option:checked {
+  background: #155e75;
+  color: #ffffff;
+}
+
 
 /* Paddlio One calendar and training workflow */
 .master-calendar-workspace {
@@ -951,7 +966,7 @@
   .master-calendar-tablet .master-calendar-toolbar-group:last-child {
     grid-column: 1 / -1;
     justify-content: flex-end;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
   }
 
   .master-calendar-tablet .master-calendar-overflow-select {
@@ -1385,6 +1400,38 @@
     border-bottom-right-radius: 0;
     max-height: 92vh;
     width: 100%;
+  }
+}
+
+.competition-start-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.competition-start-list > div {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 8px;
+}
+
+.competition-start-list span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 480px) {
+  .competition-start-list > div {
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+
+  .competition-start-list small {
+    grid-column: 2;
   }
 }
 
@@ -2717,6 +2764,31 @@ p {
 .entry-form textarea,
 .profile-form textarea {
   resize: vertical;
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+  .template-plan-form .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .template-plan-form input[type="date"],
+  .template-plan-form input[type="time"] {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+@media (max-width: 767px) {
+  .competition-entry-form .form-grid,
+  .competition-entry-form .form-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .competition-entry-form input,
+  .competition-entry-form select,
+  .competition-entry-form textarea {
+    min-width: 0;
+  }
 }
 
 .entry-form input:focus,
@@ -10345,6 +10417,21 @@ body {
   --po-color-text-muted: #64748b;
 }
 
+[data-po-theme="light"] select {
+  color-scheme: light;
+}
+
+[data-po-theme="light"] select option,
+[data-po-theme="light"] select optgroup {
+  background: #ffffff;
+  color: #08111f;
+}
+
+[data-po-theme="light"] select option:checked {
+  background: #cffafe;
+  color: #083344;
+}
+
 [data-po-theme="highContrast"] {
   --po-color-background: #000000;
   --po-color-background-elevated: #050505;
@@ -13139,6 +13226,8 @@ body,
 .master-calendar-context {
   min-width: 0;
   width: 100%;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
 }
 
 .master-calendar-workspace.is-context-overlay {
@@ -14021,6 +14110,12 @@ body,
 }
 
 .master-template-picker-card {
+  max-height: min(calc(100dvh - 48px), 820px);
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
   padding: 14px;
 }
 
@@ -14182,6 +14277,11 @@ body,
     font-size: 0.82rem;
   }
 
+  .master-calendar-workspace.master-calendar-desktop .master-segmented-control button:last-child,
+  .master-calendar-workspace.master-calendar-desktop .master-calendar-toolbar-group:last-child .po-button:first-child {
+    min-width: 76px;
+  }
+
   .master-calendar-workspace.master-calendar-desktop .master-calendar-controls {
     display: grid;
     grid-template-columns: minmax(320px, 1fr) minmax(150px, 0.22fr) minmax(150px, 0.22fr);
@@ -14268,6 +14368,23 @@ body,
   .master-calendar-workspace.master-calendar-desktop .master-calendar-context {
     width: 100%;
     max-width: 400px;
+  }
+}
+
+@media (min-width: 1200px) and (max-width: 1599px) {
+  .master-calendar-workspace.master-calendar-desktop .master-calendar-toolbar {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .master-segmented-control {
+    justify-self: end;
+    max-width: 100%;
+  }
+
+  .master-calendar-workspace.master-calendar-desktop .master-calendar-toolbar-group:last-child {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+    flex-wrap: wrap;
   }
 }
 

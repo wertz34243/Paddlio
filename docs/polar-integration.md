@@ -35,7 +35,9 @@ Erforderlich:
 
 `POLAR_REDIRECT_URI` muss exakt auch im Polar AccessLink Admin Portal eingetragen sein, z. B.:
 
-`https://paddlio.vercel.app/api/polar/callback`
+`https://dev.paddlio.de/api/polar/callback` (DEV)
+
+`POLAR_APP_RETURN_URL` ist fuer DEV auf `https://dev.paddlio.de` zu setzen. Die Callback-URL muss im Polar AccessLink Portal exakt identisch freigeschaltet sein. Ohne Polar-Client-Freischaltung und diese serverseitigen Variablen kann der reale Provider-Flow nicht vollstaendig getestet werden.
 
 ## Ablauf
 
@@ -86,3 +88,4 @@ Die Adapter-Struktur liegt in `src/features/integrations/deviceAdapters.ts` und 
 - Webhook-Sync ist vorbereitet, aber noch nicht aktiv verdrahtet.
 - Polar AccessLink liefert je nach Sportart und Datenschutzeinstellung nicht immer GPS, HR-Samples oder Training Benefit.
 - Trainerzugriff auf Polar-Daten ist RLS-seitig nur über Vereinskontext vorbereitet. Eine ausdrueckliche Freigabe pro Sportler bleibt für eine spätere Version sinnvoll.
+- Verbinden und Synchronisieren benoetigen Internet. Bereits synchronisierte Einheiten bleiben im lokalen App-Cache lesbar; neue Polar-Daten koennen offline nicht vom Provider geladen werden.

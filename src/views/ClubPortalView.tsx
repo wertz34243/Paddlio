@@ -26,7 +26,7 @@ import {
   upsertCloudClubMessage,
   upsertCloudClubSettings,
 } from "../services/clubPortalService";
-import { compareDateKeys, endOfWeekDateKey, startOfWeekDateKey, todayDateKey } from "../lib/dateOnly";
+import { compareDateKeys, endOfWeekDateKey, localTimeInputValue, startOfWeekDateKey, todayDateKey } from "../lib/dateOnly";
 
 type ClubPortalViewProps = {
   data: PaddleMotionData;
@@ -427,7 +427,7 @@ export function ClubPortalView({ data, user, onDataChange }: ClubPortalViewProps
     <section className="section-block">
       <div className="section-heading"><div><p className="eyebrow">Verein</p><h3>Vereinskalender</h3></div></div>
       <form className="entry-form" onSubmit={upsertEvent}>
-        <div className="form-grid"><label>Titel<input name="title" required /></label><label>Datum<input name="date" type="date" defaultValue={todayKey()} /></label><label>Uhrzeit<input name="time" type="time" /></label><label>Kategorie<select name="category">{eventCategories.map((category) => <option key={category} value={category}>{eventLabel[category]}</option>)}</select></label><label>Gruppe<select name="groupId"><option value="">Alle</option>{clubGroups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select></label></div>
+        <div className="form-grid"><label>Titel<input name="title" required /></label><label>Datum<input name="date" type="date" defaultValue={todayKey()} /></label><label>Uhrzeit<input name="time" type="time" defaultValue={localTimeInputValue()} /></label><label>Kategorie<select name="category">{eventCategories.map((category) => <option key={category} value={category}>{eventLabel[category]}</option>)}</select></label><label>Gruppe<select name="groupId"><option value="">Alle</option>{clubGroups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select></label></div>
         <label>Notiz<textarea name="note" rows={3} /></label><button className="save-button" type="submit">Termin speichern</button>
       </form>
       <div className="calendar-list">{events.length ? events.map((item) => <article className="calendar-training-card" key={item.id}><div className="plan-card-head"><div><span>{item.date} {item.time}</span><h4>{item.title}</h4></div><b className="status-pill planned">{eventLabel[item.category]}</b></div><p>{item.note || "Keine Notiz."}</p></article>) : <p className="empty-state">Noch keine Vereinstermine vorhanden.</p>}</div>

@@ -7,6 +7,7 @@ import {
   endOfWeekDateKey,
   getLocalWeekdayLabel,
   isValidDateKey,
+  localTimeInputValue,
   normalizeDateKey,
   startOfWeekDateKey,
   todayDateKey,
@@ -53,5 +54,14 @@ describe("dateOnly", () => {
 
   it("formats today from a local Date object", () => {
     expect(todayDateKey(new Date(2026, 6, 14, 23, 30))).toBe("2026-07-14");
+  });
+
+  it("uses the device-local calendar date without UTC conversion", () => {
+    expect(todayDateKey(new Date(2026, 8, 10, 0, 5))).toBe("2026-09-10");
+  });
+
+  it("formats the current device-local time for time inputs", () => {
+    expect(localTimeInputValue(new Date(2026, 8, 10, 7, 4))).toBe("07:04");
+    expect(localTimeInputValue(new Date(2026, 8, 10, 19, 45))).toBe("19:45");
   });
 });

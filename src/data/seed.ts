@@ -119,6 +119,7 @@ export const seedData: PaddleMotionData = {
       updatedAt: now,
     },
   ],
+  competitionStartEntries: [],
   training: [
     {
       id: "training-1",

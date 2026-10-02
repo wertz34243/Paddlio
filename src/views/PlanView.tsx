@@ -43,6 +43,7 @@ import {
   type WeeklyPlanningTemplate,
   type WeeklyPlanningTemplateItem,
 } from "../features/training/templates/planningBlocks";
+import { localTimeInputValue } from "../lib/dateOnly";
 import { deleteCloudTrainingTemplate } from "../services/trainingTemplateService";
 import type {
   BoatClass,
@@ -140,6 +141,8 @@ const trainingTaskPriorityLabels: Record<TeamTaskPriority, string> = {
 const athleteWorkflowTabs: WorkflowTabConfig[] = [
   { id: "today", label: "Heute", calendarView: "day" },
   { id: "week", label: "Diese Woche", calendarView: "week" },
+  { id: "month", label: "Saison", calendarView: "month" },
+  { id: "templates", label: "Vorlagen" },
   { id: "upcoming", label: "Kommende" },
   { id: "done", label: "Erledigt" },
   { id: "feedback", label: "Rückmeldung" },
@@ -232,8 +235,8 @@ const emptyDraft = (user: User, athleteId: string): PlanDraft => ({
   title: "",
   date: today,
   weekday: getWeekdayFromDate(today),
-  time: "17:30",
-  startTime: "17:30",
+  time: localTimeInputValue(),
+  startTime: localTimeInputValue(),
   endTime: "",
   durationMinutes: 75,
   area: "Wassertraining",
@@ -386,7 +389,7 @@ export function PlanView({
       return baseTabs;
     }
 
-    const phoneTabs: WorkflowTab[] = isCoach ? ["today", "week", "feedback"] : ["today", "upcoming", "done", "feedback"];
+    const phoneTabs: WorkflowTab[] = isCoach ? ["today", "week", "feedback"] : ["today", "week", "templates", "feedback"];
     return baseTabs.filter((tab) => phoneTabs.includes(tab.id));
   }, [isPhone, isCoach]);
   const calendarViews = useMemo<CalendarView[]>(
@@ -1105,7 +1108,7 @@ export function PlanView({
     return { assignedType: "self" as const, assignedAthleteIds: [data.athlete.id], assignedGroupIds: [] };
   };
 
-  const saveTemplateAsPlanEntry = (template: TrainingTemplate, date: string, time = "17:30") => {
+  const saveTemplateAsPlanEntry = (template: TrainingTemplate, date: string, time = localTimeInputValue()) => {
     const target = getDefaultPlanningTarget();
     if (!validateTargetSelection(target.assignedType, target.assignedAthleteIds, target.assignedGroupIds)) {
       setFormMessage("Wähle zuerst eine gültige Gruppe oder einen Sportler aus.");
@@ -1724,8 +1727,6 @@ export function PlanView({
   );
 
   const renderProgramTemplateSections = () => {
-    if (!isCoach || isPhone) return null;
-
     return (
       <section className="program-template-sections" aria-label="Wochen- und Saisonvorlagen">
         <div className="program-template-group">
@@ -2006,7 +2007,7 @@ export function PlanView({
             </div>
           </div>
         ) : null}
-        <form className="entry-form" onSubmit={planFromTemplate}>
+        <form className="entry-form template-plan-form" onSubmit={planFromTemplate}>
           <div className="form-grid">
             <div className="template-picker-field">
               <span>Vorlage</span>
@@ -2016,7 +2017,7 @@ export function PlanView({
               <input name="templateId" type="hidden" value={selectedTemplateId} />
             </div>
             <label>Datum<input name="date" type="date" defaultValue={selectedDate} required /></label>
-            <label>Uhrzeit<input name="startTime" type="time" defaultValue="17:30" /></label>
+            <label>Uhrzeit<input name="startTime" type="time" defaultValue={localTimeInputValue()} /></label>
             <label>Dauer<input name="durationMinutes" type="number" min="0" step="5" placeholder="aus Vorlage" /></label>
             <label>Intensität<select name="intensity" defaultValue="mittel">{trainingIntensities.map((intensity) => <option key={intensity} value={intensity}>{intensityLabel[intensity]}</option>)}</select></label>
           </div>

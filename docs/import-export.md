@@ -35,7 +35,20 @@ Kritische Fehler blockieren den Import. Warnungen bleiben sichtbar und können b
 - Gruppen
 - Materiallisten
 
-Der erste Importpfad schreibt in die bestehenden lokalen Paddlio-Datenstrukturen und protokolliert Importjobs, Importzeilen und Profile in Supabase.
+Jeder bestaetigte Import schreibt zuerst in den fachlich passenden Cloud-Pfad. Erst nach erfolgreicher Cloud-Uebernahme wird der lokale App-Zustand aktualisiert und der Importbericht als erfolgreich angezeigt.
+
+| Importtyp | Dauerhaftes Ziel |
+| --- | --- |
+| Trainingsplan | `training_plan_items`, danach Kalender/Planung |
+| Trainingseinheiten | `training_journal_entries`, danach Journal |
+| Wettkampfergebnisse | `competitions` und `competition_results` |
+| Sportlerliste | `imported_club_members` als berechtigungsneutrale Einladung/Vorstufe |
+| Startliste | `competition_start_entries`, fest einem vorhandenen Wettkampf zugeordnet |
+| Vereinsmitglieder | `imported_club_members` als berechtigungsneutrale Mitgliedervorstufe |
+| Gruppen | `training_groups` |
+| Materialliste | `materials` |
+
+Importierte Personen werden nicht automatisch zu Auth-Konten und erhalten keine Rollenrechte. Ein registriertes Profil wird erst ueber den bestehenden Einladungs-/Mitgliederprozess verknuepft.
 
 ## Sicherheit
 
@@ -45,6 +58,8 @@ Der erste Importpfad schreibt in die bestehenden lokalen Paddlio-Datenstrukturen
 - Importdateien werden im Browser analysiert und nicht dauerhaft gespeichert.
 - Importberichte enthalten nur begrenzte Zeilenprotokolle.
 - Neue Supabase-Tabellen sind per RLS geschützt.
+- Organisationsimporte sind nur fuer Coach, TeamAdmin, ClubAdmin und Admin sichtbar. Athleten koennen nur eigene Plaene, Einheiten, Ergebnisse und eigenes Material importieren.
+- Wiederholte Imports werden anhand fachlicher Identitaeten (zum Beispiel Wettkampf/Startnummer/Boot oder Datum/Zeit/Titel) uebersprungen.
 
 ## Supabase
 
@@ -52,12 +67,18 @@ Migration:
 
 `supabase/migrations/0027_import_export_module.sql`
 
+Ergaenzend:
+
+`supabase/migrations/20261001131418_competition_start_entries.sql`
+
 Neue Tabellen:
 
 - `import_jobs`
 - `import_profiles`
 - `import_rows`
 - `export_jobs`
+- `competition_start_entries`
+- `imported_club_members`
 
 Die Migration ist idempotent und für bestehende Datenbanken ausgelegt.
 

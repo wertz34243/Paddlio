@@ -5,6 +5,7 @@ import { protectSpreadsheetValue, sanitizeRowForSpreadsheet } from "./exportBuil
 import { detectTargetField, requiredFieldsFor } from "./mappings";
 import type { ParsedWorkbook } from "./types";
 import type { PlanEntry, User } from "../../domain/types";
+import { detectFileFormat } from "./parser";
 
 describe("import mapping and validation", () => {
   it("detects common German competition result columns", () => {
@@ -15,7 +16,109 @@ describe("import mapping and validation", () => {
 
   it("keeps required fields explicit per import type", () => {
     expect(requiredFieldsFor("training_plans")).toEqual(["date", "durationMinutes"]);
-    expect(requiredFieldsFor("competition_results")).toEqual(["date", "fullName", "rawTime"]);
+    expect(requiredFieldsFor("competition_results")).toEqual(["date", "fullName", "title", "rawTime"]);
+    expect(requiredFieldsFor("groups")).toEqual(["group"]);
+  });
+
+  it("imports groups into the actual group collection", () => {
+    const user = makeUser();
+    const workbook: ParsedWorkbook = {
+      fileName: "gruppen.csv", fileFormat: "csv", warnings: [],
+      sheets: [{ name: "Gruppen", rows: [["Gruppe", "Fokus"], ["U18", "Technik"]], detectedHeaderRow: 0, rowCount: 2, columnCount: 2 }],
+    };
+    const result = executeImport(analyzeWorkbook(workbook, "groups"), { ...seedData, coachGroups: [] }, user);
+    expect(result.report.createdRows).toBe(1);
+    expect(result.data.coachGroups[0]).toMatchObject({ name: "U18", trainingFocus: "Technik", coachUserId: user.userId });
+  });
+
+  it("imports athlete and club-member rows as pending management records", () => {
+    const user = makeUser();
+    const workbook: ParsedWorkbook = {
+      fileName: "personen.csv", fileFormat: "csv", warnings: [],
+      sheets: [{ name: "Personen", rows: [["Name", "Verein", "E-Mail"], ["Fiktive Person", "MKC Monheim", "fiktiv@example.test"]], detectedHeaderRow: 0, rowCount: 2, columnCount: 3 }],
+    };
+    for (const type of ["athletes", "club_members"] as const) {
+      const result = executeImport(analyzeWorkbook(workbook, type), { ...seedData, coachAthletes: [] }, user);
+      expect(result.report.createdRows).toBe(1);
+      expect(result.data.coachAthletes[0]).toMatchObject({ name: "Fiktive Person", invitationStatus: "einladung_offen" });
+    }
+  });
+
+  it("imports a plan into the calendar source with its supplied local time", () => {
+    const user = makeUser();
+    const workbook: ParsedWorkbook = {
+      fileName: "plan.xlsx", fileFormat: "xlsx", warnings: [],
+      sheets: [{ name: "Plan", rows: [["Datum", "Uhrzeit", "Titel", "Dauer"], ["2026-10-02", "18:15", "GA1 Test", "60"]], detectedHeaderRow: 0, rowCount: 2, columnCount: 4 }],
+    };
+    const result = executeImport(analyzeWorkbook(workbook, "training_plans"), { ...seedData, plan: [] }, user);
+    expect(result.data.plan[0]).toMatchObject({ date: "2026-10-02", startTime: "18:15", title: "GA1 Test" });
+  });
+
+  it("imports a result for the matching own profile and prevents a duplicate", () => {
+    const user = makeUser();
+    const workbook: ParsedWorkbook = {
+      fileName: "ergebnis.xls", fileFormat: "xls", warnings: [],
+      sheets: [{ name: "Ergebnis", rows: [["Datum", "Name", "Wettkampf", "Fahrzeit", "Strafsekunden"], ["2026-10-02", "Coach Test", "Fiktiver Cup", "95.4", "2"]], detectedHeaderRow: 0, rowCount: 2, columnCount: 5 }],
+    };
+    const first = executeImport(analyzeWorkbook(workbook, "competition_results"), { ...seedData, competitions: [] }, user);
+    const second = executeImport(analyzeWorkbook(workbook, "competition_results"), first.data, user);
+    expect(first.data.competitions[0]).toMatchObject({ athleteId: user.userId, name: "Fiktiver Cup", run1PenaltySeconds: 2 });
+    expect(second.report.skippedRows).toBe(1);
+    expect(second.data.competitions).toHaveLength(1);
+  });
+
+  it("imports material into material management and skips the same item twice", () => {
+    const user = makeUser();
+    const workbook: ParsedWorkbook = {
+      fileName: "material.csv", fileFormat: "csv", warnings: [],
+      sheets: [{ name: "Material", rows: [["Materialtyp", "Materialname", "Zustand"], ["Boot", "Fiktives K1", "gut"]], detectedHeaderRow: 0, rowCount: 2, columnCount: 3 }],
+    };
+    const first = executeImport(analyzeWorkbook(workbook, "materials"), { ...seedData, material: [] }, user);
+    const second = executeImport(analyzeWorkbook(workbook, "materials"), first.data, user);
+    expect(first.data.material[0]).toMatchObject({ name: "Fiktives K1", note: "gut" });
+    expect(second.report.skippedRows).toBe(1);
+  });
+
+  it("accepts the three advertised import file extensions", () => {
+    expect(detectFileFormat("test.csv")).toBe("csv");
+    expect(detectFileFormat("test.xlsx")).toBe("xlsx");
+    expect(detectFileFormat("test.xls")).toBe("xls");
+  });
+
+  it("imports completed sessions into the journal source of truth", () => {
+    const user = makeUser();
+    const workbook: ParsedWorkbook = {
+      fileName: "einheiten.xlsx", fileFormat: "xlsx", warnings: [],
+      sheets: [{ name: "Training", rows: [["Datum", "Dauer", "Fokus"], ["2026-09-10", "75", "Technik"]], detectedHeaderRow: 0, rowCount: 2, columnCount: 3 }],
+    };
+    const result = executeImport(analyzeWorkbook(workbook, "training_sessions"), { ...seedData, training: [], journal: [] }, user);
+    expect(result.data.training).toHaveLength(1);
+    expect(result.data.journal).toHaveLength(1);
+    expect(result.data.journal[0]).toMatchObject({ completionStatus: "completed", actualDurationMinutes: 75 });
+  });
+
+  it("associates start-list rows with an existing competition instead of creating athletes", () => {
+    const user = makeUser();
+    const competition = { ...seedData.competitions[0], id: "competition-1", name: "Herbst-Cup", date: "2026-09-10" };
+    const workbook: ParsedWorkbook = {
+      fileName: "startliste.csv", fileFormat: "csv", warnings: [],
+      sheets: [{ name: "Startliste", rows: [["Wettkampf", "Name", "Startnummer", "Boot"], ["Herbst-Cup", "Mia Test", "17", "K1"]], detectedHeaderRow: 0, rowCount: 2, columnCount: 4 }],
+    };
+    const result = executeImport(analyzeWorkbook(workbook, "start_lists"), { ...seedData, competitions: [competition], competitionStartEntries: [], coachAthletes: [] }, user);
+    expect(result.report.createdRows).toBe(1);
+    expect(result.data.competitionStartEntries[0]).toMatchObject({ competitionId: "competition-1", startNumber: 17, displayName: "Mia Test" });
+    expect(result.data.coachAthletes).toHaveLength(0);
+  });
+
+  it("reports a start-list row whose competition cannot be resolved", () => {
+    const user = makeUser();
+    const workbook: ParsedWorkbook = {
+      fileName: "startliste.csv", fileFormat: "csv", warnings: [],
+      sheets: [{ name: "Startliste", rows: [["Wettkampf", "Name", "Startnummer"], ["Unbekannt", "Mia Test", "17"]], detectedHeaderRow: 0, rowCount: 2, columnCount: 3 }],
+    };
+    const result = executeImport(analyzeWorkbook(workbook, "start_lists"), { ...seedData, competitions: [], competitionStartEntries: [] }, user);
+    expect(result.report.status).toBe("failed");
+    expect(result.report.errors[0]?.message).toContain("Wettkampf wurde nicht gefunden");
   });
 
   it("flags negative penalties before import execution", () => {
@@ -27,12 +130,12 @@ describe("import mapping and validation", () => {
         {
           name: "Ergebnisse",
           rows: [
-            ["Datum", "Name", "Fahrzeit", "Strafsekunden"],
-            ["2026-07-14", "Trst Hallo", "95,42", "-2"],
+            ["Datum", "Name", "Wettkampf", "Fahrzeit", "Strafsekunden"],
+            ["2026-07-14", "Trst Hallo", "Test-Cup", "95,42", "-2"],
           ],
           detectedHeaderRow: 0,
           rowCount: 2,
-          columnCount: 4,
+          columnCount: 5,
         },
       ],
     };

@@ -58,7 +58,7 @@ import type {
   UserRole,
 } from "../domain/types";
 import { canSeeSystemPrivateData, maskEmail } from "../domain/privacy";
-import { dateKeyToLocalDate, todayDateKey } from "../lib/dateOnly";
+import { dateKeyToLocalDate, localTimeInputValue, todayDateKey } from "../lib/dateOnly";
 
 type CoachViewProps = {
   data: PaddleMotionData;
@@ -1327,7 +1327,7 @@ export function CoachView({ data, user, onDataChange }: CoachViewProps) {
         <form className="entry-form" onSubmit={assignTraining}>
           <div className="form-grid">
             <label>Datum<input name="date" type="date" defaultValue={todayKey()} /></label>
-            <label>Uhrzeit<input name="time" type="time" defaultValue="17:00" /></label>
+            <label>Uhrzeit<input name="time" type="time" defaultValue={localTimeInputValue()} /></label>
             <label>Dauer<input name="durationMinutes" type="number" min="0" defaultValue={60} /></label>
             <label>Ziel<select name="target" defaultValue="self"><option value="self">sich selbst</option>{ownAthletes.map((athlete) => <option key={athlete.id} value={`athlete:${athlete.id}`}>{athlete.name}</option>)}{ownGroups.map((group) => <option key={group.id} value={`group:${group.id}`}>{group.name}</option>)}</select></label>
             <label>Bereich<select name="area" defaultValue="Wassertraining">{trainingAreas.map((area) => <option key={area} value={area}>{area}</option>)}</select></label>

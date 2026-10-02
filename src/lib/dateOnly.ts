@@ -41,6 +41,12 @@ export const addDaysToDateKey = (value: string, days: number): string => {
 
 export const todayDateKey = (date = new Date()): string => dateKeyFromLocalDate(date);
 
+export const localTimeInputValue = (date = new Date()): string => {
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
+};
+
 export const startOfWeekDateKey = (value: string): string => {
   const date = dateKeyToLocalDate(value);
   const day = date.getDay();

@@ -37,6 +37,7 @@ import type {
   User,
 } from "../domain/types";
 import type { DeviceClass } from "../lib/deviceCapabilities";
+import { localTimeInputValue } from "../lib/dateOnly";
 import { canUseCoachArea } from "../domain/accessControl";
 import { deduplicateTrainingFeedback, getTrainingFeedbackType } from "../domain/trainingFeedback";
 import {
@@ -347,7 +348,7 @@ function getEntrySections(entry: PlanEntry): string[] {
 
 function createQuickEdit(template: TrainingTemplate, date: string, user?: User): QuickEditState {
   const durationMinutes = template.defaultDurationMinutes ?? 60;
-  const startTime = "17:30";
+  const startTime = localTimeInputValue();
   return {
     template,
     date,

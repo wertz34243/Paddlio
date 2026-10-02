@@ -8,13 +8,14 @@ import {
   getRun2Total,
 } from "../domain/metrics";
 import { competitionLevelOptions, formatCompetitionLevel, normalizeCompetitionLevel, toNonNegativeNumber } from "../domain/competition";
-import type { BoatClass, Competition } from "../domain/types";
+import type { BoatClass, Competition, CompetitionStartEntry } from "../domain/types";
 import { formatDateKeyForDisplay, todayDateKey } from "../lib/dateOnly";
 
 type CompetitionDraft = Omit<Competition, "athleteId" | "createdAt" | "updatedAt">;
 
 type CompetitionsViewProps = {
   competitions: Competition[];
+  startEntries?: CompetitionStartEntry[];
   onSave: (competition: Omit<Competition, "id" | "athleteId" | "createdAt" | "updatedAt"> & { id?: string }) => void;
   onDelete: (id: string) => void;
   openNewSignal?: number;
@@ -45,7 +46,7 @@ const emptyDraft: CompetitionDraft = {
 
 const toNumber = (value: FormDataEntryValue | null): number => toNonNegativeNumber(value);
 
-export function CompetitionsView({ competitions, onSave, onDelete, openNewSignal = 0 }: CompetitionsViewProps) {
+export function CompetitionsView({ competitions, startEntries = [], onSave, onDelete, openNewSignal = 0 }: CompetitionsViewProps) {
   const [draft, setDraft] = useState<CompetitionDraft | null>(null);
   const [openId, setOpenId] = useState<string>("");
   const sortedCompetitions = [...competitions].sort((a, b) => b.date.localeCompare(a.date) || a.location.localeCompare(b.location));
@@ -127,7 +128,7 @@ export function CompetitionsView({ competitions, onSave, onDelete, openNewSignal
         </div>
 
         {draft ? (
-          <form className="entry-form" onSubmit={handleSubmit}>
+          <form className="entry-form competition-entry-form" onSubmit={handleSubmit}>
             <div className="form-grid">
               <label>
                 Name
@@ -280,6 +281,21 @@ export function CompetitionsView({ competitions, onSave, onDelete, openNewSignal
                         </div>
                       </div>
                       {competition.note ? <p className="card-note">{competition.note}</p> : null}
+                      {startEntries.some((entry) => entry.competitionId === competition.id) ? (
+                        <section className="competition-start-list" aria-label={`Startliste ${competition.name || competition.location}`}>
+                          <h5>Startliste</h5>
+                          {startEntries
+                            .filter((entry) => entry.competitionId === competition.id)
+                            .sort((left, right) => left.startNumber - right.startNumber)
+                            .map((entry) => (
+                              <div key={entry.id}>
+                                <strong>{entry.startNumber}</strong>
+                                <span>{entry.displayName}</span>
+                                <small>{entry.boatClass}{entry.ageClass ? ` · ${entry.ageClass}` : ""}</small>
+                              </div>
+                            ))}
+                        </section>
+                      ) : null}
                       <div className="card-actions">
                         <button className="edit-button" type="button" onClick={() => startEdit(competition)}>
                           Bearbeiten

@@ -36,7 +36,10 @@ async function openTrainingTab(page: Page, name: string | RegExp) {
   }
   const tab = page.locator(".training-segment-switcher").getByRole("tab", { name });
   await expect(tab).toBeVisible({ timeout: 20_000 });
-  await tab.click();
+  await expect(async () => {
+    await tab.click();
+    await expect(tab).toHaveAttribute("aria-selected", "true", { timeout: 2_000 });
+  }).toPass({ timeout: 20_000 });
 }
 
 async function openCalendar(page: Page) {
@@ -94,6 +97,54 @@ test.describe("desktop training workspace", () => {
     mkdirSync(screenshotDir, { recursive: true });
   });
 
+  test("keeps calendar controls readable, collision-free and templates scrollable", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "edge", "Desktop calendar guards run only in the edge project.");
+    await page.setViewportSize({ width: 1366, height: 768 });
+    await login(page, coachEmail!, coachPassword!);
+    await openCalendar(page);
+
+    const toolbarLayout = await page.locator(".master-calendar-toolbar").evaluate((toolbar) => {
+      const controls = [...toolbar.querySelectorAll<HTMLElement>("button, select")].filter((item) => {
+        const style = getComputedStyle(item);
+        return style.display !== "none" && style.visibility !== "hidden";
+      });
+      const rects = controls.map((item) => item.getBoundingClientRect());
+      const overlaps: Array<[number, number]> = [];
+      rects.forEach((left, leftIndex) => rects.slice(leftIndex + 1).forEach((right, offset) => {
+        if (left.left < right.right - 1 && left.right > right.left + 1 && left.top < right.bottom - 1 && left.bottom > right.top + 1) {
+          overlaps.push([leftIndex, leftIndex + offset + 1]);
+        }
+      }));
+      return { overlaps, width: toolbar.scrollWidth - toolbar.clientWidth };
+    });
+    expect(toolbarLayout.overlaps).toEqual([]);
+    expect(toolbarLayout.width).toBeLessThanOrEqual(1);
+
+    const filters = page.locator(".master-calendar-controls select");
+    await expect(filters).toHaveCount(2);
+    for (let index = 0; index < await filters.count(); index += 1) {
+      const colors = await filters.nth(index).evaluate((select) => {
+        const style = getComputedStyle(select);
+        return { background: style.backgroundColor, color: style.color };
+      });
+      expect(colors.background).not.toBe("rgba(0, 0, 0, 0)");
+      expect(colors.color).not.toBe("rgb(255, 255, 255)");
+    }
+
+    await openTemplatesPanel(page);
+    const scroller = page.locator(".master-template-picker-card");
+    await expect(scroller).toBeVisible();
+    const before = await scroller.evaluate((element) => ({ top: element.scrollTop, max: element.scrollHeight - element.clientHeight }));
+    if (before.max > 1) {
+      const box = await scroller.boundingBox();
+      expect(box).not.toBeNull();
+      await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+      await page.mouse.wheel(0, 500);
+      await expect.poll(() => scroller.evaluate((element) => element.scrollTop)).toBeGreaterThan(before.top);
+    }
+    await expect(page.locator(".master-template-card").last()).toBeAttached();
+  });
+
   test("keeps long desktop workspaces scrollable with mouse and keyboard", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "edge", "Desktop scrolling runs only in the edge project.");
     await page.setViewportSize({ width: 1366, height: 768 });
@@ -108,6 +159,14 @@ test.describe("desktop training workspace", () => {
         max: Math.max(0, (scroller?.scrollHeight ?? 0) - window.innerHeight),
       };
     });
+    const pressUntilScrolled = async (key: string, baseline: number, direction: "up" | "down") => {
+      await expect(async () => {
+        await page.keyboard.press(key);
+        const current = (await scrollMetrics()).top;
+        if (direction === "down") expect(current).toBeGreaterThan(baseline);
+        else expect(current).toBeLessThan(baseline);
+      }).toPass({ timeout: 10_000 });
+    };
 
     await expect.poll(async () => (await scrollMetrics()).max).toBeGreaterThan(100);
     await page.evaluate(() => document.scrollingElement?.scrollTo({ top: 0 }));
@@ -120,23 +179,18 @@ test.describe("desktop training workspace", () => {
 
     const afterWheel = (await scrollMetrics()).top;
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
-    await page.keyboard.press("ArrowDown");
-    await expect.poll(async () => (await scrollMetrics()).top).toBeGreaterThan(afterWheel);
+    await pressUntilScrolled("ArrowDown", afterWheel, "down");
 
-    await page.keyboard.press("PageDown");
-    await expect.poll(async () => (await scrollMetrics()).top).toBeGreaterThan(afterWheel);
+    await pressUntilScrolled("PageDown", afterWheel, "down");
     const afterPageDown = (await scrollMetrics()).top;
 
-    await page.keyboard.press("End");
-    await expect.poll(async () => (await scrollMetrics()).top).toBeGreaterThan(afterPageDown);
+    await pressUntilScrolled("End", afterPageDown, "down");
 
     const afterEnd = (await scrollMetrics()).top;
-    await page.keyboard.press("PageUp");
-    await expect.poll(async () => (await scrollMetrics()).top).toBeLessThan(afterEnd);
+    await pressUntilScrolled("PageUp", afterEnd, "up");
 
     const afterPageUp = (await scrollMetrics()).top;
-    await page.keyboard.press("Home");
-    await expect.poll(async () => (await scrollMetrics()).top).toBeLessThan(afterPageUp);
+    await pressUntilScrolled("Home", afterPageUp, "up");
   });
 
   test("captures desktop calendar interactions", async ({ page }, testInfo) => {
