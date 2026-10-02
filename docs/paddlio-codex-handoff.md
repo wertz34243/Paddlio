@@ -76,5 +76,6 @@ Manueller DEV-Praxistest: je eine fiktive CSV/XLS/XLSX-Datei ueber die UI import
 
 ## Commit und Pushstatus
 
-- Commit: wird nach finaler Diff-Pruefung erstellt.
-- Pushstatus: ausstehend bis zum Commit dieses Blocks.
+- Implementierungscommit: `37eb2fb` (`Fix imports and calendar usability`).
+- Pushstatus: erfolgreich auf `origin/develop`.
+- Dieser abschliessende Handoff-Stand folgt in einem separaten Dokumentationscommit.
