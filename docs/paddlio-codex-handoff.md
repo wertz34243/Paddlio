@@ -2,73 +2,88 @@
 
 ## Stand
 
-- Datum/Uhrzeit: 2026-10-02 12:10 CEST
-- Stabilitaetsblock: Stabile Inhalte bei lokalen Aenderungen, Cloud-Refresh und Realtime
-- Status: IMPLEMENTIERT, AUF SUPABASE DEV ANGEWENDET, REGRESSION GRUEN
+- Datum/Uhrzeit: 2026-10-03 09:45 CEST
+- Stabilitaetsblock: Zuverlaessige Persistenz fuer Ziele, persoenliches Material und Profil
+- Status: IMPLEMENTIERT, AUF SUPABASE DEV ANGEWENDET, DEV-CLOUD-ROUNDTRIP UND REGRESSION GRUEN
 
 ## Root Cause
 
-- `AuthProvider.refreshCloudData()` veroeffentlichte waehrend eines laufenden Cloud-Refreshs zwei unvollstaendige Zwischenstaende. Dabei wurden noch nicht geladene Gruppen, Mitglieder und Nachrichten als erfolgreiche leere Cloud-Antwort behandelt. Sichtbare Daten wechselten deshalb kurzzeitig oder dauerhaft auf leere Zustaende.
-- Realtime-Ereignisse waehrend eines laufenden Refreshs wurden verworfen. Ausserdem konnte eine aeltere asynchrone Cloud-Antwort einen neueren optimistischen lokalen Stand ueberschreiben.
-- Die bestehende `profiles`-RLS liefert nicht fuer jede berechtigte Chatbeziehung ein vollstaendiges Gegenprofil. Nach Verlust des lokalen Identitaetscaches blieb deshalb nur ein generischer Kontaktname.
-- Auf kleinen Phone-Viewports lag die sticky Nachrichtenleiste zu nah an der unteren Navigation.
+- Ziele wurden in `App.tsx` nur in den lokalen React-/PWA-Datenbestand geschrieben. `upsertCloudGoal()` wurde im sichtbaren Formularpfad nie aufgerufen; trotzdem meldete das Formular sofort `Ziel erstellt`.
+- Persoenliches Material hatte denselben Fehler: Der App-Callback aktualisierte nur lokal und rief `upsertCloudMaterial()` nicht auf. Nach einem Cloud-Refresh war der Eintrag deshalb wieder verschwunden.
+- Das Profil schrieb zwar die Kernspalten, DEV besass aber keine Spalte `profiles.profile_data`. Der Service fing den Schemafehler ab, wiederholte den Write ohne `profile_data` und meldete Erfolg. Dadurch gingen alle erweiterten Felder nach Reload verloren.
+- `season_goals` besass nicht alle vom Formular verwendeten Spalten. Kategorie, Metrik, Richtung, Prioritaet, Startdatum und Notizen konnten daher nicht vollstaendig rundlaufen.
+- Formulare unterschieden bislang nicht zwischen bestaetigtem Cloudwrite, sicher eingereihtem Offline-Write und nicht wiederholbarem Fehler.
 
 ## Aenderungen
 
-- Der bestehende aktuelle Account-Snapshot bleibt sichtbar, bis ein vollstaendiger Refresh vorliegt. Erfolgreich leere Cloud-Antworten bleiben weiterhin gueltige Wahrheit; nur noch nicht geladene bzw. fehlgeschlagene Bereiche verwenden den Cache.
-- Lokale Datenrevisionen verhindern, dass aeltere Cloud-Antworten neuere lokale Aenderungen ueberschreiben.
-- Realtime-Ereignisse waehrend eines Refreshs werden vorgemerkt und unmittelbar danach durch einen neuen Refresh verarbeitet.
-- Ein minimales, autorisiertes Kontaktverzeichnis liefert fuer eigene Chatpartner und gemeinsame Gruppen stabile Namen und Rollen, ohne E-Mail oder erweiterte Profildaten offenzulegen.
-- Die mobile Chatleiste besitzt Safe-Area- und Bottom-Navigation-Abstand.
-- Neue Unit- und E2E-Regressionen pruefen Accountwechsel, konkurrierende lokale/Cloud-Staende, stabile Kontakt-/Gruppennamen nach Reload und die mobile Chatleiste.
+- Ziele und Material schreiben jetzt vor der sichtbaren Erfolgsmeldung ueber die vorhandene user-scoped Cloud-/Offline-Queue-Architektur.
+- Bei bestaetigtem Cloudwrite wird `synced`, bei Offline-/transientem Fehler `queued` geliefert. Nicht wiederholbare Fehler werden an das Formular weitergereicht; Eingaben bleiben stehen und es erscheint eine verstaendliche Meldung.
+- Lokale Listen werden erst nach bestaetigtem Write oder erfolgreichem Queueing aktualisiert. Delete nutzt denselben Vertrag.
+- Ziel-Cloudmapping speichert und liest alle sichtbaren Formularfelder.
+- Profilwrites speichern das vollstaendige `UserProfile` in der geschuetzten eigenen Profilzeile und verschlucken fehlende Schemafelder nicht mehr still.
+- Die separate Einstellungen-Seite wartet ebenfalls auf den bestaetigten Profilwrite und zeigt bei Fehlern keine falsche Erfolgsmeldung mehr.
+- `athlete_id` fuer persoenliche Ziele und Material stammt aus dem aktiven Auth-Konto. Vereinsmaterial bleibt weiterhin im getrennten `club_material`-Bereich.
+- Der Vereinsname aus `club_id` bleibt beim Laden kanonisch; ein Profilformular kann die sichere Club-Zuordnung nicht durch Freitext ersetzen.
+- Mobile Formulare erhalten sichere Abstaende zu Appbar und Bottom-Navigation, vollbreite Controls und einen oberhalb der Bottom-Navigation haftenden Profil-Speicherbereich.
 
 ## Migration
 
-- Neu: `supabase/migrations/20261002061219_stable_realtime_content_state.sql`.
-- Erstellt `public.paddlio_visible_contact_profiles_20261002()` als eingeschraenkten `SECURITY DEFINER` RPC mit leerem `search_path`.
-- Ausfuehrung nur fuer `authenticated`; `anon` und `public` sind entzogen.
-- Additiver partieller Index fuer aktive Gruppenmitgliedschaften.
-- PostgREST-Schema-Reload enthalten.
-- Keine Tabellen gedroppt und keine Nutzdaten geloescht.
+- Neu: `supabase/migrations/20261003071613_reliable_goals_material_profile_persistence.sql`.
+- Additiv hinzugefuegt: `profiles.profile_data` sowie `season_goals.category`, `metric`, `direction`, `priority`, `start_date`, `coach_note`, `athlete_note`.
+- Zulaessige Zielwerte werden ueber vier Check-Constraints begrenzt.
+- Kein Drop, kein Delete, keine Nutzdatenveraenderung und keine RLS-Lockerung.
+- PostgREST-Schema-Reload ist enthalten.
 
 ## Supabase DEV Ergebnis
 
-- Vor jedem SQL-Schritt geprueftes Ziel: ausschliesslich `nlllqsfdhfiwticrcrnp` (`paddlio-dev`, linked, ACTIVE_HEALTHY).
+- Vor jedem mutierenden Datenbankschritt geprueftes Ziel: `nlllqsfdhfiwticrcrnp` (`paddlio-dev`, linked, ACTIVE_HEALTHY).
 - Production `twlkhfbrrwjwppxinmpn` war nicht verknuepft und wurde nicht verwendet.
-- Migration gezielt als einzelne SQL-Datei auf DEV angewendet; kein unsicherer historischer `db push`.
-- Verifiziert: Funktion vorhanden, `SECURITY DEFINER = true`, `search_path = ''`, `authenticated_execute = true`, `anon_execute = false`.
-- Verifiziert: Index `idx_group_memberships_user_group_active_20261002` vorhanden.
+- Migration als einzelne Datei erfolgreich auf DEV ausgefuehrt und Version `20261003071613` als angewendet in der DEV-Migrationshistorie markiert.
+- Verifiziert: alle acht neuen Spalten vorhanden.
+- Verifiziert: RLS bleibt fuer `profiles`, `season_goals` und `materials` aktiv; bestehende Policies blieben erhalten.
+- Echter Athlete-DEV-Test: Ziel und persoenliches Material erstellt, nach Reload aus DEV geladen und die ausschliesslich fuer den Test erzeugten Datensaetze anschliessend entfernt.
+- Echter Athlete-DEV-Test: erweitertes Profilfeld per PATCH gespeichert, nach Reload aus DEV gelesen und anschliessend auf den vorherigen Testkontostand zurueckgesetzt.
 
 ## Betroffene Dateien
 
-- `src/auth/AuthProvider.tsx`
-- `src/services/cloudReadState.ts`
+- `src/App.tsx`
+- `src/lib/database.types.ts`
+- `src/services/cloudWriteService.ts`
+- `src/services/goalService.ts`
+- `src/services/materialService.ts`
 - `src/services/profileService.ts`
-- `src/services/profileService.test.ts`
+- `src/services/competitionService.ts`
+- `src/services/journalService.ts`
+- `src/services/trainingTemplateService.ts`
 - `src/services/syncInfrastructure.test.ts`
+- `src/services/persistenceServices.test.ts`
+- `src/views/GoalsView.tsx`
+- `src/views/EquipmentView.tsx`
+- `src/views/ProfileView.tsx`
+- `src/views/SettingsView.tsx`
 - `src/styles.css`
-- `tests/e2e/mobile-layout.spec.ts`
-- `supabase/migrations/20261002061219_stable_realtime_content_state.sql`
+- `tests/e2e/personal-persistence.spec.ts`
+- `supabase/migrations/20261003071613_reliable_goals_material_profile_persistence.sql`
 
 ## Tests
 
-- `npm.cmd run test`: 26 Dateien, 148/148 Tests bestanden.
+- `npm.cmd run test`: 27 Dateien, 152/152 Tests bestanden.
 - `npm.cmd run build`: erfolgreich, 186 Module; nur bestehender Chunk-Hinweis.
 - `npm.cmd run check:beta`: Encoding, RLS, Security, Bundle, A11y und Beta-Blocker bestanden.
-- Neuer Mobile-Kommunikationstest: bestanden; keine DEV-Daten erzeugt oder geloescht.
-- `npm.cmd run test:e2e`: 43 bestanden, 25 vorgesehene Projekt-/Viewport-Skips, 0 Fehler.
+- `npm.cmd run test:e2e`: 46 bestanden, 28 vorgesehene Projekt-/Viewport-Skips, 0 Fehler.
 - `npm.cmd run test:e2e:roles`: 9 bestanden, 1 vorgesehener Mobile-Projekt-Skip, 0 Fehler.
-- Der erste Gesamtlauf hatte einmalig einen bestehenden Tablet-Builder-Screenshot-Timeout. Der isolierte Test und der komplette Wiederholungslauf waren gruen.
+- Neue Regressionen pruefen bestaetigten/queued Cloudwrite, nicht wiederholbare Fehler, vollstaendigen Ziel-Roundtrip, Material-Owner, Profil- und Einstellungen-Payloads sowie echte DEV-Reloads.
+- Der zuvor reparierte Gruppenchat-/Realtime-Test blieb gruen.
 
 ## Offene Punkte
 
-- Der konkrete urspruengliche iPhone-Ablauf sollte nach dem DEV-Deploy einmal manuell wiederholt werden: Gruppennachricht senden, Seite offen lassen, Direktkontakte beobachten und anschliessend neu laden.
-- Ein echter Safari-Test auf physischem iPhone/iPad ist automatisiert nicht moeglich; der Playwright-Mobile-Test deckt Layout, Reload und stabilen Datenstand ab.
-- Keine bekannten blockierenden Code-, Schema-, Sync- oder RLS-Fehler aus diesem Block.
+- Physische Safari-Tests auf iPhone/iPad und ein echtes zweites Geraet sind lokal nicht automatisierbar. Playwright deckt kleine Phone-Viewports, Tablet-Layouts, Reload, Rollen und den Zwei-Session-Trainings-/Feedbackfluss ab.
+- Das Profilbild wird in der bestehenden Architektur als Data-URL in der eigenen Profilzeile gespeichert. Die Zuordnung ist RLS-geschuetzt und getestet; fuer groessere Bilder waere spaeter eine separate Storage-Optimierung sinnvoll, aber kein Blocker dieses Fixes.
+- Nach DEV-Deploy manuell pruefen: Ziel erstellen/bearbeiten; Material erstellen/bearbeiten; alle Profilfelder und Profilbild speichern; App schliessen/oeffnen; Logout/Login; zweites Geraet.
 
 ## Naechste sinnvolle Aufgabe
 
-- Manueller DEV-Praxistest auf iPhone und iPad fuer Gruppenchat/Direktnachrichten; danach nur bei einem reproduzierbaren Restbefund weiterarbeiten.
+- Manueller DEV-Praxistest auf iPhone, iPad und PC fuer Ziele, Material, Profilbild und App-Einstellungen. Nur bei einem reproduzierbaren Restbefund einen neuen gezielten Stabilitaetsblock starten.
 
 ## Sicherheitsbestaetigung
 
@@ -79,6 +94,5 @@
 
 ## Commit und Pushstatus
 
-- Implementierungscommit: `dbc29d8` (`Stabilize realtime content refreshes`).
-- Pushstatus: erfolgreich auf `origin/develop`.
-- Dieser finale Handoff-Stand folgt in einem separaten Dokumentationscommit.
+- Implementierungscommit: wird nach Abschluss dieses Handoffs eingetragen.
+- Pushstatus: ausstehend bis zum gezielten Commit.

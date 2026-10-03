@@ -1,7 +1,7 @@
 import { getSupabaseClient } from "../lib/supabase";
 import type { SeasonGoal } from "../domain/types";
 import { sanitizeCloudPayload } from "./cloudIds";
-import { runCloudWrite } from "./cloudWriteService";
+import { runCloudWrite, type CloudWriteResult } from "./cloudWriteService";
 
 const toCloudGoal = (goal: SeasonGoal) => ({
   id: goal.id,
@@ -14,6 +14,13 @@ const toCloudGoal = (goal: SeasonGoal) => ({
   current_value: goal.currentValueOverride === "" ? null : goal.currentValueOverride,
   unit: goal.unit,
   status: goal.status,
+  category: goal.category,
+  metric: goal.metric,
+  direction: goal.direction,
+  priority: goal.priority,
+  start_date: goal.startDate || null,
+  coach_note: goal.coachNote || null,
+  athlete_note: goal.athleteNote || null,
   due_date: goal.dueDate || null,
 });
 
@@ -24,18 +31,18 @@ export const fromCloudGoal = (row: any): SeasonGoal => ({
   assignedByUserId: row.assigned_by ?? row.athlete_id,
   title: row.title,
   description: row.description ?? "",
-  category: "personal",
-  metric: "manual",
-  direction: "over",
+  category: row.category ?? "personal",
+  metric: row.metric ?? "manual",
+  direction: row.direction ?? "over",
   targetValue: row.target_value ?? 1,
   unit: row.unit ?? "",
-  startDate: row.created_at?.slice(0, 10) ?? "",
+  startDate: row.start_date ?? row.created_at?.slice(0, 10) ?? "",
   dueDate: row.due_date ?? "",
   status: row.status ?? "active",
-  priority: "medium",
+  priority: row.priority ?? "medium",
   currentValueOverride: row.current_value ?? "",
-  coachNote: "",
-  athleteNote: "",
+  coachNote: row.coach_note ?? "",
+  athleteNote: row.athlete_note ?? "",
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
@@ -48,8 +55,14 @@ export const listCloudGoals = async (): Promise<SeasonGoal[]> => {
   return (data ?? []).map(fromCloudGoal);
 };
 
-export const upsertCloudGoal = async (goal: SeasonGoal): Promise<void> => {
+export const upsertCloudGoal = async (goal: SeasonGoal): Promise<CloudWriteResult> => {
   const payload = sanitizeCloudPayload(toCloudGoal(goal));
-  await runCloudWrite("season_goals", "upsert", payload, (client) =>
+  return runCloudWrite("season_goals", "upsert", payload, (client) =>
     (client.from("season_goals") as any).upsert(payload, { onConflict: "id" }));
+};
+
+export const deleteCloudGoal = async (id: string): Promise<CloudWriteResult> => {
+  const payload = sanitizeCloudPayload({ id });
+  return runCloudWrite("season_goals", "delete", payload, (client) =>
+    (client.from("season_goals") as any).delete().eq("id", payload.id));
 };

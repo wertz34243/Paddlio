@@ -18,10 +18,12 @@ import { localTimeInputValue } from "./lib/dateOnly";
 import { canViewDevelopmentDiagnostics } from "./domain/diagnosticsAccess";
 import type { Json } from "./lib/database.types";
 import { updateCloudProfile } from "./services/profileService";
+import type { CloudWriteResult } from "./services/cloudWriteService";
 import { createCloudNotification, markAllCloudNotificationsRead, markCloudNotificationRead } from "./services/notificationService";
 import { deleteCloudJournalEntry, upsertCloudJournalEntry } from "./services/journalService";
 import { deleteCloudCompetition, upsertCloudCompetition } from "./services/competitionService";
-import { deleteCloudMaterial } from "./services/materialService";
+import { deleteCloudMaterial, upsertCloudMaterial } from "./services/materialService";
+import { deleteCloudGoal, upsertCloudGoal } from "./services/goalService";
 import { deleteCloudTraining, upsertCloudFeedback, upsertCloudTraining } from "./services/trainingService";
 import { upsertCloudSmartCoachRecommendation } from "./services/smartCoachService";
 import { upsertSmartCoachStatus } from "./domain/smartCoach";
@@ -571,19 +573,19 @@ function AppContent() {
     void upsertCloudJournalEntry(nextEntry).catch((error) => console.error("Trainingstagebuch konnte nicht direkt in Supabase gespeichert werden", error));
   };
 
-  const upsertMaterial = (item: Omit<MaterialItem, "id" | "athleteId" | "createdAt" | "updatedAt"> & { id?: string }) => {
+  const upsertMaterial = async (item: Omit<MaterialItem, "id" | "athleteId" | "createdAt" | "updatedAt"> & { id?: string }): Promise<CloudWriteResult> => {
     const timestamp = getTimestamp();
+    const existing = item.id ? data.material.find((material) => material.id === item.id) : undefined;
+    const nextItem: MaterialItem = {
+      ...item,
+      id: item.id ?? createId("material"),
+      athleteId: activeUser.userId,
+      createdAt: existing?.createdAt ?? timestamp,
+      updatedAt: timestamp,
+    };
+    const result = await upsertCloudMaterial(nextItem);
 
     updateData((current) => {
-      const existing = item.id ? current.material.find((material) => material.id === item.id) : undefined;
-      const nextItem: MaterialItem = {
-        ...item,
-        id: item.id ?? createId("material"),
-        athleteId: current.athlete.id,
-        createdAt: existing?.createdAt ?? timestamp,
-        updatedAt: timestamp,
-      };
-
       return {
         ...current,
         material: existing
@@ -591,14 +593,16 @@ function AppContent() {
           : [nextItem, ...current.material],
       };
     });
+    return result;
   };
 
-  const deleteMaterial = (id: string) => {
+  const deleteMaterial = async (id: string): Promise<CloudWriteResult> => {
+    const result = await deleteCloudMaterial(id);
     updateData((current) => ({
       ...current,
       material: current.material.filter((item) => item.id !== id),
     }));
-    void deleteCloudMaterial(id).catch((error) => console.error("Material konnte nicht aus der Cloud entfernt werden", error));
+    return result;
   };
 
   const upsertPlanEntry = (
@@ -796,22 +800,22 @@ function AppContent() {
     }
   };
 
-  const upsertGoal = (
+  const upsertGoal = async (
     goal: Omit<SeasonGoal, "id" | "athleteId" | "ownerUserId" | "createdAt" | "updatedAt"> & { id?: string },
-  ) => {
+  ): Promise<CloudWriteResult> => {
     const timestamp = getTimestamp();
+    const existing = goal.id ? data.goals.find((item) => item.id === goal.id) : undefined;
+    const nextGoal: SeasonGoal = {
+      ...goal,
+      id: goal.id ?? createId("goal"),
+      athleteId: activeUser.userId,
+      ownerUserId: activeUser.userId,
+      createdAt: existing?.createdAt ?? timestamp,
+      updatedAt: timestamp,
+    };
+    const result = await upsertCloudGoal(nextGoal);
 
     updateData((current) => {
-      const existing = goal.id ? current.goals.find((item) => item.id === goal.id) : undefined;
-      const nextGoal: SeasonGoal = {
-        ...goal,
-        id: goal.id ?? createId("goal"),
-        athleteId: current.athlete.id,
-        ownerUserId: current.activeUserId,
-        createdAt: existing?.createdAt ?? timestamp,
-        updatedAt: timestamp,
-      };
-
       return {
         ...current,
         goals: existing
@@ -819,13 +823,16 @@ function AppContent() {
           : [nextGoal, ...current.goals],
       };
     });
+    return result;
   };
 
-  const deleteGoal = (id: string) => {
+  const deleteGoal = async (id: string): Promise<CloudWriteResult> => {
+    const result = await deleteCloudGoal(id);
     updateData((current) => ({
       ...current,
       goals: current.goals.filter((goal) => goal.id !== id),
     }));
+    return result;
   };
 
   const togglePlanEntryDone = (id: string) => {
@@ -866,8 +873,24 @@ function AppContent() {
     }
   };
 
-  const updateProfile = async (userProfile: UserProfile) => {
+  const updateProfile = async (userProfile: UserProfile): Promise<CloudWriteResult> => {
     const timestamp = getTimestamp();
+
+    if (!cloudProfile) {
+      throw new Error("profile_not_ready");
+    }
+
+    const result = await updateCloudProfile({
+      id: cloudProfile.id,
+      first_name: userProfile.firstName,
+      last_name: userProfile.lastName,
+      display_name: userProfile.nickname || `${userProfile.firstName} ${userProfile.lastName}`.trim(),
+      avatar_url: userProfile.profileImageDataUrl || null,
+      age_category: userProfile.ageClass || null,
+      boat_classes: userProfile.boatClasses.map((boat) => boat),
+      paddle_side: userProfile.boatClasses.includes("C1") ? (userProfile.paddleSide === "links" ? "Links" : "Rechts") : null,
+      profile_data: userProfile as unknown as Json,
+    });
 
     updateData((current) => ({
       ...current,
@@ -886,26 +909,13 @@ function AppContent() {
         club: userProfile.club || current.athlete.club,
       },
     }));
-
-    if (cloudProfile) {
-      await updateCloudProfile({
-        id: cloudProfile.id,
-        first_name: userProfile.firstName,
-        last_name: userProfile.lastName,
-        display_name: userProfile.nickname || `${userProfile.firstName} ${userProfile.lastName}`.trim(),
-        avatar_url: userProfile.profileImageDataUrl || null,
-        age_category: userProfile.ageClass || null,
-        boat_classes: userProfile.boatClasses.map((boat) => boat),
-        paddle_side: userProfile.boatClasses.includes("C1") ? (userProfile.paddleSide === "links" ? "Links" : "Rechts") : null,
-        profile_data: userProfile as unknown as Json,
-      });
-    }
+    return result;
   };
 
   const updateProfileSettings = (
     settings: Pick<UserProfile, "profileImageDataUrl" | "darkMode" | "measurementUnit" | "language">,
-  ) => {
-    updateProfile({
+  ): Promise<CloudWriteResult> => {
+    return updateProfile({
       ...activeUser.profile,
       ...settings,
     });

@@ -59,6 +59,7 @@ export const upsertCloudTrainingTemplate = async (template: TrainingTemplate): P
     (client.from("training_templates") as any).upsert(payload, { onConflict: "id" }));
 };
 
-export const deleteCloudTrainingTemplate = async (id: string): Promise<void> =>
-  runCloudWrite("training_templates", "delete", { id }, (client) =>
+export const deleteCloudTrainingTemplate = async (id: string): Promise<void> => {
+  await runCloudWrite("training_templates", "delete", { id }, (client) =>
     (client.from("training_templates") as any).delete().eq("id", id));
+};

@@ -135,6 +135,13 @@ export type Database = {
           current_value: number | null;
           unit: string | null;
           status: GoalStatus;
+          category: "performance" | "training" | "penalty" | "technical" | "personal";
+          metric: "bestK1Total" | "bestC1Total" | "averagePenalty" | "trainingCount" | "trainingMinutes" | "manual";
+          direction: "under" | "over" | "equal";
+          priority: "low" | "medium" | "high";
+          start_date: string | null;
+          coach_note: string | null;
+          athlete_note: string | null;
           due_date: string | null;
           created_at: string;
           updated_at: string;

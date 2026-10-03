@@ -17831,3 +17831,37 @@ body,
   padding: 8px 14px;
   white-space: nowrap;
 }
+
+/* Phone persistence forms: keep controls clear of fixed app chrome and each other. */
+@media (max-width: 767px) {
+  .app-shell-phone .entry-form,
+  .app-shell-phone .profile-form {
+    min-width: 0;
+    padding-bottom: calc(var(--phone-bottom-nav-height, 66px) + 20px + env(safe-area-inset-bottom));
+    scroll-padding-top: calc(var(--phone-appbar-height, 58px) + 16px);
+    scroll-padding-bottom: calc(var(--phone-bottom-nav-height, 66px) + 24px + env(safe-area-inset-bottom));
+  }
+
+  .app-shell-phone .entry-form label,
+  .app-shell-phone .profile-form label {
+    min-width: 0;
+    gap: 7px;
+  }
+
+  .app-shell-phone .entry-form input,
+  .app-shell-phone .entry-form select,
+  .app-shell-phone .entry-form textarea,
+  .app-shell-phone .profile-form input,
+  .app-shell-phone .profile-form select,
+  .app-shell-phone .profile-form textarea {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .app-shell-phone .sticky-save {
+    position: sticky;
+    bottom: calc(var(--phone-bottom-nav-height, 66px) + 12px + env(safe-area-inset-bottom));
+    z-index: 8;
+    margin-bottom: 0;
+  }
+}

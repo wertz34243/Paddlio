@@ -64,6 +64,7 @@ export const upsertCloudJournalEntry = async (entry: TrainingJournalEntry): Prom
     (client.from("training_journal_entries") as any).upsert(payload, { onConflict: entry.trainingPlanEntryId ? "athlete_id,training_plan_entry_id" : "id" }));
 };
 
-export const deleteCloudJournalEntry = async (id: string): Promise<void> =>
-  runCloudWrite("training_journal_entries", "delete", { id }, (client) =>
+export const deleteCloudJournalEntry = async (id: string): Promise<void> => {
+  await runCloudWrite("training_journal_entries", "delete", { id }, (client) =>
     (client.from("training_journal_entries") as any).delete().eq("id", id));
+};

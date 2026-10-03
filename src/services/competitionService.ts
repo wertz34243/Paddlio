@@ -127,6 +127,7 @@ export const listCloudCompetitions = async (): Promise<Competition[]> => {
   }));
 };
 
-export const deleteCloudCompetition = async (id: string): Promise<void> =>
-  runCloudWrite("competitions", "delete", { id: toCloudUuid(id) }, (client) =>
+export const deleteCloudCompetition = async (id: string): Promise<void> => {
+  await runCloudWrite("competitions", "delete", { id: toCloudUuid(id) }, (client) =>
     (client.from("competitions") as any).delete().eq("id", toCloudUuid(id)));
+};

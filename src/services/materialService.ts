@@ -1,9 +1,9 @@
 import { getSupabaseClient } from "../lib/supabase";
 import type { MaterialItem } from "../domain/types";
 import { sanitizeCloudPayload } from "./cloudIds";
-import { runCloudWrite } from "./cloudWriteService";
+import { runCloudWrite, type CloudWriteResult } from "./cloudWriteService";
 
-export const upsertCloudMaterial = async (item: MaterialItem): Promise<void> => {
+export const upsertCloudMaterial = async (item: MaterialItem): Promise<CloudWriteResult> => {
   const payload = sanitizeCloudPayload({
     id: item.id,
     athlete_id: item.athleteId,
@@ -16,7 +16,7 @@ export const upsertCloudMaterial = async (item: MaterialItem): Promise<void> => 
     image_url: item.imageDataUrl || null,
     notes: item.note,
   });
-  await runCloudWrite("materials", "upsert", payload, (client) =>
+  return runCloudWrite("materials", "upsert", payload, (client) =>
     (client.from("materials") as any).upsert(payload, { onConflict: "id" }));
 };
 
@@ -41,6 +41,8 @@ export const listCloudMaterials = async (): Promise<MaterialItem[]> => {
   }));
 };
 
-export const deleteCloudMaterial = async (id: string): Promise<void> =>
-  runCloudWrite("materials", "delete", { id }, (client) =>
-    (client.from("materials") as any).delete().eq("id", id));
+export const deleteCloudMaterial = async (id: string): Promise<CloudWriteResult> => {
+  const payload = sanitizeCloudPayload({ id });
+  return runCloudWrite("materials", "delete", payload, (client) =>
+    (client.from("materials") as any).delete().eq("id", payload.id));
+};

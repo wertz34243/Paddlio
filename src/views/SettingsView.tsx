@@ -5,6 +5,7 @@ import type { ProfileSyncDiagnostics } from "../auth/AuthProvider";
 import { discardOfflineQueueItem, getOfflineQueueDiagnostics } from "../services/offlineQueueService";
 import { validateProfileImage } from "../domain/profileImage";
 import { ACCOUNT_DELETION_CONFIRMATION, deleteOwnAccount, downloadPersonalDataExport } from "../services/accountPrivacyService";
+import type { CloudWriteResult } from "../services/cloudWriteService";
 
 type SettingsViewProps = {
   user: User;
@@ -19,7 +20,7 @@ type SettingsViewProps = {
     buildCommit: string;
     profileSyncDiagnostics: ProfileSyncDiagnostics;
   };
-  onSave: (settings: Pick<UserProfile, "profileImageDataUrl" | "darkMode" | "measurementUnit" | "language">) => void;
+  onSave: (settings: Pick<UserProfile, "profileImageDataUrl" | "darkMode" | "measurementUnit" | "language">) => Promise<CloudWriteResult>;
   onLogout: () => void;
 };
 
@@ -36,6 +37,8 @@ const languages: Array<{ value: AppLanguage; label: string }> = [
 export function SettingsView({ user, syncStatus, onSave, onLogout }: SettingsViewProps) {
   const [profileImageDataUrl, setProfileImageDataUrl] = useState(user.profile.profileImageDataUrl);
   const [savedMessage, setSavedMessage] = useState("");
+  const [settingsError, setSettingsError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const [imageError, setImageError] = useState("");
   const [privacyAction, setPrivacyAction] = useState<"" | "export" | "delete">("");
   const [privacyMessage, setPrivacyMessage] = useState("");
@@ -64,19 +67,28 @@ export function SettingsView({ user, syncStatus, onSave, onLogout }: SettingsVie
     reader.readAsDataURL(file);
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
 
-    onSave({
-      profileImageDataUrl,
-      darkMode: formData.get("darkMode") === "on",
-      measurementUnit: String(formData.get("measurementUnit")) as MeasurementUnit,
-      language: String(formData.get("language")) as AppLanguage,
-    });
-
-    setSavedMessage("Einstellungen gespeichert");
-    window.setTimeout(() => setSavedMessage(""), 2200);
+    setIsSaving(true);
+    setSavedMessage("");
+    setSettingsError("");
+    try {
+      const result = await onSave({
+        profileImageDataUrl,
+        darkMode: formData.get("darkMode") === "on",
+        measurementUnit: String(formData.get("measurementUnit")) as MeasurementUnit,
+        language: String(formData.get("language")) as AppLanguage,
+      });
+      setSavedMessage(result === "synced" ? "Einstellungen gespeichert und synchronisiert" : "Einstellungen lokal gespeichert. Die Synchronisierung folgt automatisch.");
+      window.setTimeout(() => setSavedMessage(""), 2600);
+    } catch (error) {
+      console.error("Profileinstellungen konnten nicht gespeichert werden", error);
+      setSettingsError("Die Einstellungen konnten nicht gespeichert werden. Deine Auswahl bleibt erhalten.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleExport = async () => {
@@ -159,9 +171,10 @@ export function SettingsView({ user, syncStatus, onSave, onLogout }: SettingsVie
       </section>
 
       <div className="sticky-save">
-        <button className="save-button" type="submit">
-          Einstellungen speichern
+        <button className="save-button" type="submit" disabled={isSaving}>
+          {isSaving ? "Einstellungen werden gespeichert…" : "Einstellungen speichern"}
         </button>
+        {settingsError ? <span className="error-text" role="alert">{settingsError}</span> : null}
         {savedMessage ? <span>{savedMessage}</span> : null}
       </div>
 

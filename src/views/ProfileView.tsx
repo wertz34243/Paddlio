@@ -12,10 +12,11 @@ import type {
   User,
   UserProfile,
 } from "../domain/types";
+import type { CloudWriteResult } from "../services/cloudWriteService";
 
 type ProfileViewProps = {
   user: User;
-  onSave: (profile: UserProfile) => void | Promise<void>;
+  onSave: (profile: UserProfile) => Promise<CloudWriteResult>;
 };
 
 const profileBoatClasses: BoatClass[] = ["K1", "C1"];
@@ -134,7 +135,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
     setSavedMessage("");
 
     try {
-      await onSave({
+      const result = await onSave({
         firstName: getString(formData, "firstName"),
         lastName: getString(formData, "lastName"),
         nickname: getString(formData, "nickname"),
@@ -160,7 +161,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
         language: String(formData.get("language")) as AppLanguage,
       });
 
-      setSavedMessage("Profil gespeichert und synchronisiert");
+      setSavedMessage(result === "synced" ? "Profil gespeichert und synchronisiert" : "Profil lokal gespeichert. Die Synchronisierung folgt automatisch.");
       window.setTimeout(() => setSavedMessage(""), 2600);
     } catch (error) {
       console.error("Profil konnte nicht gespeichert werden", error);

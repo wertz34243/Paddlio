@@ -1,12 +1,13 @@
 import { useState, type FormEvent } from "react";
 import type { MaterialCategory, MaterialItem, MaterialStatus } from "../domain/types";
+import type { CloudWriteResult } from "../services/cloudWriteService";
 
 type MaterialDraft = Omit<MaterialItem, "athleteId" | "createdAt" | "updatedAt">;
 
 type EquipmentViewProps = {
   material: MaterialItem[];
-  onSave: (item: Omit<MaterialItem, "id" | "athleteId" | "createdAt" | "updatedAt"> & { id?: string }) => void;
-  onDelete: (id: string) => void;
+  onSave: (item: Omit<MaterialItem, "id" | "athleteId" | "createdAt" | "updatedAt"> & { id?: string }) => Promise<CloudWriteResult>;
+  onDelete: (id: string) => Promise<CloudWriteResult>;
 };
 
 const categories: MaterialCategory[] = ["Boot", "Paddel", "Zubehör"];
@@ -35,24 +36,46 @@ const toNumber = (value: FormDataEntryValue | null): number => Number(value ?? 0
 
 export function EquipmentView({ material, onSave, onDelete }: EquipmentViewProps) {
   const [draft, setDraft] = useState<MaterialDraft | null>(null);
+  const [message, setMessage] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
 
-    onSave({
-      id: draft?.id || undefined,
-      category: String(formData.get("category")) as MaterialCategory,
-      name: String(formData.get("name")).trim(),
-      weightKg: toNumber(formData.get("weightKg")),
-      lengthCm: toNumber(formData.get("lengthCm")),
-      imageDataUrl: draft?.imageDataUrl ?? "",
-      status: String(formData.get("status")) as MaterialStatus,
-      rating: toNumber(formData.get("rating")),
-      note: String(formData.get("note")).trim(),
-    });
+    setIsSaving(true);
+    setMessage("");
+    try {
+      const result = await onSave({
+        id: draft?.id || undefined,
+        category: String(formData.get("category")) as MaterialCategory,
+        name: String(formData.get("name")).trim(),
+        weightKg: toNumber(formData.get("weightKg")),
+        lengthCm: toNumber(formData.get("lengthCm")),
+        imageDataUrl: draft?.imageDataUrl ?? "",
+        status: String(formData.get("status")) as MaterialStatus,
+        rating: toNumber(formData.get("rating")),
+        note: String(formData.get("note")).trim(),
+      });
+      setMessage(result === "synced" ? "Material gespeichert" : "Material lokal gespeichert. Die Synchronisierung folgt automatisch.");
+      setDraft(null);
+    } catch (error) {
+      console.error("Material konnte nicht gespeichert werden", error);
+      setMessage("Das Material konnte nicht gespeichert werden. Deine Eingaben bleiben erhalten.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
-    setDraft(null);
+  const removeMaterial = async (item: MaterialItem) => {
+    setMessage("");
+    try {
+      await onDelete(item.id);
+      setMessage("Material gelöscht");
+    } catch (error) {
+      console.error("Material konnte nicht gelöscht werden", error);
+      setMessage("Das Material konnte nicht gelöscht werden. Bitte versuche es erneut.");
+    }
   };
 
   const startEdit = (item: MaterialItem) => {
@@ -127,8 +150,8 @@ export function EquipmentView({ material, onSave, onDelete }: EquipmentViewProps
               <textarea name="note" defaultValue={draft.note} rows={3} />
             </label>
             <div className="form-actions">
-              <button className="save-button" type="submit">
-                Speichern
+              <button className="save-button" type="submit" disabled={isSaving}>
+                {isSaving ? "Speichern…" : "Speichern"}
               </button>
               <button className="ghost-button wide" type="button" onClick={() => setDraft(null)}>
                 Abbrechen
@@ -136,6 +159,8 @@ export function EquipmentView({ material, onSave, onDelete }: EquipmentViewProps
             </div>
           </form>
         ) : null}
+
+        {message ? <p className="auth-message" role="status">{message}</p> : null}
 
         <div className="wallet-list">
           {material.length > 0 ? (
@@ -171,7 +196,7 @@ export function EquipmentView({ material, onSave, onDelete }: EquipmentViewProps
                     <button className="edit-button" type="button" onClick={() => startEdit(item)}>
                       Bearbeiten
                     </button>
-                    <button className="delete-button" type="button" onClick={() => onDelete(item.id)}>
+                    <button className="delete-button" type="button" onClick={() => void removeMaterial(item)}>
                       Löschen
                     </button>
                   </div>

@@ -312,10 +312,17 @@ describe("sync write error policy", () => {
 
   it("queues a transient online write failure for the active account", async () => {
     vi.mocked(getSupabaseClient).mockReturnValue({ from: vi.fn() } as never);
-    await runCloudWrite("materials", "upsert", { id: PLAN_ID }, async () => ({ error: new Error("Failed to fetch") }));
+    await expect(runCloudWrite("materials", "upsert", { id: PLAN_ID }, async () => ({ error: new Error("Failed to fetch") })))
+      .resolves.toBe("queued");
     expect(readOfflineQueue()).toEqual([
       expect.objectContaining({ table: "materials", userId: USER_ID, status: "pending" }),
     ]);
+  });
+
+  it("reports a confirmed cloud write before the UI announces success", async () => {
+    vi.mocked(getSupabaseClient).mockReturnValue({ from: vi.fn() } as never);
+    await expect(runCloudWrite("materials", "upsert", { id: PLAN_ID }, async () => ({ error: null })))
+      .resolves.toBe("synced");
   });
 
   it("surfaces a non-retryable write without poisoning the retry queue", async () => {

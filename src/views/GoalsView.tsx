@@ -12,14 +12,15 @@ import type {
   User,
 } from "../domain/types";
 import { dateKeyFromLocalDate, todayDateKey } from "../lib/dateOnly";
+import type { CloudWriteResult } from "../services/cloudWriteService";
 
 type GoalsViewProps = {
   user: User;
   goals: SeasonGoal[];
   competitions: Competition[];
   training: TrainingSession[];
-  onSave: (goal: Omit<SeasonGoal, "id" | "athleteId" | "ownerUserId" | "createdAt" | "updatedAt"> & { id?: string }) => void;
-  onDelete: (id: string) => void;
+  onSave: (goal: Omit<SeasonGoal, "id" | "athleteId" | "ownerUserId" | "createdAt" | "updatedAt"> & { id?: string }) => Promise<CloudWriteResult>;
+  onDelete: (id: string) => Promise<CloudWriteResult>;
 };
 
 const categories: Array<{ value: SeasonGoalCategory; label: string }> = [
@@ -67,6 +68,7 @@ export function GoalsView({ user, goals, competitions, training, onSave, onDelet
   const [editingGoal, setEditingGoal] = useState<SeasonGoal | null>(null);
   const [selectedMetric, setSelectedMetric] = useState<SeasonGoalMetric>("bestK1Total");
   const [message, setMessage] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const progressList = getGoalProgressList(goals, competitions, training);
   const activeGoals = progressList.filter((item) => item.goal.status !== "archived");
   const archivedGoals = progressList.filter((item) => item.goal.status === "archived");
@@ -77,7 +79,7 @@ export function GoalsView({ user, goals, competitions, training, onSave, onDelet
     setSelectedMetric("bestK1Total");
   };
 
-  const saveGoal = (event: FormEvent<HTMLFormElement>) => {
+  const saveGoal = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const metric = String(formData.get("metric") ?? "manual") as SeasonGoalMetric;
@@ -90,27 +92,50 @@ export function GoalsView({ user, goals, competitions, training, onSave, onDelet
       return;
     }
 
-    onSave({
-      id: editingGoal?.id,
-      assignedByUserId: editingGoal?.assignedByUserId ?? user.userId,
-      title,
-      description: String(formData.get("description") ?? "").trim(),
-      category: String(formData.get("category") ?? "personal") as SeasonGoalCategory,
-      metric,
-      direction: String(formData.get("direction") ?? metricDefaults.direction) as SeasonGoalDirection,
-      targetValue,
-      unit: String(formData.get("unit") ?? metricDefaults.unit).trim(),
-      startDate: String(formData.get("startDate") ?? todayKey()),
-      dueDate: String(formData.get("dueDate") ?? ""),
-      status: String(formData.get("status") ?? "active") as SeasonGoalStatus,
-      priority: String(formData.get("priority") ?? "medium") as SeasonGoalPriority,
-      currentValueOverride: formData.get("currentValueOverride") === "" ? "" : Number(formData.get("currentValueOverride") ?? 0),
-      coachNote: String(formData.get("coachNote") ?? "").trim(),
-      athleteNote: String(formData.get("athleteNote") ?? "").trim(),
-    });
-    setMessage(editingGoal ? "Ziel aktualisiert" : "Ziel erstellt");
-    event.currentTarget.reset();
-    resetForm();
+    const form = event.currentTarget;
+    setIsSaving(true);
+    setMessage("");
+    try {
+      const result = await onSave({
+        id: editingGoal?.id,
+        assignedByUserId: editingGoal?.assignedByUserId ?? user.userId,
+        title,
+        description: String(formData.get("description") ?? "").trim(),
+        category: String(formData.get("category") ?? "personal") as SeasonGoalCategory,
+        metric,
+        direction: String(formData.get("direction") ?? metricDefaults.direction) as SeasonGoalDirection,
+        targetValue,
+        unit: String(formData.get("unit") ?? metricDefaults.unit).trim(),
+        startDate: String(formData.get("startDate") ?? todayKey()),
+        dueDate: String(formData.get("dueDate") ?? ""),
+        status: String(formData.get("status") ?? "active") as SeasonGoalStatus,
+        priority: String(formData.get("priority") ?? "medium") as SeasonGoalPriority,
+        currentValueOverride: formData.get("currentValueOverride") === "" ? "" : Number(formData.get("currentValueOverride") ?? 0),
+        coachNote: String(formData.get("coachNote") ?? "").trim(),
+        athleteNote: String(formData.get("athleteNote") ?? "").trim(),
+      });
+      setMessage(result === "synced"
+        ? editingGoal ? "Ziel aktualisiert" : "Ziel erstellt"
+        : "Ziel lokal gespeichert. Die Synchronisierung folgt automatisch.");
+      form.reset();
+      resetForm();
+    } catch (error) {
+      console.error("Ziel konnte nicht gespeichert werden", error);
+      setMessage("Das Ziel konnte nicht gespeichert werden. Deine Eingaben bleiben erhalten.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const removeGoal = async (goal: SeasonGoal) => {
+    setMessage("");
+    try {
+      await onDelete(goal.id);
+      setMessage("Ziel gelöscht");
+    } catch (error) {
+      console.error("Ziel konnte nicht gelöscht werden", error);
+      setMessage("Das Ziel konnte nicht gelöscht werden. Bitte versuche es erneut.");
+    }
   };
 
   const startEditing = (goal: SeasonGoal) => {
@@ -210,7 +235,7 @@ export function GoalsView({ user, goals, competitions, training, onSave, onDelet
             Trainernotiz
             <textarea name="coachNote" defaultValue={editingGoal?.coachNote ?? ""} rows={3} placeholder="Für Coach-Kommentare vorbereitet" />
           </label>
-          <button className="save-button" type="submit">{editingGoal ? "Ziel speichern" : "Ziel erstellen"}</button>
+          <button className="save-button" type="submit" disabled={isSaving}>{isSaving ? "Speichern…" : editingGoal ? "Ziel speichern" : "Ziel erstellen"}</button>
           {message ? <p className="auth-message">{message}</p> : null}
         </form>
       </section>
@@ -242,7 +267,7 @@ export function GoalsView({ user, goals, competitions, training, onSave, onDelet
               {goal.athleteNote ? <p className="card-note">Notiz: {goal.athleteNote}</p> : null}
               <div className="card-actions">
                 <button type="button" onClick={() => startEditing(goal)} aria-label={`Ziel ${goal.title} bearbeiten`}>Bearbeiten</button>
-                <button type="button" onClick={() => onDelete(goal.id)} aria-label={`Ziel ${goal.title} löschen`}>Löschen</button>
+                <button type="button" onClick={() => void removeGoal(goal)} aria-label={`Ziel ${goal.title} löschen`}>Löschen</button>
               </div>
             </article>
           )) : <p className="empty-state">Noch keine individuellen Ziele. Erstelle dein erstes Saisonziel oben.</p>}
