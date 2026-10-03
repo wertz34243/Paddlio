@@ -94,5 +94,5 @@
 
 ## Commit und Pushstatus
 
-- Implementierungscommit: wird nach Abschluss dieses Handoffs eingetragen.
-- Pushstatus: ausstehend bis zum gezielten Commit.
+- Implementierungscommit: `247231f` (`Fix goal material and profile persistence`).
+- Pushstatus: erfolgreich auf `origin/develop`; dieser finale Handoff-Stand folgt im Dokumentationscommit.
