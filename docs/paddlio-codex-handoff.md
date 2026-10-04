@@ -85,4 +85,5 @@
 ## Commit und Pushstatus
 
 - Implementierungscommit: `6e289bc` (`Fix profile persistence race`).
-- Pushstatus: Dokumentationscommit und Push auf `origin/develop` folgen unmittelbar.
+- Dokumentationscommit: `1f2cf71` (`Document profile persistence fix`).
+- Pushstatus: Implementierung und Handoff erfolgreich auf `origin/develop` gepusht.
