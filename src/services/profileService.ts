@@ -1,11 +1,16 @@
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { getSupabaseClient } from "../lib/supabase";
 import type { Database, Json, UserRole } from "../lib/database.types";
+import type { UserProfile } from "../domain/types";
 import { listCloudClubs } from "./clubService";
 import { runCloudWrite, type CloudWriteResult } from "./cloudWriteService";
 
 export type CloudProfile = Database["public"]["Tables"]["profiles"]["Row"];
 type CloudProfileUpdate = Partial<CloudProfile> & { id: string; profile_data?: Json };
+export type ConfirmedCloudProfileWrite = {
+  status: CloudWriteResult;
+  profile: CloudProfile | null;
+};
 type VisibleContactProfile = {
   id: string;
   first_name: string | null;
@@ -50,6 +55,31 @@ export const mergeVisibleContactProfiles = (
     }));
   });
   return Array.from(merged.values());
+};
+
+export const mergeConfirmedUserProfile = (
+  submitted: UserProfile,
+  confirmed: CloudProfile | null,
+  canonicalClub: string,
+): UserProfile => {
+  if (!confirmed) return { ...submitted, club: canonicalClub };
+  const profileData = confirmed.profile_data && typeof confirmed.profile_data === "object" && !Array.isArray(confirmed.profile_data)
+    ? confirmed.profile_data as Partial<UserProfile>
+    : {};
+  const boatClasses = confirmed.boat_classes.filter((boat): boat is "K1" | "C1" => boat === "K1" || boat === "C1");
+
+  return {
+    ...submitted,
+    ...profileData,
+    firstName: confirmed.first_name ?? submitted.firstName,
+    lastName: confirmed.last_name ?? submitted.lastName,
+    nickname: confirmed.display_name ?? submitted.nickname,
+    club: canonicalClub,
+    ageClass: (confirmed.age_category ?? submitted.ageClass) as UserProfile["ageClass"],
+    boatClasses: boatClasses.length > 0 ? boatClasses : submitted.boatClasses,
+    paddleSide: confirmed.paddle_side === "Links" ? "links" : confirmed.paddle_side === "Rechts" ? "rechts" : submitted.paddleSide,
+    profileImageDataUrl: confirmed.avatar_url ?? submitted.profileImageDataUrl,
+  };
 };
 
 const profileNeedsNormalization = (profile: CloudProfile): boolean => {
@@ -205,7 +235,7 @@ export const ensureCloudProfile = async (user: SupabaseUser): Promise<CloudProfi
   return data ? normalizeCloudProfile(data) : null;
 };
 
-export const updateCloudProfile = async (profile: CloudProfileUpdate): Promise<CloudWriteResult> => {
+export const updateCloudProfileConfirmed = async (profile: CloudProfileUpdate): Promise<ConfirmedCloudProfileWrite> => {
   const buildPayload = () => {
     const payload: Record<string, unknown> = {
       first_name: profile.first_name,
@@ -228,9 +258,25 @@ export const updateCloudProfile = async (profile: CloudProfileUpdate): Promise<C
 
   const updatePayload = buildPayload();
   const queuePayload = { id: profile.id, ...updatePayload };
-  return runCloudWrite("profiles", "update", queuePayload, (client) =>
-    (client.from("profiles") as any).update(updatePayload).eq("id", profile.id));
+  let confirmedProfile: CloudProfile | null = null;
+  const status = await runCloudWrite("profiles", "update", queuePayload, async (client) => {
+    const { data, error } = await (client.from("profiles") as any)
+      .update(updatePayload)
+      .eq("id", profile.id)
+      .select("*")
+      .maybeSingle();
+    if (!error && data) confirmedProfile = normalizeCloudProfile(data as CloudProfile);
+    return { error };
+  });
+
+  if (status === "synced" && !confirmedProfile) {
+    throw new Error("profile_update_not_confirmed");
+  }
+  return { status, profile: confirmedProfile };
 };
+
+export const updateCloudProfile = async (profile: CloudProfileUpdate): Promise<CloudWriteResult> =>
+  (await updateCloudProfileConfirmed(profile)).status;
 
 export const updateCloudProfileAdminFields = async (
   id: string,

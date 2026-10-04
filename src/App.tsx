@@ -17,7 +17,7 @@ import { APP_ENVIRONMENT_LABEL, isDevelopmentDeployment, isDevelopmentEnvironmen
 import { localTimeInputValue } from "./lib/dateOnly";
 import { canViewDevelopmentDiagnostics } from "./domain/diagnosticsAccess";
 import type { Json } from "./lib/database.types";
-import { updateCloudProfile } from "./services/profileService";
+import { mergeConfirmedUserProfile, updateCloudProfileConfirmed } from "./services/profileService";
 import type { CloudWriteResult } from "./services/cloudWriteService";
 import { createCloudNotification, markAllCloudNotificationsRead, markCloudNotificationRead } from "./services/notificationService";
 import { deleteCloudJournalEntry, upsertCloudJournalEntry } from "./services/journalService";
@@ -880,7 +880,7 @@ function AppContent() {
       throw new Error("profile_not_ready");
     }
 
-    const result = await updateCloudProfile({
+    const result = await updateCloudProfileConfirmed({
       id: cloudProfile.id,
       first_name: userProfile.firstName,
       last_name: userProfile.lastName,
@@ -892,24 +892,26 @@ function AppContent() {
       profile_data: userProfile as unknown as Json,
     });
 
+    const confirmedProfile = mergeConfirmedUserProfile(userProfile, result.profile, activeUser.profile.club);
+
     updateData((current) => ({
       ...current,
       users: current.users.map((user) =>
         user.id === current.activeUserId
           ? {
               ...user,
-              profile: userProfile,
+              profile: confirmedProfile,
               updatedAt: timestamp,
             }
           : user,
       ),
       athlete: {
         ...current.athlete,
-        name: userProfile.nickname || `${userProfile.firstName} ${userProfile.lastName}`.trim() || current.athlete.name,
-        club: userProfile.club || current.athlete.club,
+        name: confirmedProfile.nickname || `${confirmedProfile.firstName} ${confirmedProfile.lastName}`.trim() || current.athlete.name,
+        club: confirmedProfile.club || current.athlete.club,
       },
     }));
-    return result;
+    return result.status;
   };
 
   const updateProfileSettings = (

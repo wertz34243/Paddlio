@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { CloudProfile } from "./profileService";
-import { buildCloudRoles, mergeVisibleContactProfiles, normalizeCloudRoles } from "./profileService";
+import { buildCloudRoles, mergeConfirmedUserProfile, mergeVisibleContactProfiles, normalizeCloudRoles } from "./profileService";
+import type { UserProfile } from "../domain/types";
 
 const profile = (id: string, displayName: string): CloudProfile => ({
   id,
@@ -64,5 +65,59 @@ describe("visible contact directory", () => {
 
     expect(result.find((item) => item.id === "coach")?.display_name).toBe("Known Coach");
     expect(result.find((item) => item.id === "coach")?.email).toBe("coach@paddlio.test");
+  });
+});
+
+describe("confirmed profile persistence", () => {
+  const submitted: UserProfile = {
+    firstName: "Neu",
+    lastName: "Name",
+    nickname: "Nini",
+    birthDate: "2000-01-02",
+    gender: "keine_angabe",
+    heightCm: 170,
+    weightKg: 65,
+    club: "Manipulierter Verein",
+    federation: "Verband",
+    coach: "Coach",
+    licenseNumber: "L-1",
+    boatClasses: ["K1", "C1"],
+    ageClass: "U23",
+    paddleSide: "links",
+    trainingYears: 6,
+    competitionExperience: "National",
+    longTermGoal: "Finale",
+    seasonGoal: "Stabilität",
+    personalNotes: "Notiz",
+    profileImageDataUrl: "data:image/png;base64,abc",
+    darkMode: true,
+    measurementUnit: "metrisch",
+    language: "de",
+  };
+
+  it("uses the confirmed core fields and preserves the canonical club", () => {
+    const confirmed = {
+      ...profile("viewer", "Bestätigt Name"),
+      first_name: "Bestätigt",
+      last_name: "Name",
+      display_name: "Cloud Spitzname",
+      boat_classes: ["K1", "C1"],
+      paddle_side: "Links",
+      profile_data: submitted,
+    };
+
+    expect(mergeConfirmedUserProfile(submitted, confirmed, "Kanonischer Verein")).toMatchObject({
+      firstName: "Bestätigt",
+      lastName: "Name",
+      nickname: "Cloud Spitzname",
+      club: "Kanonischer Verein",
+      boatClasses: ["K1", "C1"],
+      paddleSide: "links",
+      personalNotes: "Notiz",
+    });
+  });
+
+  it("does not accept a free-text club when a write is queued", () => {
+    expect(mergeConfirmedUserProfile(submitted, null, "Kanonischer Verein").club).toBe("Kanonischer Verein");
   });
 });

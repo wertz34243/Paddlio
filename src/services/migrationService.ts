@@ -1,6 +1,5 @@
 import type { PaddleMotionData } from "../domain/types";
-import type { Json } from "../lib/database.types";
-import { updateCloudProfile, type CloudProfile } from "./profileService";
+import type { CloudProfile } from "./profileService";
 import { upsertCloudTraining, upsertCloudFeedback } from "./trainingService";
 import { upsertCloudJournalEntry } from "./journalService";
 import { upsertCloudTrainingTemplate } from "./trainingTemplateService";
@@ -52,26 +51,12 @@ export const migrateLocalDataToCloud = async (userId: string, data: PaddleMotion
   return migrated;
 };
 
-export const syncDataSnapshotToCloud = async (data: PaddleMotionData, profile: CloudProfile, clubId?: string): Promise<number> => {
+export const syncDataSnapshotToCloud = async (
+  data: PaddleMotionData,
+  profile: CloudProfile,
+  clubId?: string,
+): Promise<number> => {
   let migrated = 0;
-  const localProfile = data.users[0]?.profile;
-  const localDisplayName = localProfile?.nickname || data.athlete.name;
-  const safeFirstName = profile.first_name || localProfile?.firstName || null;
-  const safeLastName = profile.last_name || localProfile?.lastName || null;
-  const safeDisplayName = profile.display_name || localDisplayName || [safeFirstName, safeLastName].filter(Boolean).join(" ") || profile.email;
-
-  await updateCloudProfile({
-    id: profile.id,
-    first_name: safeFirstName,
-    last_name: safeLastName,
-    display_name: safeDisplayName,
-    avatar_url: profile.avatar_url || localProfile?.profileImageDataUrl || null,
-    age_category: profile.age_category || localProfile?.ageClass || null,
-    boat_classes: profile.boat_classes.length > 0 ? profile.boat_classes : localProfile?.boatClasses ?? ["K1"],
-    paddle_side: profile.paddle_side || (localProfile?.paddleSide === "links" ? "Links" : localProfile?.paddleSide === "rechts" ? "Rechts" : null),
-    profile_data: (localProfile ?? {}) as unknown as Json,
-  });
-  migrated += 1;
 
   for (const entry of data.plan.filter((item) => !item.deletedAt)) {
     await upsertCloudTraining({ ...entry, ownerUserId: entry.ownerUserId || profile.id, clubId: entry.clubId || clubId || "" });

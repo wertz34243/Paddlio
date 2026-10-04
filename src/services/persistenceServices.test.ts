@@ -3,7 +3,7 @@ import { getSupabaseClient } from "../lib/supabase";
 import type { MaterialItem, SeasonGoal } from "../domain/types";
 import { fromCloudGoal, upsertCloudGoal } from "./goalService";
 import { upsertCloudMaterial } from "./materialService";
-import { updateCloudProfile } from "./profileService";
+import { updateCloudProfile, updateCloudProfileConfirmed } from "./profileService";
 
 vi.mock("../lib/supabase", () => ({ getSupabaseClient: vi.fn() }));
 
@@ -12,10 +12,31 @@ const ENTITY_ID = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 
 const createClient = () => {
   const upsert = vi.fn().mockResolvedValue({ error: null });
-  const eq = vi.fn().mockResolvedValue({ error: null });
+  const maybeSingle = vi.fn().mockResolvedValue({
+    data: {
+      id: USER_ID,
+      email: "dev.athlete@paddlio.test",
+      first_name: "Dev",
+      last_name: "Athlete",
+      display_name: "Dev Athlete",
+      club_id: null,
+      roles: ["Athlete"],
+      status: "active",
+      avatar_url: null,
+      age_category: null,
+      boat_classes: ["K1"],
+      paddle_side: null,
+      profile_data: {},
+      created_at: "2026-10-03T08:00:00.000Z",
+      updated_at: "2026-10-03T08:00:00.000Z",
+    },
+    error: null,
+  });
+  const select = vi.fn(() => ({ maybeSingle }));
+  const eq = vi.fn(() => ({ select }));
   const update = vi.fn(() => ({ eq }));
   const from = vi.fn(() => ({ upsert, update }));
-  return { client: { from }, from, upsert, update, eq };
+  return { client: { from }, from, upsert, update, eq, select, maybeSingle };
 };
 
 beforeEach(() => {
@@ -130,5 +151,16 @@ describe("reliable personal persistence", () => {
     })).resolves.toBe("synced");
     expect(update).toHaveBeenCalledWith(expect.objectContaining({ profile_data: profileData }));
     expect(eq).toHaveBeenCalledWith("id", USER_ID);
+  });
+
+  it("does not report success when RLS updates no profile row", async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    const select = vi.fn(() => ({ maybeSingle }));
+    const eq = vi.fn(() => ({ select }));
+    const update = vi.fn(() => ({ eq }));
+    vi.mocked(getSupabaseClient).mockReturnValue({ from: vi.fn(() => ({ update })) } as never);
+
+    await expect(updateCloudProfileConfirmed({ id: USER_ID, first_name: "Nicht bestätigt" }))
+      .rejects.toThrow("profile_update_not_confirmed");
   });
 });

@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { createTrainerRequest, loadTrainerRequests } from "../data/storage";
 import { getAge, getDisplayName, getInitials, getSportProfileSummary } from "../domain/profile";
 import { validateProfileImage } from "../domain/profileImage";
@@ -40,14 +40,12 @@ const languages: Array<{ value: AppLanguage; label: string }> = [
   { value: "en", label: "English" },
 ];
 
-const toNumber = (value: FormDataEntryValue | null): number => Number(value ?? 0);
-
-const getString = (formData: FormData, key: keyof UserProfile): string => String(formData.get(key) ?? "").trim();
-
 export function ProfileView({ user, onSave }: ProfileViewProps) {
-  const [profileImageDataUrl, setProfileImageDataUrl] = useState(user.profile.profileImageDataUrl);
-  const [boatClasses, setBoatClasses] = useState<BoatClass[]>(user.profile.boatClasses.length > 0 ? user.profile.boatClasses : ["K1"]);
-  const [paddleSide, setPaddleSide] = useState<PaddleSide | "">(user.profile.boatClasses.includes("C1") ? user.profile.paddleSide : "");
+  const [draft, setDraft] = useState<UserProfile>(() => ({
+    ...user.profile,
+    boatClasses: user.profile.boatClasses.length > 0 ? user.profile.boatClasses : ["K1"],
+  }));
+  const [isDirty, setIsDirty] = useState(false);
   const [savedMessage, setSavedMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [formError, setFormError] = useState("");
@@ -64,12 +62,25 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
   const [trainerRequestStatus, setTrainerRequestStatus] = useState(() =>
     loadTrainerRequests().find((request) => request.userId === user.userId)?.status ?? "",
   );
-  const age = getAge(user.profile.birthDate);
-  const hasC1 = boatClasses.includes("C1");
+  const age = getAge(draft.birthDate);
+  const hasC1 = draft.boatClasses.includes("C1");
   const previewProfile: UserProfile = {
-    ...user.profile,
-    boatClasses,
-    paddleSide: hasC1 && paddleSide ? paddleSide : "rechts",
+    ...draft,
+    paddleSide: hasC1 ? draft.paddleSide : "rechts",
+  };
+
+  useEffect(() => {
+    if (isDirty || isSaving) return;
+    setDraft({
+      ...user.profile,
+      boatClasses: user.profile.boatClasses.length > 0 ? user.profile.boatClasses : ["K1"],
+    });
+  }, [user.userId, user.updatedAt, isDirty, isSaving]);
+
+  const updateDraft = <K extends keyof UserProfile>(key: K, value: UserProfile[K]) => {
+    setDraft((current) => ({ ...current, [key]: value }));
+    setIsDirty(true);
+    setSavedMessage("");
   };
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -89,79 +100,61 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
 
     const reader = new FileReader();
     reader.addEventListener("load", () => {
-      setProfileImageDataUrl(typeof reader.result === "string" ? reader.result : "");
+      updateDraft("profileImageDataUrl", typeof reader.result === "string" ? reader.result : "");
     });
     reader.readAsDataURL(file);
   };
 
   const toggleBoatClass = (boatClass: BoatClass) => {
-    setBoatClasses((current) => {
-      if (current.includes(boatClass)) {
-        if (current.length === 1) {
+    setDraft((current) => {
+      const currentClasses = current.boatClasses;
+      if (currentClasses.includes(boatClass)) {
+        if (currentClasses.length === 1) {
           setFormError("Mindestens eine Bootsklasse muss ausgewählt sein.");
           return current;
         }
 
         setFormError("");
-        if (boatClass === "C1") {
-          setPaddleSide("");
-        }
-        return current.filter((item) => item !== boatClass);
+        setIsDirty(true);
+        return { ...current, boatClasses: currentClasses.filter((item) => item !== boatClass) };
       }
 
       setFormError("");
-      return [...current, boatClass];
+      setIsDirty(true);
+      return { ...current, boatClasses: [...currentClasses, boatClass] };
     });
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-
-    if (boatClasses.length === 0) {
+    if (draft.boatClasses.length === 0) {
       setFormError("Mindestens eine Bootsklasse muss ausgewählt sein.");
       return;
     }
 
-    if (boatClasses.includes("C1") && paddleSide !== "links" && paddleSide !== "rechts") {
+    if (draft.boatClasses.includes("C1") && draft.paddleSide !== "links" && draft.paddleSide !== "rechts") {
       setFormError("Bitte wähle für C1 eine Paddelseite aus.");
       return;
     }
-
-    const savedPaddleSide: PaddleSide = boatClasses.includes("C1") ? (paddleSide as PaddleSide) : "rechts";
 
     setIsSaving(true);
     setFormError("");
     setSavedMessage("");
 
     try {
-      const result = await onSave({
-        firstName: getString(formData, "firstName"),
-        lastName: getString(formData, "lastName"),
-        nickname: getString(formData, "nickname"),
-        birthDate: getString(formData, "birthDate"),
-        gender: String(formData.get("gender")) as Gender,
-        heightCm: toNumber(formData.get("heightCm")),
-        weightKg: toNumber(formData.get("weightKg")),
-        club: getString(formData, "club"),
-        federation: getString(formData, "federation"),
-        coach: getString(formData, "coach"),
-        licenseNumber: getString(formData, "licenseNumber"),
-        boatClasses,
-        ageClass: String(formData.get("ageClass") ?? "") as AgeClass | "",
-        paddleSide: savedPaddleSide,
-        trainingYears: toNumber(formData.get("trainingYears")),
-        competitionExperience: getString(formData, "competitionExperience"),
-        longTermGoal: getString(formData, "longTermGoal"),
-        seasonGoal: getString(formData, "seasonGoal"),
-        personalNotes: getString(formData, "personalNotes"),
-        profileImageDataUrl,
-        darkMode: formData.get("darkMode") === "on",
-        measurementUnit: String(formData.get("measurementUnit")) as MeasurementUnit,
-        language: String(formData.get("language")) as AppLanguage,
-      });
+      const submittedProfile: UserProfile = {
+        ...draft,
+        firstName: draft.firstName.trim(),
+        lastName: draft.lastName.trim(),
+        nickname: draft.nickname.trim(),
+        club: user.profile.club,
+        paddleSide: draft.boatClasses.includes("C1") ? draft.paddleSide : "rechts",
+      };
+      const result = await onSave(submittedProfile);
 
       setSavedMessage(result === "synced" ? "Profil gespeichert und synchronisiert" : "Profil lokal gespeichert. Die Synchronisierung folgt automatisch.");
+      setDraft(submittedProfile);
+      setIsDirty(false);
       window.setTimeout(() => setSavedMessage(""), 2600);
     } catch (error) {
       console.error("Profil konnte nicht gespeichert werden", error);
@@ -205,11 +198,11 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
     <form className="profile-form stack" onSubmit={handleSubmit}>
       <section className="profile-hero-card">
         <div className="profile-avatar large">
-          {profileImageDataUrl ? <img src={profileImageDataUrl} alt="" /> : getInitials(user.profile)}
+          {draft.profileImageDataUrl ? <img src={draft.profileImageDataUrl} alt="" /> : getInitials(draft)}
         </div>
         <div>
           <p className="eyebrow">Athletenprofil</p>
-          <h2>{getDisplayName(user.profile)}</h2>
+          <h2>{getDisplayName(draft)}</h2>
           <div className="profile-summary-line">
             <span>{user.profile.club || "Kein Verein"}</span>
             <span>{getSportProfileSummary(previewProfile)}</span>
@@ -227,19 +220,19 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
         <div className="form-grid">
           <label>
             Vorname
-            <input name="firstName" defaultValue={user.profile.firstName} />
+            <input name="firstName" value={draft.firstName} onChange={(event) => updateDraft("firstName", event.target.value)} />
           </label>
           <label>
             Nachname
-            <input name="lastName" defaultValue={user.profile.lastName} />
+            <input name="lastName" value={draft.lastName} onChange={(event) => updateDraft("lastName", event.target.value)} />
           </label>
           <label>
             Spitzname
-            <input name="nickname" defaultValue={user.profile.nickname} />
+            <input name="nickname" value={draft.nickname} onChange={(event) => updateDraft("nickname", event.target.value)} />
           </label>
           <label>
             Geburtsdatum
-            <input name="birthDate" type="date" defaultValue={user.profile.birthDate} />
+            <input name="birthDate" type="date" value={draft.birthDate} onChange={(event) => updateDraft("birthDate", event.target.value)} />
           </label>
           <label>
             Alter
@@ -247,7 +240,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
           </label>
           <label>
             Geschlecht
-            <select name="gender" defaultValue={user.profile.gender}>
+            <select name="gender" value={draft.gender} onChange={(event) => updateDraft("gender", event.target.value as Gender)}>
               {genders.map((gender) => (
                 <option key={gender.value} value={gender.value}>
                   {gender.label}
@@ -257,27 +250,28 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
           </label>
           <label>
             Größe
-            <input name="heightCm" type="number" min="0" step="1" defaultValue={user.profile.heightCm || ""} placeholder="cm" />
+            <input name="heightCm" type="number" min="0" step="1" value={draft.heightCm || ""} onChange={(event) => updateDraft("heightCm", Number(event.target.value || 0))} placeholder="cm" />
           </label>
           <label>
             Gewicht
-            <input name="weightKg" type="number" min="0" step="0.1" defaultValue={user.profile.weightKg || ""} placeholder="kg" />
+            <input name="weightKg" type="number" min="0" step="0.1" value={draft.weightKg || ""} onChange={(event) => updateDraft("weightKg", Number(event.target.value || 0))} placeholder="kg" />
           </label>
           <label>
             Verein
-            <input name="club" defaultValue={user.profile.club} />
+            <input id="profile-club" value={user.profile.club || "Kein Verein zugeordnet"} readOnly aria-describedby="profile-club-help" />
+            <small id="profile-club-help">Die Vereinszuordnung wird aus Sicherheitsgründen durch einen berechtigten Vereins- oder Paddlio-Admin geändert.</small>
           </label>
           <label>
             Verband
-            <input name="federation" defaultValue={user.profile.federation} />
+            <input name="federation" value={draft.federation} onChange={(event) => updateDraft("federation", event.target.value)} />
           </label>
           <label>
             Trainer
-            <input name="coach" defaultValue={user.profile.coach} />
+            <input name="coach" value={draft.coach} onChange={(event) => updateDraft("coach", event.target.value)} />
           </label>
           <label>
             Lizenznummer
-            <input name="licenseNumber" defaultValue={user.profile.licenseNumber} />
+            <input name="licenseNumber" value={draft.licenseNumber} onChange={(event) => updateDraft("licenseNumber", event.target.value)} />
           </label>
         </div>
       </section>
@@ -292,7 +286,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
         <div className="form-grid">
           <label>
             Altersklasse
-            <select name="ageClass" defaultValue={user.profile.ageClass}>
+            <select name="ageClass" value={draft.ageClass} onChange={(event) => updateDraft("ageClass", event.target.value as AgeClass | "")}>
               <option value="">Bitte wählen</option>
               {ageClasses.map((ageClass) => (
                 <option key={ageClass} value={ageClass}>
@@ -306,9 +300,9 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
               Paddelseite
               <select
                 name="paddleSide"
-                value={paddleSide}
+                value={draft.paddleSide}
                 onChange={(event) => {
-                  setPaddleSide(event.target.value as PaddleSide | "");
+                  updateDraft("paddleSide", event.target.value as PaddleSide);
                   setFormError("");
                 }}
                 required
@@ -324,7 +318,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
           ) : null}
           <label>
             Trainingsjahre
-            <input name="trainingYears" type="number" min="0" step="1" defaultValue={user.profile.trainingYears || ""} />
+            <input name="trainingYears" type="number" min="0" step="1" value={draft.trainingYears || ""} onChange={(event) => updateDraft("trainingYears", Number(event.target.value || 0))} />
           </label>
         </div>
         <div className="choice-group">
@@ -332,11 +326,11 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
           <div className="boat-class-grid">
             {profileBoatClasses.map((boatClass) => (
               <label
-                className={boatClasses.includes(boatClass) ? "boat-class-option active" : "boat-class-option"}
+                className={draft.boatClasses.includes(boatClass) ? "boat-class-option active" : "boat-class-option"}
                 key={boatClass}
               >
                 <input
-                  checked={boatClasses.includes(boatClass)}
+                  checked={draft.boatClasses.includes(boatClass)}
                   onChange={() => toggleBoatClass(boatClass)}
                   type="checkbox"
                 />
@@ -348,7 +342,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
         </div>
         <label>
           Wettkampferfahrung
-          <textarea name="competitionExperience" defaultValue={user.profile.competitionExperience} rows={3} />
+          <textarea name="competitionExperience" value={draft.competitionExperience} onChange={(event) => updateDraft("competitionExperience", event.target.value)} rows={3} />
         </label>
       </section>
 
@@ -437,15 +431,15 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
         </div>
         <label>
           Langfristiges Ziel
-          <textarea name="longTermGoal" defaultValue={user.profile.longTermGoal} rows={3} />
+          <textarea name="longTermGoal" value={draft.longTermGoal} onChange={(event) => updateDraft("longTermGoal", event.target.value)} rows={3} />
         </label>
         <label>
           Saisonziel
-          <textarea name="seasonGoal" defaultValue={user.profile.seasonGoal} rows={3} />
+          <textarea name="seasonGoal" value={draft.seasonGoal} onChange={(event) => updateDraft("seasonGoal", event.target.value)} rows={3} />
         </label>
         <label>
           Persönliche Notizen
-          <textarea name="personalNotes" defaultValue={user.profile.personalNotes} rows={4} />
+          <textarea name="personalNotes" value={draft.personalNotes} onChange={(event) => updateDraft("personalNotes", event.target.value)} rows={4} />
         </label>
       </section>
 
@@ -463,7 +457,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
         <div className="form-grid">
           <label>
             Maßeinheiten
-            <select name="measurementUnit" defaultValue={user.profile.measurementUnit}>
+            <select name="measurementUnit" value={draft.measurementUnit} onChange={(event) => updateDraft("measurementUnit", event.target.value as MeasurementUnit)}>
               {measurementUnits.map((unit) => (
                 <option key={unit.value} value={unit.value}>
                   {unit.label}
@@ -473,7 +467,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
           </label>
           <label>
             Sprache
-            <select name="language" defaultValue={user.profile.language}>
+            <select name="language" value={draft.language} onChange={(event) => updateDraft("language", event.target.value as AppLanguage)}>
               {languages.map((language) => (
                 <option key={language.value} value={language.value}>
                   {language.label}
@@ -484,7 +478,7 @@ export function ProfileView({ user, onSave }: ProfileViewProps) {
         </div>
         <label className="toggle-row">
           <span>Dark Mode</span>
-          <input name="darkMode" type="checkbox" defaultChecked={user.profile.darkMode} />
+          <input name="darkMode" type="checkbox" checked={draft.darkMode} onChange={(event) => updateDraft("darkMode", event.target.checked)} />
         </label>
       </section>
 

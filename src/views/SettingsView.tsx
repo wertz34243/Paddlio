@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { getInitials } from "../domain/profile";
 import type { AppLanguage, MeasurementUnit, User, UserProfile } from "../domain/types";
 import type { ProfileSyncDiagnostics } from "../auth/AuthProvider";
@@ -35,7 +35,13 @@ const languages: Array<{ value: AppLanguage; label: string }> = [
 ];
 
 export function SettingsView({ user, syncStatus, onSave, onLogout }: SettingsViewProps) {
-  const [profileImageDataUrl, setProfileImageDataUrl] = useState(user.profile.profileImageDataUrl);
+  const [draft, setDraft] = useState(() => ({
+    profileImageDataUrl: user.profile.profileImageDataUrl,
+    darkMode: user.profile.darkMode,
+    measurementUnit: user.profile.measurementUnit,
+    language: user.profile.language,
+  }));
+  const [isDirty, setIsDirty] = useState(false);
   const [savedMessage, setSavedMessage] = useState("");
   const [settingsError, setSettingsError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -44,6 +50,22 @@ export function SettingsView({ user, syncStatus, onSave, onLogout }: SettingsVie
   const [privacyMessage, setPrivacyMessage] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
+
+  useEffect(() => {
+    if (isDirty || isSaving) return;
+    setDraft({
+      profileImageDataUrl: user.profile.profileImageDataUrl,
+      darkMode: user.profile.darkMode,
+      measurementUnit: user.profile.measurementUnit,
+      language: user.profile.language,
+    });
+  }, [user.userId, user.updatedAt, isDirty, isSaving]);
+
+  const updateDraft = <K extends keyof typeof draft>(key: K, value: (typeof draft)[K]) => {
+    setDraft((current) => ({ ...current, [key]: value }));
+    setIsDirty(true);
+    setSavedMessage("");
+  };
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -62,26 +84,20 @@ export function SettingsView({ user, syncStatus, onSave, onLogout }: SettingsVie
 
     const reader = new FileReader();
     reader.addEventListener("load", () => {
-      setProfileImageDataUrl(typeof reader.result === "string" ? reader.result : "");
+      updateDraft("profileImageDataUrl", typeof reader.result === "string" ? reader.result : "");
     });
     reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-
     setIsSaving(true);
     setSavedMessage("");
     setSettingsError("");
     try {
-      const result = await onSave({
-        profileImageDataUrl,
-        darkMode: formData.get("darkMode") === "on",
-        measurementUnit: String(formData.get("measurementUnit")) as MeasurementUnit,
-        language: String(formData.get("language")) as AppLanguage,
-      });
+      const result = await onSave(draft);
       setSavedMessage(result === "synced" ? "Einstellungen gespeichert und synchronisiert" : "Einstellungen lokal gespeichert. Die Synchronisierung folgt automatisch.");
+      setIsDirty(false);
       window.setTimeout(() => setSavedMessage(""), 2600);
     } catch (error) {
       console.error("Profileinstellungen konnten nicht gespeichert werden", error);
@@ -120,7 +136,7 @@ export function SettingsView({ user, syncStatus, onSave, onLogout }: SettingsVie
     <form className="profile-form stack segment-panel" onSubmit={handleSubmit}>
       <section className="profile-hero-card">
         <div className="profile-avatar large">
-          {profileImageDataUrl ? <img src={profileImageDataUrl} alt="" /> : getInitials(user.profile)}
+          {draft.profileImageDataUrl ? <img src={draft.profileImageDataUrl} alt="" /> : getInitials(user.profile)}
         </div>
         <div>
           <h2>App und Profilbild</h2>
@@ -145,7 +161,7 @@ export function SettingsView({ user, syncStatus, onSave, onLogout }: SettingsVie
         <div className="form-grid">
           <label>
             Maßeinheiten
-            <select name="measurementUnit" defaultValue={user.profile.measurementUnit}>
+            <select name="measurementUnit" value={draft.measurementUnit} onChange={(event) => updateDraft("measurementUnit", event.target.value as MeasurementUnit)}>
               {measurementUnits.map((unit) => (
                 <option key={unit.value} value={unit.value}>
                   {unit.label}
@@ -155,7 +171,7 @@ export function SettingsView({ user, syncStatus, onSave, onLogout }: SettingsVie
           </label>
           <label>
             Sprache
-            <select name="language" defaultValue={user.profile.language}>
+            <select name="language" value={draft.language} onChange={(event) => updateDraft("language", event.target.value as AppLanguage)}>
               {languages.map((language) => (
                 <option key={language.value} value={language.value}>
                   {language.label}
@@ -166,7 +182,7 @@ export function SettingsView({ user, syncStatus, onSave, onLogout }: SettingsVie
         </div>
         <label className="toggle-row">
           <span>Dark Mode</span>
-          <input name="darkMode" type="checkbox" defaultChecked={user.profile.darkMode} />
+          <input name="darkMode" type="checkbox" checked={draft.darkMode} onChange={(event) => updateDraft("darkMode", event.target.checked)} />
         </label>
       </section>
 
