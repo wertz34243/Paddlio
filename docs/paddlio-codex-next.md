@@ -2,15 +2,15 @@
 
 Status: DONE
 
-Auftragsbasis: Speicherprobleme bei Zielen, Material und Profil vom 03.10.2026.
+Auftragsbasis: Paddlio 5.0 kritischer Profilfehler vor Veroeffentlichung.
 
 Ergebnis:
-- Ziele und persoenliches Material besitzen jetzt echte Cloud-Schreibpfade und bleiben nach Reload erhalten.
-- Erweiterte Profilfelder werden nicht mehr still verworfen, sondern in `profiles.profile_data` persistiert.
-- Die additive Migration `20261003071613_reliable_goals_material_profile_persistence.sql` ist auf Supabase DEV angewendet und verifiziert.
-- Erfolg, Offline-Queue und nicht wiederholbare Fehler werden fachlich getrennt behandelt.
-- Mobile Formulare bleiben oberhalb der festen Navigation erreichbar.
-- Unit-, Build-, Beta-, E2E- und Rollen-Suiten sind gruen.
+- Profil- und Einstellungswrites werden anhand der von Supabase bestaetigten Profilzeile uebernommen.
+- Der konkurrierende Snapshot-/Legacy-Profilwrite wurde entfernt; bestaetigte Werte werden nicht mehr durch alte lokale Komplettstaende ueberschrieben.
+- Alle editierbaren Profildaten einschliesslich K1+C1 und C1-Paddelseite liefen im echten DEV-Test ueber Reload.
+- Vereinszuordnung bleibt kanonisch und geschuetzt; Self-Service kann keine fremde `club_id` setzen.
+- Migration `20261004054924_harden_profile_self_update_500.sql` ist auf Supabase DEV angewendet und verifiziert.
+- Ziele, Material, Unit-, Build-, Beta-, E2E- und Rollenpruefungen sind gruen.
 - Details und manueller iPhone-/iPad-/PC-Retest stehen in `docs/paddlio-codex-handoff.md`.
 
 Naechster Auftrag erst wieder mit `Status: READY`.
