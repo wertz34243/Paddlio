@@ -2,15 +2,16 @@
 
 Status: DONE
 
-Auftragsbasis: Paddlio 5.0 kritischer Profilfehler vor Veroeffentlichung.
+Auftragsbasis: Paddlio 5.0 letzter Release-Fix vor Schritt 3.
 
 Ergebnis:
-- Profil- und Einstellungswrites werden anhand der von Supabase bestaetigten Profilzeile uebernommen.
-- Der konkurrierende Snapshot-/Legacy-Profilwrite wurde entfernt; bestaetigte Werte werden nicht mehr durch alte lokale Komplettstaende ueberschrieben.
-- Alle editierbaren Profildaten einschliesslich K1+C1 und C1-Paddelseite liefen im echten DEV-Test ueber Reload.
-- Vereinszuordnung bleibt kanonisch und geschuetzt; Self-Service kann keine fremde `club_id` setzen.
-- Migration `20261004054924_harden_profile_self_update_500.sql` ist auf Supabase DEV angewendet und verifiziert.
-- Ziele, Material, Unit-, Build-, Beta-, E2E- und Rollenpruefungen sind gruen.
-- Details und manueller iPhone-/iPad-/PC-Retest stehen in `docs/paddlio-codex-handoff.md`.
+- Trainingseinheiten werden mit stabiler UUID und Cloud-Metadaten im Trainingstagebuch gespeichert.
+- Wettkampfergebnisse verwenden stabile Identitaeten; Lauf 2 und Bestzeit werden korrekt behandelt.
+- Startlisten bleiben echte `competition_start_entries` und verlangen bei gleichnamigen Wettkaempfen eine eindeutige Datumszuordnung.
+- Dark-/Light-Theme wird am App-Root angewendet; Auswahlzustaende besitzen einheitliche Kontrastfarben.
+- Migration `20261005134123_import_journal_metadata_500.sql` ist auf Supabase DEV angewendet und verifiziert.
+- Unit-, Build-, Beta-, E2E-, Rollen- und Audit-Pruefungen sind gruen.
+- Manueller iPhone-/iPad-/PC-Nachtest mit fiktiven Importdateien bleibt vor Schritt 3 erforderlich.
 
 Naechster Auftrag erst wieder mit `Status: READY`.
+

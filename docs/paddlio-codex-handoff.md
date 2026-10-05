@@ -2,88 +2,105 @@
 
 ## Stand
 
-- Datum/Uhrzeit: 2026-10-04 08:12 CEST
-- Stabilitaetsblock: Paddlio 5.0 Profilpersistenz, Ziele und Material
-- Status: IMPLEMENTIERT, AUF SUPABASE DEV ANGEWENDET, DEV-CLOUD-ROUNDTRIP UND REGRESSION GRUEN
+- Datum/Uhrzeit: 2026-10-05 16:09 CEST
+- Stabilitaetsblock: Paddlio 5.0 letzter Import- und Dark-Mode-Release-Fix
+- Status: IMPLEMENTIERT, AUF SUPABASE DEV ANGEWENDET UND AUTOMATISIERT GRUEN
 
 ## Root Cause
 
-- Das Profilformular mischte unkontrollierte HTML-Felder mit separatem React-State fuer Bootsklassen und Paddelseite. Cloud-/Realtime-Aktualisierungen konnten deshalb einen anderen Stand als das noch sichtbare Formular liefern.
-- Ein erfolgreicher Profil-PATCH wurde bisher nicht anhand der von Supabase zurueckgegebenen Profilzeile bestaetigt. Auch ein UPDATE mit null betroffenen Zeilen haette wie ein Erfolg wirken koennen.
-- Der allgemeine Snapshot-/Legacy-Sync schrieb `profiles` zusaetzlich zum dedizierten Profilpfad. Im echten DEV-Test gingen dadurch innerhalb derselben Sekunde zwei PATCHes ein: zuerst die neue Einstellung, danach ein aelterer kompletter Profilstand. Dieser zweite Write erklaerte das Zurueckspringen nach Reload.
-- Das sichtbare Vereinsfeld war Freitext in `profile_data`, waehrend der Cloud-Load den kanonischen Verein korrekt aus `profiles.club_id` aufloest. Dadurch wirkte eine unzulaessige Freitextaenderung wie ein Speicherfehler.
-- Der bestehende Profil-Trigger enthielt weiterhin eine fest codierte Admin-E-Mail und konnte Rollen bei einer normalen Profilaktualisierung veraendern.
-- Saisonziele und persoenliches Material waren bereits im vorherigen Block auf echte Cloudwrites umgestellt. Der neue reale DEV-Test bestaetigt, dass beide weiterhin nach Reload vorhanden sind.
+- Importierte Trainingseinheiten erhielten lokale Praefix-IDs, obwohl `training_journal_entries.id` und `training_id` UUIDs erwarten. Titel, Trainingsart und Bootsklasse existierten zudem nur in der lokalen TrainingSession; nach Cloud-Reload konnte das Journal die Einheit nicht vollstaendig rekonstruieren.
+- Wettkampfergebnisse nutzten fuer Wettkampf und Ergebnis voneinander abweichende beziehungsweise geraetelokal gemappte IDs. Ein erneutes Speichern konnte eine neue Cloud-Wettkampf-ID erzeugen. Ein allein importierter zweiter Lauf wurde bei der Bestzeitberechnung durch den leeren ersten Lauf zu 0 Sekunden verfaelscht.
+- Startlisten akzeptierten bei mehreren gleichnamigen Wettkaempfen ohne Datum den ersten Treffer. Die Zuordnung war nicht eindeutig.
+- Die Profileinstellung `darkMode` wurde am authentifizierten App-Root nicht als Theme gesetzt. Native Select-/Option-Flaechen konnten deshalb in einer unpassenden Systemdarstellung erscheinen.
+- Drei E2E-Szenarien setzten zufaellig vorhandene Kalenderdaten voraus und liefen bei leerem DEV-Kalender in Timeouts.
 
 ## Aenderungen
 
-- `ProfileView` und `SettingsView` verwenden kontrollierte Entwuerfe. Eingaben bleiben bei Fehlern erhalten; eintreffende Cloudwerte ersetzen keinen aktiv bearbeiteten Entwurf.
-- K1 und C1 bleiben gleichzeitig auswaehlbar. Das Umschalten einer Bootsklasse veraendert keine anderen Profildaten; die C1-Paddelseite wird separat bestaetigt.
-- Profilupdates nutzen `UPDATE ... RETURNING` und uebernehmen anschliessend die tatsaechlich bestaetigte Cloudzeile. Null betroffene Zeilen fuehren zu `profile_update_not_confirmed` statt zu einer Erfolgsmeldung.
-- Der allgemeine Snapshot- und Legacy-Datensync schreibt keine Profile mehr. `profiles` besitzt damit genau einen fachlichen Schreibpfad.
-- Der Verein ist im Self-Service-Profil read-only. Die kanonische `club_id` kann nur ueber die vorhandene berechtigte Admin-/Vereinszuordnung geaendert werden; manipulierte Freitextwerte werden nicht uebernommen.
-- Der Profil-Trigger schuetzt bei Self-Service-Updates Rollen, Status, Primaerrolle, `club_id` und `active_club_id`. Die E-Mail-Sonderregel wurde entfernt.
+- Trainingseinheiten erhalten eine deterministische, gueltige UUID. Ein erneuter Import desselben Inhalts wird auch nach Cloud-Reload erkannt.
+- Journalzeilen speichern optional Titel, Trainingsart und Bootsklasse. Die Journalansicht nutzt diese Cloud-Metadaten ohne geraetelokale TrainingSession.
+- Importierte Wettkaempfe erhalten stabile UUIDs. `competition_results.id` entspricht der kanonischen Wettkampf-ID.
+- Lauf 1 und Lauf 2 werden getrennt gemappt; die Bestzeit verwendet nur tatsaechlich gefahrene Laeufe.
+- Competition- und Startlistenimporte verwenden die kanonische Cloud-Vereins-UUID.
+- Gleichnamige Wettkaempfe ohne eindeutiges Datum blockieren den Startlistenimport mit verstaendlicher Meldung.
+- Der App-Root setzt `data-po-theme=dark|light`. Selects, Options, Hover-, Fokus- und Disabled-Zustaende nutzen konsistente Theme-Farben.
+- Kalender-E2E-Tests warten auf den geladenen Zustand und erzeugen bei wirklich leerem Desktop-/Tablet-Kalender ueber den bestehenden Vorlagenflow eine Einheit.
 
 ## Migration
 
-- Neu: `supabase/migrations/20261004054924_harden_profile_self_update_500.sql`.
-- Ersetzt additiv die vorhandene Triggerfunktion `public.paddlio_normalize_profile_roles_0034()`.
-- Keine Tabelle gedroppt, keine Nutzdaten geloescht, RLS nicht deaktiviert und keine Berechtigung erweitert.
+- Neu: `supabase/migrations/20261005134123_import_journal_metadata_500.sql`.
+- Ergaenzt `public.training_journal_entries` additiv um nullable `title`, `training_type` und `boat_class`.
+- Ergaenzt einen K1/C1-Check fuer `boat_class`.
+- Keine Tabelle gedroppt, keine Nutzdaten geloescht, RLS nicht deaktiviert.
 - PostgREST-Schema-Reload enthalten.
 
 ## Supabase DEV Ergebnis
 
-- Ziel vor jedem Datenbankbefehl geprueft: `nlllqsfdhfiwticrcrnp`.
-- Migration erfolgreich direkt auf Supabase DEV ausgefuehrt und Version `20261004054924` als angewendet markiert.
-- Verifiziert: RLS auf `public.profiles` bleibt aktiv.
-- Verifiziert: Triggerdefinition enthaelt keine fest codierte E-Mail mehr.
-- Verifiziert: Self-Service kann Rollen und kanonische Vereinszuordnung nicht veraendern.
-- Echter Athlete-DEV-Cloudtest bestaetigte Vorname, Nachname, Spitzname, Geburtsdatum, Verband, Trainingsjahre, Wettkampferfahrung, Langfristziel, Saisonziel, Notizen, K1+C1 und C1-Paddelseite nach Reload. Testwerte wurden zurueckgesetzt.
-- Echter DEV-Cloudtest bestaetigte App-Einstellungen nach Reload sowie Ziele und persoenliches Material. Testdaten wurden bereinigt beziehungsweise auf den Ausgangswert zurueckgesetzt.
+- Vor jedem Datenbankbefehl Zielprojekt geprueft: `nlllqsfdhfiwticrcrnp`.
+- Migration erfolgreich direkt auf Supabase DEV angewendet und Version `20261005134123` als angewendet markiert.
+- Verifiziert: alle drei Spalten vorhanden und nullable.
+- Verifiziert: Constraint `training_journal_entries_boat_class_500` aktiv.
+- Verifiziert: RLS weiterhin aktiv und Tabelle weiterhin in `supabase_realtime`.
+- Production `twlkhfbrrwjwppxinmpn` wurde nicht verwendet.
 
 ## Betroffene Dateien
 
 - `src/App.tsx`
-- `src/services/migrationService.ts`
-- `src/services/persistenceServices.test.ts`
-- `src/services/profileService.ts`
-- `src/services/profileService.test.ts`
-- `src/views/ProfileView.tsx`
-- `src/views/SettingsView.tsx`
-- `tests/e2e/personal-persistence.spec.ts`
-- `supabase/migrations/20261004054924_harden_profile_self_update_500.sql`
-- `docs/paddlio-codex-handoff.md`
-- `docs/paddlio-codex-next.md`
+- `src/domain/types.ts`
+- `src/features/importExport/engine.ts` und Test
+- `src/services/competitionService.ts` und Test
+- `src/services/importPersistenceService.ts` und Test
+- `src/services/journalService.ts` und Test
+- `src/styles.css`
+- `src/views/TrainingJournalView.tsx`
+- `tests/e2e/helpers/calendar.ts`
+- drei Kalender-/Tablet-E2E-Spezifikationen
+- `supabase/migrations/20261005134123_import_journal_metadata_500.sql`
+
+## Importziele
+
+| Importtyp | Ziel |
+|---|---|
+| Trainingsplan | `training_plan_items` / Kalender |
+| Trainingseinheiten | `training_journal_entries` / Trainingstagebuch |
+| Wettkampfergebnisse | `competitions` + `competition_results` / Ergebnisse |
+| Sportlerliste | `imported_club_members` / Sportlerverwaltung |
+| Startliste | `competition_start_entries` / zugeordneter Wettkampf |
+| Vereinsmitglieder | `imported_club_members` / Mitgliederverwaltung |
+| Gruppen | `training_groups` / Gruppenverwaltung |
+| Materialliste | `materials` / Materialverwaltung |
 
 ## Tests
 
-- `npm.cmd ci`: erfolgreich; 109 Pakete geprueft, 0 Schwachstellen.
-- `npm.cmd run test`: 27 Dateien, 155/155 Tests bestanden.
+- `npm.cmd audit`: 0 Schwachstellen.
+- `npm.cmd run test`: 28 Dateien, 162/162 bestanden.
 - `npm.cmd run build`: erfolgreich; nur bestehender Chunk-Groessenhinweis.
-- `npm.cmd run check:beta`: Encoding, RLS, Security, Bundle, A11y und Beta-Blocker bestanden.
-- Gezielter echter DEV-Test `personal-persistence.spec.ts`: 3/3 bestanden.
+- Encoding, RLS, Bundle, A11y und Beta: bestanden.
 - `npm.cmd run test:e2e`: 46 bestanden, 28 vorgesehene Projekt-/Viewport-Skips, 0 Fehler.
 - `npm.cmd run test:e2e:roles`: 9 bestanden, 1 vorgesehener Mobile-Projekt-Skip, 0 Fehler.
+- CSV, XLS und XLSX sowie alle acht Importtypen bleiben in Parser-/Engine-/Persistenztests abgedeckt.
 
-## Offene Punkte
+## Offene Punkte und manueller Nachtest
 
-- Physischer Safari-/PWA-Nachtest auf iPhone und iPad sowie Sichtpruefung auf einem zweiten realen Geraet bleiben manuell. Der Cloud-Roundtrip wurde automatisiert gegen DEV ausgefuehrt.
-- Profilbilder werden weiterhin als validierte Data-URL in der eigenen RLS-geschuetzten Profilzeile gespeichert. Eine spaetere Storage-Optimierung ist sinnvoll, aber nicht Bestandteil dieses gezielten Release-Blockers.
-- Vereinswechsel erfolgen weiterhin ueber die bestehende berechtigte Admin-Zuordnung. Ein eigener Nutzer-Anfrageworkflow fuer Vereinswechsel waere eine separate Produktentscheidung.
+- Ein realer Import wurde nicht in bestehende DEV-Testkonten geschrieben, um keine dauerhaften Testdatensaetze einzustreuen. Cloud-Schema, Persistenzpayloads, Reload-Semantik und generische Zwei-Geraete-Synchronisierung sind automatisiert geprueft.
+- Tobias sollte nach DEV-Deploy je eine fiktive CSV/XLSX-Datei fuer Trainingseinheiten, Wettkampfergebnisse und Startliste importieren und auf iPhone, iPad sowie PC Zielansicht, Reload und zweites Geraet pruefen.
+- Bei identischem Wettkampfnamen muss die Startliste das Datum enthalten.
+- Native iOS-Auswahlpicker werden vom Betriebssystem gerendert. Theme und Kontrast sind im DOM gesetzt; finale Safari-/PWA-Sichtpruefung bleibt manuell.
 
 ## Naechste sinnvolle Aufgabe
 
-- Nach DEV-Deploy auf iPhone/iPad/PC alle Profilfelder aendern, App schliessen/oeffnen, Logout/Login und ein zweites Geraet pruefen. Insbesondere K1+C1, C1-Paddelseite, Profilbild und Einstellungen kontrollieren.
+- DEV deployen und den beschriebenen manuellen Funktionsblock abschliessen. Bei Erfolg kann Schritt 3 (Sicherheit, Rechtliches und Webseiten) beginnen; vorher keine neuen Produktfeatures.
 
 ## Sicherheitsbestaetigung
 
-- Ausschliesslich Branch `develop` verwendet.
+- Ausschliesslich Branch `develop`.
 - Ausschliesslich Supabase DEV `nlllqsfdhfiwticrcrnp` veraendert.
 - `main` unveraendert.
 - Production Supabase `twlkhfbrrwjwppxinmpn` unveraendert.
+- Keine vorhandenen Nutzdaten geloescht.
 
 ## Commit und Pushstatus
 
-- Implementierungscommit: `6e289bc` (`Fix profile persistence race`).
-- Dokumentationscommit: `1f2cf71` (`Document profile persistence fix`).
-- Pushstatus: Implementierung und Handoff erfolgreich auf `origin/develop` gepusht.
+- Implementierungscommit: `abadfcd` (`Fix imported training and competition persistence`).
+- Handoff-Commit: wird mit diesem Bericht erstellt.
+- Pushstatus: ausstehend bis zum Handoff-Commit.
+
