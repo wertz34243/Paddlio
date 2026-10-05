@@ -34,6 +34,40 @@ describe("import persistence", () => {
     expect(upsertTraining).toHaveBeenCalledOnce();
   });
 
+  it("persists imported sessions through the journal source of truth", async () => {
+    const entry = {
+      ...seedData.journal[0],
+      id: "749cd776-785a-486e-96da-00c58b5c946d",
+      trainingId: "3eea80ae-c5fd-4bcb-b1a9-a42a4c6a5311",
+      title: "Technik Import",
+    };
+    const count = await persistImportedEntities(
+      "training_sessions",
+      { ...seedData, journal: [] },
+      { ...seedData, journal: [entry] },
+      user,
+    );
+    expect(count).toBe(1);
+    expect(upsertJournal).toHaveBeenCalledWith(entry);
+  });
+
+  it("uses the canonical cloud club for imported competition results", async () => {
+    const competition = { ...seedData.competitions[0], id: "749cd776-785a-486e-96da-00c58b5c946d", clubId: "Lokaler Vereinsname" };
+    const cloudClubId = "78fd4956-3549-4f66-94d0-963c75cf8310";
+    const count = await persistImportedEntities(
+      "competition_results",
+      { ...seedData, competitions: [] },
+      { ...seedData, competitions: [competition] },
+      user,
+      cloudClubId,
+    );
+    expect(count).toBe(1);
+    expect(upsertCompetition).toHaveBeenCalledWith(
+      expect.objectContaining({ clubId: cloudClubId }),
+      cloudClubId,
+    );
+  });
+
   it("persists start-list rows through their dedicated cloud table", async () => {
     const entry = {
       id: "start-1", competitionId: seedData.competitions[0].id, clubId: "", createdBy: user.userId,

@@ -7,9 +7,18 @@ import { calculateCompetitionTotalTime, normalizeCompetitionLevel } from "../dom
 
 const competitionIdFor = (competition: Competition): string => toCloudUuid(competition.id) ?? crypto.randomUUID();
 
+const bestCompletedRun = (competition: Competition): number | null => {
+  const totals = [
+    competition.run1TimeSeconds > 0 ? calculateCompetitionTotalTime(competition.run1TimeSeconds, competition.run1PenaltySeconds) : null,
+    competition.run2TimeSeconds > 0 ? calculateCompetitionTotalTime(competition.run2TimeSeconds, competition.run2PenaltySeconds) : null,
+  ].filter((value): value is number => value !== null);
+  return totals.length ? Math.min(...totals) : null;
+};
+
 export const upsertCloudCompetition = async (competition: Competition, clubId?: string): Promise<void> => {
   const client = getSupabaseClient();
   const cloudCompetitionId = competitionIdFor(competition);
+  const bestTotal = bestCompletedRun(competition);
   const competitionPayload = sanitizeCloudPayload({
     id: cloudCompetitionId,
     club_id: clubId || null,
@@ -28,7 +37,7 @@ export const upsertCloudCompetition = async (competition: Competition, clubId?: 
     notes: competition.note,
   });
   const resultPayload = sanitizeCloudPayload({
-    id: `result-${competition.id}`,
+    id: cloudCompetitionId,
     club_id: competition.clubId || clubId || null,
     competition_id: cloudCompetitionId,
     athlete_id: toCloudUuidOrNull(competition.athleteId),
@@ -48,14 +57,8 @@ export const upsertCloudCompetition = async (competition: Competition, clubId?: 
     run2_penalties: competition.run2PenaltySeconds,
     run2_penalty_seconds: competition.run2PenaltySeconds,
     run2_total: calculateCompetitionTotalTime(competition.run2TimeSeconds, competition.run2PenaltySeconds),
-    best_total: Math.min(
-      calculateCompetitionTotalTime(competition.run1TimeSeconds, competition.run1PenaltySeconds),
-      calculateCompetitionTotalTime(competition.run2TimeSeconds, competition.run2PenaltySeconds),
-    ),
-    best_total_seconds: Math.min(
-      calculateCompetitionTotalTime(competition.run1TimeSeconds, competition.run1PenaltySeconds),
-      calculateCompetitionTotalTime(competition.run2TimeSeconds, competition.run2PenaltySeconds),
-    ),
+    best_total: bestTotal,
+    best_total_seconds: bestTotal,
     ranking: competition.rank,
     rank: competition.rank,
     starter_count: competition.starterField ?? null,

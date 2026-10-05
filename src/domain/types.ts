@@ -430,6 +430,9 @@ export type TrainingJournalEntry = {
   athleteId: string;
   trainingId: string;
   trainingPlanEntryId?: string;
+  title?: string;
+  trainingType?: TrainingType;
+  boatClass?: BoatClass;
   date: string;
   completionStatus?: "completed" | "partially_completed" | "skipped";
   actualDurationMinutes?: number;

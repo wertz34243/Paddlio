@@ -1930,7 +1930,11 @@ function AppContent() {
   })();
 
   return (
-    <div className={`${isHome ? "app-shell app-shell-home" : "app-shell"} app-shell-${currentDeviceClass} ${topChromeVisible ? "scroll-chrome-visible" : "scroll-chrome-hidden"}`} data-testid="authenticated-app">
+    <div
+      className={`${isHome ? "app-shell app-shell-home" : "app-shell"} app-shell-${currentDeviceClass} ${topChromeVisible ? "scroll-chrome-visible" : "scroll-chrome-hidden"}`}
+      data-po-theme={activeUser.profile.darkMode ? "dark" : "light"}
+      data-testid="authenticated-app"
+    >
       <a className="skip-link" href="#main">
         Zum Inhalt springen
       </a>

@@ -94,7 +94,37 @@ describe("import mapping and validation", () => {
     const result = executeImport(analyzeWorkbook(workbook, "training_sessions"), { ...seedData, training: [], journal: [] }, user);
     expect(result.data.training).toHaveLength(1);
     expect(result.data.journal).toHaveLength(1);
-    expect(result.data.journal[0]).toMatchObject({ completionStatus: "completed", actualDurationMinutes: 75 });
+    expect(result.data.journal[0]).toMatchObject({
+      completionStatus: "completed",
+      actualDurationMinutes: 75,
+      title: "Technik",
+    });
+    expect(result.data.journal[0].id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+    expect(result.data.journal[0].trainingId).toBe(result.data.journal[0].id);
+
+    const afterReload = executeImport(analyzeWorkbook(workbook, "training_sessions"), {
+      ...seedData,
+      training: [],
+      journal: result.data.journal,
+    }, user);
+    expect(afterReload.report.skippedRows).toBe(1);
+    expect(afterReload.data.journal).toHaveLength(1);
+  });
+
+  it("keeps second-run competition values in run two", () => {
+    const user = makeUser();
+    const workbook: ParsedWorkbook = {
+      fileName: "lauf-zwei.csv", fileFormat: "csv", warnings: [],
+      sheets: [{ name: "Ergebnis", rows: [["Datum", "Name", "Wettkampf", "Lauf", "Fahrzeit", "Strafsekunden"], ["2026-10-02", "Coach Test", "Fiktiver Cup", "2", "94.2", "4"]], detectedHeaderRow: 0, rowCount: 2, columnCount: 6 }],
+    };
+    const result = executeImport(analyzeWorkbook(workbook, "competition_results"), { ...seedData, competitions: [] }, user);
+    expect(result.data.competitions[0]).toMatchObject({
+      run1TimeSeconds: 0,
+      run2TimeSeconds: 94.2,
+      run2PenaltySeconds: 4,
+      bestTotalSeconds: 98.2,
+    });
+    expect(result.data.competitions[0].id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
   });
 
   it("associates start-list rows with an existing competition instead of creating athletes", () => {
@@ -119,6 +149,21 @@ describe("import mapping and validation", () => {
     const result = executeImport(analyzeWorkbook(workbook, "start_lists"), { ...seedData, competitions: [], competitionStartEntries: [] }, user);
     expect(result.report.status).toBe("failed");
     expect(result.report.errors[0]?.message).toContain("Wettkampf wurde nicht gefunden");
+  });
+
+  it("requires a date when a start-list name matches multiple competitions", () => {
+    const user = makeUser();
+    const competitions = [
+      { ...seedData.competitions[0], id: "competition-1", name: "Herbst-Cup", date: "2026-09-10" },
+      { ...seedData.competitions[0], id: "competition-2", name: "Herbst-Cup", date: "2026-09-11" },
+    ];
+    const workbook: ParsedWorkbook = {
+      fileName: "startliste.csv", fileFormat: "csv", warnings: [],
+      sheets: [{ name: "Startliste", rows: [["Wettkampf", "Name", "Startnummer"], ["Herbst-Cup", "Mia Test", "17"]], detectedHeaderRow: 0, rowCount: 2, columnCount: 3 }],
+    };
+    const result = executeImport(analyzeWorkbook(workbook, "start_lists"), { ...seedData, competitions, competitionStartEntries: [] }, user);
+    expect(result.report.status).toBe("failed");
+    expect(result.report.errors[0]?.message).toContain("Bitte das Datum ergänzen");
   });
 
   it("flags negative penalties before import execution", () => {

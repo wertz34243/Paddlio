@@ -183,13 +183,20 @@ function applyRow(importType: ImportType, row: ImportPreviewRow, data: PaddleMot
   if (importType === "start_lists") {
     const competitionName = String(value.title ?? "").trim().toLowerCase();
     const competitionDate = String(value.date ?? "");
-    const competition = data.competitions.find((item) =>
+    const matchingCompetitions = data.competitions.filter((item) =>
       (item.name || item.location).trim().toLowerCase() === competitionName
       && (!competitionDate || item.date === competitionDate));
+    const competition = matchingCompetitions.length === 1 ? matchingCompetitions[0] : undefined;
     if (!competition) return {
       data,
       skipped: true,
-      error: { severity: "error", field: "title", message: `Zeile ${row.rowNumber}: Der angegebene Wettkampf wurde nicht gefunden.` },
+      error: {
+        severity: "error",
+        field: "title",
+        message: matchingCompetitions.length > 1
+          ? `Zeile ${row.rowNumber}: Mehrere Wettkämpfe haben diesen Namen. Bitte das Datum ergänzen.`
+          : `Zeile ${row.rowNumber}: Der angegebene Wettkampf wurde nicht gefunden.`,
+      },
     };
     const startNumber = Number(value.startNumber ?? 0);
     const boatClass = normalizeBoatClasses(value.boatClass)[0] ?? "K1";
@@ -296,10 +303,16 @@ function applyRow(importType: ImportType, row: ImportPreviewRow, data: PaddleMot
       session.date === date &&
       session.durationMinutes === Number(value.durationMinutes ?? 0) &&
       session.focus.trim().toLowerCase() === focus.trim().toLowerCase(),
+    ) || data.journal.some((entry) =>
+      entry.athleteId === user.userId &&
+      entry.date === date &&
+      entry.actualDurationMinutes === Number(value.durationMinutes ?? 0) &&
+      (entry.title ?? "").trim().toLowerCase() === focus.trim().toLowerCase(),
     );
     if (duplicate) return { data, skipped: true };
+    const identity = stableImportUuid(`training-session|${user.userId}|${date}|${Number(value.durationMinutes ?? 0)}|${focus.toLowerCase()}`);
     const session: TrainingSession = {
-      id: createId("training-import"),
+      id: identity,
       athleteId: user.userId,
       date,
       type: inferSessionType(String(value.trainingType ?? value.focus ?? "")),
@@ -311,7 +324,9 @@ function applyRow(importType: ImportType, row: ImportPreviewRow, data: PaddleMot
       updatedAt: timestamp,
     };
     const journalEntry: TrainingJournalEntry = {
-      id: createId("journal-import"), athleteId: user.userId, trainingId: session.id, date,
+      id: identity, athleteId: user.userId, trainingId: session.id, date,
+      title: focus || "Importiertes Training", trainingType: session.type,
+      boatClass: normalizeBoatClasses(value.boatClass)[0],
       completionStatus: "completed", actualDurationMinutes: session.durationMinutes,
       perceivedExertion: session.rpe, trainingRating: 7, feeling: 7, fatigue: 4,
       sleep: 7, motivation: 7, notes: session.note, createdAt: timestamp, updatedAt: timestamp,
@@ -346,8 +361,9 @@ function applyRow(importType: ImportType, row: ImportPreviewRow, data: PaddleMot
       (competition.name || "").trim().toLowerCase() === title.trim().toLowerCase(),
     );
     if (duplicate) return { data, skipped: true };
+    const run = Number(value.run ?? 1) === 2 ? 2 : 1;
     const competition: Competition = {
-      id: createId("competition-import"),
+      id: stableImportUuid(`competition-result|${athleteId}|${date}|${title.toLowerCase()}|${String(value.boatClass ?? "K1").toLowerCase()}|${run}`),
       athleteId,
       clubId: user.profile.club,
       name: title,
@@ -357,12 +373,12 @@ function applyRow(importType: ImportType, row: ImportPreviewRow, data: PaddleMot
       courseName: "",
       level: "general",
       boatClass: normalizeBoatClasses(value.boatClass)[0] ?? "K1",
-      run1TimeSeconds: rawTime,
-      run1PenaltySeconds: penalty,
-      run1TotalSeconds: rawTime + penalty,
-      run2TimeSeconds: 0,
-      run2PenaltySeconds: 0,
-      run2TotalSeconds: 0,
+      run1TimeSeconds: run === 1 ? rawTime : 0,
+      run1PenaltySeconds: run === 1 ? penalty : 0,
+      run1TotalSeconds: run === 1 ? rawTime + penalty : 0,
+      run2TimeSeconds: run === 2 ? rawTime : 0,
+      run2PenaltySeconds: run === 2 ? penalty : 0,
+      run2TotalSeconds: run === 2 ? rawTime + penalty : 0,
       bestTotalSeconds: rawTime + penalty,
       rank: Number(value.rank ?? 0),
       gapToWinnerSeconds: 0,
@@ -406,6 +422,24 @@ function applyRow(importType: ImportType, row: ImportPreviewRow, data: PaddleMot
   }
 
   return { data, skipped: true };
+}
+
+function stableImportUuid(value: string): string {
+  let first = 0x811c9dc5;
+  let second = 0x9e3779b9;
+  let third = 0x85ebca6b;
+  let fourth = 0xc2b2ae35;
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index);
+    first = Math.imul(first ^ code, 0x01000193);
+    second = Math.imul(second ^ code, 0x27d4eb2d);
+    third = Math.imul(third ^ code, 0x165667b1);
+    fourth = Math.imul(fourth ^ code, 0x9e3779b1);
+  }
+  const hex = [first, second, third, fourth]
+    .map((part) => (part >>> 0).toString(16).padStart(8, "0"))
+    .join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
 
 function parseDateValue(value: string): string {

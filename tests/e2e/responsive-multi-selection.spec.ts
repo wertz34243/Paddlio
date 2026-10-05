@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { login } from "./helpers/auth";
+import { ensureCalendarTraining } from "./helpers/calendar";
 
 const coachEmail = process.env.PADDLIO_E2E_COACH_EMAIL;
 const coachPassword = process.env.PADDLIO_E2E_COACH_PASSWORD;
@@ -31,12 +32,14 @@ async function openCalendar(page: Page, viaBottomCalendar = false) {
 
 async function ensureTrainingVisible(page: Page) {
   const firstTraining = page.locator(".master-training-block-main").first();
+  if (await firstTraining.waitFor({ state: "visible", timeout: 10_000 }).then(() => true).catch(() => false)) {
+    return firstTraining;
+  }
   for (let attempt = 0; attempt < 4; attempt += 1) {
     if (await firstTraining.isVisible().catch(() => false)) return firstTraining;
     await page.getByRole("button", { name: "Vorheriger Zeitraum" }).click();
   }
-  await expect(firstTraining).toBeVisible({ timeout: 20_000 });
-  return firstTraining;
+  return ensureCalendarTraining(page);
 }
 
 async function longPress(page: Page, locator: Locator) {

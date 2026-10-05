@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { login } from "./helpers/auth";
+import { ensureCalendarTraining } from "./helpers/calendar";
 
 const coachEmail = process.env.PADDLIO_E2E_COACH_EMAIL;
 const coachPassword = process.env.PADDLIO_E2E_COACH_PASSWORD;
@@ -209,8 +210,7 @@ test.describe("desktop training workspace", () => {
     await openTemplatesPanel(page);
     await capture(page, "03-calendar-template-panel.png");
 
-    const firstTraining = page.locator(".master-training-block-main").first();
-    await expect(firstTraining).toBeVisible({ timeout: 20_000 });
+    const firstTraining = await ensureCalendarTraining(page);
     await firstTraining.click();
     await expect(page.getByTestId("training-detail-panel")).toBeVisible({ timeout: 20_000 });
     await capture(page, "04-calendar-detail-inspector.png");

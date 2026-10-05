@@ -25,6 +25,8 @@
 
 select {
   color-scheme: dark;
+  background-color: var(--po-color-surface, #132233);
+  color: var(--po-color-text-primary, #f8fafc);
 }
 
 select option,
@@ -36,6 +38,18 @@ select optgroup {
 select option:checked {
   background: #155e75;
   color: #ffffff;
+}
+
+select option:hover,
+select option:focus {
+  background: #164e63;
+  color: #ffffff;
+}
+
+select:disabled {
+  background-color: var(--po-color-background-elevated, #17202d);
+  color: var(--po-color-text-muted, #94a3b8);
+  opacity: 1;
 }
 
 
@@ -10430,6 +10444,17 @@ body {
 [data-po-theme="light"] select option:checked {
   background: #cffafe;
   color: #083344;
+}
+
+[data-po-theme="light"] select option:hover,
+[data-po-theme="light"] select option:focus {
+  background: #e0f2fe;
+  color: #082f49;
+}
+
+[data-po-theme="light"] select:disabled {
+  background-color: #e8eef3;
+  color: #64748b;
 }
 
 [data-po-theme="highContrast"] {

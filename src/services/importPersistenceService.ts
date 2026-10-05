@@ -55,12 +55,14 @@ export async function persistImportedEntities(
   }
   if (importType === "competition_results") {
     const items = addedItems(before.competitions, after.competitions);
-    await Promise.all(items.map((item) => upsertCloudCompetition(item, item.clubId)));
+    const clubId = toCloudUuidOrNull(cloudClubId);
+    await Promise.all(items.map((item) => upsertCloudCompetition({ ...item, clubId: clubId ?? "" }, clubId ?? undefined)));
     return items.length;
   }
   if (importType === "start_lists") {
     const items = addedItems(before.competitionStartEntries, after.competitionStartEntries);
-    await Promise.all(items.map((item) => upsertCloudCompetitionStartEntry(item)));
+    const clubId = toCloudUuidOrNull(cloudClubId);
+    await Promise.all(items.map((item) => upsertCloudCompetitionStartEntry({ ...item, clubId: clubId ?? "" })));
     return items.length;
   }
   if (importType === "materials") {

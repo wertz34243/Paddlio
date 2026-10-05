@@ -79,7 +79,7 @@ export function TrainingJournalView({
         {sortedJournal.length > 0 ? sortedJournal.map((entry) => {
           const session = sessionsById.get(entry.trainingId);
           const planned = entry.trainingPlanEntryId ? planById.get(entry.trainingPlanEntryId) : undefined;
-          const title = planned?.title || planned?.trainingType || session?.focus || session?.type || "Freies Training";
+          const title = planned?.title || planned?.trainingType || session?.focus || entry.title || session?.type || entry.trainingType || "Freies Training";
           const plannedMinutes = planned?.durationMinutes;
           const actualMinutes = entry.actualDurationMinutes ?? plannedMinutes ?? session?.durationMinutes ?? 0;
 

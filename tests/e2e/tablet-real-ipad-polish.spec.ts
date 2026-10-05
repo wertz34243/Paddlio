@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { login } from "./helpers/auth";
+import { ensureCalendarTraining } from "./helpers/calendar";
 
 const coachEmail = process.env.PADDLIO_E2E_COACH_EMAIL;
 const coachPassword = process.env.PADDLIO_E2E_COACH_PASSWORD;
@@ -80,6 +81,7 @@ test.describe("real iPad training polish", () => {
     }
     await expect(page.locator(".master-calendar-context")).toHaveCount(0);
 
+    await ensureCalendarTraining(page);
     const completedTraining = page.getByRole("option").filter({ hasText: "Durchgeführt" }).first().locator(".master-training-block-main");
     const trainingToInspect = await completedTraining.isVisible().catch(() => false)
       ? completedTraining
