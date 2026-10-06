@@ -2,13 +2,13 @@
 
 Status: DONE
 
-Auftragsbasis: Zeitwahl auf 15-Minuten-Raster verbessern.
+Auftragsbasis: Paddlio 5.0 letzter Restfehler Trainingseinheiten-Import.
 
 Ergebnis:
-- Neue Trainings starten weiterhin mit der exakten lokalen Geraetezeit.
-- `+15` und `-15` wechseln danach auf ein sauberes Viertelstundenraster.
-- Bereits gespeicherte Zeiten bleiben beim Bearbeiten unveraendert.
-- Vorlagenverwendung und individuelle Trainingsplanung verwenden dieselbe Initialisierungslogik.
-- Unit-, Build-, Beta- und relevanter Mobile-E2E-Test sind gruen.
+- Der Cloud-Write war bereits erfolgreich; der Restfehler lag in der geraeteabhaengigen Journalansicht.
+- Phone, Tablet und Desktop verwenden jetzt dieselbe cloudbasierte Journalquelle.
+- Freie importierte Einheiten bleiben ohne lokalen Session-/Plan-Datensatz sichtbar.
+- DEV-Schema, RLS und Realtime sind verifiziert.
+- Unit-, Build-, Beta- und Journal-E2E-Pruefungen sind gruen.
 
 Naechster Auftrag erst wieder mit `Status: READY`.
