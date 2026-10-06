@@ -23,6 +23,26 @@ async function clickVisible(page: Page, testId: string) {
   throw new Error(`No visible ${testId} button found`);
 }
 
+async function clickDetailTab(page: Page, name: string) {
+  const deadline = Date.now() + 20_000;
+
+  while (Date.now() < deadline) {
+    try {
+      const panel = page.getByTestId("training-detail-panel");
+      if (!(await panel.isVisible().catch(() => false))) {
+        await page.locator(".master-training-block-main").first().click({ timeout: 5_000 });
+      }
+      await expect(panel).toBeVisible({ timeout: 5_000 });
+      const tab = panel.getByRole("button", { name, exact: true });
+      await tab.click({ timeout: 5_000 });
+      await expect(tab).toHaveClass(/active/, { timeout: 5_000 });
+      return;
+    } catch (error) {
+      if (Date.now() >= deadline) throw error;
+    }
+  }
+}
+
 async function capture(page: Page, name: string, options: { preserveScroll?: boolean } = {}) {
   await page.evaluate(() => {
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -91,7 +111,7 @@ test.describe("real iPad training polish", () => {
     await expect(page.getByTestId("training-detail-panel").getByRole("button", { name: "Feedback" })).toBeVisible();
     await capture(page, "04-calendar-training-inspector.png");
 
-    await page.getByTestId("training-detail-panel").getByRole("button", { name: "Feedback" }).click();
+    await clickDetailTab(page, "Feedback");
     const detailTabs = page.getByTestId("training-detail-panel").locator(".master-detail-tabs button");
     await expect(detailTabs).toHaveCount(4);
     const tabMetrics = await detailTabs.evaluateAll((nodes) => nodes.map((node) => ({
@@ -110,7 +130,7 @@ test.describe("real iPad training polish", () => {
     await page.locator(".master-feedback-sheet").getByRole("button", { name: "Schließen" }).click();
     await expect(page.locator(".master-feedback-sheet")).toHaveCount(0);
     await expect(page.getByTestId("training-detail-panel")).toBeVisible({ timeout: 20_000 });
-    await page.getByTestId("training-detail-panel").getByRole("button", { name: "Aufgaben" }).click();
+    await clickDetailTab(page, "Aufgaben");
     await page.getByRole("button", { name: "Traineraufgabe erstellen" }).click();
     await expect(page.locator(".master-task-sheet")).toBeVisible({ timeout: 20_000 });
     await capture(page, "07-trainer-task-sheet.png");

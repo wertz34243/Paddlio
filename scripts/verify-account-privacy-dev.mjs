@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const DEV_PROJECT_REF = "nlllqsfdhfiwticrcrnp";
 
-for (const path of [".env.local", ".env.e2e.local"]) {
+for (const path of [".env.e2e.local", ".env.local"]) {
   if (!existsSync(path)) continue;
   for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
     const trimmed = line.trim();
@@ -29,6 +29,13 @@ const { data: signInData, error: signInError } = await client.auth.signInWithPas
 if (signInError || !signInData.user || !signInData.session?.access_token) throw new Error("DEV-Testlogin fehlgeschlagen.");
 
 const functionUrl = `${url}/functions/v1/account-privacy`;
+const unauthenticatedResponse = await fetch(functionUrl, {
+  method: "POST",
+  headers: { apikey: anonKey, "Content-Type": "application/json", Origin: "https://dev.paddlio.de" },
+  body: JSON.stringify({ action: "export" }),
+});
+if (unauthenticatedResponse.status !== 401) throw new Error("Unauthentifizierter DEV-Export wurde nicht mit HTTP 401 abgelehnt.");
+
 const preflightResponse = await fetch(functionUrl, {
   method: "OPTIONS",
   headers: {
@@ -97,6 +104,7 @@ await client.auth.signOut();
 console.log(JSON.stringify({
   projectRef: DEV_PROJECT_REF,
   testRole: testRole.toLowerCase(),
+  unauthenticatedExportRejected: true,
   authenticatedExport: true,
   validJson: true,
   ownAccount: true,

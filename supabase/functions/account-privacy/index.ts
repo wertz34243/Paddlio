@@ -156,7 +156,8 @@ Deno.serve(async (req: Request) => {
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const authorization = req.headers.get("Authorization");
-  if (!supabaseUrl || !anonKey || !serviceRoleKey || !authorization) return response(origin, { error: "service_unavailable" }, 503);
+  if (!supabaseUrl || !anonKey || !serviceRoleKey) return response(origin, { error: "service_unavailable" }, 503);
+  if (!authorization) return response(origin, { error: "not_authenticated" }, 401);
 
   const userClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authorization } }, auth: { persistSession: false } });
   const { data: authData, error: authError } = await userClient.auth.getUser();

@@ -2,68 +2,78 @@
 
 ## Stand
 
-- Datum/Uhrzeit: 2026-10-06 15:20 CEST
-- Stabilitaetsblock: Trainingseinheiten-Import-Button und Submit-Pfad
-- Status: ROOT CAUSE BEHOBEN, REGRESSIONSTEST GRUEN
+- Datum/Uhrzeit: 2026-10-06 17:20 CEST
+- Stabilitaetsblock: Paddlio 5.0 Schritt 3A - Security Release Hardening
+- Status: TECHNISCH ABGESCHLOSSEN, OEFFENTLICHER RELEASE WEGEN MANUELLER AUTH-/RECHTSAUFGABEN BLOCKIERT
 
 ## Root Cause
 
-- Der Button war korrekt verdrahtet, aber `executeImport(...)` wurde vor dem `try/catch` ausgefuehrt. Ein synchroner Fehler konnte deshalb den Import ohne sichtbaren Bericht beenden und den Loading-Zustand festhalten.
-- Die Fehlermeldung wurde nur weit oben am Dateifeld dargestellt. Direkt am Importbutton gab es weder einen verlässlichen Fortschritts- noch Erfolgs- oder Fehlerstatus.
-- Der eigentliche Cloud-Write fuer Trainingseinheiten nutzt korrekt `training_journal_entries` als Source of Truth; `TrainingSession` bleibt der lokale Begleitdatensatz.
-- Beim erneuten Import nach einem Cloud-Reload war die Duplikaterkennung nur semantisch. Die bereits vorhandene deterministische Import-ID wurde nicht direkt beruecksichtigt und konnte dadurch einen unnoetigen zweiten Persistenzversuch ausloesen.
+- 24 `SECURITY DEFINER`-Funktionen waren direkt fuer `anon` ausfuehrbar; Triggerfunktionen waren teilweise auch fuer `authenticated` erreichbar.
+- `set_updated_at` und `default_roles_for_email` hatten einen mutablen `search_path`.
+- Die verbleibenden authenticated-Advisor-Warnungen gehoeren ueberwiegend zu Policy-Helfern, deren EXECUTE-Recht fuer bestehende RLS-Regeln erforderlich ist. Ein pauschaler Entzug haette legitimen Datenzugriff gebrochen.
+- Leaked Password Protection ist im aktuellen Supabase-Free-Plan nicht aktivierbar.
+- Das unfertige Dateianhang-Metadatenformular war fuer Nutzer sichtbar; Polar war nicht deutlich genug als noch unvollstaendig real getestete Beta abgegrenzt.
+- `source-map-js@1.2.1` hatte ein bekanntes High-Severity-DoS-Finding.
+- Ein iPad-Screenshot-E2E klickte waehrend eines React-Realtime-Refreshs auf einen ersetzten Detail-Tab und war dadurch intermittierend.
 
 ## Aenderungen
 
-- Der gesamte Importaufbau und Persistenzpfad liegt jetzt innerhalb des Fehlerfangs; `finally` beendet den Loading-Zustand verlaesslich.
-- Jeder Klick zeigt unmittelbar einen Status und endet sichtbar mit Erfolg, Teilerfolg oder einer verstaendlichen Fehlermeldung.
-- Der Importbericht wird direkt nach bestaetigter Kerndaten-Persistenz angezeigt.
-- Fehler beim separaten Importprotokoll verdecken einen erfolgreich gespeicherten Import nicht mehr; sie werden geloggt und als spaeter zu synchronisierendes Protokoll gekennzeichnet.
-- Trainingseinheiten werden zusaetzlich ueber ihre stabile Import-ID in Session und Journal dedupliziert.
-- Neuer Playwright-Test klickt den echten Button, prueft drei REST-Persistenzen, den Importbericht, die Journalanzeige, Reload und den duplikatfreien Zweitimport.
-- Neuer Unit-Test bildet drei importierte Einheiten sowie einen Cloud-artigen Reload ohne lokale Sessions ab.
+- SECURITY-DEFINER-Rechte differenziert gehaertet: kein direkter `anon`/`public`-Aufruf, Triggerfunktionen auch fuer `authenticated` gesperrt, notwendige RLS-Helfer erhalten.
+- Beide gemeldeten Funktionen auf festen leeren `search_path` gesetzt.
+- Security-Regressioncheck fuer Migration, Polar-Beta und ausgeblendete Anhang-UI ergaenzt.
+- Nicht authentifizierter Datenschutzexport liefert jetzt korrekt 401 statt 503.
+- DEV-Verifikationsskript prueft unauthentifizierten Export und bevorzugt die eindeutige E2E-DEV-Konfiguration.
+- Dateianhang-Metadatenformular aus der normalen Kommunikation entfernt.
+- Polar als Beta gekennzeichnet; Connect bleibt ohne Serverkonfiguration deaktiviert.
+- `source-map-js` kompatibel auf 1.2.2 aktualisiert.
+- iPad-E2E oeffnet einen durch Realtime-Refresh geschlossenen Inspector zustandsbasiert erneut; keine festen Sleeps.
 
-## Migrationen / Supabase DEV
+## Migration / Supabase DEV
 
-- Keine Migration erforderlich.
-- Supabase DEV `nlllqsfdhfiwticrcrnp` wurde in diesem Block nicht veraendert.
-- Der bereits verifizierte Write-Pfad zu `training_journal_entries` bleibt unveraendert.
-- Production Supabase wurde nicht verwendet.
+- Migration: `supabase/migrations/20261006154000_security_release_hardening.sql`.
+- Vor jedem DB-Befehl Zielprojekt als `nlllqsfdhfiwticrcrnp` bestaetigt.
+- Migration ausschliesslich auf Supabase DEV angewendet; PostgREST-Schema-Reload ausgefuehrt.
+- Security Advisor: 52 auf 22 Warnungen reduziert (30 behoben).
+- Funktionskatalog verifiziert: search paths fest, anon-Rechte entfernt, Trigger-authenticated-Rechte entfernt, legitimer Kontakt-RPC fuer authenticated erhalten.
+- `account-privacy` ausschliesslich auf DEV erneut deployed.
+- Production wurde weder gelesen noch veraendert.
 
-## Betroffene Dateien
+## Datenschutz- und Cloud-Ergebnis
 
-- `src/views/ImportExportView.tsx`
-- `src/features/importExport/engine.ts`
-- `src/features/importExport/engine.test.ts`
-- `tests/e2e/training-session-import.spec.ts`
-- `docs/paddlio-codex-handoff.md`
-- `docs/paddlio-codex-next.md`
+- Nicht authentifiziert: Export HTTP 401.
+- Authentifizierter Export: gueltiges JSON, eigener Account, 0 unmaskierte Fremdidentitaeten, keine Provider-Secrets.
+- Falsche Loeschphrase und fremde Origin abgelehnt.
+- Entbehrliches, eigens erzeugtes DEV-Testkonto erfolgreich geloescht; eigene Testdaten entfernt, fremde Profile/Clubs unveraendert, Login danach abgelehnt.
+- DEV Storage: 0 Buckets; reale Objektloeschung daher nicht anwendbar.
+- Echte DEV-Header bestaetigt: HTTPS/308-Redirect, CSP, HSTS, nosniff, DENY/frame-ancestors, Referrer- und Permissions-Policy.
 
 ## Tests
 
-- Unit/Integration: 29 Dateien, 170/170 Tests bestanden.
-- Build: erfolgreich; nur bestehender Chunk-Groessenhinweis.
-- `check:beta`: Encoding, RLS, Security, Bundle, A11y und Beta bestanden.
-- Vollstaendige Playwright-Suite: 50 bestanden, 32 vorgesehene projekt-/viewportabhaengige Skips, 0 fehlgeschlagen.
-- Trainingseinheiten-Import-E2E: Desktop/Edge 1/1 bestanden; der mobile Projektlauf ist bewusst ausgeschlossen, weil derselbe Persistenzpfad einmal deterministisch gegen die gemockte REST-Quelle ausgefuehrt wird.
-- Der E2E prueft: drei gueltige Zeilen, Buttonklick, sichtbaren Erfolg, 3 neue Eintraege, Journalanzeige, Reload, Zweitimport mit 0 neu / 3 uebersprungen und weiterhin genau drei Cloudzeilen.
+- `npm audit`: 0 Schwachstellen.
+- Unit/Integration: 29 Dateien, 170/170 bestanden.
+- Build: bestanden; nur bestehender Chunk-Groessenhinweis.
+- Encoding, RLS, Security, Bundle, A11y und Beta: bestanden.
+- Rollen-E2E: 9 bestanden, 1 vorgesehener mobiler Multi-Device-Skip.
+- iPad-Race-Regression: 6/6 Wiederholungen bestanden.
+- Gesamte E2E-Suite: 50 bestanden, 32 vorgesehene projekt-/viewportabhaengige Skips, 0 Fehler.
+
+## Offene Punkte
+
+- Leaked Password Protection: Plan/Alternative entscheiden.
+- Mindestpasswortregeln, Secure Password Change, CAPTCHA, MFA und Session-Limits verbindlich festlegen.
+- Polar vor Vollfreigabe real mit einem DEV-Providerkonto testen oder Beta deaktiviert lassen.
+- Bei erstem Storage-Bucket Upload-Policies und Kontoloeschung erneut pruefen.
+- Betreiberangaben, Rechtsgrundlagen, Aufbewahrung und Minderjaehrigen-Konzept rechtlich/fachlich abschliessen.
 
 ## Commit / Push
 
-- Implementierungscommit: `7db2e20` (`Fix training session import submission`).
-- Pushstatus: folgt nach Handoff-Commit.
-
-## Offene Punkte / manueller Nachtest
-
-- Nach DEV-Deploy dieselbe fiktive Drei-Zeilen-Datei auf iPhone, iPad und PC importieren.
-- Pruefen: sofort sichtbarer Fortschritt, Importbericht, drei Journalzeilen, Reload und Zweitimport mit drei uebersprungenen Zeilen.
-- Zweitgeraet-Sichtbarkeit mit demselben DEV-Konto real bestaetigen.
-- Keine bekannten technischen Restfehler im Submit-Pfad; echter Multi-Geraet-Test bleibt ein manueller Release-Schritt.
+- Commit: wird nach finaler Statuspruefung eingetragen.
+- Pushstatus: ausstehend.
 
 ## Grenzen bestaetigt
 
-- Nur Branch `develop` verwendet.
-- Supabase DEV Ziel bleibt `nlllqsfdhfiwticrcrnp`.
+- Nur Branch `develop`.
+- Nur Supabase DEV `nlllqsfdhfiwticrcrnp`.
 - `main` unveraendert.
 - Production Supabase `twlkhfbrrwjwppxinmpn` unveraendert.
-- Keine Nutzdaten geloescht oder zurueckgesetzt.
+- Keine bestehenden Nutzdaten geloescht.

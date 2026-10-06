@@ -198,9 +198,9 @@ export function PolarIntegrationView({ data, user, sessionAccessToken, onDataCha
     <section className="polar-view stack">
       <header className="polar-hero">
         <div>
-          <p className="eyebrow">Polar AccessLink</p>
+          <p className="eyebrow">Polar AccessLink · Beta</p>
           <h3>Polar Flow verbinden</h3>
-          <p>Trainings, Herzfrequenz, GPS und Belastung sicher in Paddlio synchronisieren.</p>
+          <p>Beta-Integration in technischer Prüfung. Die öffentliche Freigabe folgt nach bestandenem OAuth-Praxistest.</p>
         </div>
         <div className={`polar-status ${connected ? "connected" : "disconnected"}`}>
           <strong>{connected ? "Verbunden" : "Nicht verbunden"}</strong>
@@ -216,7 +216,7 @@ export function PolarIntegrationView({ data, user, sessionAccessToken, onDataCha
       ) : null}
 
       <div className="polar-actions">
-        <button className="primary-action" type="button" onClick={() => void connect()} disabled={loading || connected || !sessionAccessToken}>
+        <button className="primary-action" type="button" onClick={() => void connect()} disabled={loading || connected || !sessionAccessToken || !envReady}>
           Polar verbinden
         </button>
         <button className="secondary-button" type="button" onClick={() => void sync()} disabled={loading || !connected || !sessionAccessToken}>

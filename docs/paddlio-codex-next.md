@@ -2,13 +2,14 @@
 
 Status: DONE
 
-Auftragsbasis: Paddlio 5.0 Trainingseinheiten-Import-Button ohne Funktion.
+Auftragsbasis: Paddlio 5.0 Schritt 3A - Security Release Hardening.
 
 Ergebnis:
-- Der Submit-Pfad reagiert jetzt immer sichtbar mit Fortschritt, Erfolg, Teilerfolg oder Fehler.
-- Kerndaten-Persistenz und optionales Importprotokoll sind fachlich getrennt.
-- Drei Trainingseinheiten erscheinen nach dem Buttonklick im Journal und bleiben nach Reload vorhanden.
-- Derselbe Import erzeugt dank stabiler Import-ID keine Duplikate.
-- Unit-, Build-, Beta- und relevanter Browser-E2E-Test sind gruen.
+- Security Advisor von 52 auf 22 Warnungen reduziert.
+- Definer-Ausfuehrungsrechte und mutable search paths gehaertet.
+- Datenschutzexport und Kontoloeschung real auf DEV regressionsgeprueft.
+- Reale DEV-Header und Auth-Konfiguration dokumentiert.
+- Unfertige Dateianhang-UI entfernt; Polar als Beta abgesichert.
+- Abhaengigkeits-Audit ohne bekannte Schwachstellen.
 
 Naechster Auftrag erst wieder mit `Status: READY`.

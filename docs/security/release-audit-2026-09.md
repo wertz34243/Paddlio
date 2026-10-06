@@ -1,72 +1,103 @@
-# Paddlio Security- und Datenschutz-Audit
+# Paddlio 5.0 Security- und Datenschutz-Audit
 
-Stand: 26.09.2026
+Stand: 06.10.2026
 
-Dieses Dokument ist eine technische Bestandsaufnahme und kein rechtsanwaltlich geprüfter Rechtstext.
+Dieses Dokument ist eine technische Bestandsaufnahme und kein rechtsanwaltlich gepruefter Rechtstext.
 
-## Ergebnis
+## Freigabeempfehlung
 
-Der Client enthält keine eingecheckten geheimen Schlüssel. Der Supabase-Anon-Key ist als öffentlicher Client-Schlüssel vorgesehen; `service_role`, Polar-Client-Secret und Token-Verschlüsselung bleiben ausschließlich in serverseitigen Vercel-Umgebungsvariablen. Eine frühere clientseitige Rollenhoch stufung anhand bestimmter E-Mail-Adressen beziehungsweise editierbarer Auth-Metadaten wurde entfernt. Rollen aus `public.profiles.roles` und Supabase-RLS sind die Berechtigungsquelle.
+**Technischer Stand: TECHNICALLY READY mit manuellen Auth-Aufgaben.** Die automatisierten Sicherheits-, RLS-, Rollen-, Datenschutz- und Header-Pruefungen sind bestanden. Der offizielle oeffentliche Release bleibt **BLOCKED**, bis die unten genannten Auth-Entscheidungen und rechtlichen Betreiberangaben abgeschlossen sind.
 
-Vercel liefert CSP, MIME-Schutz, Referrer-Policy, Permissions-Policy, Frame-Schutz und HSTS aus. Diese Header wurden am realen DEV-HTTPS-Endpunkt kontrolliert. Polar-API-Endpunkte geben bei internen Fehlern nur stabile öffentliche Fehlercodes zurück; technische Details bleiben in Server-Logs.
+## Security Advisor
 
-`npm audit` meldet nach kompatiblen Patch-/Minor-Aktualisierungen 0 bekannte Schwachstellen. Es wurden keine erzwungenen Major-Upgrades ausgeführt.
+Der Supabase DEV Security Advisor wurde fuer `nlllqsfdhfiwticrcrnp` vor und nach der Haertung ausgelesen.
 
-## Verarbeitete Daten
+| Zustand | Warnungen | Details |
+|---|---:|---|
+| Vorher | 52 | 24 anon-ausfuehrbare Definer, 25 authenticated-ausfuehrbare Definer, 2 mutable `search_path`, 1 Leaked-Password-Schutz |
+| Nachher | 22 | 21 bewusst fuer RLS/RPC benoetigte authenticated-Definer, 1 Leaked-Password-Schutz |
+| Behoben | 30 | anon EXECUTE entzogen, Triggerfunktionen fuer authenticated gesperrt, 2 `search_path` gehaertet |
 
-| Kategorie | Beispiele | Speicherorte/Zweck |
-|---|---|---|
-| Konto | E-Mail, Auth-ID, Session | Supabase Auth; Anmeldung und Session |
-| Profil | Name, Geburtsdatum, Geschlecht, Körpermaße, Profilbild, Verein, Bootsklasse, Ziele, Notizen | `profiles`, lokaler accountbezogener Cache |
-| Training | Pläne, Vorlagen, Durchführung, Intensität, Zeiten, Feedback, Journal | fachliche Supabase-Tabellen und Offline-Cache |
-| Organisation | Verein, Gruppen, Mitgliedschaften, Rollen, Aufgaben, Anwesenheit | Supabase mit RLS |
-| Kommunikation | Direkt-, Gruppen- und Vereinsnachrichten, Benachrichtigungen, Anhänge | Supabase mit rollenbezogenem Zugriff |
-| Wettkampf | Meldungen, Ergebnisse, Bestzeiten, Notizen | Supabase und lokaler Cache |
-| Material/Akademie | Boote, Paddel, Materialdaten, Lernfortschritt, Favoriten | Supabase und lokaler Cache |
-| Externe Trainingsdaten | Polar-Verbindung, verschlüsselte Provider-Tokens, importierte Einheiten | Tokens nur serverseitig verschlüsselt; Trainingsdaten in Supabase |
-| Technik | Offline-Queue, Sync-Zeitpunkte, Build-/Fehlerdiagnose | accountbezogener Browser-Speicher und DEV-/Server-Logs |
+Alle bekannten `SECURITY DEFINER`-Helfer sind fuer `anon` und `public` nicht mehr direkt ausfuehrbar. Triggerfunktionen sind zusaetzlich fuer `authenticated` gesperrt. Die verbleibenden authenticated-Rechte werden von RLS-Policies oder dem bewusst exponierten Kontaktverzeichnis-RPC benoetigt:
 
-Im Client wurde kein Marketing-Tracking, Werbe-Cookie oder Analytics-SDK gefunden. Funktionaler `localStorage` speichert accountbezogene Offline-Daten, Sync-Queue, ID-Zuordnungen und UI-Einstellungen. `sessionStorage` hält kurzlebige Recovery-/Confirmation- und Polar-Rückkehrzustände. Supabase verwaltet seine notwendige Auth-Session. Sensible fachliche Daten liegen dadurch unverschlüsselt im Browserspeicher des Geräts; Logout entfernt den aktuellen Profildaten-Cache, während unsynchronisierte accountbezogene Queue-Daten aus Gründen der Datenintegrität isoliert erhalten bleiben.
+- Kern/Rollen: `current_user_club_id`, `current_user_is_admin`, `current_user_is_club_manager`, `has_role`, `is_admin`.
+- Training: `paddlio_can_author_trainer_feedback_0041`, `paddlio_can_read_training_feedback_0024`, `paddlio_can_read_training_item_0024`, `paddlio_can_write_training_feedback_0024`, `paddlio_can_write_training_item_0024`.
+- Club/Gruppe/Admin: `paddlio_can_manage_club_415`, `paddlio_can_manage_group_415`, `paddlio_is_admin_414`, `paddlio_is_admin_415`, `paddlio_is_admin_profile_sync_415`, `paddlio_user_has_club_role_0024`, `paddlio_user_has_club_role_0031`.
+- Academy: `paddlio_can_read_academy_course_0031`, `paddlio_can_read_academy_lesson_0031`, `paddlio_is_admin_0031`.
+- Legitimer Client-RPC: `paddlio_visible_contact_profiles_20261002`.
 
-## Eingaben, Uploads und Ausgaben
+Ein spaeterer Umbau dieser Policy-Helfer in ein nicht exponiertes Schema waere Defense-in-Depth, ist aber keine sichere kurzfristige Rechteaenderung. Die Migration `20261006154000_security_release_hardening.sql` aendert keine RLS-Fachregel.
 
-- React rendert Nutzereingaben standardmäßig escaped; es wurde keine produktive Verwendung von `dangerouslySetInnerHTML`, `innerHTML` oder `document.write` gefunden.
-- Profilbilder sind auf JPEG, PNG oder WebP und 2 MB begrenzt. SVG wird wegen aktivem Inhalt nicht akzeptiert.
-- CSV/XLS/XLSX-Import ist auf 25 MB sowie bekannte Dateitypen begrenzt. Tabellenexport schützt Werte mit `=`, `+`, `-` oder `@` gegen Formula Injection.
-- Externe Polar-Zugriffe verwenden serverseitige Secrets, Bearer-Validierung, kurzlebigen OAuth-State und verschlüsselte Provider-Tokens.
-- Vollständige UUIDs/E-Mails sollen nur in notwendigen Fachansichten erscheinen, nicht in normaler technischer Fehlerausgabe.
+## Auth-Konfiguration DEV
 
-## Rollen und RLS
+Real im DEV-Dashboard verifiziert:
 
-Die UI trennt Athlete, Coach, TeamAdmin, ClubAdmin und Admin. Client-Gates dienen nur der Bedienoberfläche; Datenzugriff wird durch Supabase-RLS abgesichert. Der statische RLS-Check, der reale DEV-DB-Lint und die Rollen-E2E-Matrix sind gruen. Die verbleibenden Security-Advisor-Warnungen sind unten dokumentiert und muessen vor dem offiziellen Release gezielt gehaertet werden.
+- Site URL: `https://dev.paddlio.de`
+- Redirect-Allowlist: `https://dev.paddlio.de/**`
+- E-Mail/Passwort und Registrierung aktiv; E-Mail-Bestaetigung aktiv.
+- Anonymous Sign-in und manuelles Account-Linking deaktiviert.
+- Secure Email Change aktiv.
+- Access Token 3600 Sekunden; Refresh-Token-Reuse-Erkennung aktiv, Intervall 10 Sekunden.
+- OTP-Ablauf 3600 Sekunden, OTP-Laenge 8.
+- Leaked Password Protection deaktiviert und im aktuellen Free-Plan nicht verfuegbar.
+- CAPTCHA deaktiviert; MFA, Passwortkomplexitaet, Secure Password Change und Session-Limits benoetigen eine dokumentierte Betreiberentscheidung.
 
-## Datenschutzfunktionen
+Rollen werden nicht aus editierbaren Client-Metadaten vergeben. Berechtigungsquelle bleiben `public.profiles.roles`, aktiver Profilstatus und RLS.
 
-- Eigene Profildaten können berichtigt werden.
-- Logout löscht Session und aktuellen lokalen Profildaten-Cache.
-- Fachliche CSV-/XLSX-Exporte bleiben vorhanden. Zusaetzlich ist ein eigener JSON-Auskunftsexport ueber die authentifizierte Edge Function `account-privacy` vorbereitet; Abfragen sind explizit auf die verifizierte Nutzer-ID begrenzt und Provider-Tokens werden nicht exportiert.
-- Technische Datenschutz-/Impressumsbereiche sind öffentlich bei Registrierung und intern in Einstellungen vorbereitet.
-- Eine serverseitige Konto-/Datenloeschung ist als authentifizierte Edge Function implementiert. Der Service-Role-Key bleibt ausschliesslich im Function Runtime Secret; der Client verlangt eine explizite Bestaetigungsphrase und sendet die aktuelle Account-ID als zusaetzliche Verwechslungssperre.
-- Die Function ist auf Supabase DEV deployed und mit einem entbehrlichen DEV-Testkonto Ende-zu-Ende verifiziert. Gemeinsame Kommunikationsdaten folgen weiterhin der noch freizugebenden Betreiber-Aufbewahrungsregel. DEV hat aktuell keine Storage-Buckets.
+## Web-Security
 
-## Manuelle Release-Blocker
+Die tatsaechlichen HTTP-Responses von `dev.paddlio.de` wurden geprueft:
 
-1. Verantwortlichen, ladungsfähige Anschrift, Kontakt und gegebenenfalls Datenschutzkontakt festlegen und in Impressum/Datenschutzerklärung eintragen.
-2. Rechtsgrundlagen, Empfänger/Auftragsverarbeiter, Drittlandtransfer, Aufbewahrungs- und Löschfristen rechtlich prüfen lassen.
-3. Aufbewahrung gemeinsamer Kommunikationsdaten und die kuenftige Storage-Loeschung fachlich freigeben; der aktuelle DEV-Stand hat keine Storage-Buckets.
-4. Für minderjährige Athleten Alterskonzept, Einwilligung/Sorgeberechtigte, Sichtbarkeit und Aufbewahrung fachlich und rechtlich entscheiden.
-5. Supabase Auth-E-Mail-Templates, Redirect-Allowlist, Passwortregeln, MFA-Entscheidung, Rate Limits, Storage-Buckets und Security Advisor im DEV-Dashboard anhand `manual-dev-security-check.md` prüfen.
-6. CSP-Verstoesse in den relevanten Browserablaeufen kontrollieren; die ausgelieferten Header selbst sind real verifiziert.
-7. Polar-Auftragsverarbeitung, Scopes, Widerruf/Disconnect und Löschung importierter Daten dokumentieren.
+- HTTPS liefert 200; HTTP leitet mit 308 auf HTTPS um.
+- CSP ist aktiv; in den geprueften Browserablaeufen wurden keine CSP-Verstoesse gefunden.
+- HSTS: `max-age=31536000; includeSubDomains`.
+- `X-Content-Type-Options: nosniff`.
+- Frame-Schutz durch `frame-ancestors 'none'` und `X-Frame-Options: DENY`.
+- `Referrer-Policy: strict-origin-when-cross-origin`.
+- Permissions Policy sperrt Kamera, Mikrofon, Geolocation, Payment und USB.
 
-## DEV-Verifikation vom 26.09.2026
+## Datenschutz und Eingaben
 
-- `account-privacy` Version 7 wurde mit aktiver JWT-Pruefung ausschliesslich auf Supabase DEV `nlllqsfdhfiwticrcrnp` deployed.
-- Export wurde real als Admin, Coach und Athlete getestet. Die Antworten waren gueltiges JSON, kontobezogen, ohne Provider-/Service-Secrets und ohne unmaskierte fremde Identitaeten.
-- Ein nicht authentifizierter Aufruf wurde mit HTTP 401 abgelehnt. `dev.paddlio.de` bestand den CORS-Preflight; eine authentifizierte fremde Origin wurde mit HTTP 403 abgelehnt.
-- Die Loeschung wurde mit einem eigens erzeugten entbehrlichen DEV-Testkonto Ende-zu-Ende bestaetigt. Falsche Phrase wurde abgelehnt; Auth-Konto, Profil und markierte eigene Testdaten wurden entfernt, fremde Profile und Clubs blieben unveraendert, erneuter Login schlug fehl.
-- DEV-Storage enthaelt aktuell 0 Buckets. Es gab deshalb keine Storage-Objekte zu loeschen; bei spaeter eingefuehrten Buckets ist die Function zu erweitern.
-- Ausgelieferte DEV-Header wurden real bestaetigt: HTTPS/HTTP-Redirect, CSP, HSTS, MIME-, Frame-, Referrer- und Permissions-Schutz.
-- Supabase DB-Lint meldet keine Schemafehler. Der Security Advisor meldet noch 51 Warnungen: 48 zu direkt aufrufbaren `SECURITY DEFINER`-Hilfsfunktionen, 2 zu mutablem `search_path` und 1 zur deaktivierten Leaked-Password-Protection.
+- Keine geheimen Service-Role-, Polar- oder Provider-Schluessel wurden im Client gefunden. Der Supabase-Anon-Key ist ein vorgesehener oeffentlicher Client-Key.
+- React escaped Nutzereingaben; keine produktive unsichere HTML-Ausgabe wurde gefunden.
+- CSV/XLS/XLSX-Import ist begrenzt und Export schuetzt gegen Spreadsheet-Formula-Injection.
+- Eigene Profildaten koennen berichtigt werden; Logout, JSON-Auskunftsexport und serverseitige Kontoloeschung sind vorhanden.
+- Der reale DEV-Auskunftsexport war kontobezogen, gueltiges JSON, maskierte Fremdidentitaeten und enthielt keine Provider-Secrets.
+- Nicht authentifizierter Export wurde mit 401 abgelehnt; falsche Loeschphrase und fremde Origin wurden abgelehnt.
+- Ein eigens erstelltes entbehrliches DEV-Testkonto wurde erfolgreich geloescht. Eigene Testdaten verschwanden, fremde Profile und Clubs blieben unveraendert, erneuter Login wurde abgelehnt.
+- DEV hat aktuell keine Storage-Buckets. Eine reale Storage-Loeschung war deshalb nicht testbar; bei Einfuehrung des ersten Buckets muss der Loeschpfad erweitert und erneut geprueft werden.
 
-Der vollstaendige manuelle DEV-Nutzertest kann beginnen. Fuer einen offiziellen oeffentlichen Release bleiben die Security-Advisor-Haertung, Auth-Dashboard-Pruefung, Betreiberangaben und rechtlich/fachlich freigegebenen Aufbewahrungsregeln offen.
+## Noch nicht freigegebene Features
+
+- Das technische Metadatenformular fuer Dateianhaenge ist fuer normale Nutzer entfernt. Ein echter Upload wird erst mit Storage und Policies in 5.1 freigegeben.
+- Polar ist sichtbar als Beta gekennzeichnet. Ohne vollstaendige Serverkonfiguration ist der Verbindungsbutton deaktiviert. Der reale OAuth-Ende-zu-Ende-Test bleibt vor einer Vollfreigabe erforderlich.
+
+## Abhaengigkeiten und Tests
+
+`source-map-js` wurde ohne Major-/Force-Upgrade von 1.2.1 auf 1.2.2 aktualisiert. `npm audit` meldet 0 bekannte Schwachstellen.
+
+- Unit/Integration: 170/170 bestanden.
+- Build: bestanden; bestehender Hinweis auf grossen Bundle-Chunk.
+- Encoding, RLS, Security, Bundle, A11y und Beta: bestanden.
+- Rollen-E2E: 9 bestanden, 1 vorgesehener mobiler Multi-Device-Skip.
+- Ein vorhandener iPad-Screenshot-Test traf einen React-DOM-Replacement-Race. Der Test wurde zustandsbasiert gehaertet und bestand danach dreimal in Folge. Der abschliessende Gesamtlauf bestand mit 50 Tests und 32 vorgesehenen projekt-/viewportabhaengigen Skips.
+
+## Manuelle technische Aufgaben vor oeffentlichem Release
+
+1. Supabase-Plan/Alternative fuer Leaked Password Protection entscheiden und aktivieren, sobald verfuegbar.
+2. Mindestlaenge und Komplexitaet der Passwoerter verbindlich festlegen; Secure Password Change, CAPTCHA, MFA und Session-Limits entscheiden.
+3. Polar-OAuth mit realem DEV-Providerkonto Ende-zu-Ende testen oder Beta fuer den oeffentlichen Release deaktiviert lassen.
+4. Bei Einfuehrung von Storage private Buckets, Policies, Signed URLs und Kontoloeschung erneut testen.
+
+## Rechtliche Blocker
+
+1. Verantwortlichen, ladungsfaehige Anschrift, Kontakt und gegebenenfalls Datenschutzkontakt einsetzen.
+2. Rechtsgrundlagen, Auftragsverarbeiter, Drittlandtransfer, Aufbewahrungs- und Loeschfristen rechtlich pruefen lassen.
+3. Minderjaehrigen-Konzept, Einwilligung/Sorgeberechtigte, Sichtbarkeit und Aufbewahrung fachlich und rechtlich entscheiden.
+4. Kommunikations-, Vereins- und spaetere Storage-Aufbewahrung verbindlich festlegen.
+
+## Grenzen
+
+- Migration und Cloud-Tests liefen ausschliesslich gegen Supabase DEV `nlllqsfdhfiwticrcrnp`.
+- `main` und Production Supabase `twlkhfbrrwjwppxinmpn` wurden nicht veraendert.
+- Bestehende Nutzdaten wurden nicht geloescht; der Loeschtest verwendete ausschliesslich ein eigens angelegtes DEV-Testkonto.

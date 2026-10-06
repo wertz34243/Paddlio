@@ -1,96 +1,69 @@
 # Paddlio DEV Security Verification
 
-Stand: 26.09.2026
+Stand: 06.10.2026
 
-Diese Checkliste gilt ausschliesslich fuer Supabase DEV `nlllqsfdhfiwticrcrnp` und `https://dev.paddlio.de`. Production `twlkhfbrrwjwppxinmpn` bleibt unangetastet. Keine Schluessel oder personenbezogenen Testdaten in Screenshots oder Tickets aufnehmen.
+Gilt ausschliesslich fuer Supabase DEV `nlllqsfdhfiwticrcrnp` und `https://dev.paddlio.de`.
 
-## Hosting und Browser
+## Verifiziert
 
-- [ ] `https://dev.paddlio.de` ist ohne Zertifikatswarnung erreichbar; HTTP wird auf HTTPS umgeleitet.
-- [ ] `curl -I https://dev.paddlio.de` oder Browser-Netzwerkanalyse zeigt `Strict-Transport-Security: max-age=31536000; includeSubDomains`.
-- [ ] `Content-Security-Policy` entspricht `vercel.json`; Browserkonsole zeigt bei Login, Kalender, Dateiimport und Polar keine erforderlichen blockierten Quellen.
-- [ ] `frame-ancestors 'none'` und `X-Frame-Options: DENY` verhindern Einbettung in fremde Frames.
-- [ ] `X-Content-Type-Options: nosniff` ist vorhanden.
-- [ ] `Referrer-Policy: strict-origin-when-cross-origin` ist vorhanden.
-- [ ] `Permissions-Policy` deaktiviert Kamera, Mikrofon, Geolocation, Payment und USB, solange Paddlio diese Funktionen nicht bewusst nutzt.
-- [ ] Vercel-Projekt verweist beim DEV-Deployment auf Branch `develop`; keine Production-Domain wurde umgehangen.
+- [x] Zielprojekt vor Migration/Deploy: `nlllqsfdhfiwticrcrnp`.
+- [x] HTTPS 200 und HTTP-zu-HTTPS 308.
+- [x] CSP, HSTS, Frame-, MIME-, Referrer- und Permissions-Schutz in echten DEV-Responses.
+- [x] Keine CSP-Verstoesse in den geprueften Browserablaeufen.
+- [x] Site URL `https://dev.paddlio.de` und Redirect-Allowlist `https://dev.paddlio.de/**`.
+- [x] E-Mail-Bestaetigung aktiv; Confirmation- und Recovery-Flows bleiben getrennt.
+- [x] Anonymous Sign-in und manuelles Account-Linking deaktiviert.
+- [x] RLS- und Rollenchecks fuer Athlete, Coach, ClubAdmin und Admin bestanden.
+- [x] Security Advisor: 52 auf 22 Warnungen reduziert; 30 Findings beseitigt.
+- [x] `anon`/`public` EXECUTE fuer Definer-Helfer entzogen; Triggerfunktionen nicht durch authenticated aufrufbar.
+- [x] `set_updated_at` und `default_roles_for_email` mit festem leerem `search_path`.
+- [x] PostgREST-Schema-Reload nach Migration.
+- [x] `account-privacy` auf DEV deployed; ohne JWT 401.
+- [x] Eigener JSON-Export gueltig, kontobezogen, Fremdidentitaeten maskiert, keine Provider-Secrets.
+- [x] Falsche Loeschphrase abgelehnt.
+- [x] Entbehrliches DEV-Testkonto geloescht; fremde Profile/Clubs unveraendert, Login danach abgelehnt.
+- [x] Storage inventarisiert: aktuell 0 Buckets.
+- [x] Dateianhang-Metadatenformular fuer normale Nutzer entfernt.
+- [x] Polar als Beta markiert und ohne Serverkonfiguration deaktiviert.
+- [x] `npm audit`: 0 bekannte Schwachstellen.
 
-## Supabase Auth
+## Auth-Sollzustand und offene Entscheidungen
 
-- [ ] Dashboard-Projekt oben zeigt vor jeder Kontrolle `nlllqsfdhfiwticrcrnp`.
-- [ ] Site URL und Redirect-Allowlist enthalten `https://dev.paddlio.de`; keine sichtbare localhost-/Vercel-Rueckleitung im Nutzerfluss.
-- [ ] Signup verlangt E-Mail-Bestaetigung; der Link fuehrt zur Loginseite, nicht automatisch zu Heute.
-- [ ] Password Recovery fuehrt zur Passwortseite und bleibt vom Confirmation-Flow getrennt.
-- [ ] Passwortregeln, Rate Limits, Bot-/CAPTCHA-Entscheidung und optional MFA sind fuer den Release dokumentiert.
-- [ ] Test mit Admin, Coach und Athlete: Login, Session Restore, Logout und Accountwechsel ohne Cache-/Queue-Leak.
+- [x] Registrierung und E-Mail-Verifikation aktiv.
+- [x] OTP: 3600 Sekunden, 8 Zeichen.
+- [x] Access Token: 3600 Sekunden; Refresh-Reuse-Erkennung aktiv (10 Sekunden).
+- [ ] Leaked Password Protection: im aktuellen Free-Plan nicht verfuegbar. Plan/Alternative vor oeffentlichem Release entscheiden.
+- [ ] Mindestpasswortlaenge und Komplexitaetsoption verbindlich dokumentieren.
+- [ ] Secure Password Change / Require Current Password fachlich entscheiden.
+- [ ] CAPTCHA fuer Signup/Login anhand Missbrauchsrisiko entscheiden.
+- [ ] MFA-Strategie mindestens fuer privilegierte Rollen entscheiden.
+- [ ] Single-Session-, Time-box- und Inactivity-Limits entscheiden; im Free-Plan teilweise nicht verfuegbar.
 
-## RLS und Datenbank
+## Verbleibende Advisor-Warnungen
 
-- [ ] Security Advisor im DEV-Dashboard ausfuehren und Findings dokumentieren.
-- [ ] Alle Tabellen im exponierten `public`-Schema haben RLS aktiviert.
-- [ ] Admin/Coach/Athlete lesen, schreiben und loeschen nur fachlich erlaubte Zeilen; fremde Club-/Athletendaten bleiben gesperrt.
-- [ ] Keine Policy autorisiert ueber `raw_user_meta_data` oder nur ueber `TO authenticated` ohne Zeilenpruefung.
-- [ ] Security-Definer-Funktionen haben festen `search_path`, interne Identitaetspruefung und eingeschraenkte EXECUTE-Rechte.
-- [ ] PostgREST-Schema-Cache und Realtime-Publication entsprechen dem aktuellen DEV-Migrationsstand.
+21 authenticated-Definer-Warnungen bleiben bewusst bestehen, weil die Funktionen von RLS-Policies oder als kontrollierter Kontakt-RPC benoetigt werden. Vor einem spaeteren Entzug muss zuerst auf ein nicht exponiertes Policy-Helper-Schema migriert werden. Die Leaked-Password-Warnung bleibt bis zur Plan-/Produktentscheidung bestehen.
 
-## Storage und Uploads
+## Vor dem ersten Storage-Release
 
-- [ ] Storage-Buckets inventarisieren; jeder Bucket ist bewusst public oder private dokumentiert.
-- [ ] Private Anhaenge sind nur ueber kurzlebige Signed URLs erreichbar.
-- [ ] Storage-Policies verhindern Lesen/Schreiben fremder Nutzer und Vereine.
-- [ ] Profilbild- und Dateiuploads pruefen: erlaubter MIME-Typ, Groessenlimit, kein SVG/HTML als aktiver Inhalt.
-- [ ] Kontoloeschung entfernt zugehoerige private Storage-Objekte gemaess finaler Aufbewahrungsregel.
+- [ ] Private Bucket-Entscheidung und Policies.
+- [ ] MIME-/Groessenpruefung serverseitig.
+- [ ] Kurzlebige Signed URLs.
+- [ ] Kontoloeschung entfernt eigene private Objekte.
+- [ ] Fremdzugriff mit Athlete/Coach/Admin negativ testen.
 
-## Edge Function `account-privacy`
+## Polar vor Vollfreigabe
 
-- [ ] Supabase CLI zeigt vor Deploy eindeutig DEV: `nlllqsfdhfiwticrcrnp`.
-- [ ] `supabase functions deploy account-privacy --project-ref nlllqsfdhfiwticrcrnp` ohne `--no-verify-jwt` ausfuehren.
-- [ ] `PADDLIO_ALLOWED_ORIGINS=https://dev.paddlio.de` als Function Secret setzen.
-- [ ] Kein Service-Role-Key in Vite-/Browser-Variablen; er bleibt nur im Function Runtime Secret.
-- [ ] Export als Athlete, Coach und Admin: Antwort enthaelt nur Datensaetze mit Bezug zum eigenen Konto und maskiert fremde Identitaets-IDs.
-- [ ] Export ohne JWT, mit fremdem Origin und mit abgelaufener Session wird abgelehnt.
-- [ ] Loeschtest nur mit einem neu angelegten DEV-Testkonto: falsche Phrase abgelehnt, richtige Phrase loescht Auth-Konto und eigene Daten.
-- [ ] Nach Loeschtest sind Login, Profil, personenbezogene Tabellen und private Storage-Objekte kontrolliert; gemeinsame Club-Inhalte folgen der freigegebenen Aufbewahrungsregel.
-- [ ] Function-Logs enthalten Fehlercodes/Tabellen, aber keine Tokens, E-Mails oder vollstaendigen Nutzdaten.
+- [ ] Reales DEV-OAuth mit Providerkonto.
+- [ ] Token-Refresh, Disconnect und Widerruf.
+- [ ] Scopes, lokale Zeit/UTC, Deduplizierung und Loeschung importierter Daten.
+- [ ] Bis dahin Beta-Hinweis beziehungsweise deaktivierte Verbindung beibehalten.
 
-## CORS und Origins
+## Rechtliches
 
-- [ ] Edge Function akzeptiert `https://dev.paddlio.de` und lehnt nicht erlaubte Origins ab.
-- [ ] Supabase API-/Auth-Konfiguration und Polar-Endpunkte erlauben nur die benoetigten DEV-Origins.
-- [ ] Preflight (`OPTIONS`) fuer den Account-Export ist erfolgreich; Credentials/JWT werden nicht an fremde Origins freigegeben.
+- [ ] Betreiberangaben in Impressum und Datenschutz einsetzen; nichts erfinden.
+- [ ] Rechtsgrundlagen, Auftragsverarbeiter, Transfer, Aufbewahrung und Loeschfristen pruefen.
+- [ ] Minderjaehrigen-Konzept festlegen. Technische Einfuegepunkte sind Registerformular, serverseitig geschuetzte Consent-Daten, RLS und Datenschutzexport/-loeschung.
 
-## Minderjaehrige: technische Vorbereitung
+## Protokollregel
 
-Noch keine Altersgrenze oder Form der Elternzustimmung festlegen. Vor Umsetzung muss der Betreiber die rechtliche und fachliche Regel definieren.
-
-- Registrierung: vorgesehener Einfuegepunkt ist `AuthView`/`RegisterInput`; dort koennen spaeter Geburts-/Altersgruppe und erforderliche Einwilligungsart abgefragt werden.
-- Auth-Metadaten: Einwilligung nicht als Berechtigungsquelle in editierbare `user_metadata` legen. Nach Entscheidung eigene serverseitig geschuetzte Profil-/Consent-Felder mit Zeitstempel, Version und Nachweis verwenden.
-- Zugriff: `AuthProvider`, RLS-Helper und Rollenmodell muessen einen eventuell eingeschraenkten Status serverseitig erzwingen; UI-Verstecken reicht nicht.
-- Coach/Verein: Einladungs- und Zuordnungsfluesse muessen geklaerte Sorgeberechtigten- und Sichtbarkeitsregeln beruecksichtigen.
-- Datenschutz: Export, Berichtigung und Loeschung muessen Consent-Nachweise und besondere Aufbewahrungsregeln korrekt behandeln.
-- Kommunikation/Uploads: Direktnachrichten, Dateien, Anwesenheit und Trainerfeedback benoetigen eine fachlich festgelegte Sichtbarkeits- und Moderationsregel.
-- Audit: Einwilligungsfassung, Zeitpunkt, Widerruf und handelnde Person muessen manipulationsgeschuetzt nachvollziehbar sein, sobald das Konzept beschlossen ist.
-
-## Manuelles Ergebnisprotokoll
-
-Fuer jeden Punkt Datum, pruefende Person, DEV-Build-Commit, Ergebnis und Link zu einem datensparsamen Nachweis festhalten. Ein nicht gepruefter Punkt gilt nicht als bestanden.
-
-## Verifiziert am 26.09.2026
-
-- [x] Zielprojekt vor Deploy: `nlllqsfdhfiwticrcrnp`; Production war nicht verknuepft.
-- [x] Edge Function `account-privacy` Version 7 aktiv, JWT-Pruefung aktiv, erlaubte Origin als DEV-Secret gesetzt.
-- [x] Export mit Admin, Coach und Athlete real bestanden; Fremdidentitaeten maskiert, keine Polar-/Service-Secrets.
-- [x] Ohne JWT HTTP 401; falsche Loeschphrase abgelehnt; fremde authentifizierte Origin HTTP 403.
-- [x] Entbehrliches DEV-Testkonto mit richtiger Phrase geloescht; eigene markierte Daten entfernt, fremde Profile/Clubs unveraendert, Login danach abgelehnt.
-- [x] Storage inventarisiert: 0 Buckets. Aktuell kein Objekt-Loeschtest moeglich oder erforderlich; bei erstem Bucket erneut pruefen.
-- [x] HTTPS und HTTP-Redirect real verifiziert.
-- [x] CSP, HSTS, Frame-, MIME-, Referrer- und Permissions-Header real in der DEV-Response verifiziert.
-- [x] DB-Lint ohne Schemafehler.
-- [x] Security Advisor ausgefuehrt: 51 offene Warnungen dokumentiert.
-
-## Noch manuell im DEV-Dashboard
-
-- [ ] Auth Site URL und Redirect-Allowlist gegen `https://dev.paddlio.de` protokollieren.
-- [ ] Leaked-Password-Protection aktivieren; Passwortregeln, Rate Limits und MFA-Entscheidung dokumentieren.
-- [ ] Die 48 `SECURITY DEFINER`-EXECUTE-Warnungen funktionsweise pruefen, bevor Rechte entzogen werden; mehrere Helper werden von RLS-Policies benoetigt.
-- [ ] `search_path` fuer `public.set_updated_at` und `public.default_roles_for_email` in einer additiven DEV-Migration fixieren.
+Jeden manuellen Punkt mit Datum, pruefender Person, DEV-Build-Commit und datensparsamem Nachweis dokumentieren. Nicht gepruefte Punkte gelten nicht als bestanden.

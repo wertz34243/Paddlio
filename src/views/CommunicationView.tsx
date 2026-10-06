@@ -10,7 +10,6 @@ import type {
   ClubPostPriority,
   ClubPostTargetType,
   DirectMessage,
-  FileAttachment,
   GroupMessage,
   PaddleMotionData,
   TeamTask,
@@ -27,7 +26,6 @@ import {
   deleteCloudTrainingAttendance,
   upsertCloudClubPost,
   upsertCloudDirectMessage,
-  upsertCloudFileAttachment,
   upsertCloudGroupMessage,
   upsertCloudTask,
   upsertCloudTaskAssignment,
@@ -35,7 +33,7 @@ import {
 } from "../services/communicationService";
 import { todayDateKey } from "../lib/dateOnly";
 
-type CommunicationSegment = "messages" | "groups" | "news" | "tasks" | "attendance" | "files";
+type CommunicationSegment = "messages" | "groups" | "news" | "tasks" | "attendance";
 
 type CommunicationViewProps = {
   data: PaddleMotionData;
@@ -49,7 +47,6 @@ const segments: SegmentItem<CommunicationSegment>[] = [
   { id: "news", label: "Vereinsnews" },
   { id: "tasks", label: "Aufgaben" },
   { id: "attendance", label: "Anwesenheit" },
-  { id: "files", label: "Dateien" },
 ];
 
 const taskTypes: TeamTaskType[] = ["general", "technique", "material", "video", "competition", "training", "mental", "recovery"];
@@ -327,26 +324,6 @@ export function CommunicationView({ data, user, onDataChange }: CommunicationVie
     }), () => deleteCloudTrainingAttendance(trainingId, answers));
   };
 
-  const createAttachment = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const item: FileAttachment = {
-      id: createId("attachment"),
-      clubId: clubIds[0] ?? "",
-      ownerId: user.userId,
-      relatedType: String(form.get("relatedType") ?? "training") as FileAttachment["relatedType"],
-      relatedId: String(form.get("relatedId") ?? ""),
-      fileName: String(form.get("fileName") ?? "").trim(),
-      filePath: String(form.get("filePath") ?? "").trim(),
-      fileType: String(form.get("fileType") ?? "").trim(),
-      fileSize: Number(form.get("fileSize") ?? 0),
-      createdAt: new Date().toISOString(),
-      deletedAt: "",
-    };
-    saveLocalAndCloud("Anhang vorbereitet", (current) => ({ ...current, fileAttachments: [item, ...current.fileAttachments] }), () => upsertCloudFileAttachment(item));
-    event.currentTarget.reset();
-  };
-
   const messagesView = (
     <section className="communication-layout">
       <div className="section-block">
@@ -405,22 +382,12 @@ export function CommunicationView({ data, user, onDataChange }: CommunicationVie
     </section>
   );
 
-  const filesView = (
-    <section className="section-block">
-      <div className="section-heading"><div><p className="eyebrow">Dateien</p><h3>Anhänge vorbereiten</h3></div></div>
-      <form className="entry-form" onSubmit={createAttachment}><div className="form-grid"><label>Dateiname<input name="fileName" required /></label><label>Pfad / URL<input name="filePath" required /></label><label>Typ<input name="fileType" placeholder="application/pdf" /></label><label>Größe Bytes<input name="fileSize" type="number" /></label><label>Verknüpfung<select name="relatedType"><option value="direct_message">Direktnachricht</option><option value="group_message">Gruppennachricht</option><option value="club_post">Vereinsnews</option><option value="task">Aufgabe</option><option value="training">Training</option><option value="competition">Wettkampf</option></select></label><label>Verknüpfte ID<input name="relatedId" /></label></div><button className="save-button" type="submit">Anhang speichern</button></form>
-      <p className="muted">Supabase Storage Bucket `paddlio-files` ist vorbereitet. Uploads laufen später über separate Storage Policies; diese Version speichert stabile Metadaten ohne App-Absturz.</p>
-      <div className="club-card-list">{data.fileAttachments.length ? data.fileAttachments.map((file) => <article className="user-admin-card" key={file.id}><strong>{file.fileName}</strong><span>{file.relatedType} - {file.fileType || "Datei"}</span><small>{file.filePath}</small></article>) : <p className="empty-state">Noch keine Anhänge vorbereitet.</p>}</div>
-    </section>
-  );
-
   const content = {
     messages: messagesView,
     groups: groupsView,
     news: newsView,
     tasks: tasksView,
     attendance: attendanceView,
-    files: filesView,
   }[segment];
 
   return (
