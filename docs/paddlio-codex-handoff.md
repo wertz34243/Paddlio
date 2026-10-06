@@ -61,8 +61,8 @@
 
 ## Commit / Push
 
-- Commit: wird nach finaler Statusprüfung erstellt.
-- Pushstatus: ausstehend.
+- Implementierungscommit: `6cb08d8` (`Add public Paddlio website`).
+- Pushstatus: wird mit diesem Handoff-Abschluss auf `origin/develop` aktualisiert.
 
 ## Grenzen bestätigt
 
