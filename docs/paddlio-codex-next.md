@@ -2,16 +2,13 @@
 
 Status: DONE
 
-Auftragsbasis: Paddlio 5.0 letzter Release-Fix vor Schritt 3.
+Auftragsbasis: Zeitwahl auf 15-Minuten-Raster verbessern.
 
 Ergebnis:
-- Trainingseinheiten werden mit stabiler UUID und Cloud-Metadaten im Trainingstagebuch gespeichert.
-- Wettkampfergebnisse verwenden stabile Identitaeten; Lauf 2 und Bestzeit werden korrekt behandelt.
-- Startlisten bleiben echte `competition_start_entries` und verlangen bei gleichnamigen Wettkaempfen eine eindeutige Datumszuordnung.
-- Dark-/Light-Theme wird am App-Root angewendet; Auswahlzustaende besitzen einheitliche Kontrastfarben.
-- Migration `20261005134123_import_journal_metadata_500.sql` ist auf Supabase DEV angewendet und verifiziert.
-- Unit-, Build-, Beta-, E2E-, Rollen- und Audit-Pruefungen sind gruen.
-- Manueller iPhone-/iPad-/PC-Nachtest mit fiktiven Importdateien bleibt vor Schritt 3 erforderlich.
+- Neue Trainings starten weiterhin mit der exakten lokalen Geraetezeit.
+- `+15` und `-15` wechseln danach auf ein sauberes Viertelstundenraster.
+- Bereits gespeicherte Zeiten bleiben beim Bearbeiten unveraendert.
+- Vorlagenverwendung und individuelle Trainingsplanung verwenden dieselbe Initialisierungslogik.
+- Unit-, Build-, Beta- und relevanter Mobile-E2E-Test sind gruen.
 
 Naechster Auftrag erst wieder mit `Status: READY`.
-
