@@ -23,6 +23,8 @@ const indexHtml = fs.existsSync(path.join(distDir, "index.html"))
   ? fs.readFileSync(path.join(distDir, "index.html"), "utf8")
   : "";
 const xlsxChunk = assets.find((asset) => /^xlsx-.*\.js$/.test(asset.name));
+const appChunk = assets.find((asset) => /^App-.*\.js$/.test(asset.name));
+const publicWebsiteChunk = assets.find((asset) => /^PublicWebsite-.*\.js$/.test(asset.name));
 
 if (!mainJs) {
   failures.push("No main index JS chunk found.");
@@ -36,10 +38,23 @@ if (!xlsxChunk) {
   failures.push(`XLSX chunk ${xlsxChunk.name} is referenced by index.html and would load initially.`);
 }
 
+if (!appChunk) {
+  failures.push("Private app is not isolated in its own App chunk.");
+} else if (appChunk.size > 650_000) {
+  failures.push(`Private App JS chunk too large: ${appChunk.name} is ${appChunk.size} bytes, budget is 650000 bytes.`);
+}
+
+if (!publicWebsiteChunk) {
+  failures.push("Public website is not isolated in its own chunk.");
+} else if (publicWebsiteChunk.size > 100_000) {
+  failures.push(`Public website JS chunk too large: ${publicWebsiteChunk.name} is ${publicWebsiteChunk.size} bytes, budget is 100000 bytes.`);
+}
+
 for (const asset of assets) {
   const isKnownVendor = /^xlsx-.*\.js$/.test(asset.name) || /^supabase-.*\.js$/.test(asset.name);
   const isMain = mainJs && asset.name === mainJs.name;
-  if (asset.name.endsWith(".js") && !isKnownVendor && !isMain && asset.size > 250_000) {
+  const isApplicationEntry = appChunk && asset.name === appChunk.name;
+  if (asset.name.endsWith(".js") && !isKnownVendor && !isMain && !isApplicationEntry && asset.size > 250_000) {
     failures.push(`Feature JS chunk too large: ${asset.name} is ${asset.size} bytes, budget is 250000 bytes.`);
   }
 }
@@ -50,4 +65,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`Bundle budget check passed. Main JS: ${mainJs?.name ?? "n/a"} ${mainJs?.size ?? 0} bytes.`);
+console.log(`Bundle budget check passed. Entry JS: ${mainJs?.name ?? "n/a"} ${mainJs?.size ?? 0} bytes; App JS: ${appChunk?.size ?? 0} bytes; Public JS: ${publicWebsiteChunk?.size ?? 0} bytes.`);

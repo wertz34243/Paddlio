@@ -2,78 +2,71 @@
 
 ## Stand
 
-- Datum/Uhrzeit: 2026-10-06 17:20 CEST
-- Stabilitaetsblock: Paddlio 5.0 Schritt 3A - Security Release Hardening
-- Status: TECHNISCH ABGESCHLOSSEN, OEFFENTLICHER RELEASE WEGEN MANUELLER AUTH-/RECHTSAUFGABEN BLOCKIERT
+- Datum/Uhrzeit: 2026-10-06 18:20 CEST
+- Stabilitaetsblock: Paddlio 5.0 Schritt 3C - öffentliche Website und App-Domain
+- Status: IMPLEMENTIERT UND GETESTET, PRODUCTION-AKTIVIERUNG BEWUSST OFFEN
 
-## Root Cause
+## Änderungen
 
-- 24 `SECURITY DEFINER`-Funktionen waren direkt fuer `anon` ausfuehrbar; Triggerfunktionen waren teilweise auch fuer `authenticated` erreichbar.
-- `set_updated_at` und `default_roles_for_email` hatten einen mutablen `search_path`.
-- Die verbleibenden authenticated-Advisor-Warnungen gehoeren ueberwiegend zu Policy-Helfern, deren EXECUTE-Recht fuer bestehende RLS-Regeln erforderlich ist. Ein pauschaler Entzug haette legitimen Datenzugriff gebrochen.
-- Leaked Password Protection ist im aktuellen Supabase-Free-Plan nicht aktivierbar.
-- Das unfertige Dateianhang-Metadatenformular war fuer Nutzer sichtbar; Polar war nicht deutlich genug als noch unvollstaendig real getestete Beta abgegrenzt.
-- `source-map-js@1.2.1` hatte ein bekanntes High-Severity-DoS-Finding.
-- Ein iPad-Screenshot-E2E klickte waehrend eines React-Realtime-Refreshs auf einen ersetzten Detail-Tab und war dadurch intermittierend.
+- Öffentliche responsive Website mit den Routen `/`, `/funktionen`, `/sportler`, `/trainer`, `/vereine`, `/installation`, `/hilfe`, `/datenschutz` und `/impressum`.
+- Dark-Water-Design mit Paddlio-Branding, Produktvorschau, Rollenbereichen, Gerätehinweisen und klaren App-CTAs.
+- Polar ausschließlich als „Beta / in Vorbereitung“ beschrieben; Datei-Upload und nicht freigegebene Academy-/Video-Funktionen werden nicht beworben.
+- Release-Entwürfe für Impressum und Datenschutz mit den bereitgestellten Betreiberangaben und klarer Kennzeichnung der noch ausstehenden rechtlichen Prüfung.
+- SEO-Basis: Title, Description, OpenGraph, Favicon, semantische Überschriften, `robots.txt` und öffentliche `sitemap.xml`.
+- Registrierung verlangt ein Geburtsdatum und blockiert im UI sowie AuthProvider die selbstständige Registrierung unter 16.
 
-## Aenderungen
+## Technische Trennung
 
-- SECURITY-DEFINER-Rechte differenziert gehaertet: kein direkter `anon`/`public`-Aufruf, Triggerfunktionen auch fuer `authenticated` gesperrt, notwendige RLS-Helfer erhalten.
-- Beide gemeldeten Funktionen auf festen leeren `search_path` gesetzt.
-- Security-Regressioncheck fuer Migration, Polar-Beta und ausgeblendete Anhang-UI ergaenzt.
-- Nicht authentifizierter Datenschutzexport liefert jetzt korrekt 401 statt 503.
-- DEV-Verifikationsskript prueft unauthentifizierten Export und bevorzugt die eindeutige E2E-DEV-Konfiguration.
-- Dateianhang-Metadatenformular aus der normalen Kommunikation entfernt.
-- Polar als Beta gekennzeichnet; Connect bleibt ohne Serverkonfiguration deaktiviert.
-- `source-map-js` kompatibel auf 1.2.2 aktualisiert.
-- iPad-E2E oeffnet einen durch Realtime-Refresh geschlossenen Inspector zustandsbasiert erneut; keine festen Sleeps.
+- `paddlio.de` und `www.paddlio.de` laden ausschließlich das Public-Website-Bundle.
+- `app.paddlio.de` und `dev.paddlio.de` laden weiterhin die PWA mit Auth/Supabase.
+- App, Supabase und App-CSS werden dynamisch nicht in die öffentliche Website initialisiert.
+- Die öffentliche Website registriert keinen PWA-Service-Worker und entfernt den App-Manifest-Link.
+- DEV-/Preview-Testweg: `/public-preview`; optional `VITE_PUBLIC_SITE_MODE=true`.
+- DEV-App-Link zeigt sicher auf `https://dev.paddlio.de`; Production-Public-Site später auf `https://app.paddlio.de`.
 
-## Migration / Supabase DEV
+## Domain-Konzept
 
-- Migration: `supabase/migrations/20261006154000_security_release_hardening.sql`.
-- Vor jedem DB-Befehl Zielprojekt als `nlllqsfdhfiwticrcrnp` bestaetigt.
-- Migration ausschliesslich auf Supabase DEV angewendet; PostgREST-Schema-Reload ausgefuehrt.
-- Security Advisor: 52 auf 22 Warnungen reduziert (30 behoben).
-- Funktionskatalog verifiziert: search paths fest, anon-Rechte entfernt, Trigger-authenticated-Rechte entfernt, legitimer Kontakt-RPC fuer authenticated erhalten.
-- `account-privacy` ausschliesslich auf DEV erneut deployed.
-- Production wurde weder gelesen noch veraendert.
+- `paddlio.de`: öffentliche Website.
+- `www.paddlio.de`: permanente Weiterleitung auf `paddlio.de`.
+- `app.paddlio.de`: Paddlio-PWA.
+- `dev.paddlio.de`: bestehende DEV-App und `/public-preview`.
+- Vercel-/DNS-/Supabase-Auth-Schritte sind in `docs/release/public-web-domain-plan.md` dokumentiert.
+- Keine DNS-, Production-Vercel- oder Production-Supabase-Änderung wurde ausgeführt.
 
-## Datenschutz- und Cloud-Ergebnis
+## Supabase DEV
 
-- Nicht authentifiziert: Export HTTP 401.
-- Authentifizierter Export: gueltiges JSON, eigener Account, 0 unmaskierte Fremdidentitaeten, keine Provider-Secrets.
-- Falsche Loeschphrase und fremde Origin abgelehnt.
-- Entbehrliches, eigens erzeugtes DEV-Testkonto erfolgreich geloescht; eigene Testdaten entfernt, fremde Profile/Clubs unveraendert, Login danach abgelehnt.
-- DEV Storage: 0 Buckets; reale Objektloeschung daher nicht anwendbar.
-- Echte DEV-Header bestaetigt: HTTPS/308-Redirect, CSP, HSTS, nosniff, DENY/frame-ancestors, Referrer- und Permissions-Policy.
+- Keine Migration erforderlich.
+- Supabase DEV `nlllqsfdhfiwticrcrnp` wurde nicht verändert.
+- Production Supabase `twlkhfbrrwjwppxinmpn` wurde nicht verwendet.
 
 ## Tests
 
 - `npm audit`: 0 Schwachstellen.
-- Unit/Integration: 29 Dateien, 170/170 bestanden.
-- Build: bestanden; nur bestehender Chunk-Groessenhinweis.
+- Unit/Integration: 31 Dateien, 176/176 bestanden.
+- Build: bestanden.
 - Encoding, RLS, Security, Bundle, A11y und Beta: bestanden.
+- Bundle-Trennung: Entry 196,926 Bytes, private App 374,815 Bytes, Public Website 16,214 Bytes.
+- Öffentliche Website E2E: Landingpage ohne Login/Supabase, App-Link, Installation, Datenschutz, Impressum, Phone/Desktop und kein horizontaler Overflow bestanden.
+- Gesamte E2E-Suite: 56 bestanden, 32 vorgesehene projekt-/viewportabhängige Skips, 0 Fehler.
 - Rollen-E2E: 9 bestanden, 1 vorgesehener mobiler Multi-Device-Skip.
-- iPad-Race-Regression: 6/6 Wiederholungen bestanden.
-- Gesamte E2E-Suite: 50 bestanden, 32 vorgesehene projekt-/viewportabhaengige Skips, 0 Fehler.
+- Visuelle Browserprüfung auf Desktop durchgeführt.
 
-## Offene Punkte
+## Offene Release-Blocker
 
-- Leaked Password Protection: Plan/Alternative entscheiden.
-- Mindestpasswortregeln, Secure Password Change, CAPTCHA, MFA und Session-Limits verbindlich festlegen.
-- Polar vor Vollfreigabe real mit einem DEV-Providerkonto testen oder Beta deaktiviert lassen.
-- Bei erstem Storage-Bucket Upload-Policies und Kontoloeschung erneut pruefen.
-- Betreiberangaben, Rechtsgrundlagen, Aufbewahrung und Minderjaehrigen-Konzept rechtlich/fachlich abschliessen.
+- `info@paddlio.de`, `support@paddlio.de` und `datenschutz@paddlio.de` vor öffentlicher Aktivierung real auf Empfang prüfen.
+- Impressum und Datenschutzerklärung rechtlich final prüfen.
+- Die 16+-Regel ist in der regulären UI und im AuthProvider umgesetzt, aber noch nicht serverseitig nicht-umgehbar. Vor Production Auth-Hook/Trigger oder einen gleichwertigen Sorgeberechtigten-/Einladungsprozess festlegen.
+- Production-Domains, Vercel-Projekte, DNS und Supabase-Auth-Redirects erst in einem ausdrücklich freigegebenen Production-Schritt konfigurieren.
+- App-Domain mit app-spezifischem `robots.txt` vollständig von Indexierung ausschließen.
 
 ## Commit / Push
 
-- Implementierungscommit: `80ca811` (`Harden release security controls`).
-- Pushstatus: wird mit diesem Handoff-Abschluss auf `origin/develop` aktualisiert.
+- Commit: wird nach finaler Statusprüfung erstellt.
+- Pushstatus: ausstehend.
 
-## Grenzen bestaetigt
+## Grenzen bestätigt
 
 - Nur Branch `develop`.
-- Nur Supabase DEV `nlllqsfdhfiwticrcrnp`.
-- `main` unveraendert.
-- Production Supabase `twlkhfbrrwjwppxinmpn` unveraendert.
-- Keine bestehenden Nutzdaten geloescht.
+- `main` unverändert.
+- Production Supabase unverändert.
+- Keine DEV- oder Production-Nutzdaten gelöscht.

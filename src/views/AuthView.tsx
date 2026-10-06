@@ -69,6 +69,7 @@ export function AuthView({ onLogin, onRegister, onResetPassword, onResendConfirm
     const result = await onRegister({
       firstName: String(formData.get("firstName") ?? ""),
       lastName: String(formData.get("lastName") ?? ""),
+      birthDate: String(formData.get("birthDate") ?? ""),
       email,
       password: String(formData.get("password") ?? ""),
       passwordRepeat: String(formData.get("passwordRepeat") ?? ""),
@@ -195,6 +196,11 @@ export function AuthView({ onLogin, onRegister, onResetPassword, onResendConfirm
             <label>
               E-Mail
               <input name="email" type="email" autoComplete="email" required />
+            </label>
+            <label>
+              Geburtsdatum
+              <input name="birthDate" type="date" autoComplete="bday" required />
+              <small className="card-note">Die selbstständige Registrierung ist ab 16 Jahren möglich.</small>
             </label>
             <div className="choice-group">
               <span>Verein</span>

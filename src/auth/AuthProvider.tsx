@@ -4,6 +4,7 @@ import { supabase, getSupabaseClient } from "../lib/supabase";
 import { getSupabaseConfigMessage, isSupabaseConfigured } from "../lib/supabaseConfig";
 import { isDevelopmentEnvironment } from "../lib/appEnvironment";
 import { PROFILE_SYNC_RETRY_MESSAGE } from "./authMessages";
+import { isAtLeastAge } from "../domain/registrationAge";
 import {
   cacheCloudAuthUsers,
   cacheCloudClubRequests,
@@ -1251,6 +1252,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const client = getSupabaseClient();
     if (!client) return { ok: false, message: getSupabaseConfigMessage() };
     if (!input.privacyAccepted) return { ok: false, message: "Bitte akzeptiere den Datenschutz." };
+    if (!isAtLeastAge(input.birthDate)) return { ok: false, message: "Die selbstständige Registrierung ist ab 16 Jahren möglich." };
     if (input.password !== input.passwordRepeat) return { ok: false, message: "Die Passwörter stimmen nicht überein." };
     const { data: result, error } = await client.auth.signUp({
       email: input.email.trim().toLowerCase(),
@@ -1260,6 +1262,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         data: {
           firstName: input.firstName.trim(),
           lastName: input.lastName.trim(),
+          birthDate: input.birthDate,
+          registrationPolicy: "self_registration_16_plus_v1",
           clubId: input.clubId,
           club: input.club,
         },

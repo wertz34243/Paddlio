@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /auth
+Disallow: /recovery
+Disallow: /components-preview
+Disallow: /design-preview
+
+Sitemap: https://paddlio.de/sitemap.xml

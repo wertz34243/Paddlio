@@ -4,6 +4,7 @@ test("public app shell shows login without exposing private navigation", async (
   await page.goto("/");
 
   await expect(page.getByRole("button", { name: "Einloggen" })).toBeVisible();
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex, nofollow");
   await expect(page.getByText("Konto erstellen")).toBeVisible();
   await expect(page.getByText("Heute")).not.toBeVisible();
   await expect(page.getByText(/Cloud eingeschränkt|Profil-Sync|Supabase|RLS|Rolle ist lokal/i)).not.toBeVisible();

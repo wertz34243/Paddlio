@@ -2,14 +2,14 @@
 
 Status: DONE
 
-Auftragsbasis: Paddlio 5.0 Schritt 3A - Security Release Hardening.
+Auftragsbasis: Paddlio 5.0 Schritt 3C - öffentliche Website und App-Domain.
 
 Ergebnis:
-- Security Advisor von 52 auf 22 Warnungen reduziert.
-- Definer-Ausfuehrungsrechte und mutable search paths gehaertet.
-- Datenschutzexport und Kontoloeschung real auf DEV regressionsgeprueft.
-- Reale DEV-Header und Auth-Konfiguration dokumentiert.
-- Unfertige Dateianhang-UI entfernt; Polar als Beta abgesichert.
-- Abhaengigkeits-Audit ohne bekannte Schwachstellen.
+- Öffentliche Website und neun öffentliche Routen implementiert.
+- Public Website und private PWA werden anhand der Domain in getrennten Bundles geladen.
+- DEV-Vorschau unter `/public-preview` getestet.
+- Domain-, Vercel-, DNS-, Auth-Redirect- und SEO-Konzept dokumentiert.
+- 16+-Registrierungsregel in UI und AuthProvider ergänzt; serverseitige Production-Durchsetzung als Blocker dokumentiert.
+- Vollständige Testmatrix grün.
 
 Naechster Auftrag erst wieder mit `Status: READY`.

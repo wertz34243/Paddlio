@@ -1,6 +1,7 @@
 import { seedData } from "./seed";
 import { academyInitialData } from "../features/academy/academyContent";
 import { getWeekdayFromDate } from "../domain/trainingPlan";
+import { isAtLeastAge } from "../domain/registrationAge";
 import { writeLocalFirstCache } from "../services/localFirstCacheService";
 import type {
   AgeClass,
@@ -125,8 +126,9 @@ type LegacyPlanEntry = Partial<PlanEntry> & {
 };
 
 export type RegisterInput = {
-  firstName: string;
-  lastName: string;
+    firstName: string;
+    lastName: string;
+    birthDate: string;
   email: string;
   clubId: string;
   club: string;
@@ -1558,6 +1560,7 @@ export const registerLocalUser = (input: RegisterInput): AuthResult => {
   const club = (selectedClub?.name ?? input.club).trim();
   const password = input.password.trim();
   const passwordRepeat = input.passwordRepeat.trim();
+  const birthDate = input.birthDate.trim();
 
   if (firstName.length < 2) {
     return { ok: false, message: "Der Vorname braucht mindestens 2 Zeichen." };
@@ -1569,6 +1572,10 @@ export const registerLocalUser = (input: RegisterInput): AuthResult => {
 
   if (!isValidEmail(email)) {
     return { ok: false, message: "Bitte gib eine gueltige E-Mail-Adresse ein." };
+  }
+
+  if (!isAtLeastAge(birthDate)) {
+    return { ok: false, message: "Die selbstständige Registrierung ist ab 16 Jahren möglich." };
   }
 
   if (password.length < 8) {
