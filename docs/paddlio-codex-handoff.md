@@ -2,74 +2,68 @@
 
 ## Stand
 
-- Datum/Uhrzeit: 2026-10-06 08:27 CEST
-- Stabilitaetsblock: Letzter Release-Blocker Trainingseinheiten-Import
-- Status: ROOT CAUSE BEHOBEN, DEV VERIFIZIERT, TESTS GRUEN
+- Datum/Uhrzeit: 2026-10-06 15:20 CEST
+- Stabilitaetsblock: Trainingseinheiten-Import-Button und Submit-Pfad
+- Status: ROOT CAUSE BEHOBEN, REGRESSIONSTEST GRUEN
 
 ## Root Cause
 
-- Der Import und Supabase-Write funktionierten bereits: DEV-Logs zeigen erfolgreiche `POST 201` auf `training_journal_entries`; nachfolgende Lesezugriffe antworteten mit `GET 200`.
-- In DEV sind importtypische Journalzeilen mit Titel/Trainingsart/Bootsklasse vorhanden.
-- Die sichtbare Restursache lag im Routing: Phone verwendete `TrainingJournalView`, Tablet und Desktop leiteten den Tab `Journal` dagegen in `PlanView` mit `initialWorkflowTab="feedback"` um.
-- Diese Feedbackansicht baut ausschliesslich auf Kalender-/Plan-Eintraegen auf. Freie importierte Journalzeilen ohne `trainingPlanEntryId` konnten dort nie erscheinen.
-- `TrainingSession` ist weiterhin der lokale Begleitdatensatz. Cloud-Source-of-Truth fuer durchgefuehrte/importierte Einheiten ist bewusst `training_journal_entries`; dessen Metadaten reichen fuer Reload und Zweitgeraetedarstellung aus.
+- Der Button war korrekt verdrahtet, aber `executeImport(...)` wurde vor dem `try/catch` ausgefuehrt. Ein synchroner Fehler konnte deshalb den Import ohne sichtbaren Bericht beenden und den Loading-Zustand festhalten.
+- Die Fehlermeldung wurde nur weit oben am Dateifeld dargestellt. Direkt am Importbutton gab es weder einen verlässlichen Fortschritts- noch Erfolgs- oder Fehlerstatus.
+- Der eigentliche Cloud-Write fuer Trainingseinheiten nutzt korrekt `training_journal_entries` als Source of Truth; `TrainingSession` bleibt der lokale Begleitdatensatz.
+- Beim erneuten Import nach einem Cloud-Reload war die Duplikaterkennung nur semantisch. Die bereits vorhandene deterministische Import-ID wurde nicht direkt beruecksichtigt und konnte dadurch einen unnoetigen zweiten Persistenzversuch ausloesen.
 
 ## Aenderungen
 
-- Der Tab `Journal` rendert jetzt auf Phone, Tablet und Desktop einheitlich `TrainingJournalView`.
-- Die Ansicht verwendet einheitlich `activeData.journal`, `activeData.training` und den sichtbaren Planbestand.
-- Cloud-Mapping von Journal-Metadaten ist direkt testbar und fuer Reload abgesichert.
-- Ein importierter freier Journaleintrag wird auch ohne lokale Session und ohne Plan-Verknuepfung angezeigt.
-- Bestehende manuelle Journalzeilen bleiben unveraendert sichtbar.
-- Bestehende Desktop-/Tablet-E2E-Erwartungen wurden auf die echte Journalansicht aktualisiert.
-- Neuer E2E-Test prueft die cloudbasierte Journalansicht bei iPhone-, iPad- und Desktop-Viewport.
+- Der gesamte Importaufbau und Persistenzpfad liegt jetzt innerhalb des Fehlerfangs; `finally` beendet den Loading-Zustand verlaesslich.
+- Jeder Klick zeigt unmittelbar einen Status und endet sichtbar mit Erfolg, Teilerfolg oder einer verstaendlichen Fehlermeldung.
+- Der Importbericht wird direkt nach bestaetigter Kerndaten-Persistenz angezeigt.
+- Fehler beim separaten Importprotokoll verdecken einen erfolgreich gespeicherten Import nicht mehr; sie werden geloggt und als spaeter zu synchronisierendes Protokoll gekennzeichnet.
+- Trainingseinheiten werden zusaetzlich ueber ihre stabile Import-ID in Session und Journal dedupliziert.
+- Neuer Playwright-Test klickt den echten Button, prueft drei REST-Persistenzen, den Importbericht, die Journalanzeige, Reload und den duplikatfreien Zweitimport.
+- Neuer Unit-Test bildet drei importierte Einheiten sowie einen Cloud-artigen Reload ohne lokale Sessions ab.
 
 ## Migrationen / Supabase DEV
 
-- Keine neue Migration erforderlich.
-- Ausschliesslich Supabase DEV `nlllqsfdhfiwticrcrnp` gelesen; Production wurde nicht verwendet.
-- Verifiziert: `training_journal_entries` besitzt `id`, `athlete_id`, `training_id`, `training_plan_entry_id`, `date`, `actual_duration_minutes`, `title`, `training_type` und `boat_class` mit passenden Typen.
-- Verifiziert: RLS aktiv, zwei Journal-Policies vorhanden, Realtime-Publication aktiv.
-- Verifiziert: 15 Journalzeilen vorhanden, davon 3 mit Importmetadaten und deterministischer Importidentitaet. Keine Nutzdaten wurden veraendert oder geloescht.
+- Keine Migration erforderlich.
+- Supabase DEV `nlllqsfdhfiwticrcrnp` wurde in diesem Block nicht veraendert.
+- Der bereits verifizierte Write-Pfad zu `training_journal_entries` bleibt unveraendert.
+- Production Supabase wurde nicht verwendet.
 
 ## Betroffene Dateien
 
-- `src/App.tsx`
-- `src/services/journalService.ts`
-- `src/services/journalService.test.ts`
-- `src/views/TrainingJournalView.test.tsx`
-- `tests/e2e/journal-import-visibility.spec.ts`
-- `tests/e2e/desktop-training-workspace.spec.ts`
-- `tests/e2e/tablet-real-ipad-polish.spec.ts`
-- `tests/e2e/tablet-training-consolidation.spec.ts`
+- `src/views/ImportExportView.tsx`
+- `src/features/importExport/engine.ts`
+- `src/features/importExport/engine.test.ts`
+- `tests/e2e/training-session-import.spec.ts`
 - `docs/paddlio-codex-handoff.md`
 - `docs/paddlio-codex-next.md`
 
 ## Tests
 
-- Unit/Integration: 29 Dateien, 169/169 Tests bestanden.
+- Unit/Integration: 29 Dateien, 170/170 Tests bestanden.
 - Build: erfolgreich; nur bestehender Chunk-Groessenhinweis.
 - `check:beta`: Encoding, RLS, Security, Bundle, A11y und Beta bestanden.
-- Journal-E2E: iPhone, iPad und Desktop, 3/3 bestanden.
-- DEV-Cloud: erfolgreicher Write/Read-Pfad anhand realer Logs und vorhandener Importzeilen bestaetigt.
+- Vollstaendige Playwright-Suite: 50 bestanden, 32 vorgesehene projekt-/viewportabhaengige Skips, 0 fehlgeschlagen.
+- Trainingseinheiten-Import-E2E: Desktop/Edge 1/1 bestanden; der mobile Projektlauf ist bewusst ausgeschlossen, weil derselbe Persistenzpfad einmal deterministisch gegen die gemockte REST-Quelle ausgefuehrt wird.
+- Der E2E prueft: drei gueltige Zeilen, Buttonklick, sichtbaren Erfolg, 3 neue Eintraege, Journalanzeige, Reload, Zweitimport mit 0 neu / 3 uebersprungen und weiterhin genau drei Cloudzeilen.
 
 ## Commit / Push
 
-- Implementierungscommit: `09f85c4` (`Show imported sessions in journal across devices`).
-- Handoff-Commit folgt separat.
-- Pushstatus wird nach Handoff-Commit aktualisiert.
+- Implementierungscommit: `7db2e20` (`Fix training session import submission`).
+- Pushstatus: folgt nach Handoff-Commit.
 
 ## Offene Punkte / manueller Nachtest
 
-- Nach DEV-Deploy einmal dieselbe Trainingseinheiten-Datei erneut importieren: der Importbericht muss den Datensatz als Duplikat ueberspringen.
-- Journal auf iPhone, iPad und PC oeffnen, danach Reload sowie Ab-/Anmeldung pruefen.
-- Auf einem zweiten Geraet denselben Journaleintrag kontrollieren.
-- Keine bekannten technischen Restfehler im Trainingseinheiten-Importpfad.
+- Nach DEV-Deploy dieselbe fiktive Drei-Zeilen-Datei auf iPhone, iPad und PC importieren.
+- Pruefen: sofort sichtbarer Fortschritt, Importbericht, drei Journalzeilen, Reload und Zweitimport mit drei uebersprungenen Zeilen.
+- Zweitgeraet-Sichtbarkeit mit demselben DEV-Konto real bestaetigen.
+- Keine bekannten technischen Restfehler im Submit-Pfad; echter Multi-Geraet-Test bleibt ein manueller Release-Schritt.
 
 ## Grenzen bestaetigt
 
 - Nur Branch `develop` verwendet.
-- Nur Supabase DEV `nlllqsfdhfiwticrcrnp` gelesen.
+- Supabase DEV Ziel bleibt `nlllqsfdhfiwticrcrnp`.
 - `main` unveraendert.
 - Production Supabase `twlkhfbrrwjwppxinmpn` unveraendert.
 - Keine Nutzdaten geloescht oder zurueckgesetzt.
