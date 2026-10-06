@@ -298,25 +298,31 @@ function applyRow(importType: ImportType, row: ImportPreviewRow, data: PaddleMot
   if (importType === "training_sessions") {
     const date = String(value.date ?? formatLocalDateOnly(new Date()));
     const focus = String(value.focus ?? "");
+    const durationMinutes = Number(value.durationMinutes ?? 0);
+    const normalizedFocus = focus.trim().toLowerCase();
+    const identity = stableImportUuid(`training-session|${user.userId}|${date}|${durationMinutes}|${normalizedFocus}`);
     const duplicate = data.training.some((session) =>
-      session.athleteId === user.userId &&
-      session.date === date &&
-      session.durationMinutes === Number(value.durationMinutes ?? 0) &&
-      session.focus.trim().toLowerCase() === focus.trim().toLowerCase(),
+      session.id === identity || (
+        session.athleteId === user.userId &&
+        session.date === date &&
+        session.durationMinutes === durationMinutes &&
+        session.focus.trim().toLowerCase() === normalizedFocus
+      ),
     ) || data.journal.some((entry) =>
-      entry.athleteId === user.userId &&
-      entry.date === date &&
-      entry.actualDurationMinutes === Number(value.durationMinutes ?? 0) &&
-      (entry.title ?? "").trim().toLowerCase() === focus.trim().toLowerCase(),
+      entry.id === identity || entry.trainingId === identity || (
+        entry.athleteId === user.userId &&
+        entry.date === date &&
+        entry.actualDurationMinutes === durationMinutes &&
+        (entry.title ?? "").trim().toLowerCase() === normalizedFocus
+      ),
     );
     if (duplicate) return { data, skipped: true };
-    const identity = stableImportUuid(`training-session|${user.userId}|${date}|${Number(value.durationMinutes ?? 0)}|${focus.toLowerCase()}`);
     const session: TrainingSession = {
       id: identity,
       athleteId: user.userId,
       date,
       type: inferSessionType(String(value.trainingType ?? value.focus ?? "")),
-      durationMinutes: Number(value.durationMinutes ?? 0),
+      durationMinutes,
       rpe: 5,
       focus,
       note: String(value.description ?? ""),

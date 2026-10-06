@@ -111,6 +111,34 @@ describe("import mapping and validation", () => {
     expect(afterReload.data.journal).toHaveLength(1);
   });
 
+  it("keeps a three-row training session import idempotent after a cloud-style journal reload", () => {
+    const user = makeUser();
+    const workbook: ParsedWorkbook = {
+      fileName: "einheiten.csv", fileFormat: "csv", warnings: [],
+      sheets: [{
+        name: "Training",
+        rows: [
+          ["Datum", "Dauer", "Fokus"],
+          ["2026-10-01", "45", "Technik"],
+          ["2026-10-02", "60", "Ausdauer"],
+          ["2026-10-03", "75", "Wettkampf"],
+        ],
+        detectedHeaderRow: 0, rowCount: 4, columnCount: 3,
+      }],
+    };
+    const analysis = analyzeWorkbook(workbook, "training_sessions");
+    const first = executeImport(analysis, { ...seedData, training: [], journal: [] }, user);
+    const afterReload = executeImport(analysis, {
+      ...seedData,
+      training: [],
+      journal: first.data.journal,
+    }, user);
+
+    expect(first.report).toMatchObject({ createdRows: 3, skippedRows: 0, errorRows: 0 });
+    expect(afterReload.report).toMatchObject({ createdRows: 0, skippedRows: 3, errorRows: 0 });
+    expect(afterReload.data.journal).toHaveLength(3);
+  });
+
   it("keeps second-run competition values in run two", () => {
     const user = makeUser();
     const workbook: ParsedWorkbook = {

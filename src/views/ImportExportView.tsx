@@ -55,6 +55,7 @@ export function ImportExportView({ data, user, sessionAccessToken, cloudClubId, 
   const [exportFormat, setExportFormat] = useState<Extract<ImportFileFormat, "csv" | "xlsx">>("xlsx");
   const [lastExportRows, setLastExportRows] = useState<number | null>(null);
   const [importing, setImporting] = useState(false);
+  const [importNotice, setImportNotice] = useState("");
   const canManageOrganisationImports = ["coach", "teamAdmin", "clubAdmin", "admin"].includes(user.role);
   const visibleImportTypes = supportedImportTypes.filter((type) => canManageOrganisationImports || !["athletes", "club_members", "groups", "start_lists"].includes(type.id));
 
@@ -91,6 +92,7 @@ export function ImportExportView({ data, user, sessionAccessToken, cloudClubId, 
   const handleFile = async (file: File | null) => {
     if (!file) return;
     setFileError("");
+    setImportNotice("");
     setReport(null);
     setConfirmed(false);
     try {
@@ -137,8 +139,10 @@ export function ImportExportView({ data, user, sessionAccessToken, cloudClubId, 
     if (!analysis || criticalErrors > 0 || !confirmed || importing) return;
     setImporting(true);
     setFileError("");
-    const result = executeImport(analysis, data, user);
+    setImportNotice("Import wird verarbeitet und gespeichert.");
+    setReport(null);
     try {
+      const result = executeImport(analysis, data, user);
       const persistedRows = await persistImportedEntities(analysis.importType, data, result.data, user, cloudClubId);
       if (result.report.createdRows > 0 && persistedRows !== result.report.createdRows) {
         throw new Error("Nicht alle importierten Datensätze konnten gespeichert werden.");
@@ -146,15 +150,24 @@ export function ImportExportView({ data, user, sessionAccessToken, cloudClubId, 
       onDataChange(() => result.data);
       setReport(result.report);
       setHistory((items) => [result.report, ...items]);
-      await upsertCloudImportJob(result.report);
-      await Promise.all(analysis.previewRows.slice(0, storableRowLimit).map((row) => upsertCloudImportRow({
-        id: createId("import-row"), importJobId: result.report.id, rowNumber: row.rowNumber,
-        status: row.status, sourceData: row.original, transformedData: row.transformed,
-        errors: row.issues.filter((issue) => issue.severity === "error"),
-        warnings: row.issues.filter((issue) => issue.severity === "warning"), createdAt: result.report.completedAt,
-      })));
+      setImportNotice(result.report.errorRows > 0
+        ? "Der Import wurde teilweise abgeschlossen. Details stehen im Importbericht."
+        : "Der Import wurde erfolgreich gespeichert.");
+      try {
+        await upsertCloudImportJob(result.report);
+        await Promise.all(analysis.previewRows.slice(0, storableRowLimit).map((row) => upsertCloudImportRow({
+          id: createId("import-row"), importJobId: result.report.id, rowNumber: row.rowNumber,
+          status: row.status, sourceData: row.original, transformedData: row.transformed,
+          errors: row.issues.filter((issue) => issue.severity === "error"),
+          warnings: row.issues.filter((issue) => issue.severity === "warning"), createdAt: result.report.completedAt,
+        })));
+      } catch (historyError) {
+        console.warn("Import wurde gespeichert, das Importprotokoll konnte aber nicht vollständig synchronisiert werden.", historyError);
+        setImportNotice("Der Import wurde gespeichert. Das Importprotokoll wird später synchronisiert.");
+      }
     } catch (error) {
-      setFileError(error instanceof Error ? error.message : "Der Import konnte nicht gespeichert werden.");
+      setImportNotice("");
+      setFileError(error instanceof Error ? error.message : "Der Import konnte nicht gespeichert werden. Bitte versuche es erneut.");
     } finally {
       setImporting(false);
     }
@@ -343,6 +356,11 @@ export function ImportExportView({ data, user, sessionAccessToken, cloudClubId, 
                 <button className="primary-action" type="button" onClick={() => void runImport()} disabled={!confirmed || criticalErrors > 0 || importing}>
                   {importing ? "Import wird gespeichert..." : "Jetzt importieren"}
                 </button>
+                <div aria-live="polite" aria-atomic="true">
+                  {importing ? <p className="muted">Import wird verarbeitet. Bitte diese Ansicht geöffnet lassen.</p> : null}
+                  {!importing && importNotice ? <p className={report?.errorRows ? "warning-text" : "success-text"}>{importNotice}</p> : null}
+                  {!importing && fileError ? <p className="error-text" role="alert">{fileError}</p> : null}
+                </div>
                 {report ? <ImportReportSummary report={report} /> : null}
               </section>
             </>
