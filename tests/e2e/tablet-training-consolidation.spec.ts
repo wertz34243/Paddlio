@@ -101,7 +101,8 @@ test.describe("tablet training workspace consolidation", () => {
     await capture(page, "08-season-templates.png");
 
     await openTrainingTab(page, "Journal");
-    await expect(page.getByText("Statusübersicht").first()).toBeVisible({ timeout: 20_000 });
+    await expect(page.locator(".po-journal-list")).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText("Trainingstagebuch").first()).toBeVisible({ timeout: 20_000 });
     await capture(page, "09-journal-landscape.png");
   });
 

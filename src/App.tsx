@@ -1109,35 +1109,11 @@ function AppContent() {
           />
         );
       case "journal":
-        if (currentDeviceClass !== "phone") {
-          return (
-            <PlanView
-              key="training-journal"
-              data={activeData}
-              entries={activePlanEntries}
-              user={activeUser}
-              onSave={upsertPlanEntry}
-              onDelete={deletePlanEntry}
-              onDeleteSeries={deletePlanEntrySeries}
-              onToggleDone={togglePlanEntryDone}
-              onFeedbackSave={saveTrainingFeedback}
-              onDataChange={updateData}
-              onOpenOverview={() => setTrainingSegment("overview")}
-              onOpenSessions={() => {
-                setTrainingSegment("sessions");
-                setNewTrainingSignal((value) => value + 1);
-              }}
-              onOpenJournal={() => setTrainingSegment("journal")}
-              deviceClass={currentDeviceClass}
-              initialWorkflowTab="feedback"
-            />
-          );
-        }
         return (
           <TrainingJournalView
-            sessions={data.training}
+            sessions={activeData.training}
             plan={activePlanEntries}
-            journal={data.journal}
+            journal={activeData.journal}
             onOpenOverview={() => setTrainingSegment("overview")}
             onOpenPlan={() => setTrainingSegment("plan")}
             onOpenSessions={() => {

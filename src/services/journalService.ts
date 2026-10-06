@@ -28,7 +28,7 @@ const toCloudJournalEntry = (entry: TrainingJournalEntry) => sanitizeCloudPayloa
   updated_at: entry.updatedAt,
 });
 
-const fromCloudJournalEntry = (row: any): TrainingJournalEntry => ({
+export const fromCloudJournalEntry = (row: any): TrainingJournalEntry => ({
   id: row.id,
   athleteId: row.athlete_id,
   trainingId: row.training_id,

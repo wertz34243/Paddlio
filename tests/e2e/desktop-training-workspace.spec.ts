@@ -270,11 +270,12 @@ test.describe("desktop training workspace", () => {
     await capture(page, "14-season-templates.png");
 
     await openTrainingTab(page, "Journal");
-    await expect(page.locator(".journal-filter-bar")).toBeVisible({ timeout: 20_000 });
+    await expect(page.locator(".po-journal-list")).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText("Trainingstagebuch").first()).toBeVisible({ timeout: 20_000 });
     await capture(page, "15-journal.png");
-    const feedbackEntry = page.locator(".training-journal-only .calendar-training-card").first();
-    if (await feedbackEntry.isVisible().catch(() => false)) {
-      await feedbackEntry.click();
+    const journalEntry = page.locator(".po-journal-row").first();
+    if (await journalEntry.isVisible().catch(() => false)) {
+      await journalEntry.scrollIntoViewIfNeeded();
     }
     await capture(page, "16-journal-detail.png");
   });

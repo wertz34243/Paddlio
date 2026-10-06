@@ -136,7 +136,8 @@ test.describe("real iPad training polish", () => {
     await capture(page, "10-create-builder.png");
 
     await openTrainingTab(page, "Journal");
-    await expect(page.getByText("Statusübersicht").first()).toBeVisible({ timeout: 20_000 });
+    await expect(page.locator(".po-journal-list")).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText("Trainingstagebuch").first()).toBeVisible({ timeout: 20_000 });
     await capture(page, "11-journal.png");
   });
 
