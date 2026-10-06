@@ -47,6 +47,29 @@ export const localTimeInputValue = (date = new Date()): string => {
   return `${hours}:${minutes}`;
 };
 
+export const shiftTimeOnQuarterHourGrid = (value: string, direction: -1 | 1): string => {
+  const match = /^(\d{2}):(\d{2})$/.exec(value);
+  if (!match) return value;
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) return value;
+
+  const totalMinutes = hours * 60 + minutes;
+  const isOnQuarterHour = minutes % 15 === 0;
+  const shifted = direction > 0
+    ? isOnQuarterHour
+      ? totalMinutes + 15
+      : Math.ceil(totalMinutes / 15) * 15
+    : isOnQuarterHour
+      ? totalMinutes - 15
+      : Math.floor(totalMinutes / 15) * 15;
+  const normalized = ((shifted % (24 * 60)) + 24 * 60) % (24 * 60);
+  const nextHours = String(Math.floor(normalized / 60)).padStart(2, "0");
+  const nextMinutes = String(normalized % 60).padStart(2, "0");
+  return `${nextHours}:${nextMinutes}`;
+};
+
 export const startOfWeekDateKey = (value: string): string => {
   const date = dateKeyToLocalDate(value);
   const day = date.getDay();

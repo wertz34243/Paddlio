@@ -14,7 +14,7 @@ import { useAppChromeVisibility } from "./hooks/useAutoHideOnScroll";
 import { useResponsiveCapabilities } from "./hooks/useResponsiveCapabilities";
 import { getFeatureMode, isFeatureAvailable, pageFeatureMap, type FeatureId, type FeatureMode } from "./lib/deviceCapabilities";
 import { APP_ENVIRONMENT_LABEL, isDevelopmentDeployment, isDevelopmentEnvironment, isProductionEnvironment } from "./lib/appEnvironment";
-import { localTimeInputValue } from "./lib/dateOnly";
+import { localTimeInputValue, shiftTimeOnQuarterHourGrid } from "./lib/dateOnly";
 import { canViewDevelopmentDiagnostics } from "./domain/diagnosticsAccess";
 import type { Json } from "./lib/database.types";
 import { mergeConfirmedUserProfile, updateCloudProfileConfirmed } from "./services/profileService";
@@ -86,15 +86,6 @@ type MoreSegment = "profile" | "academy" | "club" | "competitions" | "equipment"
 type MoreSegmentMeta = SegmentItem<MoreSegment> & { description: string; icon: IconName };
 type MoreGroupKind = "account" | "sport" | "team" | "beta" | "admin" | "system";
 
-const shiftTimeByMinutes = (time: string, deltaMinutes: number) => {
-  const [hours = "17", minutes = "30"] = time.split(":");
-  const totalMinutes = Number(hours) * 60 + Number(minutes) + deltaMinutes;
-  const dayMinutes = 24 * 60;
-  const normalized = ((totalMinutes % dayMinutes) + dayMinutes) % dayMinutes;
-  const nextHours = Math.floor(normalized / 60).toString().padStart(2, "0");
-  const nextMinutes = (normalized % 60).toString().padStart(2, "0");
-  return `${nextHours}:${nextMinutes}`;
-};
 type SmartMoreItem = MoreSegmentMeta & { kind: MoreGroupKind; priority?: boolean; badge?: string };
 type DeviceLimitedAction = { label: string; onClick: () => void };
 
@@ -1064,7 +1055,7 @@ function AppContent() {
                   <button
                     type="button"
                     aria-label="Uhrzeit 15 Minuten frueher"
-                    onClick={() => setMobileTemplateDraft((current) => current ? { ...current, startTime: shiftTimeByMinutes(current.startTime, -15) } : current)}
+                    onClick={() => setMobileTemplateDraft((current) => current ? { ...current, startTime: shiftTimeOnQuarterHourGrid(current.startTime, -1) } : current)}
                   >
                     -15
                   </button>
@@ -1072,7 +1063,7 @@ function AppContent() {
                   <button
                     type="button"
                     aria-label="Uhrzeit 15 Minuten spaeter"
-                    onClick={() => setMobileTemplateDraft((current) => current ? { ...current, startTime: shiftTimeByMinutes(current.startTime, 15) } : current)}
+                    onClick={() => setMobileTemplateDraft((current) => current ? { ...current, startTime: shiftTimeOnQuarterHourGrid(current.startTime, 1) } : current)}
                   >
                     +15
                   </button>

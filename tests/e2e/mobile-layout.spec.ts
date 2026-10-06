@@ -110,7 +110,11 @@ test.describe("mobile layout guards", () => {
     expect(initialTime).toMatch(/^\d{2}:\d{2}$/);
     expect(Math.abs(toMinutes(initialTime) - toMinutes(currentDeviceTime))).toBeLessThanOrEqual(1);
     await page.getByRole("button", { name: "Uhrzeit 15 Minuten spaeter" }).click();
-    await expect(timeValue).toHaveText(fromMinutes(toMinutes(initialTime) + 15));
+    const nextQuarter = shiftToQuarter(initialTime, 1);
+    await expect(timeValue).toHaveText(nextQuarter);
+    expect([0, 15, 30, 45]).toContain(Number(nextQuarter.slice(3)));
+    await page.getByRole("button", { name: "Uhrzeit 15 Minuten frueher" }).click();
+    await expect(timeValue).toHaveText(shiftToQuarter(nextQuarter, -1));
     await expect(page.getByTestId("mobile-template-use-sheet")).toBeVisible();
     await expectPhoneChromeUsable(page);
   });
@@ -208,4 +212,13 @@ function toMinutes(value: string): number {
 function fromMinutes(value: number): string {
   const normalized = (value + 24 * 60) % (24 * 60);
   return `${String(Math.floor(normalized / 60)).padStart(2, "0")}:${String(normalized % 60).padStart(2, "0")}`;
+}
+
+function shiftToQuarter(value: string, direction: -1 | 1): string {
+  const minutes = toMinutes(value);
+  const isAligned = minutes % 15 === 0;
+  const shifted = direction > 0
+    ? isAligned ? minutes + 15 : Math.ceil(minutes / 15) * 15
+    : isAligned ? minutes - 15 : Math.floor(minutes / 15) * 15;
+  return fromMinutes(shifted);
 }

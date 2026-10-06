@@ -225,37 +225,40 @@ const getBuilderSectionToneClass = (section: TabletBuilderSection): string => {
   return "neutral";
 };
 
-const emptyDraft = (user: User, athleteId: string): PlanDraft => ({
-  id: "",
-  ownerUserId: user.userId,
-  clubId: user.profile.club,
-  assignedType: "self",
-  assignedAthleteIds: [athleteId],
-  assignedGroupIds: [],
-  title: "",
-  date: today,
-  weekday: getWeekdayFromDate(today),
-  time: localTimeInputValue(),
-  startTime: localTimeInputValue(),
-  endTime: "",
-  durationMinutes: 75,
-  area: "Wassertraining",
-  trainingType: "K1 Technik",
-  boatClass: "K1",
-  goal: "",
-  focus: "",
-  description: "",
-  intensity: "mittel",
-  note: "",
-  notes: "",
-  status: "planned",
-  repeat: "none",
-  repeatUntil: "",
-  repeatMaxCount: undefined,
-  assignedAthleteId: athleteId,
-  assignedGroupId: "",
-  feedbackNote: "",
-});
+const emptyDraft = (user: User, athleteId: string): PlanDraft => {
+  const currentTime = localTimeInputValue();
+  return {
+    id: "",
+    ownerUserId: user.userId,
+    clubId: user.profile.club,
+    assignedType: "self",
+    assignedAthleteIds: [athleteId],
+    assignedGroupIds: [],
+    title: "",
+    date: today,
+    weekday: getWeekdayFromDate(today),
+    time: currentTime,
+    startTime: currentTime,
+    endTime: "",
+    durationMinutes: 75,
+    area: "Wassertraining",
+    trainingType: "K1 Technik",
+    boatClass: "K1",
+    goal: "",
+    focus: "",
+    description: "",
+    intensity: "mittel",
+    note: "",
+    notes: "",
+    status: "planned",
+    repeat: "none",
+    repeatUntil: "",
+    repeatMaxCount: undefined,
+    assignedAthleteId: athleteId,
+    assignedGroupId: "",
+    feedbackNote: "",
+  };
+};
 
 const getMonday = (date: string): Date => {
   const current = parseLocalDateOnly(date);

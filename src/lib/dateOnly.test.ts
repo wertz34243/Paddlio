@@ -9,6 +9,7 @@ import {
   isValidDateKey,
   localTimeInputValue,
   normalizeDateKey,
+  shiftTimeOnQuarterHourGrid,
   startOfWeekDateKey,
   todayDateKey,
 } from "./dateOnly";
@@ -63,5 +64,26 @@ describe("dateOnly", () => {
   it("formats the current device-local time for time inputs", () => {
     expect(localTimeInputValue(new Date(2026, 8, 10, 7, 4))).toBe("07:04");
     expect(localTimeInputValue(new Date(2026, 8, 10, 19, 45))).toBe("19:45");
+  });
+
+  it("moves irregular times to the next or previous quarter hour", () => {
+    expect(shiftTimeOnQuarterHourGrid("17:07", 1)).toBe("17:15");
+    expect(shiftTimeOnQuarterHourGrid("17:07", -1)).toBe("17:00");
+  });
+
+  it("moves aligned times by a full quarter hour", () => {
+    expect(shiftTimeOnQuarterHourGrid("17:15", 1)).toBe("17:30");
+    expect(shiftTimeOnQuarterHourGrid("17:00", -1)).toBe("16:45");
+  });
+
+  it("wraps quarter-hour controls across day boundaries", () => {
+    expect(shiftTimeOnQuarterHourGrid("23:53", 1)).toBe("00:00");
+    expect(shiftTimeOnQuarterHourGrid("00:07", -1)).toBe("00:00");
+    expect(shiftTimeOnQuarterHourGrid("00:00", -1)).toBe("23:45");
+  });
+
+  it("leaves invalid stored values untouched", () => {
+    expect(shiftTimeOnQuarterHourGrid("17:75", 1)).toBe("17:75");
+    expect(shiftTimeOnQuarterHourGrid("", -1)).toBe("");
   });
 });
