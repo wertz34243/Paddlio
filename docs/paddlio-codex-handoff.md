@@ -23,6 +23,8 @@
 - Die öffentliche Website registriert keinen PWA-Service-Worker und entfernt den App-Manifest-Link.
 - DEV-/Preview-Testweg: `/public-preview`; optional `VITE_PUBLIC_SITE_MODE=true`.
 - DEV-App-Link zeigt sicher auf `https://dev.paddlio.de`; Production-Public-Site später auf `https://app.paddlio.de`.
+- Live auf DEV verifiziert: `https://dev.paddlio.de/public-preview` liefert die öffentliche Website ohne Auth-Weiterleitung.
+- Echte DEV-Response behält CSP, HSTS, nosniff, Frame-, Referrer- und Permissions-Policy.
 
 ## Domain-Konzept
 
@@ -62,7 +64,7 @@
 ## Commit / Push
 
 - Implementierungscommit: `6cb08d8` (`Add public Paddlio website`).
-- Pushstatus: wird mit diesem Handoff-Abschluss auf `origin/develop` aktualisiert.
+- Pushstatus: Implementierung und Handoff auf `origin/develop`; dieser Live-Nachweis folgt als Abschlusscommit.
 
 ## Grenzen bestätigt
 
