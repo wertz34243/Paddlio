@@ -67,8 +67,8 @@
 
 ## Commit / Push
 
-- Commit: wird nach finaler Statuspruefung eingetragen.
-- Pushstatus: ausstehend.
+- Implementierungscommit: `80ca811` (`Harden release security controls`).
+- Pushstatus: wird mit diesem Handoff-Abschluss auf `origin/develop` aktualisiert.
 
 ## Grenzen bestaetigt
 
