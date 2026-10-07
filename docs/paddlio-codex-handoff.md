@@ -43,6 +43,8 @@
 - E2E: 60 bestanden, 32 vorgesehene projekt-/viewportabhaengige Skips, 0 Fehler.
 - Rollen-/Sync-E2E: 9 bestanden, 1 vorgesehener mobiler Multi-Device-Skip, 0 Fehler.
 - DEV-Cloud: Auth-Alters-/Passwortregeln, Funktionsrechte und unauthentifizierter Privacy-Zugriff real verifiziert.
+- Vercel-Status fuer Abschlusscommit `2387019`: erfolgreich, Deployment abgeschlossen.
+- `https://dev.paddlio.de/public-preview`: HTTP 200; CSP, HSTS, nosniff, DENY-Frame-Schutz, Referrer- und Permissions-Policy real im Response vorhanden.
 
 ## Verbindliche Go-Live-Gates
 
@@ -57,7 +59,8 @@
 ## Commit / Push
 
 - Implementierungscommit: `9fab0a7` (`Harden Paddlio 5 release readiness`).
-- Pushstatus: Implementierung und dieser Handoff werden auf `origin/develop` verifiziert.
+- Handoff-Commit: `2387019` (`Update final release handoff`).
+- Pushstatus: `origin/develop` und lokaler HEAD waren identisch; Vercel-Deployment erfolgreich.
 
 ## Grenzen bestaetigt
 
