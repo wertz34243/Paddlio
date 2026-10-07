@@ -46,7 +46,9 @@
 ## Commit / Push
 
 - Implementierungscommit: `f26169c` (`Integrate final Paddlio logos`).
-- Pushstatus: Implementierung und dieser Handoff werden auf `origin/develop` verifiziert.
+- Handoff-Commit: `c4d2582` (`Update logo integration handoff`).
+- Pushstatus: `origin/develop` aktuell; Vercel-DEV-Deployment erfolgreich.
+- Live-Verifikation: beide Brand-WebP-Dateien und alle vier PWA-/Touch-Icons liefern auf `dev.paddlio.de` HTTP 200 mit korrektem Bildtyp und erwarteter Dateigröße.
 
 ## Offene Punkte
 
