@@ -45,8 +45,8 @@
 
 ## Commit / Push
 
-- Commit: wird mit diesem Arbeitsblock gesetzt.
-- Pushstatus: wird nach Commit auf `origin/develop` verifiziert.
+- Implementierungscommit: `f26169c` (`Integrate final Paddlio logos`).
+- Pushstatus: Implementierung und dieser Handoff werden auf `origin/develop` verifiziert.
 
 ## Offene Punkte
 
