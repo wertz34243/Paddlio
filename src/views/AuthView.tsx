@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { APP_NAME, APP_SLOGAN } from "../brand";
+import { APP_SLOGAN } from "../brand";
 import { cacheCloudClubs, loadClubs, type LoginInput, type RegisterInput } from "../data/storage";
 import type { CloudAuthResult } from "../auth/AuthProvider";
 import { isUserVisibleLoginMessage } from "../auth/authMessages";
@@ -128,7 +128,7 @@ export function AuthView({ onLogin, onRegister, onResetPassword, onResendConfirm
     <main className="auth-shell">
       <section className="auth-card">
         <div className="auth-brand">
-          <p className="app-brand">{APP_NAME}</p>
+          <img className="auth-brand-logo" src="/brand/paddlio-brand-primary.webp" alt="Paddlio" />
           <p className="brand-slogan">{APP_SLOGAN}</p>
           <span>Kanuslalom Training, Wettkampf und Teamplattform</span>
         </div>

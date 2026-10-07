@@ -65,7 +65,7 @@ export function DesktopSideNavigation({
   return (
     <aside className="desktop-side-nav app-sidebar" aria-label="Desktop-Navigation" data-testid="app-sidebar">
       <div className="desktop-brand">
-        <span aria-hidden="true">{appName.slice(0, 1)}</span>
+        <img className="desktop-brand-logo" src="/icons/paddlio-icon-192.png" alt="" aria-hidden="true" />
         <div>
           <strong>{appName}</strong>
           <small>{appSlogan}</small>

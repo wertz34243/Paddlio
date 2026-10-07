@@ -9,6 +9,8 @@ test.describe("public Paddlio website", () => {
 
     await page.goto("/public-preview");
     await expect(page.getByRole("heading", { name: "Paddlio", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Paddlio Startseite" }).getByRole("img", { name: "Paddlio" }))
+      .toHaveAttribute("src", "/brand/paddlio-brand-header.webp");
     await expect(page.getByRole("link", { name: "Paddlio App öffnen" })).toHaveAttribute("href", "https://dev.paddlio.de");
     await expect(page.getByTestId("authenticated-app")).toHaveCount(0);
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "index, follow");

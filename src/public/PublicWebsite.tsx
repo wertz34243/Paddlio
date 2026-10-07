@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { APP_NAME, APP_SLOGAN } from "../brand";
+import { APP_SLOGAN } from "../brand";
 import { getPublicAppUrl, getPublicRoute, publicHref, PUBLIC_PREVIEW_PREFIX } from "./publicSiteRouting";
 import "./publicWebsite.css";
 
@@ -222,7 +222,7 @@ export default function PublicWebsite() {
 
   return <div className="public-site">
     <a className="public-skip" href="#main">Zum Inhalt springen</a>
-    <header className="public-header"><a className="public-brand" href={href("/")}><img src="/icons/paddlio-icon-192.png" alt="" /><span><strong>{APP_NAME}</strong><small>{APP_SLOGAN}</small></span></a><nav aria-label="Öffentliche Navigation"><a href={href("/funktionen")}>Funktionen</a><a href={href("/installation")}>Installation</a><a href={href("/hilfe")}>Hilfe</a></nav><a className="public-app-link" href={appUrl}>App öffnen</a></header>
+    <header className="public-header"><a className="public-brand" href={href("/")} aria-label="Paddlio Startseite"><img src="/brand/paddlio-brand-header.webp" alt="Paddlio" /></a><nav aria-label="Öffentliche Navigation"><a href={href("/funktionen")}>Funktionen</a><a href={href("/installation")}>Installation</a><a href={href("/hilfe")}>Hilfe</a></nav><a className="public-app-link" href={appUrl}>App öffnen</a></header>
     {content}
     <footer className="public-footer"><div><strong>Paddlio</strong><span>{APP_SLOGAN}</span></div><nav aria-label="Rechtliches"><a href={href("/datenschutz")}>Datenschutz</a><a href={href("/impressum")}>Impressum</a><a href={href("/hilfe")}>Hilfe</a></nav><small>Privates, kostenloses Kanuslalom-Projekt.</small></footer>
   </div>;

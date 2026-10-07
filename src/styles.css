@@ -17890,3 +17890,27 @@ body,
     margin-bottom: 0;
   }
 }
+
+/* Paddlio 5.0 final logo integration */
+.auth-brand-logo {
+  display: block;
+  width: min(100%, 320px);
+  height: auto;
+  margin: 0 auto 10px;
+  object-fit: contain;
+}
+
+.desktop-brand-logo {
+  display: block;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+@media (max-width: 560px) {
+  .auth-brand-logo {
+    width: min(100%, 260px);
+  }
+}
