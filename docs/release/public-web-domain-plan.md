@@ -41,6 +41,10 @@ Erst beim späteren Production-Schritt, nicht jetzt:
 - Redirect-Allowlist für `https://app.paddlio.de/**`.
 - `paddlio.de` benötigt keine Supabase-Redirects.
 - E-Mail-Bestätigung und Recovery gegen die App-Domain Ende-zu-Ende testen.
+- Passwortminimum 10 und Groß-/Kleinbuchstabe, Zahl sowie Sonderzeichen serverseitig aktivieren.
+- `paddlio_before_user_created_500` als Before-User-Created-Hook aktivieren.
+- CAPTCHA-Provider und Keys konfigurieren; Signup, Login und Recovery mit `captchaToken` testen.
+- Die vollständige Production-Checkliste und den Rollback enthält `paddlio-5-production-readiness.md`.
 
 ## SEO
 

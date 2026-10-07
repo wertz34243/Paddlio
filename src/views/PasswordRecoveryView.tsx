@@ -1,15 +1,13 @@
 import { useState, type FormEvent } from "react";
 import { APP_NAME, APP_SLOGAN } from "../brand";
 import type { CloudAuthResult } from "../auth/AuthProvider";
+import { PASSWORD_MIN_LENGTH, PASSWORD_REQUIREMENTS_TEXT, passwordMeetsRequirements } from "../domain/passwordPolicy";
 
 type PasswordRecoveryViewProps = {
   hasSession: boolean;
   onUpdatePassword: (password: string) => Promise<CloudAuthResult>;
   onRequestNewLink: () => Promise<void>;
 };
-
-const passwordMeetsRequirements = (password: string): boolean =>
-  password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password);
 
 export function PasswordRecoveryView({ hasSession, onUpdatePassword, onRequestNewLink }: PasswordRecoveryViewProps) {
   const [password, setPassword] = useState("");
@@ -30,7 +28,7 @@ export function PasswordRecoveryView({ hasSession, onUpdatePassword, onRequestNe
     }
 
     if (!passwordMeetsRequirements(password)) {
-      setMessage("Bitte nutze mindestens 8 Zeichen mit Großbuchstabe, Kleinbuchstabe und Zahl.");
+      setMessage(PASSWORD_REQUIREMENTS_TEXT);
       setMessageOk(false);
       return;
     }
@@ -79,7 +77,7 @@ export function PasswordRecoveryView({ hasSession, onUpdatePassword, onRequestNe
                 onChange={(event) => setPassword(event.target.value)}
                 type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
-                minLength={8}
+                minLength={PASSWORD_MIN_LENGTH}
                 required
               />
             </label>
@@ -90,7 +88,7 @@ export function PasswordRecoveryView({ hasSession, onUpdatePassword, onRequestNe
                 onChange={(event) => setPasswordRepeat(event.target.value)}
                 type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
-                minLength={8}
+                minLength={PASSWORD_MIN_LENGTH}
                 required
               />
             </label>
@@ -98,7 +96,7 @@ export function PasswordRecoveryView({ hasSession, onUpdatePassword, onRequestNe
               <span>Passwort anzeigen</span>
               <input type="checkbox" checked={showPassword} onChange={(event) => setShowPassword(event.target.checked)} />
             </label>
-            <p className="card-note">Mindestens 8 Zeichen, ein Großbuchstabe, ein Kleinbuchstabe und eine Zahl.</p>
+            <p className="card-note">{PASSWORD_REQUIREMENTS_TEXT}</p>
             <button className="save-button" type="submit" disabled={submitting}>
               {submitting ? "Speichere..." : "Passwort speichern"}
             </button>

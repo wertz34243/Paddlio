@@ -207,7 +207,7 @@ export function SettingsView({ user, syncStatus, onSave, onLogout }: SettingsVie
           <div className="legal-copy">
             <p>Kontodaten dienen Anmeldung und Berechtigungsprüfung. Trainings-, Feedback-, Team- und Wettkampfdaten werden für Planung, Durchführung und Auswertung verarbeitet. Lokaler Gerätespeicher ermöglicht Offline-Nutzung und Synchronisation.</p>
             <p>Es ist kein Marketing-Tracking im Client eingebaut. Externe Dienste werden nur für ausdrücklich genutzte Funktionen wie Supabase-Cloudspeicherung oder eine verbundene Polar-Integration angesprochen.</p>
-            <p>Eigene Profildaten kannst du im Profil berichtigen. Über den Auskunftsexport erhältst du eine maschinenlesbare Kopie der Daten deines Kontos. Kontakt und Aufbewahrungsfristen müssen vor dem offiziellen Release durch den Betreiber ergänzt und rechtlich geprüft werden.</p>
+            <p>Eigene Profildaten kannst du im Profil berichtigen. Über den Auskunftsexport erhältst du eine maschinenlesbare Kopie der Daten deines Kontos. Aufbewahrung und Kontaktwege sind in der öffentlichen Datenschutzerklärung beschrieben.</p>
           </div>
         </details>
         <details>

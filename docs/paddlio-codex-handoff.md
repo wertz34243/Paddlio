@@ -2,73 +2,71 @@
 
 ## Stand
 
-- Datum/Uhrzeit: 2026-10-06 18:20 CEST
-- Stabilitaetsblock: Paddlio 5.0 Schritt 3C - öffentliche Website und App-Domain
-- Status: IMPLEMENTIERT UND GETESTET, PRODUCTION-AKTIVIERUNG BEWUSST OFFEN
+- Datum/Uhrzeit: 2026-10-07 06:47 CEST
+- Stabilitaetsblock: Paddlio 5.0 Schritt 3D - finale Release-Abnahme
+- Entscheidung: **READY FOR PRODUCTION mit verbindlichen manuellen Go-Live-Gates**
+- Bedeutung: Keine bekannten technischen Code-/DEV-Blocker. Es wurde weder Production veraendert noch ein Release ausgeloest.
 
-## Änderungen
+## Root Cause und Haertung
 
-- Öffentliche responsive Website mit den Routen `/`, `/funktionen`, `/sportler`, `/trainer`, `/vereine`, `/installation`, `/hilfe`, `/datenschutz` und `/impressum`.
-- Dark-Water-Design mit Paddlio-Branding, Produktvorschau, Rollenbereichen, Gerätehinweisen und klaren App-CTAs.
-- Polar ausschließlich als „Beta / in Vorbereitung“ beschrieben; Datei-Upload und nicht freigegebene Academy-/Video-Funktionen werden nicht beworben.
-- Release-Entwürfe für Impressum und Datenschutz mit den bereitgestellten Betreiberangaben und klarer Kennzeichnung der noch ausstehenden rechtlichen Prüfung.
-- SEO-Basis: Title, Description, OpenGraph, Favicon, semantische Überschriften, `robots.txt` und öffentliche `sitemap.xml`.
-- Registrierung verlangt ein Geburtsdatum und blockiert im UI sowie AuthProvider die selbstständige Registrierung unter 16.
+- Passwortregeln waren zwischen Registrierung, Recovery und lokalem Fallback uneinheitlich und serverseitig in DEV noch nicht erzwungen.
+- Die 16+-Regel war nur in UI/AuthProvider vorhanden und durch direkten Auth-Zugriff umgehbar.
+- Die Kontoloeschung haette gemeinsame Nachrichten anderer Beteiligter mitgeloescht.
+- Aufbewahrung, Aufsichtsbehoerde, Production-Konfiguration, Migrationsreihenfolge und Rollback waren noch nicht verbindlich zusammengefuehrt.
 
-## Technische Trennung
+## Aenderungen
 
-- `paddlio.de` und `www.paddlio.de` laden ausschließlich das Public-Website-Bundle.
-- `app.paddlio.de` und `dev.paddlio.de` laden weiterhin die PWA mit Auth/Supabase.
-- App, Supabase und App-CSS werden dynamisch nicht in die öffentliche Website initialisiert.
-- Die öffentliche Website registriert keinen PWA-Service-Worker und entfernt den App-Manifest-Link.
-- DEV-/Preview-Testweg: `/public-preview`; optional `VITE_PUBLIC_SITE_MODE=true`.
-- DEV-App-Link zeigt sicher auf `https://dev.paddlio.de`; Production-Public-Site später auf `https://app.paddlio.de`.
-- Live auf DEV verifiziert: `https://dev.paddlio.de/public-preview` liefert die öffentliche Website ohne Auth-Weiterleitung.
-- Echte DEV-Response behält CSP, HSTS, nosniff, Frame-, Referrer- und Permissions-Policy.
+- Gemeinsame Passwortpolicy: mindestens 10 Zeichen, Gross-/Kleinbuchstabe, Zahl und Sonderzeichen; Registrierung und Recovery verwenden dieselbe Regel.
+- Privater Supabase-Before-User-Created-Hook blockiert fehlende, ungueltige und Unter-16-Geburtsdaten vor Anlage des Auth-Kontos.
+- Account-Privacy anonymisiert Identitaetsbezug in gemeinsamen Nachrichten und Beitraegen; fremde Kommunikationsverlaeufe bleiben erhalten.
+- Datenschutzerklaerung um Aufbewahrung, Anonymisierung und offizielle LDI-NRW-Angaben erweitert.
+- Public-E2E deckt alle neun Routen, Phone/Tablet/Desktop und fehlende private Service-Worker-Initialisierung ab.
+- Vollstaendige Production-Checkliste, Advisor-Inventur, 52 Migrationen und Rollback in `docs/release/paddlio-5-production-readiness.md`.
 
-## Domain-Konzept
+## Migration / Supabase DEV
 
-- `paddlio.de`: öffentliche Website.
-- `www.paddlio.de`: permanente Weiterleitung auf `paddlio.de`.
-- `app.paddlio.de`: Paddlio-PWA.
-- `dev.paddlio.de`: bestehende DEV-App und `/public-preview`.
-- Vercel-/DNS-/Supabase-Auth-Schritte sind in `docs/release/public-web-domain-plan.md` dokumentiert.
-- Keine DNS-, Production-Vercel- oder Production-Supabase-Änderung wurde ausgeführt.
-
-## Supabase DEV
-
-- Keine Migration erforderlich.
-- Supabase DEV `nlllqsfdhfiwticrcrnp` wurde nicht verändert.
-- Production Supabase `twlkhfbrrwjwppxinmpn` wurde nicht verwendet.
+- Migration: `20261006163252_release_auth_age_and_privacy_hardening.sql`.
+- Ausschliesslich auf DEV `nlllqsfdhfiwticrcrnp` angewendet.
+- Auth-Hook `paddlio_before_user_created_500` in DEV aktiviert.
+- DEV Auth: Mindestlaenge 10 und staerkste Zeichenanforderung aktiviert.
+- Direkte DEV-Tests: Unter-16-Signup 403; schwache Passwoerter 422; keine negativen Testkonten angelegt.
+- `account-privacy` ausschliesslich auf DEV als Version 9 ACTIVE deployed; unauthentifizierter Zugriff 401.
+- Security Advisor: 22 Warnungen (21 benoetigte authentifizierte SECURITY-DEFINER-Helfer, 1 im Free-Plan nicht verfuegbare Leaked-Password-Pruefung). Jede Warnung ist einzeln bewertet.
+- Keine Nutzdaten geloescht. RLS blieb aktiv.
 
 ## Tests
 
 - `npm audit`: 0 Schwachstellen.
-- Unit/Integration: 31 Dateien, 176/176 bestanden.
-- Build: bestanden.
+- `npm test`: 32 Dateien, 182/182 bestanden.
+- `npm run build`: bestanden; bekannte nicht blockierende XLSX-Chunk-Warnung bei 500.06 kB.
 - Encoding, RLS, Security, Bundle, A11y und Beta: bestanden.
-- Bundle-Trennung: Entry 196,926 Bytes, private App 374,815 Bytes, Public Website 16,214 Bytes.
-- Öffentliche Website E2E: Landingpage ohne Login/Supabase, App-Link, Installation, Datenschutz, Impressum, Phone/Desktop und kein horizontaler Overflow bestanden.
-- Gesamte E2E-Suite: 56 bestanden, 32 vorgesehene projekt-/viewportabhängige Skips, 0 Fehler.
-- Rollen-E2E: 9 bestanden, 1 vorgesehener mobiler Multi-Device-Skip.
-- Visuelle Browserprüfung auf Desktop durchgeführt.
+- E2E: 60 bestanden, 32 vorgesehene projekt-/viewportabhaengige Skips, 0 Fehler.
+- Rollen-/Sync-E2E: 9 bestanden, 1 vorgesehener mobiler Multi-Device-Skip, 0 Fehler.
+- DEV-Cloud: Auth-Alters-/Passwortregeln, Funktionsrechte und unauthentifizierter Privacy-Zugriff real verifiziert.
 
-## Offene Release-Blocker
+## Verbindliche Go-Live-Gates
 
-- `info@paddlio.de`, `support@paddlio.de` und `datenschutz@paddlio.de` vor öffentlicher Aktivierung real auf Empfang prüfen.
-- Impressum und Datenschutzerklärung rechtlich final prüfen.
-- Die 16+-Regel ist in der regulären UI und im AuthProvider umgesetzt, aber noch nicht serverseitig nicht-umgehbar. Vor Production Auth-Hook/Trigger oder einen gleichwertigen Sorgeberechtigten-/Einladungsprozess festlegen.
-- Production-Domains, Vercel-Projekte, DNS und Supabase-Auth-Redirects erst in einem ausdrücklich freigegebenen Production-Schritt konfigurieren.
-- App-Domain mit app-spezifischem `robots.txt` vollständig von Indexierung ausschließen.
+- `info@paddlio.de`, `support@paddlio.de`, `datenschutz@paddlio.de` auf Versand und Empfang pruefen.
+- Rechtstexte vom Betreiber beziehungsweise qualifizierter Stelle final pruefen; sie sind technische Release-Entwuerfe.
+- CAPTCHA-Provider/Keys in Production konfigurieren und Signup, Login sowie Recovery testen.
+- Production-Migrationsdifferenz autorisiert ermitteln, Backup/Dry Run durchfuehren und danach RLS/Advisor pruefen.
+- Production-Domains, Auth-Redirects, Mailtemplates und Environment-Variablen gemaess Checkliste setzen.
+- Polar bleibt Beta; ohne Backend-Konfiguration bleibt Connect deaktiviert.
+- Leaked Password Protection ist im aktuellen Supabase-Free-Plan nicht aktivierbar und bleibt als akzeptierte Einschraenkung dokumentiert.
 
 ## Commit / Push
 
-- Implementierungscommit: `6cb08d8` (`Add public Paddlio website`).
-- Pushstatus: Implementierung und Handoff auf `origin/develop`; dieser Live-Nachweis folgt als Abschlusscommit.
+- Commit: wird im Abschlusscommit dieses Blocks gesetzt.
+- Pushstatus: wird nach finalem Commit auf `origin/develop` verifiziert.
 
-## Grenzen bestätigt
+## Grenzen bestaetigt
 
 - Nur Branch `develop`.
-- `main` unverändert.
-- Production Supabase unverändert.
-- Keine DEV- oder Production-Nutzdaten gelöscht.
+- Nur Supabase DEV `nlllqsfdhfiwticrcrnp` veraendert.
+- `main` unveraendert.
+- Production Supabase `twlkhfbrrwjwppxinmpn` unveraendert.
+- DNS und Production-Hosting unveraendert.
+
+## Naechster Schritt
+
+Nach ausdruecklicher Freigabe die manuelle Production-Checkliste ausfuehren. Kein automatischer Merge, Production-Deploy oder DNS-Schritt.

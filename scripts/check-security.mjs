@@ -10,6 +10,8 @@ const polarHandlers = ["start", "status", "disconnect", "sync"].map((name) => re
 const polarView = read("src/views/PolarIntegrationView.tsx");
 const communicationView = read("src/views/CommunicationView.tsx");
 const hardeningMigration = read("supabase/migrations/20261006154000_security_release_hardening.sql");
+const releaseMigration = read("supabase/migrations/20261006163252_release_auth_age_and_privacy_hardening.sql");
+const accountPrivacyFunction = read("supabase/functions/account-privacy/index.ts");
 
 if (/ADMIN_EMAILS?|dev\.admin@paddlio\.test|t\.kanu@outlook\.com/.test(profileService + storage)) {
   failures.push("Client code must not derive administrator privileges from email addresses.");
@@ -29,6 +31,20 @@ if (!polarView.includes("Polar AccessLink · Beta") || !polarView.includes("!ses
 if (!hardeningMigration.includes("alter function public.set_updated_at() set search_path = ''")
   || !hardeningMigration.includes("revoke all on function %s from anon")) {
   failures.push("Security release migration must harden function search paths and anonymous execution.");
+}
+if (!releaseMigration.includes("paddlio_before_user_created_500")
+  || !releaseMigration.includes("current_date - interval '16 years'")
+  || !releaseMigration.includes("revoke all on function public.paddlio_before_user_created_500(jsonb) from public, anon, authenticated")) {
+  failures.push("Release migration must enforce the 16+ registration rule in a private Auth hook.");
+}
+const deleteSpecs = accountPrivacyFunction.slice(
+  accountPrivacyFunction.indexOf("const deleteSpecs"),
+  accountPrivacyFunction.indexOf("function allowedOrigins"),
+);
+if (!accountPrivacyFunction.includes('from("direct_messages").update({ sender_id: null })')
+  || !accountPrivacyFunction.includes('from("direct_messages").update({ receiver_id: null })')
+  || deleteSpecs.includes('table: "direct_messages"')) {
+  failures.push("Account deletion must anonymize shared messages instead of deleting other participants' conversation history.");
 }
 
 const headers = new Map((vercel.headers?.[0]?.headers ?? []).map((entry) => [entry.key.toLowerCase(), entry.value]));

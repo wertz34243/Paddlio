@@ -172,9 +172,12 @@ function PrivacyPage() {
     <h2>Lokale Speicherung</h2><p>Die App speichert funktionale Caches, Offline-Änderungen, Synchronisierungsstände und Einstellungen lokal auf dem Gerät. Das ermöglicht Offline-Nutzung und schützt noch nicht übertragene Änderungen vor Verlust.</p>
     <h2>Tracking und Werbung</h2><p>Paddlio enthält nach aktuellem technischen Audit kein Marketing-Tracking oder Analytics-SDK und zeigt keine Werbung.</p>
     <h2>Minderjährige</h2><p>Die selbstständige Registrierung ist für Paddlio 5.0 ab 16 Jahren vorgesehen. Profile, Trainings- und Leistungsdaten sind nicht öffentlich. Unter 16 Jahren ist keine normale eigenständige Registrierung vorgesehen, solange kein belastbarer Sorgeberechtigten-Prozess vorhanden ist.</p>
+    <h2>Aufbewahrung</h2><p>Kontodaten werden bis zur Kontolöschung beziehungsweise bis zum Ablauf zwingender gesetzlicher Pflichten gespeichert. Profilangaben bleiben bis zu ihrer Änderung oder Kontolöschung erhalten. Trainings-, Wettkampf-, Ziel-, Material- und sonstige persönliche Daten bleiben gespeichert, bis der Nutzer sie oder sein Konto löscht.</p>
+    <p>Nachrichten bleiben gespeichert, solange sie Teil einer bestehenden Unterhaltung sind. Bei einer Kontolöschung wird der Bezug zum gelöschten Absender beziehungsweise Empfänger anonymisiert; Nachrichten und Daten anderer Beteiligter werden nicht mitgelöscht. Vollständig verwaiste Direktnachrichten werden entfernt.</p>
     <h2>Auskunft, Berichtigung und Löschung</h2><p>Nutzer können eigene Profildaten berichtigen, einen JSON-Auskunftsexport anfordern und die Kontolöschung in der App starten. Daneben bestehen im gesetzlichen Rahmen Rechte auf Auskunft, Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit, Widerruf beziehungsweise Widerspruch und Beschwerde bei einer Datenschutzaufsichtsbehörde.</p>
+    <h2>Datenschutzaufsicht</h2><p>Zuständige Aufsichtsbehörde ist die Landesbeauftragte für Datenschutz und Informationsfreiheit Nordrhein-Westfalen, Kavalleriestraße 2–4, 40213 Düsseldorf. Weitere Informationen und Kontaktmöglichkeiten stehen unter <a href="https://www.ldi.nrw.de" rel="noreferrer">www.ldi.nrw.de</a>.</p>
     <h2>Kontakt</h2><p>Datenschutzanfragen sollen nach bestätigter Einrichtung an datenschutz@paddlio.de gerichtet werden.</p>
-    <p className="public-legal-note">Vor Production müssen Mail-Erreichbarkeit, Rechtsgrundlagen, Aufbewahrungsfristen, Auftragsverarbeiter und Minderjährigen-Konzept abschließend geprüft werden.</p>
+    <p className="public-legal-note">Vor Production müssen Mail-Erreichbarkeit, Rechtsgrundlagen, Auftragsverarbeiter und dieser Release-Entwurf abschließend geprüft werden. Die Seite stellt keine Rechtsberatung dar.</p>
   </article></main>;
 }
 

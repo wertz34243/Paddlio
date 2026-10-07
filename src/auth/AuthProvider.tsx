@@ -5,6 +5,7 @@ import { getSupabaseConfigMessage, isSupabaseConfigured } from "../lib/supabaseC
 import { isDevelopmentEnvironment } from "../lib/appEnvironment";
 import { PROFILE_SYNC_RETRY_MESSAGE } from "./authMessages";
 import { isAtLeastAge } from "../domain/registrationAge";
+import { PASSWORD_REQUIREMENTS_TEXT, passwordMeetsRequirements } from "../domain/passwordPolicy";
 import {
   cacheCloudAuthUsers,
   cacheCloudClubRequests,
@@ -1253,6 +1254,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!client) return { ok: false, message: getSupabaseConfigMessage() };
     if (!input.privacyAccepted) return { ok: false, message: "Bitte akzeptiere den Datenschutz." };
     if (!isAtLeastAge(input.birthDate)) return { ok: false, message: "Die selbstständige Registrierung ist ab 16 Jahren möglich." };
+    if (!passwordMeetsRequirements(input.password)) return { ok: false, message: PASSWORD_REQUIREMENTS_TEXT };
     if (input.password !== input.passwordRepeat) return { ok: false, message: "Die Passwörter stimmen nicht überein." };
     const { data: result, error } = await client.auth.signUp({
       email: input.email.trim().toLowerCase(),
@@ -1351,11 +1353,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { ok: false, message: "Dieser Link ist ungültig oder abgelaufen." };
     }
 
+    if (!passwordMeetsRequirements(password)) {
+      return { ok: false, message: PASSWORD_REQUIREMENTS_TEXT };
+    }
+
     const { error } = await client.auth.updateUser({ password });
     if (error) {
       const message = error.message.toLowerCase();
       if (message.includes("weak") || message.includes("password")) {
-        return { ok: false, message: "Das Passwort ist zu schwach. Bitte nutze mindestens 8 Zeichen mit Großbuchstabe, Kleinbuchstabe und Zahl." };
+        return { ok: false, message: PASSWORD_REQUIREMENTS_TEXT };
       }
       return { ok: false, message: "Das Passwort konnte nicht geändert werden. Bitte fordere einen neuen Link an." };
     }

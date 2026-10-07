@@ -2,14 +2,14 @@
 
 Status: DONE
 
-Auftragsbasis: Paddlio 5.0 Schritt 3C - öffentliche Website und App-Domain.
+Auftragsbasis: Paddlio 5.0 Schritt 3D - finale Release-Abnahme.
 
 Ergebnis:
-- Öffentliche Website und neun öffentliche Routen implementiert.
-- Public Website und private PWA werden anhand der Domain in getrennten Bundles geladen.
-- DEV-Vorschau unter `/public-preview` getestet.
-- Domain-, Vercel-, DNS-, Auth-Redirect- und SEO-Konzept dokumentiert.
-- 16+-Registrierungsregel in UI und AuthProvider ergänzt; serverseitige Production-Durchsetzung als Blocker dokumentiert.
-- Vollständige Testmatrix grün.
+- Technische Code- und DEV-Abnahme bestanden.
+- Serverseitige 16+-Regel und starke Passwortpolicy in DEV aktiv und real getestet.
+- Gemeinsame Kommunikation wird bei Kontoloeschung anonymisiert statt fremd geloescht.
+- Security Advisor, Production-Konfiguration, Migrationen und Rollback vollstaendig dokumentiert.
+- Automatisierte Testmatrix gruen.
+- Entscheidung: READY FOR PRODUCTION mit verbindlichen manuellen Go-Live-Gates.
 
 Naechster Auftrag erst wieder mit `Status: READY`.

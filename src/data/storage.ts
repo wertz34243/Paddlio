@@ -2,6 +2,7 @@ import { seedData } from "./seed";
 import { academyInitialData } from "../features/academy/academyContent";
 import { getWeekdayFromDate } from "../domain/trainingPlan";
 import { isAtLeastAge } from "../domain/registrationAge";
+import { PASSWORD_REQUIREMENTS_TEXT, passwordMeetsRequirements } from "../domain/passwordPolicy";
 import { writeLocalFirstCache } from "../services/localFirstCacheService";
 import type {
   AgeClass,
@@ -1548,9 +1549,6 @@ const createSession = (userId: string): AuthSession => {
 
 const isValidEmail = (email: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-const passwordHasRecommendedShape = (password: string): boolean =>
-  /[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password);
-
 export const registerLocalUser = (input: RegisterInput): AuthResult => {
   const firstName = input.firstName.trim();
   const lastName = input.lastName.trim();
@@ -1578,12 +1576,8 @@ export const registerLocalUser = (input: RegisterInput): AuthResult => {
     return { ok: false, message: "Die selbstständige Registrierung ist ab 16 Jahren möglich." };
   }
 
-  if (password.length < 8) {
-    return { ok: false, message: "Das Passwort braucht mindestens 8 Zeichen." };
-  }
-
-  if (!passwordHasRecommendedShape(password)) {
-    return { ok: false, message: "Nutze bitte Grossbuchstaben, Kleinbuchstaben und mindestens eine Zahl." };
+  if (!passwordMeetsRequirements(password)) {
+    return { ok: false, message: PASSWORD_REQUIREMENTS_TEXT };
   }
 
   if (password !== passwordRepeat) {

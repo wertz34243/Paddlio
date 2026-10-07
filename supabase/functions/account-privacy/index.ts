@@ -79,10 +79,6 @@ const deleteSpecs: ExportSpec[] = [
   { table: "task_assignments", filters: ["assigned_to", "user_id"] },
   { table: "training_attendance", filters: ["athlete_id", "user_id"] },
   { table: "notifications", filters: ["user_id"] },
-  { table: "direct_messages", filters: ["sender_id", "receiver_id"] },
-  { table: "group_messages", filters: ["sender_id"] },
-  { table: "club_messages", filters: ["sender_id", "target_user_id"] },
-  { table: "club_posts", filters: ["author_id", "target_user_id"] },
   { table: "file_attachments", filters: ["owner_id", "user_id"] },
   { table: "tasks", filters: ["user_id", "owner_id", "created_by"] },
   { table: "result_imports", filters: ["owner_id", "user_id"] },
@@ -205,6 +201,13 @@ Deno.serve(async (req: Request) => {
 
     // Remove rows owned by this account. Shared plans are retained, while their personal assignment is detached.
     const detachOperations = [
+      admin.from("direct_messages").update({ sender_id: null }).eq("sender_id", user.id),
+      admin.from("direct_messages").update({ receiver_id: null }).eq("receiver_id", user.id),
+      admin.from("group_messages").update({ sender_id: null }).eq("sender_id", user.id),
+      admin.from("club_messages").update({ sender_id: null }).eq("sender_id", user.id),
+      admin.from("club_messages").update({ target_user_id: null }).eq("target_user_id", user.id),
+      admin.from("club_posts").update({ author_id: null }).eq("author_id", user.id),
+      admin.from("club_posts").update({ target_user_id: null }).eq("target_user_id", user.id),
       admin.from("training_plan_items").update({ assigned_athlete_id: null }).eq("assigned_athlete_id", user.id).neq("owner_id", user.id),
       admin.from("training_plan_items").update({ coach_id: null }).eq("coach_id", user.id).neq("owner_id", user.id),
       admin.from("training_groups").update({ coach_id: null }).eq("coach_id", user.id),
@@ -223,6 +226,19 @@ Deno.serve(async (req: Request) => {
           ...(canSeeDevelopmentDiagnostics ? { diagnostic: { table: "shared_identity_detach", code: error.code } } : {}),
         }, 500);
       }
+    }
+
+    const { error: orphanedDirectMessagesError } = await admin
+      .from("direct_messages")
+      .delete()
+      .is("sender_id", null)
+      .is("receiver_id", null);
+    if (orphanedDirectMessagesError) {
+      console.error("account_privacy_orphan_cleanup_failed", { code: orphanedDirectMessagesError.code });
+      return response(origin, {
+        error: "delete_failed",
+        ...(canSeeDevelopmentDiagnostics ? { diagnostic: { table: "direct_messages", code: orphanedDirectMessagesError.code } } : {}),
+      }, 500);
     }
 
     for (const spec of deleteSpecs) {

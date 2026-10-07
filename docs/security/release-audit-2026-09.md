@@ -6,7 +6,7 @@ Dieses Dokument ist eine technische Bestandsaufnahme und kein rechtsanwaltlich g
 
 ## Freigabeempfehlung
 
-**Technischer Stand: TECHNICALLY READY mit manuellen Auth-Aufgaben.** Die automatisierten Sicherheits-, RLS-, Rollen-, Datenschutz- und Header-Pruefungen sind bestanden. Der offizielle oeffentliche Release bleibt **BLOCKED**, bis die unten genannten Auth-Entscheidungen und rechtlichen Betreiberangaben abgeschlossen sind.
+**Technischer Stand: READY FOR PRODUCTION mit verbindlichen manuellen Go-Live-Gates.** Die technischen Auth-Luecken bei Passwortstaerke und 16+-Registrierung sind auf DEV geschlossen. Production, DNS und `main` bleiben unberuehrt. Mail-Erreichbarkeit, CAPTCHA, Production-Konfiguration und rechtliche Endpruefung muessen vor dem tatsaechlichen Go-Live bestaetigt werden.
 
 ## Security Advisor
 
@@ -40,7 +40,9 @@ Real im DEV-Dashboard verifiziert:
 - Access Token 3600 Sekunden; Refresh-Token-Reuse-Erkennung aktiv, Intervall 10 Sekunden.
 - OTP-Ablauf 3600 Sekunden, OTP-Laenge 8.
 - Leaked Password Protection deaktiviert und im aktuellen Free-Plan nicht verfuegbar.
-- CAPTCHA deaktiviert; MFA, Passwortkomplexitaet, Secure Password Change und Session-Limits benoetigen eine dokumentierte Betreiberentscheidung.
+- Passwortminimum 10 und staerkste Zeichenanforderung (Gross-/Kleinbuchstabe, Zahl, Sonderzeichen) serverseitig aktiv.
+- Before-User-Created-Hook `paddlio_before_user_created_500` aktiv; direkter Unter-16-Signup real mit 403 abgelehnt.
+- CAPTCHA deaktiviert, weil Provider-Keys und Production-Konfiguration noch fehlen. MFA ist fuer 5.0 bewusst nicht verpflichtend; keine unfertige MFA-UI.
 
 Rollen werden nicht aus editierbaren Client-Metadaten vergeben. Berechtigungsquelle bleiben `public.profiles.roles`, aktiver Profilstatus und RLS.
 
@@ -62,6 +64,7 @@ Die tatsaechlichen HTTP-Responses von `dev.paddlio.de` wurden geprueft:
 - React escaped Nutzereingaben; keine produktive unsichere HTML-Ausgabe wurde gefunden.
 - CSV/XLS/XLSX-Import ist begrenzt und Export schuetzt gegen Spreadsheet-Formula-Injection.
 - Eigene Profildaten koennen berichtigt werden; Logout, JSON-Auskunftsexport und serverseitige Kontoloeschung sind vorhanden.
+- Gemeinsame Nachrichten werden bei Kontoloeschung anonymisiert. Andere Beteiligte verlieren ihren Gespraechsverlauf nicht; vollstaendig verwaiste Direktnachrichten werden entfernt.
 - Der reale DEV-Auskunftsexport war kontobezogen, gueltiges JSON, maskierte Fremdidentitaeten und enthielt keine Provider-Secrets.
 - Nicht authentifizierter Export wurde mit 401 abgelehnt; falsche Loeschphrase und fremde Origin wurden abgelehnt.
 - Ein eigens erstelltes entbehrliches DEV-Testkonto wurde erfolgreich geloescht. Eigene Testdaten verschwanden, fremde Profile und Clubs blieben unveraendert, erneuter Login wurde abgelehnt.
@@ -79,22 +82,26 @@ Die tatsaechlichen HTTP-Responses von `dev.paddlio.de` wurden geprueft:
 - Unit/Integration: 170/170 bestanden.
 - Build: bestanden; bestehender Hinweis auf grossen Bundle-Chunk.
 - Encoding, RLS, Security, Bundle, A11y und Beta: bestanden.
-- Rollen-E2E: 9 bestanden, 1 vorgesehener mobiler Multi-Device-Skip.
-- Ein vorhandener iPad-Screenshot-Test traf einen React-DOM-Replacement-Race. Der Test wurde zustandsbasiert gehaertet und bestand danach dreimal in Folge. Der abschliessende Gesamtlauf bestand mit 50 Tests und 32 vorgesehenen projekt-/viewportabhaengigen Skips.
+- Unit/Integration: 32 Dateien, 182/182 bestanden.
+- E2E: 60 bestanden, 32 vorgesehene projekt-/viewportabhaengige Skips, 0 Fehler.
+- Rollen-/Sync-E2E: 9 bestanden, 1 vorgesehener mobiler Multi-Device-Skip, 0 Fehler.
+- Build, Encoding, RLS, Security, Bundle, A11y und Beta bestanden. Der XLSX-Chunk erzeugt weiterhin eine nicht blockierende Vite-Warnung bei 500.06 kB.
 
-## Manuelle technische Aufgaben vor oeffentlichem Release
+## Manuelle Go-Live-Aufgaben
 
 1. Supabase-Plan/Alternative fuer Leaked Password Protection entscheiden und aktivieren, sobald verfuegbar.
-2. Mindestlaenge und Komplexitaet der Passwoerter verbindlich festlegen; Secure Password Change, CAPTCHA, MFA und Session-Limits entscheiden.
+2. CAPTCHA-Provider waehlen, Keys konfigurieren und Signup/Login/Recovery in DEV sowie Production testen.
 3. Polar-OAuth mit realem DEV-Providerkonto Ende-zu-Ende testen oder Beta fuer den oeffentlichen Release deaktiviert lassen.
 4. Bei Einfuehrung von Storage private Buckets, Policies, Signed URLs und Kontoloeschung erneut testen.
 
-## Rechtliche Blocker
+## Rechtliche und externe Go-Live-Gates
 
-1. Verantwortlichen, ladungsfaehige Anschrift, Kontakt und gegebenenfalls Datenschutzkontakt einsetzen.
-2. Rechtsgrundlagen, Auftragsverarbeiter, Drittlandtransfer, Aufbewahrungs- und Loeschfristen rechtlich pruefen lassen.
-3. Minderjaehrigen-Konzept, Einwilligung/Sorgeberechtigte, Sichtbarkeit und Aufbewahrung fachlich und rechtlich entscheiden.
-4. Kommunikations-, Vereins- und spaetere Storage-Aufbewahrung verbindlich festlegen.
+1. `info@paddlio.de`, `support@paddlio.de` und `datenschutz@paddlio.de` real auf Versand und Empfang pruefen.
+2. Rechtsgrundlagen, Auftragsverarbeiter, Transfers und Release-Entwuerfe rechtlich pruefen lassen.
+3. Unter 16 bleibt ohne Sorgeberechtigten-Prozess gesperrt; kein solcher Prozess wird fuer 5.0 vorgetaeuscht.
+4. Die Production-Migrationsdifferenz autorisiert ermitteln, Backup und Dry Run vornehmen.
+
+Die Detailentscheidung, alle 22 Advisor-Warnungen, Production-Konfiguration, 52 Migrationen und Rollback stehen in `docs/release/paddlio-5-production-readiness.md`.
 
 ## Grenzen
 

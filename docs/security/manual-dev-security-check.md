@@ -33,10 +33,12 @@ Gilt ausschliesslich fuer Supabase DEV `nlllqsfdhfiwticrcrnp` und `https://dev.p
 - [x] OTP: 3600 Sekunden, 8 Zeichen.
 - [x] Access Token: 3600 Sekunden; Refresh-Reuse-Erkennung aktiv (10 Sekunden).
 - [ ] Leaked Password Protection: im aktuellen Free-Plan nicht verfuegbar. Plan/Alternative vor oeffentlichem Release entscheiden.
-- [ ] Mindestpasswortlaenge und Komplexitaetsoption verbindlich dokumentieren.
+- [x] Mindestpasswortlaenge 10 und staerkste Zeichenanforderung in DEV aktiviert; Client und Recovery stimmen ueberein.
 - [ ] Secure Password Change / Require Current Password fachlich entscheiden.
-- [ ] CAPTCHA fuer Signup/Login anhand Missbrauchsrisiko entscheiden.
-- [ ] MFA-Strategie mindestens fuer privilegierte Rollen entscheiden.
+- [ ] CAPTCHA: fuer Production vorgesehen; Provider-Keys, Dashboard-Aktivierung und Client-Token fehlen noch.
+- [x] MFA fuer 5.0 nicht verpflichtend; keine unfertige UI. Spaeteres Sicherheitsupdate fuer privilegierte Rollen pruefen.
+- [x] Before-User-Created-Hook `paddlio_before_user_created_500` in DEV aktiv und direkter Unter-16-Signup mit 403 blockiert.
+- [x] Gemeinsame Nachrichten werden bei Kontoloeschung anonymisiert statt fremd mitgeloescht.
 - [ ] Single-Session-, Time-box- und Inactivity-Limits entscheiden; im Free-Plan teilweise nicht verfuegbar.
 
 ## Verbleibende Advisor-Warnungen

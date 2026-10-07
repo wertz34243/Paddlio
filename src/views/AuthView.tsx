@@ -5,6 +5,7 @@ import type { CloudAuthResult } from "../auth/AuthProvider";
 import { isUserVisibleLoginMessage } from "../auth/authMessages";
 import { getActiveRegistrationClubs, resolveRegistrationClubSelection, toRegistrationClub } from "../auth/registrationClubs";
 import { listCloudClubs } from "../services/clubService";
+import { PASSWORD_MIN_LENGTH, PASSWORD_REQUIREMENTS_TEXT } from "../domain/passwordPolicy";
 
 type AuthMode = "login" | "register";
 
@@ -235,14 +236,14 @@ export function AuthView({ onLogin, onRegister, onResetPassword, onResendConfirm
             <div className="form-grid">
               <label>
                 Passwort
-                <input name="password" type="password" autoComplete="new-password" minLength={8} required />
+                <input name="password" type="password" autoComplete="new-password" minLength={PASSWORD_MIN_LENGTH} required />
               </label>
               <label>
                 Passwort wiederholen
-                <input name="passwordRepeat" type="password" autoComplete="new-password" minLength={8} required />
+                <input name="passwordRepeat" type="password" autoComplete="new-password" minLength={PASSWORD_MIN_LENGTH} required />
               </label>
             </div>
-            <p className="card-note">Empfohlen: Großbuchstabe, Kleinbuchstabe und Zahl.</p>
+            <p className="card-note">{PASSWORD_REQUIREMENTS_TEXT}</p>
             <label className="toggle-row">
               <span>Datenschutzhinweise akzeptieren</span>
               <input name="privacyAccepted" type="checkbox" required />
