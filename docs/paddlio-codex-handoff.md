@@ -56,8 +56,8 @@
 
 ## Commit / Push
 
-- Commit: wird im Abschlusscommit dieses Blocks gesetzt.
-- Pushstatus: wird nach finalem Commit auf `origin/develop` verifiziert.
+- Implementierungscommit: `9fab0a7` (`Harden Paddlio 5 release readiness`).
+- Pushstatus: Implementierung und dieser Handoff werden auf `origin/develop` verifiziert.
 
 ## Grenzen bestaetigt
 
