@@ -48,6 +48,11 @@
 
 - Die zwei genannten App-E2E-Screenshot-Szenarien benötigen wieder eigenständig erzeugte Fixtures statt vorhandener DEV-Trainings-/Vorlagendaten. Das ist ein bestehender Testinfrastrukturpunkt, kein Fehler der neuen öffentlichen Seite.
 
+## Commit / Push
+
+- Implementierungscommit: `af81d3d` (`Add public kadertest preparation page`).
+- Pushstatus: Implementierung und Handoff werden auf `origin/develop` verifiziert.
+
 ## Grenzen bestätigt
 
 - Nur Branch `develop`.
