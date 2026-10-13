@@ -2,61 +2,54 @@
 
 ## Stand
 
-- Datum/Uhrzeit: 2026-10-07
-- Arbeitsblock: Finale Paddlio-Logo-Integration
-- Status: IMPLEMENTIERT, GETESTET UND AUF `develop` VORBEREITET
-
-## Root Cause / Ziel
-
-- Die App verwendete bislang Text beziehungsweise ältere Icon-Assets an Auth-, Navigations- und Public-Website-Stellen.
-- Das bereitgestellte Integrationspaket ordnet drei freigegebene Logo-Varianten konsistent ihren Einsatzzwecken zu.
+- Datum: 2026-10-13
+- Arbeitsblock: Öffentliche Landeskadertest-Vorbereitung
+- Status: IMPLEMENTIERT UND FACHLICH GETESTET
 
 ## Änderungen
 
-- Hauptlogo mit Schriftzug in Login und Registrierung integriert.
-- Quadratisches Logo in Desktop-App-Navigation sowie bestehende PWA-, Apple-Touch- und Manifest-Iconpfade eingesetzt.
-- Horizontales Logo im Header der öffentlichen Website integriert.
-- Responsive Größen für Auth- und Navigationslogo ergänzt.
-- E2E-Regressionen prüfen die Auth- und Public-Logo-Pfade.
-- Manifest- und Iconpfade blieben unverändert; keine PWA-Struktur wurde umgebaut.
+- Neue öffentliche Route `/kadertest`; in DEV unter `/public-preview/kadertest` erreichbar.
+- Auswahl für optionalen Namen, kalendarisches Alter K, biologisches Alter B und Disziplin.
+- K steuert Sit & Reach, Rumpfkraft und Technik; B steuert Kraftziele, Sprint und Ausdauer.
+- Sämtliche vorgegebenen K1-/C1-Normwerte umgesetzt.
+- Für K 13,5 werden keine Technikwerte interpoliert; beide offiziellen Vergleichsstufen und Trainerhinweise werden angezeigt.
+- Kraftstation für K 13,5 zeigt beide Möglichkeiten mit Saison-Altersklassen-Hinweis.
+- Disziplinspezifische Technik- und Materialchecklisten mit großen Touchzielen.
+- Fortschritt, Prozentbalken, lokale Checkbox-Persistenz und Reset ohne Anmeldung oder Cloudzugriff.
+- Mobile-First-Dark-Layout; Route bewusst nicht in der Hauptnavigation verlinkt.
+- Öffentliche Sitemap um `/kadertest` ergänzt.
 
-## Assets
-
-- `public/brand/paddlio-brand-primary.webp`
-- `public/brand/paddlio-brand-header.webp`
-- `public/icons/paddlio-icon-192.png`
-- `public/icons/paddlio-icon-512.png`
-- `public/icons/paddlio-maskable-512.png`
-- `public/icons/apple-touch-icon.png`
-
-## Migrationen / Supabase
+## Supabase / Migrationen
 
 - Keine Migration.
-- Supabase DEV wurde nicht verändert.
-- Production Supabase wurde nicht verwendet.
+- Supabase DEV und Production wurden nicht verändert.
+- Die Public-E2E-Prüfung bestätigt: kein Supabase-Request und kein privater Service Worker.
 
 ## Tests
 
-- `npm test`: 32 Dateien, 182/182 bestanden.
-- `npm run build`: bestanden; bekannte nicht blockierende XLSX-Chunk-Warnung.
-- `npm run check:beta`: Encoding, RLS, Security, Bundle, A11y und Beta bestanden.
-- `npm run test:e2e`: 60 bestanden, 32 vorgesehene projekt-/viewportabhängige Skips, 0 Fehler.
-- Visuelle Kontrolle: Login/Auth und öffentliche Website auf Desktop ohne Überlauf oder Kollisionen.
+- Unit: 33 Dateien, 186/186 bestanden; neue Normwerttests enthalten.
+- Build: bestanden; bekannte nicht blockierende XLSX-Chunk-Warnung.
+- `check:beta`: Encoding, RLS, Security, Bundle, A11y und Beta bestanden.
+- Public-E2E gezielt: 10/10 bestanden in Desktop- und Mobile-Projekt.
+- Kadertest-E2E: Auswahl K/B/Disziplin, 13,5-Hinweise, Zielwerte, Persistenz nach Reload, Reset, 375-px-Überlauf und Null Supabase-Requests bestanden.
+- Gesamte E2E-Suite: 60 bestanden, 32 vorgesehene Skips, 2 bestehende datenabhängige Fehler. Betroffen sind ausschließlich ein Tablet-Kalender-Screenshot ohne sichtbaren DEV-Trainingseintrag und ein Coach-Mobile-Test ohne vorhandene DEV-Vorlage. Beide Fehler wurden isoliert reproduziert; die Kadertest-/Public-Suite ist nicht beteiligt. Tests wurden nicht deaktiviert.
 
-## Commit / Push
+## Geänderte Dateien
 
-- Implementierungscommit: `f26169c` (`Integrate final Paddlio logos`).
-- Handoff-Commit: `c4d2582` (`Update logo integration handoff`).
-- Pushstatus: `origin/develop` aktuell; Vercel-DEV-Deployment erfolgreich.
-- Live-Verifikation: beide Brand-WebP-Dateien und alle vier PWA-/Touch-Icons liefern auf `dev.paddlio.de` HTTP 200 mit korrektem Bildtyp und erwarteter Dateigröße.
+- `src/public/KadertestPage.tsx`
+- `src/public/kadertestData.ts`
+- `src/public/kadertestData.test.ts`
+- `src/public/PublicWebsite.tsx`
+- `src/public/publicWebsite.css`
+- `public/sitemap.xml`
+- `tests/e2e/public-website.spec.ts`
 
 ## Offene Punkte
 
-- Nach DEV-Deploy PWA auf iPhone/Android gegebenenfalls einmal vollständig schließen und neu öffnen, damit Betriebssystem-/Service-Worker-Icon-Caches die neuen Bilder übernehmen.
+- Die zwei genannten App-E2E-Screenshot-Szenarien benötigen wieder eigenständig erzeugte Fixtures statt vorhandener DEV-Trainings-/Vorlagendaten. Das ist ein bestehender Testinfrastrukturpunkt, kein Fehler der neuen öffentlichen Seite.
 
 ## Grenzen bestätigt
 
 - Nur Branch `develop`.
-- `main` unverändert.
-- Production Supabase und DNS unverändert.
+- `main`, Production Supabase und DNS unverändert.
 - Keine Nutzdaten verändert oder gelöscht.

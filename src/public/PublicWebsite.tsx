@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import { APP_SLOGAN } from "../brand";
 import { getPublicAppUrl, getPublicRoute, publicHref, PUBLIC_PREVIEW_PREFIX } from "./publicSiteRouting";
+import { KadertestPage } from "./KadertestPage";
 import "./publicWebsite.css";
 
-type PublicPage = "home" | "features" | "athletes" | "coaches" | "clubs" | "installation" | "help" | "privacy" | "imprint";
+type PublicPage = "home" | "features" | "athletes" | "coaches" | "clubs" | "installation" | "help" | "privacy" | "imprint" | "kadertest";
 
 const routeMap: Record<string, PublicPage> = {
   "/": "home",
@@ -15,6 +16,7 @@ const routeMap: Record<string, PublicPage> = {
   "/hilfe": "help",
   "/datenschutz": "privacy",
   "/impressum": "imprint",
+  "/kadertest": "kadertest",
 };
 
 const pageTitles: Record<PublicPage, string> = {
@@ -27,6 +29,7 @@ const pageTitles: Record<PublicPage, string> = {
   help: "Hilfe und Kontakt | Paddlio",
   privacy: "Datenschutz | Paddlio",
   imprint: "Impressum | Paddlio",
+  kadertest: "Landeskadertest – Vorbereitung | Paddlio",
 };
 
 const roleContent = {
@@ -217,6 +220,7 @@ export default function PublicWebsite() {
     if (page === "installation") return <InstallationPage appUrl={appUrl} />;
     if (page === "help") return <HelpPage href={href} />;
     if (page === "privacy") return <PrivacyPage />;
+    if (page === "kadertest") return <KadertestPage />;
     return <ImprintPage />;
   })();
 

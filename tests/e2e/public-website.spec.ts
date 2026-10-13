@@ -28,6 +28,7 @@ test.describe("public Paddlio website", () => {
       ["/hilfe", "Fragen rund um Paddlio."],
       ["/datenschutz", "Datenschutzerklärung"],
       ["/impressum", "Impressum"],
+      ["/kadertest", "Landeskadertest – Vorbereitung"],
     ] as const) {
       await page.goto(`/public-preview${route}`);
       await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
@@ -58,5 +59,35 @@ test.describe("public Paddlio website", () => {
     await page.waitForLoadState("networkidle");
     expect(serviceWorkerRequests).toEqual([]);
     await expect(page.locator('link[rel="manifest"]')).toHaveCount(0);
+  });
+
+  test("builds and locally persists the mobile kadertest checklist", async ({ page }) => {
+    const supabaseRequests: string[] = [];
+    page.on("request", (request) => {
+      if (request.url().includes(".supabase.co")) supabaseRequests.push(request.url());
+    });
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto("/public-preview/kadertest");
+
+    await expect(page.getByText("0 von 21 erledigt – 0 %")).toBeVisible();
+    await expect(page.getByText("Zielwert: 100 cm")).toBeVisible();
+    await page.getByLabel("K – kalendarisches Alter").selectOption("13.5");
+    await page.getByLabel("B – biologisches Alter").selectOption("14.0");
+    await page.getByLabel("Kajak + Canadier").check();
+    await expect(page.getByText("Das DKV-Testmanual enthält keine eigene Technik-Norm für 13,5 Jahre.")).toHaveCount(2);
+    await expect(page.getByText("Zielwert: 10", { exact: true })).toBeVisible();
+    await expect(page.getByText("Zielwert: 7,80 s")).toBeVisible();
+    await expect(page.getByText("Abwärtstor verkanten")).toBeVisible();
+
+    await page.getByText("Sit & Reach", { exact: true }).click();
+    await expect(page.getByText(/1 von \d+ erledigt/)).toBeVisible();
+    await page.reload();
+    await expect(page.getByText(/1 von \d+ erledigt/)).toBeVisible();
+    await page.getByRole("button", { name: "Alle Häkchen zurücksetzen" }).click();
+    await expect(page.getByText(/0 von \d+ erledigt – 0 %/)).toBeVisible();
+
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
+    expect(overflow).toBe(false);
+    expect(supabaseRequests).toEqual([]);
   });
 });
