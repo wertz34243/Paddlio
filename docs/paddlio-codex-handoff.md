@@ -51,7 +51,9 @@
 ## Commit / Push
 
 - Implementierungscommit: `af81d3d` (`Add public kadertest preparation page`).
-- Pushstatus: Implementierung und Handoff werden auf `origin/develop` verifiziert.
+- Handoff-Commit: `20222f3` (`Update kadertest handoff`).
+- Pushstatus: `origin/develop` aktuell; Vercel-DEV-Deployment erfolgreich.
+- Live-Verifikation: `https://dev.paddlio.de/public-preview/kadertest` liefert HTTP 200 und rendert die vollständige öffentliche Checkliste mit CSP und HSTS.
 
 ## Grenzen bestätigt
 
