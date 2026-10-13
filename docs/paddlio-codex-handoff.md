@@ -3,60 +3,63 @@
 ## Stand
 
 - Datum: 2026-10-13
-- Arbeitsblock: Öffentliche Landeskadertest-Vorbereitung
-- Status: IMPLEMENTIERT UND FACHLICH GETESTET
+- Arbeitsblock: Landeskadertest auf alle Altersklassen erweitern
+- Status: IMPLEMENTIERT UND GETESTET
+
+## Root Cause / Ausgangslage
+
+- Die erste Kadertest-Version enthielt nur die zuvor angeforderten Stufen 13,0, 13,5 und 14,0.
+- Das DKV-Testmanual weist Normen für die Altersklassen 11 bis 18, zusätzliche biologische Halbjahresstufen sowie getrennte weibliche und männliche Werte aus.
+- Techniknormen existieren ausschließlich für ganze Altersklassen; Zwischenwerte dürfen nicht interpoliert werden.
 
 ## Änderungen
 
-- Neue öffentliche Route `/kadertest`; in DEV unter `/public-preview/kadertest` erreichbar.
-- Auswahl für optionalen Namen, kalendarisches Alter K, biologisches Alter B und Disziplin.
-- K steuert Sit & Reach, Rumpfkraft und Technik; B steuert Kraftziele, Sprint und Ausdauer.
-- Sämtliche vorgegebenen K1-/C1-Normwerte umgesetzt.
-- Für K 13,5 werden keine Technikwerte interpoliert; beide offiziellen Vergleichsstufen und Trainerhinweise werden angezeigt.
-- Kraftstation für K 13,5 zeigt beide Möglichkeiten mit Saison-Altersklassen-Hinweis.
-- Disziplinspezifische Technik- und Materialchecklisten mit großen Touchzielen.
-- Fortschritt, Prozentbalken, lokale Checkbox-Persistenz und Reset ohne Anmeldung oder Cloudzugriff.
-- Mobile-First-Dark-Layout; Route bewusst nicht in der Hauptnavigation verlinkt.
-- Öffentliche Sitemap um `/kadertest` ergänzt.
+- Kalendarisches Alter K auf 11,0 bis 18,0 erweitert; die im Manual vorhandenen Halbjahreswerte sind enthalten.
+- Biologisches Alter B auf sämtliche veröffentlichten Werte von 10,0 bis 18,0 erweitert. 17,5 wird nicht angeboten, da das Manual dafür keinen Wert enthält.
+- Geschlechtsauswahl ergänzt, damit die getrennten DKV-Normen für weibliche und männliche Sportler korrekt verwendet werden.
+- Vollständige Normtabellen für Sit & Reach, Rumpfkraft, Klimmzüge, Liegestütze, relative Kraft, K1-/C1-Sprint und K1-/C1-Ausdauer übernommen.
+- Technikmittelwerte und Einzeltechnik-Normen für K1 und C1 der Altersklassen 11 bis 18 übernommen.
+- Technikaufgaben werden altersabhängig angezeigt: Grundtechniken bis AK 14, C1 Konter/Übergriff ab AK 13, C1 Verkanten ab AK 14 und C1 Staken ab AK 15.
+- Bei Halbjahresstufen werden keine Technikwerte erfunden. Die Seite zeigt die beiden benachbarten offiziellen Mittelwerte und einen Trainerhinweis.
+- Kraftstation wechselt gemäß Testprogramm von Klimmzügen/Liegestützen zu Bankziehen/Bankdrücken. Für K 13,5 bleiben beide Varianten mit dem Hinweis auf die Saison-Altersklasse sichtbar.
+- Responsive Eingabemaske für das zusätzliche Auswahlfeld angepasst; Hinweise erhielten eine klar erkennbare Darstellung.
+- LocalStorage-Schlüssel auf Version 2 angehoben, damit veraltete Aufgabenkennungen den neuen altersabhängigen Fortschritt nicht verfälschen.
 
-## Supabase / Migrationen
+## Quellen
 
-- Keine Migration.
-- Supabase DEV und Production wurden nicht verändert.
-- Die Public-E2E-Prüfung bestätigt: kein Supabase-Request und kein privater Service Worker.
+- `Anteile Landeskadertest_Altersklasse_S.10.pdf`
+- `Testmanual DKV Slalom 2023_Stand 14.02.2024.pdf`, insbesondere Seiten 11, 12, 14 und 15.
+
+## Migrationen / Supabase
+
+- Keine Migration erforderlich.
+- Supabase DEV `nlllqsfdhfiwticrcrnp` wurde nicht verändert.
+- Production Supabase wurde nicht verwendet oder verändert.
 
 ## Tests
 
-- Unit: 33 Dateien, 186/186 bestanden; neue Normwerttests enthalten.
-- Build: bestanden; bekannte nicht blockierende XLSX-Chunk-Warnung.
+- Unit: 33 Dateien, 189/189 Tests bestanden.
+- Build: bestanden; ausschließlich bekannte nicht blockierende XLSX-Chunk-Warnung.
 - `check:beta`: Encoding, RLS, Security, Bundle, A11y und Beta bestanden.
-- Public-E2E gezielt: 10/10 bestanden in Desktop- und Mobile-Projekt.
-- Kadertest-E2E: Auswahl K/B/Disziplin, 13,5-Hinweise, Zielwerte, Persistenz nach Reload, Reset, 375-px-Überlauf und Null Supabase-Requests bestanden.
-- Gesamte E2E-Suite: 60 bestanden, 32 vorgesehene Skips, 2 bestehende datenabhängige Fehler. Betroffen sind ausschließlich ein Tablet-Kalender-Screenshot ohne sichtbaren DEV-Trainingseintrag und ein Coach-Mobile-Test ohne vorhandene DEV-Vorlage. Beide Fehler wurden isoliert reproduziert; die Kadertest-/Public-Suite ist nicht beteiligt. Tests wurden nicht deaktiviert.
+- Public-/Kadertest-E2E: 10/10 bestanden in Desktop- und Mobile-Projekt.
+- E2E deckt weibliche AK/B 18, männliche AK/B 13,5/14, beide Disziplinen, Halbjahreshinweise, Technikaufgaben, Persistenz, Reset und fehlende Supabase-Requests ab.
 
 ## Geänderte Dateien
 
 - `src/public/KadertestPage.tsx`
 - `src/public/kadertestData.ts`
 - `src/public/kadertestData.test.ts`
-- `src/public/PublicWebsite.tsx`
 - `src/public/publicWebsite.css`
-- `public/sitemap.xml`
 - `tests/e2e/public-website.spec.ts`
+- `docs/paddlio-codex-handoff.md`
 
 ## Offene Punkte
 
-- Die zwei genannten App-E2E-Screenshot-Szenarien benötigen wieder eigenständig erzeugte Fixtures statt vorhandener DEV-Trainings-/Vorlagendaten. Das ist ein bestehender Testinfrastrukturpunkt, kein Fehler der neuen öffentlichen Seite.
-
-## Commit / Push
-
-- Implementierungscommit: `af81d3d` (`Add public kadertest preparation page`).
-- Handoff-Commit: `20222f3` (`Update kadertest handoff`).
-- Pushstatus: `origin/develop` aktuell; Vercel-DEV-Deployment erfolgreich.
-- Live-Verifikation: `https://dev.paddlio.de/public-preview/kadertest` liefert HTTP 200 und rendert die vollständige öffentliche Checkliste mit CSP und HSTS.
+- Keine bekannten funktionalen Blocker für die Kadertest-Seite.
+- Die offizielle Zuordnung zur Saison-Altersklasse bleibt eine Trainer-/Verbandsentscheidung; die Seite weist bei uneindeutigen Halbjahresstufen darauf hin.
 
 ## Grenzen bestätigt
 
-- Nur Branch `develop`.
+- Nur Branch `develop` bearbeitet.
 - `main`, Production Supabase und DNS unverändert.
 - Keine Nutzdaten verändert oder gelöscht.

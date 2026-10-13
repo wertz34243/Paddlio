@@ -109,7 +109,7 @@
 .kadertest-hero { padding: clamp(52px, 8vw, 88px) 0 34px; }
 .kadertest-hero h1 { margin: 0 0 16px; font-size: clamp(2.1rem, 7vw, 4.2rem); line-height: 1.02; letter-spacing: 0; }
 .kadertest-hero > p:last-child { max-width: 700px; margin: 0; color: #b6c8ce; line-height: 1.65; }
-.kadertest-controls { display: grid; grid-template-columns: minmax(220px, 1.4fr) repeat(2, minmax(150px, .6fr)); gap: 18px; padding: 22px; border: 1px solid #294652; border-radius: 8px; background: #0b1c25; }
+.kadertest-controls { display: grid; grid-template-columns: minmax(210px, 1.2fr) repeat(3, minmax(130px, .6fr)); gap: 18px; padding: 22px; border: 1px solid #294652; border-radius: 8px; background: #0b1c25; }
 .kadertest-controls > label { display: grid; gap: 8px; min-width: 0; }
 .kadertest-controls label > span, .kadertest-controls legend { color: #dcebed; font-weight: 750; }
 .kadertest-controls small { color: #8fa7ae; font-weight: 500; }
@@ -135,6 +135,7 @@
 .kadertest-section > header { padding: 22px; border-bottom: 1px solid #29434f; background: #0d222c; }
 .kadertest-section h2 { margin: 0; font-size: 1.35rem; }
 .kadertest-section header p { margin: 8px 0 0; color: #9fb5bb; line-height: 1.5; }
+.kadertest-section header .kadertest-note { padding: 10px 12px; border-left: 3px solid #72e4e8; background: #102c36; color: #d4e8eb; }
 .kadertest-task-list { display: grid; }
 .kadertest-task { min-height: 72px; display: grid; grid-template-columns: 32px 1fr; gap: 14px; align-items: center; padding: 13px 18px; border-bottom: 1px solid #203741; cursor: pointer; }
 .kadertest-task:last-child { border-bottom: 0; }

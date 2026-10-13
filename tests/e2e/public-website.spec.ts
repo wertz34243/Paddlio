@@ -79,6 +79,16 @@ test.describe("public Paddlio website", () => {
     await expect(page.getByText("Zielwert: 7,80 s")).toBeVisible();
     await expect(page.getByText("Abwärtstor verkanten")).toBeVisible();
 
+    await page.getByLabel("Geschlecht").selectOption("female");
+    await page.getByLabel("K – kalendarisches Alter").selectOption("18.0");
+    await page.getByLabel("B – biologisches Alter").selectOption("18.0");
+    await expect(page.getByText("Zielwert: 108 cm")).toBeVisible();
+    await expect(page.getByText("Zielwert: relative Kraft 193 %")).toHaveCount(2);
+    await expect(page.getByText("Zielwert: 6,90 s")).toBeVisible();
+    await expect(page.getByText("Zielwert: 8,50 s")).toBeVisible();
+    await expect(page.getByText("Technikziel Mittelwert 0,6")).toBeVisible();
+    await expect(page.getByText("Technikziel Mittelwert 0,76")).toBeVisible();
+
     await page.getByText("Sit & Reach", { exact: true }).click();
     await expect(page.getByText(/1 von \d+ erledigt/)).toBeVisible();
     await page.reload();

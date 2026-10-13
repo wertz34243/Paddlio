@@ -1,21 +1,28 @@
 import { useMemo, useState } from "react";
 import {
-  biologicalNorms,
-  calendarNorms,
-  canoeTechnique,
+  biologicalAges,
+  calendarAges,
+  formatAge,
+  formatDecimal,
+  formatDuration,
+  getBiologicalNorm,
+  getCalendarNorm,
+  getTechniqueAge,
+  getTechniqueComparison,
   includesCanoe,
   includesKayak,
-  kayakTechnique,
   materialChecks,
-  techniqueComparison,
-  type TestAge,
+  techniqueNorms,
+  type BiologicalAge,
+  type CalendarAge,
   type TestDiscipline,
+  type TestGender,
 } from "./kadertestData";
 
-const CHECKS_STORAGE_KEY = "paddlio-kadertest-checks-v1";
+const CHECKS_STORAGE_KEY = "paddlio-kadertest-checks-v2";
 
-type TestTask = { id: string; name: string; target: string };
-type TestSection = { id: string; title: string; description?: string; tasks: TestTask[] };
+export type TestTask = { id: string; name: string; target: string };
+export type TestSection = { id: string; title: string; description?: string; note?: string; tasks: TestTask[] };
 
 const readChecks = (): Record<string, boolean> => {
   try {
@@ -26,94 +33,103 @@ const readChecks = (): Record<string, boolean> => {
   }
 };
 
-const techniqueTarget = (age: TestAge, discipline: "kayak" | "canoe"): string => {
-  const norm = discipline === "kayak" ? calendarNorms[age].kayakTechnique : calendarNorms[age].canoeTechnique;
-  return norm ?? `Vergleich: ${techniqueComparison(discipline)}`;
+const techniqueSection = (age: CalendarAge, discipline: "kayak" | "canoe"): TestSection => {
+  const exactAge = getTechniqueAge(age);
+  const title = discipline === "kayak" ? "Kajak-Technik" : "Canadier-Technik";
+  if (exactAge !== null) {
+    const norm = techniqueNorms[discipline][exactAge];
+    return {
+      id: `${discipline}-technique`,
+      title,
+      description: `Technikziel Mittelwert ${formatDecimal(norm.mean, discipline === "kayak" ? 1 : 2)}`,
+      tasks: Object.entries(norm.tasks).map(([name, target], index) => ({
+        id: `${discipline}-technique-${index}`,
+        name,
+        target: `max. ${formatDecimal(target)} Fehlerpunkte im Mittel`,
+      })),
+    };
+  }
+
+  const lowerAge = Math.floor(Number(age));
+  const upperAge = Math.ceil(Number(age));
+  const taskNames = Array.from(new Set([
+    ...Object.keys(techniqueNorms[discipline][lowerAge].tasks),
+    ...Object.keys(techniqueNorms[discipline][upperAge].tasks),
+  ]));
+  return {
+    id: `${discipline}-technique`,
+    title,
+    description: `Das DKV-Testmanual enthält keine eigene Technik-Norm für ${formatAge(age)} Jahre.`,
+    note: `Vergleich Mittelwert: ${getTechniqueComparison(age, discipline)}. Welche Saison-Altersklasse gilt, bitte mit dem Trainer prüfen.`,
+    tasks: taskNames.map((name, index) => ({
+      id: `${discipline}-technique-${index}`,
+      name,
+      target: `Vergleich: ${getTechniqueComparison(age, discipline)}`,
+    })),
+  };
 };
 
-function buildSections(calendarAge: TestAge, biologicalAge: TestAge, discipline: TestDiscipline): TestSection[] {
-  const calendar = calendarNorms[calendarAge];
-  const biological = biologicalNorms[biologicalAge];
+export function buildSections(calendarAge: CalendarAge, biologicalAge: BiologicalAge, gender: TestGender, discipline: TestDiscipline): TestSection[] {
+  const calendar = getCalendarNorm(calendarAge, gender);
+  const biological = getBiologicalNorm(biologicalAge, gender);
   const sections: TestSection[] = [{
     id: "basics",
     title: "Beweglichkeit & Rumpfkraft",
-    description: `Zielwerte nach kalendarischem Alter K ${calendarAge.replace(".", ",")}`,
+    description: `Zielwerte nach kalendarischem Alter K ${formatAge(calendarAge)}`,
     tasks: [
-      { id: "sit-and-reach", name: "Sit & Reach", target: calendar.sitAndReach },
-      { id: "core-strength", name: "Rumpfkraft", target: calendar.coreStrength },
+      { id: "sit-and-reach", name: "Sit & Reach", target: `${calendar.sitAndReach} cm` },
+      { id: "core-strength", name: "Rumpfkraft", target: `${calendar.coreStrength} s` },
     ],
   }];
 
-  const strengthTasks: TestTask[] = calendarAge === "13.0"
-    ? [
-        { id: "pull-ups", name: "Klimmzüge", target: biological.pullUps },
-        { id: "push-ups", name: "Liegestütze", target: biological.pushUps },
-      ]
-    : calendarAge === "14.0"
-      ? [
-          { id: "bench-pull", name: "Bankziehen", target: `relative Kraft ${biological.relativeStrength}` },
-          { id: "bench-press", name: "Bankdrücken", target: `relative Kraft ${biological.relativeStrength}` },
-        ]
-      : [
-          { id: "pull-ups", name: "Klimmzüge", target: biological.pullUps },
-          { id: "push-ups", name: "Liegestütze", target: biological.pushUps },
-          { id: "bench-pull", name: "Bankziehen", target: `relative Kraft ${biological.relativeStrength}` },
-          { id: "bench-press", name: "Bankdrücken", target: `relative Kraft ${biological.relativeStrength}` },
-        ];
+  const calendarValue = Number(calendarAge);
+  const bodyweightTasks: TestTask[] = [
+    { id: "pull-ups", name: "Klimmzüge", target: biological.pullUps === undefined ? "keine Norm für diese Altersstufe" : String(biological.pullUps) },
+    { id: "push-ups", name: "Liegestütze", target: biological.pushUps === undefined ? "keine Norm für diese Altersstufe" : String(biological.pushUps) },
+  ];
+  const relativeTarget = biological.relativeStrength === undefined ? "keine Norm für diese Altersstufe" : `relative Kraft ${biological.relativeStrength} %`;
+  const benchTasks: TestTask[] = [
+    { id: "bench-pull", name: "Bankziehen", target: relativeTarget },
+    { id: "bench-press", name: "Bankdrücken", target: relativeTarget },
+  ];
+  const transitionalStrength = calendarValue === 13.5;
   sections.push({
     id: "strength",
     title: "Kraftstation",
-    description: calendarAge === "13.5" ? "Welche Kraftstation getestet wird, richtet sich offiziell nach der Saison-Altersklasse. Bitte mit Trainer prüfen." : `Zielwerte nach biologischem Alter B ${biologicalAge.replace(".", ",")}`,
-    tasks: strengthTasks,
+    description: `Zielwerte nach biologischem Alter B ${formatAge(biologicalAge)}`,
+    note: transitionalStrength ? "Welche Kraftstation getestet wird, richtet sich offiziell nach der Saison-Altersklasse. Bitte mit Trainer prüfen." : undefined,
+    tasks: transitionalStrength ? [...bodyweightTasks, ...benchTasks] : calendarValue <= 13 ? bodyweightTasks : benchTasks,
   });
 
   const performanceTasks: TestTask[] = [];
   if (includesKayak(discipline)) {
     performanceTasks.push(
-      { id: "kayak-sprint", name: "K1 20-m-Sprint", target: biological.kayakSprint },
-      { id: "kayak-endurance", name: "K1 Ausdauertest", target: biological.kayakEndurance },
+      { id: "kayak-sprint", name: "K1 20-m-Sprint", target: `${formatDecimal(biological.kayakSprint)} s` },
+      { id: "kayak-endurance", name: "K1 Ausdauertest", target: formatDuration(biological.kayakEndurance) },
     );
   }
   if (includesCanoe(discipline)) {
     performanceTasks.push(
-      { id: "canoe-sprint", name: "C1 20-m-Sprint", target: biological.canoeSprint },
-      { id: "canoe-endurance", name: "C1 Ausdauertest", target: biological.canoeEndurance },
+      { id: "canoe-sprint", name: "C1 20-m-Sprint", target: `${formatDecimal(biological.canoeSprint)} s` },
+      { id: "canoe-endurance", name: "C1 Ausdauertest", target: formatDuration(biological.canoeEndurance) },
     );
   }
-  sections.push({ id: "performance", title: "Sprint & Ausdauer", description: `Zielwerte nach biologischem Alter B ${biologicalAge.replace(".", ",")}`, tasks: performanceTasks });
+  sections.push({ id: "performance", title: "Sprint & Ausdauer", description: `Zielwerte nach biologischem Alter B ${formatAge(biologicalAge)}`, tasks: performanceTasks });
 
-  if (includesKayak(discipline)) {
-    sections.push({
-      id: "kayak-technique",
-      title: "Kajak-Technik",
-      description: calendarAge === "13.5" ? "Das DKV-Testmanual enthält keine eigene Technik-Norm für 13,5 Jahre." : `Technikziel ${calendar.kayakTechnique}`,
-      tasks: kayakTechnique.map((name, index) => ({ id: `kayak-technique-${index}`, name, target: techniqueTarget(calendarAge, "kayak") })),
-    });
-  }
-
-  if (includesCanoe(discipline)) {
-    const tasks: TestTask[] = canoeTechnique.map((name, index) => ({ id: `canoe-technique-${index}`, name, target: techniqueTarget(calendarAge, "canoe") }));
-    if (calendarAge === "14.0") tasks.push({ id: "canoe-edge-gate", name: "Abwärtstor verkanten", target: calendar.canoeTechnique ?? "" });
-    if (calendarAge === "13.5") tasks.push({ id: "canoe-edge-gate", name: "Abwärtstor verkanten", target: "ab Altersstufe 14, mit Trainer prüfen" });
-    sections.push({
-      id: "canoe-technique",
-      title: "Canadier-Technik",
-      description: calendarAge === "13.5" ? "Das DKV-Testmanual enthält keine eigene Technik-Norm für 13,5 Jahre." : `Technikziel ${calendar.canoeTechnique}`,
-      tasks,
-    });
-  }
-
+  if (includesKayak(discipline)) sections.push(techniqueSection(calendarAge, "kayak"));
+  if (includesCanoe(discipline)) sections.push(techniqueSection(calendarAge, "canoe"));
   sections.push({ id: "material", title: "Vermessung & Material", tasks: materialChecks.map((name, index) => ({ id: `material-${index}`, name, target: "vollständig erfassen" })) });
   return sections;
 }
 
 export function KadertestPage() {
   const [athleteName, setAthleteName] = useState("");
-  const [calendarAge, setCalendarAge] = useState<TestAge>("13.0");
-  const [biologicalAge, setBiologicalAge] = useState<TestAge>("13.0");
+  const [gender, setGender] = useState<TestGender>("male");
+  const [calendarAge, setCalendarAge] = useState<CalendarAge>("13.0");
+  const [biologicalAge, setBiologicalAge] = useState<BiologicalAge>("13.0");
   const [discipline, setDiscipline] = useState<TestDiscipline>("kayak");
   const [checks, setChecks] = useState<Record<string, boolean>>(readChecks);
-  const sections = useMemo(() => buildSections(calendarAge, biologicalAge, discipline), [calendarAge, biologicalAge, discipline]);
+  const sections = useMemo(() => buildSections(calendarAge, biologicalAge, gender, discipline), [calendarAge, biologicalAge, gender, discipline]);
   const visibleTasks = sections.flatMap((section) => section.tasks);
   const completed = visibleTasks.filter((task) => checks[task.id]).length;
   const progress = visibleTasks.length > 0 ? Math.round((completed / visibleTasks.length) * 100) : 0;
@@ -135,13 +151,14 @@ export function KadertestPage() {
     <section className="kadertest-hero">
       <p className="public-eyebrow">Persönliche Checkliste</p>
       <h1>Landeskadertest – Vorbereitung</h1>
-      <p>Wähle Alter und Disziplin. Paddlio stellt die passenden Zielwerte und Technikaufgaben zusammen.</p>
+      <p>Wähle Altersstufe, Geschlecht und Disziplin. Paddlio stellt die im DKV-Testmanual ausgewiesenen Zielwerte und Technikaufgaben zusammen.</p>
     </section>
 
     <section className="kadertest-controls" aria-label="Kadertest Einstellungen">
       <label><span>Name des Sportlers <small>(optional)</small></span><input value={athleteName} onChange={(event) => setAthleteName(event.target.value)} autoComplete="name" /></label>
-      <label><span>K – kalendarisches Alter</span><select value={calendarAge} onChange={(event) => setCalendarAge(event.target.value as TestAge)}><option value="13.0">13,0</option><option value="13.5">13,5</option><option value="14.0">14,0</option></select></label>
-      <label><span>B – biologisches Alter</span><select value={biologicalAge} onChange={(event) => setBiologicalAge(event.target.value as TestAge)}><option value="13.0">13,0</option><option value="13.5">13,5</option><option value="14.0">14,0</option></select></label>
+      <label><span>Geschlecht</span><select value={gender} onChange={(event) => setGender(event.target.value as TestGender)}><option value="male">männlich</option><option value="female">weiblich</option></select></label>
+      <label><span>K – kalendarisches Alter</span><select value={calendarAge} onChange={(event) => setCalendarAge(event.target.value as CalendarAge)}>{calendarAges.map((age) => <option value={age} key={age}>{formatAge(age)}</option>)}</select></label>
+      <label><span>B – biologisches Alter</span><select value={biologicalAge} onChange={(event) => setBiologicalAge(event.target.value as BiologicalAge)}>{biologicalAges.map((age) => <option value={age} key={age}>{formatAge(age)}</option>)}</select></label>
       <fieldset><legend>Disziplin</legend><div className="kadertest-segments">
         <label><input type="radio" name="discipline" value="kayak" checked={discipline === "kayak"} onChange={() => setDiscipline("kayak")} /><span>Kajak</span></label>
         <label><input type="radio" name="discipline" value="canoe" checked={discipline === "canoe"} onChange={() => setDiscipline("canoe")} /><span>Canadier</span></label>
@@ -156,7 +173,7 @@ export function KadertestPage() {
 
     <div className="kadertest-sections">
       {sections.map((section) => <section className="kadertest-section" key={section.id}>
-        <header><h2>{section.title}</h2>{section.description ? <p>{section.description}</p> : null}</header>
+        <header><h2>{section.title}</h2>{section.description ? <p>{section.description}</p> : null}{section.note ? <p className="kadertest-note">{section.note}</p> : null}</header>
         <div className="kadertest-task-list">
           {section.tasks.map((task) => <label className="kadertest-task" key={task.id}>
             <input type="checkbox" checked={Boolean(checks[task.id])} onChange={(event) => setChecked(task.id, event.target.checked)} />
@@ -166,9 +183,7 @@ export function KadertestPage() {
       </section>)}
     </div>
 
-    <section className="kadertest-reset">
-      <button type="button" onClick={resetChecks}>Alle Häkchen zurücksetzen</button>
-    </section>
+    <section className="kadertest-reset"><button type="button" onClick={resetChecks}>Alle Häkchen zurücksetzen</button></section>
     <p className="kadertest-disclaimer">Diese Seite ist eine Trainings- und Vorbereitungshilfe nach der Struktur des DKV-Testmanuals. Sie ersetzt keine offizielle DKV-Auswertung.</p>
   </main>;
 }
