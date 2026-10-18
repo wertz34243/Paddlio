@@ -1,4 +1,5 @@
-﻿import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { CAPTCHA_MESSAGE, captchaRequired, isCaptchaError } from "./captcha";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { AuthChangeEvent, Session, User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase, getSupabaseClient } from "../lib/supabase";
 import { getSupabaseConfigMessage, isSupabaseConfigured } from "../lib/supabaseConfig";
@@ -113,13 +114,13 @@ type AuthContextValue = {
   lastSyncAt: string;
   cloudMessage: string;
   profileSyncDiagnostics: ProfileSyncDiagnostics;
-  signIn: (input: LoginInput) => Promise<CloudAuthResult>;
-  signUp: (input: RegisterInput) => Promise<CloudAuthResult>;
+  signIn: (input: LoginInput, captchaToken?: string) => Promise<CloudAuthResult>;
+  signUp: (input: RegisterInput, captchaToken?: string) => Promise<CloudAuthResult>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<CloudAuthResult>;
+  resetPassword: (email: string, captchaToken?: string) => Promise<CloudAuthResult>;
   updatePassword: (password: string) => Promise<CloudAuthResult>;
   cancelPasswordRecovery: () => Promise<void>;
-  resendConfirmation: (email: string) => Promise<CloudAuthResult>;
+  resendConfirmation: (email: string, captchaToken?: string) => Promise<CloudAuthResult>;
   refreshCloudData: () => Promise<void>;
 };
 
@@ -1240,16 +1241,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
   }, [session?.user.id, profile?.club_id, profile?.roles.join("|")]);
 
-  const signIn = async (input: LoginInput): Promise<CloudAuthResult> => {
+  const signIn = async (input: LoginInput, captchaToken?: string): Promise<CloudAuthResult> => {
+    if (captchaRequired(captchaToken)) return { ok: false, message: CAPTCHA_MESSAGE };
     const client = getSupabaseClient();
     if (!client) return { ok: false, message: getSupabaseConfigMessage() };
-    const { error } = await client.auth.signInWithPassword({ email: input.email.trim().toLowerCase(), password: input.password });
-    if (error) return { ok: false, message: "E-Mail oder Passwort ist nicht korrekt." };
+    const { error } = await client.auth.signInWithPassword({ email: input.email.trim().toLowerCase(), password: input.password, options: { captchaToken } });
+    if (error) return { ok: false, message: isCaptchaError(error) ? CAPTCHA_MESSAGE : "E-Mail oder Passwort ist nicht korrekt." };
     await refreshCloudData();
     return { ok: true };
   };
 
-  const signUp = async (input: RegisterInput): Promise<CloudAuthResult> => {
+  const signUp = async (input: RegisterInput, captchaToken?: string): Promise<CloudAuthResult> => {
+    if (captchaRequired(captchaToken)) return { ok: false, message: CAPTCHA_MESSAGE };
     const client = getSupabaseClient();
     if (!client) return { ok: false, message: getSupabaseConfigMessage() };
     if (!input.privacyAccepted) return { ok: false, message: "Bitte akzeptiere den Datenschutz." };
@@ -1260,6 +1263,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: input.email.trim().toLowerCase(),
       password: input.password,
       options: {
+        captchaToken,
         ...(getAuthEmailRedirectTo() ? { emailRedirectTo: getAuthEmailRedirectTo() } : {}),
         data: {
           firstName: input.firstName.trim(),
@@ -1272,6 +1276,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     });
     if (error) {
+      if (isCaptchaError(error)) return { ok: false, message: CAPTCHA_MESSAGE };
       if (isAuthRateLimitError(error)) {
         logCloudError("Registrierung Rate Limit", error);
         return {
@@ -1314,15 +1319,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setDataState(null);
   };
 
-  const resetPassword = async (email: string): Promise<CloudAuthResult> => {
+  const resetPassword = async (email: string, captchaToken?: string): Promise<CloudAuthResult> => {
+    if (captchaRequired(captchaToken)) return { ok: false, message: CAPTCHA_MESSAGE };
     const client = getSupabaseClient();
     if (!client) return { ok: false, message: getSupabaseConfigMessage() };
     const redirectTo = getAuthEmailRedirectTo();
     const { error } = await client.auth.resetPasswordForEmail(
       email.trim().toLowerCase(),
-      redirectTo ? { redirectTo } : undefined,
+      { ...(redirectTo ? { redirectTo } : {}), captchaToken },
     );
     if (error) {
+      if (isCaptchaError(error)) return { ok: false, message: CAPTCHA_MESSAGE };
       logCloudError("Passwort-Reset", error);
       return { ok: false, message: "Der Reset-Link konnte gerade nicht angefordert werden. Bitte versuche es später erneut." };
     }
@@ -1370,7 +1377,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { ok: true, message: "Dein Passwort wurde erfolgreich geändert." };
   };
 
-  const resendConfirmation = async (email: string): Promise<CloudAuthResult> => {
+  const resendConfirmation = async (email: string, captchaToken?: string): Promise<CloudAuthResult> => {
+    if (captchaRequired(captchaToken)) return { ok: false, message: CAPTCHA_MESSAGE };
     const client = getSupabaseClient();
     if (!client) return { ok: false, message: getSupabaseConfigMessage() };
 
@@ -1381,10 +1389,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await client.auth.resend({
       type: "signup",
       email: normalizedEmail,
-      options: emailRedirectTo ? { emailRedirectTo } : undefined,
+      options: { ...(emailRedirectTo ? { emailRedirectTo } : {}), captchaToken },
     });
 
     if (error) {
+      if (isCaptchaError(error)) return { ok: false, message: CAPTCHA_MESSAGE };
       if (isAuthRateLimitError(error)) {
         logCloudError("Bestätigungsmail erneut senden Rate Limit", error);
         return {

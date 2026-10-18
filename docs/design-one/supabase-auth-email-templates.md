@@ -51,7 +51,8 @@ HTML:
               <td style="padding:20px 28px;background:#0b1420;color:#8ea0af;font-size:13px;line-height:1.5;">
                 <strong style="color:#eef7fb;">Paddlio</strong><br />
                 Train. Analyze. Improve.<br />
-                paddlio.de
+                paddlio.de<br />
+                Hilfe: <a href="mailto:support@paddlio.de">support@paddlio.de</a>
               </td>
             </tr>
           </table>
@@ -112,7 +113,8 @@ HTML:
               <td style="padding:20px 28px;background:#0b1420;color:#8ea0af;font-size:13px;line-height:1.5;">
                 <strong style="color:#eef7fb;">Paddlio</strong><br />
                 Train. Analyze. Improve.<br />
-                paddlio.de
+                paddlio.de<br />
+                Hilfe: <a href="mailto:support@paddlio.de">support@paddlio.de</a>
               </td>
             </tr>
           </table>
@@ -132,3 +134,7 @@ Falls Magic Link, Einladung oder E-Mail-Aenderung in Supabase aktiviert werden, 
 - E-Mail-Änderung Subject: `Paddlio – Neue E-Mail-Adresse bestätigen`
 
 Sicherheitsnotiz: Keine Secrets in Mail-Templates eintragen. Keine statischen localhost- oder Vercel-Links in die Templates schreiben; erlaubte Redirects gehoeren in die Supabase Auth URL-Konfiguration.
+
+## Absender und Antworten
+
+Automatische Auth-Mails laufen über Supabase Custom SMTP mit Resend. Sender: `Paddlio <noreply@paddlio.de>`. Der Absender wird serverseitig im DEV-Dashboard eingestellt, nicht im React-Client. Bestehende SMTP-Zugangsdaten beibehalten. Wo die tatsächlich eingesetzte Versandkonfiguration Reply-To unterstützt, `support@paddlio.de` verwenden; kein zusätzliches Mail-Gateway nur dafür einführen. Die Templates nennen den Support explizit. Resend API Keys/SMTP-Passwörter niemals in VITE_-Variablen speichern. Production-Einstellungen nicht in diesem Arbeitsschritt ändern.

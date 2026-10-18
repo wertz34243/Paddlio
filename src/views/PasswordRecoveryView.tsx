@@ -117,6 +117,7 @@ export function PasswordRecoveryView({ hasSession, onUpdatePassword, onRequestNe
             ) : null}
           </div>
         ) : null}
+        <p className="card-note">Hilfe: <a href="mailto:support@paddlio.de">support@paddlio.de</a></p>
       </section>
     </main>
   );

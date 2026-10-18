@@ -151,27 +151,27 @@ function HelpPage({ href }: { href: (route: string) => string }) {
   return <main id="main" className="public-main"><section className="public-page-hero"><p className="public-eyebrow">Hilfe</p><h1>Fragen rund um Paddlio.</h1><p>Kurze Wege zu Installation, Konto und Datenschutz.</p></section><section className="public-section public-help-list">
     <details open><summary>Was ist Paddlio?</summary><p>Eine Trainings-, Wettkampf- und Organisationsplattform für Kanuslalom.</p></details>
     <details><summary>Wie installiere ich Paddlio?</summary><p>Die Schritte für iPhone, iPad, Android und Desktop stehen auf der <a href={href("/installation")}>Installationsseite</a>.</p></details>
-    <details><summary>Wie melde ich einen Fehler?</summary><p>Nach Freigabe des Mailbetriebs über support@paddlio.de. Bitte keine Passwörter oder sensiblen Trainingsdaten mitsenden.</p></details>
+    <details><summary>Wie melde ich einen Fehler?</summary><p>Schreibe an <a href="mailto:support@paddlio.de">support@paddlio.de</a>. Bitte keine Passwörter oder sensiblen Trainingsdaten mitsenden.</p></details>
     <details><summary>Wie lösche oder exportiere ich meine Daten?</summary><p>In der App unter Einstellungen kannst du deinen JSON-Auskunftsexport anfordern und die Kontolöschung mit einer Bestätigungsphrase starten.</p></details>
-    <details><summary>Was mache ich bei Login-Problemen?</summary><p>Nutze zuerst „Passwort vergessen“. Nach Freigabe des Mailbetriebs hilft support@paddlio.de.</p></details>
-    <p className="public-contact-note">Kontaktadressen vor Production prüfen: info@paddlio.de · support@paddlio.de · datenschutz@paddlio.de</p>
+    <details><summary>Was mache ich bei Login-Problemen?</summary><p>Nutze zuerst „Passwort vergessen“. Bei weiteren Fragen hilft <a href="mailto:support@paddlio.de">support@paddlio.de</a>.</p></details>
+    <p className="public-contact-note">Allgemeiner Kontakt: <a href="mailto:info@paddlio.de">info@paddlio.de</a> · <a href="mailto:support@paddlio.de">support@paddlio.de</a> · <a href="mailto:datenschutz@paddlio.de">datenschutz@paddlio.de</a></p>
   </section></main>;
 }
 
 function ImprintPage() {
   return <main id="main" className="public-main"><section className="public-page-hero legal"><p className="public-eyebrow">Rechtliches</p><h1>Impressum</h1></section><article className="public-legal">
     <h2>Betreiber</h2><p>Tobias Kuhn<br />Opladener Str. 131<br />42699 Solingen<br />Deutschland</p>
-    <h2>Kontakt</h2><p>E-Mail: info@paddlio.de</p><p className="public-legal-note">Hinweis vor Veröffentlichung: Die Erreichbarkeit dieses Postfachs muss vor dem Production-Release bestätigt werden.</p>
+    <h2>Kontakt</h2><p>E-Mail: <a href="mailto:info@paddlio.de">info@paddlio.de</a></p>
     <h2>Projekt</h2><p>Paddlio ist ein privat betriebenes, kostenloses Projekt für Training, Wettkämpfe und Organisation im Kanuslalom. Derzeit werden weder kostenpflichtige Abonnements noch Werbung angeboten.</p>
   </article></main>;
 }
 
 function PrivacyPage() {
   return <main id="main" className="public-main"><section className="public-page-hero legal"><p className="public-eyebrow">Release-Entwurf</p><h1>Datenschutzerklärung</h1><p>Technischer Entwurf für Paddlio 5.0. Dieser Text ist noch nicht abschließend rechtlich geprüft.</p></section><article className="public-legal">
-    <h2>Verantwortlicher</h2><p>Tobias Kuhn<br />Opladener Str. 131<br />42699 Solingen<br />Deutschland<br />E-Mail: info@paddlio.de</p>
+    <h2>Verantwortlicher</h2><p>Tobias Kuhn<br />Opladener Str. 131<br />42699 Solingen<br />Deutschland<br />E-Mail: <a href="mailto:datenschutz@paddlio.de">datenschutz@paddlio.de</a></p>
     <h2>Welche Daten verarbeitet werden</h2><p>Paddlio verarbeitet Kontodaten, Profildaten, Trainings- und Wettkampfdaten, Ziele, Vereins- und Gruppendaten, Kommunikation, Materialdaten sowie technisch notwendige Offline-, Cache- und Synchronisierungsdaten.</p>
     <h2>Zwecke</h2><p>Die Daten werden verwendet, um Anmeldung, Trainingsplanung, Dokumentation, Wettkampfverwaltung, Zusammenarbeit und geräteübergreifende Synchronisierung bereitzustellen.</p>
-    <h2>Eingesetzte Dienste</h2><p>Technisch eingesetzt werden Supabase für Authentifizierung und Datenhaltung, Vercel für Hosting, Resend für System-E-Mails und netcup für Domain- beziehungsweise Mail-Infrastruktur. Polar wird nur bei aktivierter Beta-Integration verwendet.</p>
+    <h2>Eingesetzte Dienste</h2><p>Technisch eingesetzt werden Supabase für Authentifizierung und Datenhaltung, Vercel für Hosting, Resend für System-E-Mails und netcup für Domain- beziehungsweise Mail-Infrastruktur. Polar wird nur bei aktivierter Beta-Integration verwendet. Bei aktivierter Sicherheitsprüfung wird Cloudflare Turnstile zum Bot-Schutz bei Auth-Anfragen eingesetzt.</p>
     <h2>Lokale Speicherung</h2><p>Die App speichert funktionale Caches, Offline-Änderungen, Synchronisierungsstände und Einstellungen lokal auf dem Gerät. Das ermöglicht Offline-Nutzung und schützt noch nicht übertragene Änderungen vor Verlust.</p>
     <h2>Tracking und Werbung</h2><p>Paddlio enthält nach aktuellem technischen Audit kein Marketing-Tracking oder Analytics-SDK und zeigt keine Werbung.</p>
     <h2>Minderjährige</h2><p>Die selbstständige Registrierung ist für Paddlio 5.0 ab 16 Jahren vorgesehen. Profile, Trainings- und Leistungsdaten sind nicht öffentlich. Unter 16 Jahren ist keine normale eigenständige Registrierung vorgesehen, solange kein belastbarer Sorgeberechtigten-Prozess vorhanden ist.</p>
@@ -179,8 +179,8 @@ function PrivacyPage() {
     <p>Nachrichten bleiben gespeichert, solange sie Teil einer bestehenden Unterhaltung sind. Bei einer Kontolöschung wird der Bezug zum gelöschten Absender beziehungsweise Empfänger anonymisiert; Nachrichten und Daten anderer Beteiligter werden nicht mitgelöscht. Vollständig verwaiste Direktnachrichten werden entfernt.</p>
     <h2>Auskunft, Berichtigung und Löschung</h2><p>Nutzer können eigene Profildaten berichtigen, einen JSON-Auskunftsexport anfordern und die Kontolöschung in der App starten. Daneben bestehen im gesetzlichen Rahmen Rechte auf Auskunft, Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit, Widerruf beziehungsweise Widerspruch und Beschwerde bei einer Datenschutzaufsichtsbehörde.</p>
     <h2>Datenschutzaufsicht</h2><p>Zuständige Aufsichtsbehörde ist die Landesbeauftragte für Datenschutz und Informationsfreiheit Nordrhein-Westfalen, Kavalleriestraße 2–4, 40213 Düsseldorf. Weitere Informationen und Kontaktmöglichkeiten stehen unter <a href="https://www.ldi.nrw.de" rel="noreferrer">www.ldi.nrw.de</a>.</p>
-    <h2>Kontakt</h2><p>Datenschutzanfragen sollen nach bestätigter Einrichtung an datenschutz@paddlio.de gerichtet werden.</p>
-    <p className="public-legal-note">Vor Production müssen Mail-Erreichbarkeit, Rechtsgrundlagen, Auftragsverarbeiter und dieser Release-Entwurf abschließend geprüft werden. Die Seite stellt keine Rechtsberatung dar.</p>
+    <h2>Kontakt</h2><p>Datenschutzanfragen zu Auskunft, Löschung und Betroffenenrechten kannst du an <a href="mailto:datenschutz@paddlio.de">datenschutz@paddlio.de</a> richten.</p>
+    <p className="public-legal-note">Vor Production müssen Rechtsgrundlagen, Auftragsverarbeiter und dieser Release-Entwurf abschließend geprüft werden. Die Seite stellt keine Rechtsberatung dar.</p>
   </article></main>;
 }
 
@@ -228,6 +228,6 @@ export default function PublicWebsite() {
     <a className="public-skip" href="#main">Zum Inhalt springen</a>
     <header className="public-header"><a className="public-brand" href={href("/")} aria-label="Paddlio Startseite"><img src="/brand/paddlio-brand-header.webp" alt="Paddlio" /></a><nav aria-label="Öffentliche Navigation"><a href={href("/funktionen")}>Funktionen</a><a href={href("/installation")}>Installation</a><a href={href("/hilfe")}>Hilfe</a></nav><a className="public-app-link" href={appUrl}>App öffnen</a></header>
     {content}
-    <footer className="public-footer"><div><strong>Paddlio</strong><span>{APP_SLOGAN}</span></div><nav aria-label="Rechtliches"><a href={href("/datenschutz")}>Datenschutz</a><a href={href("/impressum")}>Impressum</a><a href={href("/hilfe")}>Hilfe</a></nav><small>Privates, kostenloses Kanuslalom-Projekt.</small></footer>
+    <footer className="public-footer"><div><strong>Paddlio</strong><span>{APP_SLOGAN}</span></div><nav aria-label="Rechtliches"><a href={href("/datenschutz")}>Datenschutz</a><a href={href("/impressum")}>Impressum</a><a href={href("/hilfe")}>Hilfe</a></nav><small>Privates, kostenloses Kanuslalom-Projekt. Kontakt: <a href="mailto:info@paddlio.de">info@paddlio.de</a> · Support: <a href="mailto:support@paddlio.de">support@paddlio.de</a></small></footer>
   </div>;
 }

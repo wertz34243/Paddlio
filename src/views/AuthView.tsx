@@ -1,4 +1,6 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { AuthCaptcha } from "../components/AuthCaptcha";
+import { CAPTCHA_MESSAGE, captchaRequired } from "../auth/captcha";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { APP_SLOGAN } from "../brand";
 import { cacheCloudClubs, loadClubs, type LoginInput, type RegisterInput } from "../data/storage";
 import type { CloudAuthResult } from "../auth/AuthProvider";
@@ -10,10 +12,10 @@ import { PASSWORD_MIN_LENGTH, PASSWORD_REQUIREMENTS_TEXT } from "../domain/passw
 type AuthMode = "login" | "register";
 
 type AuthViewProps = {
-  onLogin: (input: LoginInput) => Promise<CloudAuthResult>;
-  onRegister: (input: RegisterInput) => Promise<CloudAuthResult>;
-  onResetPassword: (email: string) => Promise<CloudAuthResult>;
-  onResendConfirmation: (email: string) => Promise<CloudAuthResult>;
+  onLogin: (input: LoginInput, captchaToken?: string) => Promise<CloudAuthResult>;
+  onRegister: (input: RegisterInput, captchaToken?: string) => Promise<CloudAuthResult>;
+  onResetPassword: (email: string, captchaToken?: string) => Promise<CloudAuthResult>;
+  onResendConfirmation: (email: string, captchaToken?: string) => Promise<CloudAuthResult>;
   cloudMessage?: string;
 };
 
@@ -27,6 +29,25 @@ export function AuthView({ onLogin, onRegister, onResetPassword, onResendConfirm
   const [resetEmail, setResetEmail] = useState("");
   const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState("");
   const [resendPending, setResendPending] = useState(false);
+
+
+  const [captchaToken, setCaptchaToken] = useState("");
+  const tokenRef = useRef("");
+  const [captchaAttempt, setCaptchaAttempt] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+  const receiveToken = useCallback((token: string) => { tokenRef.current = token; setCaptchaToken(token); }, []);
+  const submitAuth = async (action: (token?: string) => Promise<CloudAuthResult>): Promise<CloudAuthResult> => {
+    if (submittingRef.current) return { ok: false, message: "Bitte warte, bis die Anfrage abgeschlossen ist." };
+    if (captchaRequired(tokenRef.current)) return { ok: false, message: CAPTCHA_MESSAGE };
+    const token = tokenRef.current || undefined;
+    submittingRef.current = true;
+    setSubmitting(true);
+    receiveToken("");
+    try { return await action(token); }
+    catch { return { ok: false, message: "Die Anfrage konnte nicht abgeschlossen werden. Bitte versuche es erneut." }; }
+    finally { submittingRef.current = false; setSubmitting(false); setCaptchaAttempt((value) => value + 1); }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -49,10 +70,10 @@ export function AuthView({ onLogin, onRegister, onResetPassword, onResendConfirm
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const result = await onLogin({
+    const result = await submitAuth((token) => onLogin({
       email: String(formData.get("email") ?? ""),
       password: String(formData.get("password") ?? ""),
-    });
+    }, token));
 
     setMessage(result.ok ? result.message ?? "" : result.message);
     setMessageOk(result.ok);
@@ -67,7 +88,7 @@ export function AuthView({ onLogin, onRegister, onResetPassword, onResendConfirm
       suggestClub ? "" : String(formData.get("clubId") ?? ""),
       String(formData.get("club") ?? ""),
     );
-    const result = await onRegister({
+    const result = await submitAuth((token) => onRegister({
       firstName: String(formData.get("firstName") ?? ""),
       lastName: String(formData.get("lastName") ?? ""),
       birthDate: String(formData.get("birthDate") ?? ""),
@@ -78,7 +99,7 @@ export function AuthView({ onLogin, onRegister, onResetPassword, onResendConfirm
       club: selectedClub.club,
       suggestClub,
       privacyAccepted: formData.get("privacyAccepted") === "on",
-    });
+    }, token));
 
     setMessage(result.ok ? result.message ?? "" : result.message);
     setMessageOk(result.ok);
@@ -92,7 +113,7 @@ export function AuthView({ onLogin, onRegister, onResetPassword, onResendConfirm
       return;
     }
 
-    const result = await onResetPassword(email);
+    const result = await submitAuth((token) => onResetPassword(email, token));
     setMessage(result.message ?? "Passwort-Reset wurde angefordert.");
     setMessageOk(result.ok);
     if (result.ok) {
@@ -110,13 +131,15 @@ export function AuthView({ onLogin, onRegister, onResetPassword, onResendConfirm
     }
 
     setResendPending(true);
-    const result = await onResendConfirmation(email);
+    const result = await submitAuth((token) => onResendConfirmation(email, token));
     setResendPending(false);
     setMessage(result.ok ? result.message ?? "" : result.message);
     setMessageOk(result.ok);
   };
 
   const switchMode = (nextMode: AuthMode) => {
+    receiveToken("");
+    setCaptchaAttempt((value) => value + 1);
     setMode(nextMode);
     setResetOpen(false);
     setMessage("");
@@ -134,7 +157,7 @@ export function AuthView({ onLogin, onRegister, onResetPassword, onResendConfirm
         </div>
 
         <div className="auth-tabs" aria-label="Authentifizierung">
-          <button className={mode === "login" ? "active" : ""} type="button" onClick={() => switchMode("login")}>
+          <button className={mode === "login" ? "active" : ""} type="button" disabled={submitting} onClick={() => switchMode("login")}>
             Login
           </button>
           <button className={mode === "register" ? "active" : ""} type="button" onClick={() => switchMode("register")}>
@@ -142,6 +165,7 @@ export function AuthView({ onLogin, onRegister, onResetPassword, onResendConfirm
           </button>
         </div>
 
+        <AuthCaptcha attempt={captchaAttempt} onToken={receiveToken} />
         {mode === "login" ? (
           <form className="auth-form" onSubmit={handleLogin}>
             <label>
@@ -152,7 +176,7 @@ export function AuthView({ onLogin, onRegister, onResetPassword, onResendConfirm
               Passwort
               <input name="password" type="password" autoComplete="current-password" required />
             </label>
-            <button className="save-button" type="submit">
+            <button className="save-button" type="submit" disabled={submitting || captchaRequired(captchaToken)}>
               Einloggen
             </button>
             <button className="text-button" type="button" onClick={() => setResetOpen((current) => !current)} aria-expanded={resetOpen}>
@@ -172,7 +196,7 @@ export function AuthView({ onLogin, onRegister, onResetPassword, onResendConfirm
                   />
                 </label>
                 <div className="inline-actions">
-                  <button className="save-button" type="button" onClick={() => void handleResetPassword()}>
+                  <button className="save-button" type="button" onClick={() => void handleResetPassword()} disabled={submitting || captchaRequired(captchaToken)}>
                     Reset-Link senden
                   </button>
                   <button className="ghost-button" type="button" onClick={() => setResetOpen(false)}>
@@ -251,9 +275,9 @@ export function AuthView({ onLogin, onRegister, onResetPassword, onResendConfirm
             <details className="auth-legal-info">
               <summary>Datenschutzhinweise und Impressum</summary>
               <p>Paddlio verarbeitet Konto-, Profil-, Vereins- und Trainingsdaten zur Bereitstellung der App. Lokaler Gerätespeicher unterstützt Offline-Nutzung und Synchronisation. Es ist kein Marketing-Tracking im Client eingebaut.</p>
-              <p>Die vollständigen Betreiberangaben, Kontaktwege, Aufbewahrungsfristen und der verbindliche Löschprozess werden vor dem offiziellen Release ergänzt. Diese technische Vorlage ist nicht rechtsanwaltlich geprüft.</p>
+              <p>Betreiber: Tobias Kuhn, Opladener Str. 131, 42699 Solingen, Deutschland. Kontakt: <a href="mailto:info@paddlio.de">info@paddlio.de</a>. Datenschutzanfragen: <a href="mailto:datenschutz@paddlio.de">datenschutz@paddlio.de</a>. Die <a href="/public-preview/datenschutz">Datenschutzerklärung</a> bleibt ein rechtlich zu prüfender Release-Entwurf.</p>
             </details>
-            <button className="save-button" type="submit">
+            <button className="save-button" type="submit" disabled={submitting || captchaRequired(captchaToken)}>
               Konto erstellen
             </button>
           </form>
@@ -263,13 +287,14 @@ export function AuthView({ onLogin, onRegister, onResetPassword, onResendConfirm
         {message ? (
           <div className={`auth-message ${messageOk ? "success" : ""}`}>
             <p>{message}</p>
-            {mode === "register" && messageOk && pendingConfirmationEmail ? (
-              <button className="ghost-button" type="button" onClick={() => void handleResendConfirmation()} disabled={resendPending}>
+            {mode === "register" && pendingConfirmationEmail ? (
+              <button className="ghost-button" type="button" onClick={() => void handleResendConfirmation()} disabled={resendPending || submitting || captchaRequired(captchaToken)}>
                 {resendPending ? "Sende..." : "Bestätigungsmail erneut senden"}
               </button>
             ) : null}
           </div>
         ) : null}
+        <p className="card-note">Hilfe bei Konto- oder Anmeldeproblemen: <a href="mailto:support@paddlio.de">support@paddlio.de</a></p>
       </section>
     </main>
   );

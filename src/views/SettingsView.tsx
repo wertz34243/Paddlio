@@ -207,13 +207,14 @@ export function SettingsView({ user, syncStatus, onSave, onLogout }: SettingsVie
           <div className="legal-copy">
             <p>Kontodaten dienen Anmeldung und Berechtigungsprüfung. Trainings-, Feedback-, Team- und Wettkampfdaten werden für Planung, Durchführung und Auswertung verarbeitet. Lokaler Gerätespeicher ermöglicht Offline-Nutzung und Synchronisation.</p>
             <p>Es ist kein Marketing-Tracking im Client eingebaut. Externe Dienste werden nur für ausdrücklich genutzte Funktionen wie Supabase-Cloudspeicherung oder eine verbundene Polar-Integration angesprochen.</p>
-            <p>Eigene Profildaten kannst du im Profil berichtigen. Über den Auskunftsexport erhältst du eine maschinenlesbare Kopie der Daten deines Kontos. Aufbewahrung und Kontaktwege sind in der öffentlichen Datenschutzerklärung beschrieben.</p>
+            <p>Eigene Profildaten kannst du im Profil berichtigen. Über den Auskunftsexport erhältst du eine maschinenlesbare Kopie der Daten deines Kontos. Aufbewahrung und Kontaktwege sind in der öffentlichen Datenschutzerklärung beschrieben. Datenschutzanfragen: <a href="mailto:datenschutz@paddlio.de">datenschutz@paddlio.de</a>.</p>
           </div>
         </details>
         <details>
           <summary>Impressum</summary>
-          <p className="card-note">Die gesetzlich erforderlichen Betreiber- und Kontaktdaten sind vor dem offiziellen Release einzutragen. Diese technische Vorlage ist kein rechtsanwaltlich geprüfter Rechtstext.</p>
+          <p className="card-note">Tobias Kuhn<br />Opladener Str. 131<br />42699 Solingen<br />Deutschland<br /><a href="mailto:info@paddlio.de">info@paddlio.de</a></p>
         </details>
+        <p>Technische Hilfe und Accountprobleme: <a href="mailto:support@paddlio.de">support@paddlio.de</a></p>
         <div className="privacy-actions">
           <button className="secondary-button" type="button" disabled={privacyAction !== ""} onClick={() => void handleExport()}>
             {privacyAction === "export" ? "Export wird erstellt..." : "Eigene Daten exportieren"}

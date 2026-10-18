@@ -1,5 +1,7 @@
 # Paddlio 5.0 Production Readiness
 
+Aktualisierung 18.10.2026: Mailversand/-empfang ist laut Tobias bestätigt. Turnstile ist im Client implementiert; echte DEV-Keys, Dashboard-Aktivierung und Live-Abnahme sind noch offen. Siehe [Mail/CAPTCHA-Status](mail-captcha-5.0.md). Frühere CAPTCHA-TODOs unten beschreiben den vorherigen Stand.
+
 Stand: 06.10.2026
 
 Diese technische Freigabe ist keine Rechtsberatung. Sie dokumentiert den Stand auf `develop` und Supabase DEV `nlllqsfdhfiwticrcrnp`. Production wurde nicht gelesen oder verändert.
