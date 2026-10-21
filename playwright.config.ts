@@ -4,6 +4,13 @@ import { existsSync, readFileSync } from "node:fs";
 loadLocalEnv(".env.local");
 loadLocalEnv(".env.e2e.local", true);
 
+// Authenticated browser tests may write fixtures. Never point them at Production.
+const hasRoleCredentials = ["ATHLETE", "COACH", "CLUBADMIN", "ADMIN"]
+  .some((role) => process.env[`PADDLIO_E2E_${role}_EMAIL`] || process.env[`PADDLIO_E2E_${role}_PASSWORD`]);
+if (hasRoleCredentials && process.env.VITE_SUPABASE_URL !== "https://nlllqsfdhfiwticrcrnp.supabase.co") {
+  throw new Error("Authenticated E2E tests require the exact Paddlio DEV URL.");
+}
+
 function loadLocalEnv(path: string, override = false) {
   if (!existsSync(path)) return;
 

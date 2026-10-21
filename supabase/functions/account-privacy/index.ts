@@ -60,52 +60,6 @@ const exportSpecs: ExportSpec[] = [
   { table: "audit_logs", filters: ["actor_id"] },
 ];
 
-const deleteSpecs: ExportSpec[] = [
-  { table: "academy_quiz_attempts", filters: ["user_id"] },
-  { table: "academy_favorites", filters: ["user_id"] },
-  { table: "academy_progress", filters: ["user_id"] },
-  { table: "academy_assignments", filters: ["assigned_to", "assigned_by"] },
-  { table: "polar_training_imports", filters: ["user_id"] },
-  { table: "polar_sync_jobs", filters: ["user_id"] },
-  { table: "polar_oauth_states", filters: ["user_id"] },
-  { table: "polar_accounts", filters: ["user_id"] },
-  { table: "device_connections", filters: ["user_id"] },
-  { table: "import_rows", filters: [] },
-  { table: "export_jobs", filters: ["user_id"] },
-  { table: "import_profiles", filters: ["user_id"] },
-  { table: "import_jobs", filters: ["user_id"] },
-  { table: "training_feedback", filters: ["athlete_id", "author_id", "coach_id"] },
-  { table: "training_journal_entries", filters: ["athlete_id"] },
-  { table: "task_assignments", filters: ["assigned_to", "user_id"] },
-  { table: "training_attendance", filters: ["athlete_id", "user_id"] },
-  { table: "notifications", filters: ["user_id"] },
-  { table: "file_attachments", filters: ["owner_id", "user_id"] },
-  { table: "tasks", filters: ["user_id", "owner_id", "created_by"] },
-  { table: "result_imports", filters: ["owner_id", "user_id"] },
-  { table: "personal_bests", filters: ["owner_id", "user_id"] },
-  { table: "external_connections", filters: ["owner_id", "user_id"] },
-  { table: "external_training_sessions", filters: ["owner_id", "user_id"] },
-  { table: "beta_readiness_checks", filters: ["user_id"] },
-  { table: "beta_feedback", filters: ["user_id"] },
-  { table: "beta_testers", filters: ["user_id"] },
-  { table: "competition_results", filters: ["athlete_id", "created_by"] },
-  { table: "competitions", filters: ["user_id", "created_by"] },
-  { table: "materials", filters: ["athlete_id"] },
-  { table: "season_goals", filters: ["athlete_id", "assigned_by"] },
-  { table: "training_templates", filters: ["owner_id", "created_by"] },
-  { table: "training_plan_items", filters: ["owner_id"] },
-  { table: "smart_coach_recommendations", filters: ["owner_user_id", "created_for_user_id"] },
-  { table: "boats", filters: ["owner_id", "user_id"] },
-  { table: "club_material", filters: ["owner_id", "user_id"] },
-  { table: "club_events", filters: ["user_id", "created_by"] },
-  { table: "club_documents", filters: ["owner_id", "created_by"] },
-  { table: "group_members", filters: ["athlete_id"] },
-  { table: "group_memberships", filters: ["user_id"] },
-  { table: "club_memberships", filters: ["user_id"] },
-  { table: "trainer_requests", filters: ["user_id"] },
-  { table: "club_requests", filters: ["requested_by"] },
-];
-
 function allowedOrigins(): string[] {
   return (Deno.env.get("PADDLIO_ALLOWED_ORIGINS") ?? DEFAULT_ALLOWED_ORIGINS.join(","))
     .split(",")
@@ -199,58 +153,11 @@ Deno.serve(async (req: Request) => {
   if (payload.action === "delete") {
     if (payload.confirmation !== CONFIRMATION || payload.confirmAccountId !== user.id) return response(origin, { error: "confirmation_required" }, 400);
 
-    // Remove rows owned by this account. Shared plans are retained, while their personal assignment is detached.
-    const detachOperations = [
-      admin.from("direct_messages").update({ sender_id: null }).eq("sender_id", user.id),
-      admin.from("direct_messages").update({ receiver_id: null }).eq("receiver_id", user.id),
-      admin.from("group_messages").update({ sender_id: null }).eq("sender_id", user.id),
-      admin.from("club_messages").update({ sender_id: null }).eq("sender_id", user.id),
-      admin.from("club_messages").update({ target_user_id: null }).eq("target_user_id", user.id),
-      admin.from("club_posts").update({ author_id: null }).eq("author_id", user.id),
-      admin.from("club_posts").update({ target_user_id: null }).eq("target_user_id", user.id),
-      admin.from("training_plan_items").update({ assigned_athlete_id: null }).eq("assigned_athlete_id", user.id).neq("owner_id", user.id),
-      admin.from("training_plan_items").update({ coach_id: null }).eq("coach_id", user.id).neq("owner_id", user.id),
-      admin.from("training_groups").update({ coach_id: null }).eq("coach_id", user.id),
-      admin.from("audit_logs").update({ actor_id: null }).eq("actor_id", user.id),
-      admin.from("academy_courses").update({ created_by: null }).eq("created_by", user.id),
-      admin.from("academy_lessons").update({ created_by: null }).eq("created_by", user.id),
-      admin.from("academy_learning_paths").update({ created_by: null }).eq("created_by", user.id),
-      admin.from("academy_media").update({ created_by: null }).eq("created_by", user.id),
-    ];
-    for (const operation of detachOperations) {
-      const { error } = await operation;
-      if (error) {
-        console.error("account_privacy_detach_failed", { code: error.code });
-        return response(origin, {
-          error: "delete_failed",
-          ...(canSeeDevelopmentDiagnostics ? { diagnostic: { table: "shared_identity_detach", code: error.code } } : {}),
-        }, 500);
-      }
-    }
-
-    const { error: orphanedDirectMessagesError } = await admin
-      .from("direct_messages")
-      .delete()
-      .is("sender_id", null)
-      .is("receiver_id", null);
-    if (orphanedDirectMessagesError) {
-      console.error("account_privacy_orphan_cleanup_failed", { code: orphanedDirectMessagesError.code });
-      return response(origin, {
-        error: "delete_failed",
-        ...(canSeeDevelopmentDiagnostics ? { diagnostic: { table: "direct_messages", code: orphanedDirectMessagesError.code } } : {}),
-      }, 500);
-    }
-
-    for (const spec of deleteSpecs) {
-      if (spec.table === "import_rows") continue;
-      const { error } = await admin.from(spec.table).delete().or(scopeFilter(spec.filters, user.id));
-      if (error) {
-        console.error("account_privacy_delete_failed", { table: spec.table, code: error.code });
-        return response(origin, {
-          error: "delete_failed",
-          ...(canSeeDevelopmentDiagnostics ? { diagnostic: { table: spec.table, code: error.code } } : {}),
-        }, 500);
-      }
+    // GoTrue deletes auth.users; its BEFORE DELETE trigger performs scoped
+    // relational cleanup in the same transaction. Never pre-delete via REST.
+    const { data: deletionReady, error: readinessError } = await admin.rpc("account_deletion_ready");
+    if (readinessError || deletionReady !== true) {
+      return response(origin, { error: "service_unavailable" }, 503);
     }
 
     const { error: deleteUserError } = await admin.auth.admin.deleteUser(user.id);

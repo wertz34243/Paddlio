@@ -37,14 +37,15 @@ if (!releaseMigration.includes("paddlio_before_user_created_500")
   || !releaseMigration.includes("revoke all on function public.paddlio_before_user_created_500(jsonb) from public, anon, authenticated")) {
   failures.push("Release migration must enforce the 16+ registration rule in a private Auth hook.");
 }
-const deleteSpecs = accountPrivacyFunction.slice(
-  accountPrivacyFunction.indexOf("const deleteSpecs"),
-  accountPrivacyFunction.indexOf("function allowedOrigins"),
-);
-if (!accountPrivacyFunction.includes('from("direct_messages").update({ sender_id: null })')
-  || !accountPrivacyFunction.includes('from("direct_messages").update({ receiver_id: null })')
-  || deleteSpecs.includes('table: "direct_messages"')) {
-  failures.push("Account deletion must anonymize shared messages instead of deleting other participants' conversation history.");
+const deletionMigration = read("supabase/migrations/20261020141843_atomic_account_privacy.sql");
+if (accountPrivacyFunction.includes(".delete()")
+  || accountPrivacyFunction.includes(".update(")
+  || !accountPrivacyFunction.includes('admin.rpc("account_deletion_ready")')
+  || !accountPrivacyFunction.includes("admin.auth.admin.deleteUser(user.id)")
+  || !deletionMigration.includes("before delete on auth.users")
+  || !deletionMigration.includes("update public.direct_messages set sender_id = null where sender_id = old.id")
+  || !deletionMigration.includes("update public.direct_messages set receiver_id = null where receiver_id = old.id")) {
+  failures.push("Account deletion must use scoped transactional cleanup, gated by the installed Auth trigger.");
 }
 
 const headers = new Map((vercel.headers?.[0]?.headers ?? []).map((entry) => [entry.key.toLowerCase(), entry.value]));
