@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { login } from "./helpers/auth";
 
 const coachEmail = process.env.PADDLIO_E2E_COACH_EMAIL;
@@ -63,14 +63,6 @@ async function ensureTemplatePanelVisible(page: Page) {
   await expect(page.getByRole("region", { name: /Vorlagenbibliothek/i })).toBeVisible({ timeout: 20_000 });
 }
 
-async function selectOptionMatching(select: Locator, pattern: RegExp) {
-  const matchingOption = select.locator("option").filter({ hasText: pattern }).first();
-  await expect(matchingOption).toBeAttached({ timeout: 20_000 });
-  const value = await matchingOption.getAttribute("value");
-  const label = (await matchingOption.textContent())?.trim();
-  await select.selectOption(value ? { value } : { label: label ?? "" });
-}
-
 function dateKeyWithOffset(dayOffset: number) {
   const now = new Date();
   now.setDate(now.getDate() + dayOffset);
@@ -90,7 +82,7 @@ function uniqueStartTime(runId: number) {
   return `${`${hour}`.padStart(2, "0")}:${`${minutes}`.padStart(2, "0")}`;
 }
 
-async function createTrainingFromCalendarTemplate(page: Page, marker: string, runId: number) {
+async function createTrainingFromCalendarTemplate(page: Page, marker: string, runId: number, athleteId: string) {
   await ensureTemplatePanelVisible(page);
   const templatePanel = page.getByRole("region", { name: /Vorlagenbibliothek/i });
   const templateButton = templatePanel.getByRole("button", { name: /GA1 Grundlagenfahrt|GA2 Tempoausdauer|K1 Technik|Kraftausdauer Zirkel|Wettkampfsimulation/i }).first();
@@ -104,7 +96,7 @@ async function createTrainingFromCalendarTemplate(page: Page, marker: string, ru
   await quickEdit.getByLabel("Start").fill(startTime);
   await quickEdit.getByLabel("Dauer").fill("55");
   await quickEdit.getByLabel("Zuweisung").selectOption("athlete");
-  await selectOptionMatching(quickEdit.getByLabel("Ziel"), seededAthletePattern(athleteEmail));
+  await quickEdit.getByLabel("Ziel").selectOption(athleteId);
   await quickEdit.getByText("Weitere Details").click();
   await quickEdit.getByLabel("Individuelle Anpassung").fill(marker);
   await quickEdit.getByRole("button", { name: /Einf.*gen/i }).click();
@@ -175,12 +167,6 @@ async function expectFeedbackVisibleAfterSync(page: Page, marker: string, text: 
   }
 
   await expect(page.getByText(text)).toBeVisible({ timeout: 20_000 });
-}
-
-function seededAthletePattern(email?: string): RegExp {
-  if (email?.includes("athlete2")) return /Noah Test|athlete2/i;
-  if (email?.includes("athlete3")) return /Lea Test|athlete3/i;
-  return /Mia Test|Test Athlete|athlete1|dev\.athlete/i;
 }
 
 function coachAreaLocator(page: Page) {
@@ -258,7 +244,14 @@ test.describe("two-device training and feedback flow", () => {
     await expect(coachPage.getByTestId("authenticated-app")).toBeVisible();
     await expect(athletePage.getByTestId("authenticated-app")).toBeVisible();
 
-    const trainingStartTime = await createTrainingFromCalendarTemplate(coachPage, marker, runId);
+    // Display names are editable and may be changed by the profile persistence test.
+    // Return only the account ID, never the session or its tokens.
+    const athleteId = await athletePage.evaluate(() => {
+      const session = JSON.parse(localStorage.getItem("sb-nlllqsfdhfiwticrcrnp-auth-token") || "null");
+      return session?.user?.id as string | undefined;
+    });
+    expect(athleteId).toMatch(/^[0-9a-f-]{36}$/i);
+    const trainingStartTime = await createTrainingFromCalendarTemplate(coachPage, marker, runId, athleteId!);
     await openTrainingDetailsByMarker(coachPage, marker, trainingStartTime);
 
     const athleteDetails = await openTrainingDetailsByMarker(athletePage, marker, trainingStartTime);

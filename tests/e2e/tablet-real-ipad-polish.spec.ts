@@ -49,7 +49,7 @@ async function capture(page: Page, name: string, options: { preserveScroll?: boo
     document.querySelector<HTMLElement>(".skip-link")?.style.setProperty("display", "none");
   });
   if (!options.preserveScroll) await page.evaluate(() => window.scrollTo(0, 0));
-  await page.screenshot({ path: join(screenshotDir, name), fullPage: true });
+  await page.screenshot({ path: join(screenshotDir, name), fullPage: false });
 }
 
 async function openTrainingTab(page: Page, name: string) {

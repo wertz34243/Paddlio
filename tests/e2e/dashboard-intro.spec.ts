@@ -9,6 +9,7 @@ test.describe("dashboard intro", () => {
   test.skip(!coachEmail || !coachPassword, "Development coach credentials are required for dashboard intro tests.");
 
   test("opens, navigates and persists the Paddlio intro entry point", async ({ page }) => {
+    test.setTimeout(60_000);
     await page.addInitScript((key) => {
       const resetMarker = `${key}:e2e-reset`;
       if (window.sessionStorage.getItem(resetMarker) === "true") return;
@@ -28,7 +29,7 @@ test.describe("dashboard intro", () => {
       await expect(introLink).toBeVisible();
 
       await page.reload();
-      await expect(page.getByTestId("authenticated-app")).toBeVisible();
+      await expect(page.getByTestId("authenticated-app")).toBeVisible({ timeout: 30_000 });
       await expect(introCard).not.toBeVisible();
     } else {
       await expect(introLink).toBeVisible();

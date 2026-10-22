@@ -44,7 +44,7 @@ async function capture(page: Page, name: string) {
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     document.querySelector<HTMLElement>(".skip-link")?.style.setProperty("display", "none");
   });
-  await page.screenshot({ path: join(screenshotDir, name), fullPage: true });
+  await page.screenshot({ path: join(screenshotDir, name), fullPage: false });
 }
 
 test.describe("tablet training builder", () => {

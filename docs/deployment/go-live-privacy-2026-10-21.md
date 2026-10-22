@@ -1,5 +1,7 @@
 # Paddlio 5.0: Privacy-Fixes und verbleibende Freigabeschritte
 
+Aktueller Stand: [Sicherheitsnachweis vom 22.10.2026](release-security-2026-10-22.md). Die dort dokumentierten abgeschlossenen Tests, vorhandenen Testkonten, Sicherheitsmigrationen und Paketupdates ersetzen die älteren offenen Punkte dieses historischen Berichts. Production-Freigabereife ist noch nicht erreicht.
+
 DEV `nlllqsfdhfiwticrcrnp` ist die Release-Referenz. Production `twlkhfbrrwjwppxinmpn` und main wurden nicht verändert. Ein Backup des entbehrlichen alten Production-Standes ist kein Release-Blocker. DEV-Nutzerdaten werden nicht übernommen. Turnstile bleibt 5.0.1; für 5.0 Site-Key leer lassen und CAPTCHA deaktiviert halten.
 
 ## Umgesetzt
@@ -39,3 +41,15 @@ Das begleitende Review-Paket enthält das hashgeprüfte DEV-Schema vom 19.10.202
 Vor Production-Freigabe: vier Testzugänge lokal bereitstellen, vollständige Rollen-/HTTP-Tests abschließen, aktuellen DEV-Schemaexport samt Auth-/Realtime-Ergänzungen erstellen und den sauberen Neuaufbau testen. Danach konkrete Schema-/Auth-/Hosting-Schritte Tobias zur Freigabe vorlegen. Keine Freigabe für Production oder main wird aus diesem Dokument abgeleitet.
 
 Quellen: https://supabase.com/docs/guides/auth/managing-user-data und https://supabase.com/docs/guides/database/functions.
+
+## Verifizierter Fortschritt vom 22.10.2026
+
+Dieser Abschnitt ersetzt widersprechende offene Punkte oben.
+
+- Schema-Neuaufbau bestanden: `paddlio-schema-28492c488b3d`, Ergebnis lokal unter `A:\Codex\Backups\Paddlio-Dev\paddlio-schema-28492c488b3d\RESULT.txt` selbst gelesen. Schema-SHA256 `C2133CE051FB2F1A25F9CF5D40D75BA14E02816FA03AEB743A88B54827EB9D30`. 63 Anwendungstabellen, 133 Policies, keine public-Tabelle ohne RLS, 120 Funktionsrechte-Assertions; Signup, Kontoloeschung und Rollback bestanden, keine persistenten Testdaten. Dieser Nachweis gilt fuer genau diese Basis; nachfolgende Security-Deltas benoetigen gezielte Nachweise.
+- Vier DEV-Testkonten vorhanden, Rollen/Navigation Desktop und Mobil bestanden. Zugangsdaten ausschliesslich lokal und Git-ignoriert. Authentifizierter Export, Abweisung fremder Loeschbestaetigung und echte Loeschung eines eigens erzeugten Wegwerfkontos bestanden.
+- Rollen-Haertung `20261021145502_release_profile_authorization.sql` auf DEV angewendet und mit SQL-/REST-Eskalationstests verifiziert. Nicht erneut anwenden.
+- Vite 6.4.5 vorbereitet: saubere Installation, Build/TypeScript, 202 Unit-Tests und Beta-Checks bestanden; npm audit ohne Vulnerabilities im bisherigen Nachweis. Root-Installation ebenfalls 6.4.5. Selektiv committen, vorhandene fremde Supabase-CLI-Aenderungen in package.json/Lockfile nicht aufnehmen.
+- Git remote aktuell bestaetigt: develop `ea2e9eff9c194a3f386826eb3a4ce550f438b7a4`, main `4fd7ea7ff0f803ca33a02a8aba5e285cef66687e`. Keine ungepushten Commits; weitere Release-Aenderungen noch uncommitted.
+- Sicherheitsblocker bestaetigt: 20 Legacy-Policies `*_own_or_club_413` erlauben ALL allein bei `auth.uid() IS NOT NULL`. Vollstaendige Trennung von Konten/Vereinen dadurch nicht gegeben. Vor Freigabe korrigieren und negative Rollenpruefungen ausfuehren. Die Zahl aktivierter RLS-Tabellen ist kein Isolationsnachweis.
+- Production-Paket weiterhin nicht freigabereif. Production und main unveraendert. Turnstile bleibt 5.0.1.

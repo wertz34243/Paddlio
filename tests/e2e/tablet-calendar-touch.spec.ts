@@ -51,11 +51,10 @@ async function longPress(page: Page, locator: Locator) {
 }
 
 async function ensureTrainingVisible(page: Page) {
-  const firstTraining = page.locator(".master-training-block-main").first();
-  for (let attempt = 0; attempt < 4; attempt += 1) {
-    if (await firstTraining.isVisible().catch(() => false)) return firstTraining;
-    await page.getByRole("button", { name: "Vorheriger Zeitraum" }).click();
-  }
+  const firstTraining = page.locator(".master-training-block-main, .master-training-pill [role='button']").first();
+  // Release fixtures belong to the current week; wait for asynchronous loading.
+  await page.getByRole("button", { name: "Heute", exact: true }).click();
+  await page.getByRole("button", { name: "Woche", exact: true }).click();
   await expect(firstTraining).toBeVisible({ timeout: 20_000 });
   return firstTraining;
 }
@@ -72,23 +71,23 @@ test.describe("tablet calendar touch interactions", () => {
     await page.setViewportSize({ width: 1194, height: 834 });
     await login(page, coachEmail!, coachPassword!);
     await openCalendar(page);
-    await page.screenshot({ path: join(screenshotDir, "01-calendar-clean.png"), fullPage: true });
+    await page.screenshot({ path: join(screenshotDir, "01-calendar-clean.png"), fullPage: false });
 
     await openTemplates(page);
-    await page.screenshot({ path: join(screenshotDir, "02-calendar-template-panel.png"), fullPage: true });
+    await page.screenshot({ path: join(screenshotDir, "02-calendar-template-panel.png"), fullPage: false });
 
     const templateButton = page.locator(".master-calendar-context .master-template-card button").first();
     await expect(templateButton).toBeVisible({ timeout: 20_000 });
     await templateButton.click();
     const quickEdit = page.getByRole("region", { name: /Training schnell/i }).or(page.getByRole("dialog", { name: /Training schnell/i })).first();
     await expect(quickEdit).toBeVisible({ timeout: 20_000 });
-    await page.screenshot({ path: join(screenshotDir, "06-template-insert.png"), fullPage: true });
+    await page.screenshot({ path: join(screenshotDir, "06-template-insert.png"), fullPage: false });
     await closeContext(page);
 
     const firstTraining = await ensureTrainingVisible(page);
     await firstTraining.dblclick();
     await expect(quickEdit).toBeVisible({ timeout: 20_000 });
-    await page.screenshot({ path: join(screenshotDir, "03-calendar-quick-edit.png"), fullPage: true });
+    await page.screenshot({ path: join(screenshotDir, "03-calendar-quick-edit.png"), fullPage: false });
     await firstTraining.dblclick();
     await expect(quickEdit).not.toBeVisible({ timeout: 20_000 });
 
@@ -100,20 +99,20 @@ test.describe("tablet calendar touch interactions", () => {
     }
     await expect(selectionBar).toBeVisible({ timeout: 20_000 });
     await expect(selectionBar.getByRole("button", { name: /Löschen/i })).toBeVisible();
-    await page.screenshot({ path: join(screenshotDir, "04-calendar-multi-select.png"), fullPage: true });
-    const secondTraining = page.locator(".master-training-block-main").nth(1);
+    await page.screenshot({ path: join(screenshotDir, "04-calendar-multi-select.png"), fullPage: false });
+    const secondTraining = page.locator(".master-training-block-main, .master-training-pill [role='button']").nth(1);
     if (await secondTraining.isVisible().catch(() => false)) {
       await secondTraining.click();
     }
-    await page.screenshot({ path: join(screenshotDir, "05-calendar-multi-select-actions.png"), fullPage: true });
+    await page.screenshot({ path: join(screenshotDir, "05-calendar-multi-select-actions.png"), fullPage: false });
     await page.getByRole("button", { name: "Auswahl beenden" }).click();
     await expect(page.locator(".master-selection-bar")).not.toBeVisible({ timeout: 20_000 });
-    await page.screenshot({ path: join(screenshotDir, "07-calendar-full-width.png"), fullPage: true });
+    await page.screenshot({ path: join(screenshotDir, "07-calendar-full-width.png"), fullPage: false });
 
     await page.setViewportSize({ width: 834, height: 1194 });
     await openTemplates(page);
     await templateButton.click();
     await expect(quickEdit).toBeVisible({ timeout: 20_000 });
-    await page.screenshot({ path: join(screenshotDir, "08-calendar-portrait-sheet.png"), fullPage: true });
+    await page.screenshot({ path: join(screenshotDir, "08-calendar-portrait-sheet.png"), fullPage: false });
   });
 });
