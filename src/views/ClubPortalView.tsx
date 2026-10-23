@@ -1,4 +1,5 @@
 import { useMemo, useState, type FormEvent } from "react";
+import { useAuth } from "../auth/AuthProvider";
 import { SegmentNav, type SegmentItem } from "../components/SegmentNav";
 import { createId } from "../data/storage";
 import { canManageAdminArea, canUseCoachArea, getAthletesForCurrentUser, getGroupsForCurrentUser } from "../domain/accessControl";
@@ -89,6 +90,7 @@ const isThisWeek = (date: string): boolean => {
 const numberValue = (value: FormDataEntryValue | null): number => Number(value || 0);
 
 export function ClubPortalView({ data, user, onDataChange }: ClubPortalViewProps) {
+  const { profile } = useAuth();
   const [segment, setSegment] = useState<ClubPortalSegment>("dashboard");
   const [memberQuery, setMemberQuery] = useState("");
   const [memberRole, setMemberRole] = useState<UserRole | "all">("all");
@@ -97,10 +99,11 @@ export function ClubPortalView({ data, user, onDataChange }: ClubPortalViewProps
   const isAdmin = canManageAdminArea(user.role);
   const userClubName = user.profile.club.trim().toLowerCase();
   const clubIds = useMemo(() => {
-    if (isAdmin) return Array.from(new Set([...(data.coachGroups.map((group) => group.clubId)), ...(data.coachAthletes.map((athlete) => athlete.clubId)), user.profile.club].filter(Boolean)));
-    return Array.from(new Set([user.profile.club, ...data.coachGroups.filter((group) => group.clubId === user.profile.club || group.coachUserId === user.userId).map((group) => group.clubId)].filter(Boolean)));
-  }, [data.coachAthletes, data.coachGroups, isAdmin, user.profile.club, user.userId]);
-  const primaryClubId = clubIds[0] || user.profile.club || "club-local";
+    if (isAdmin) return Array.from(new Set([...(data.coachGroups.map((group) => group.clubId)), ...(data.coachAthletes.map((athlete) => athlete.clubId)), profile?.club_id ?? "", user.profile.club].filter(Boolean)));
+    return Array.from(new Set([profile?.club_id ?? "", user.profile.club, ...data.coachGroups.filter((group) => group.clubId === user.profile.club || group.coachUserId === user.userId).map((group) => group.clubId)].filter(Boolean)));
+  }, [data.coachAthletes, data.coachGroups, isAdmin, profile?.club_id ?? "", user.profile.club, user.userId]);
+  const primaryClubId = profile?.club_id ?? "";
+  const canEditClubAdministration = isAdmin || user.role === "clubAdmin";
   const clubAthletes = useMemo(() => getAthletesForCurrentUser(data, user, clubIds), [clubIds, data, user]);
   const clubGroups = useMemo(() => getGroupsForCurrentUser(data, user, clubIds), [clubIds, data, user]);
   const members = useMemo(() => {
@@ -169,12 +172,16 @@ export function ClubPortalView({ data, user, onDataChange }: ClubPortalViewProps
   }
 
   const saveLocalAndCloud = <T,>(successMessage: string, update: (current: PaddleMotionData) => PaddleMotionData, cloudAction: () => Promise<T>) => {
+    if (!primaryClubId) {
+      setMessage("Zum Speichern muss deinem Konto ein Verein zugeordnet sein.");
+      return;
+    }
     onDataChange(update);
     void cloudAction()
       .then(() => setMessage(successMessage))
       .catch((error) => {
         console.error("[Paddlio Cloud] Vereinsportal konnte nicht speichern", error);
-        setMessage("Lokal gespeichert. Cloud-Synchronisation wird erneut versucht, sobald die Berechtigung passt.");
+        setMessage("Cloud-Speicherung fehlgeschlagen. Bitte prüfe deine Berechtigung und versuche es erneut.");
       });
   };
 
@@ -251,6 +258,7 @@ export function ClubPortalView({ data, user, onDataChange }: ClubPortalViewProps
 
   const upsertDocument = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!canEditClubAdministration) { setMessage("Dokumente verwaltet die Vereinsadministration."); return; }
     const form = new FormData(event.currentTarget);
     const timestamp = new Date().toISOString();
     const document: ClubDocument = {
@@ -292,6 +300,7 @@ export function ClubPortalView({ data, user, onDataChange }: ClubPortalViewProps
 
   const upsertSettings = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!canEditClubAdministration) { setMessage("Einstellungen verwaltet die Vereinsadministration."); return; }
     const form = new FormData(event.currentTarget);
     const next: ClubSettings = {
       clubId: primaryClubId,
@@ -437,7 +446,7 @@ export function ClubPortalView({ data, user, onDataChange }: ClubPortalViewProps
   const documentsView = (
     <section className="section-block">
       <div className="section-heading"><div><p className="eyebrow">Verein</p><h3>Dokumente</h3></div></div>
-      <form className="entry-form" onSubmit={upsertDocument}><div className="form-grid"><label>Ordner<select name="folder">{documentFolders.map((folder) => <option key={folder} value={folder}>{folder}</option>)}</select></label><label>Titel<input name="title" required /></label><label>Dateiname<input name="fileName" /></label><label>Datei URL<input name="fileUrl" /></label><label>MIME Typ<input name="mimeType" placeholder="application/pdf" /></label></div><div className="choice-group"><span>Sichtbar für</span><div className="tag-row">{(["coach", "teamAdmin", "clubAdmin", "admin"] as UserRole[]).map((role) => <label className="toggle-row" key={role}>{roleLabel[role]}<input name="visibleForRoles" type="checkbox" value={role} defaultChecked /></label>)}</div></div><button className="save-button" type="submit">Dokument speichern</button></form>
+      <form className="entry-form" onSubmit={upsertDocument}><div className="form-grid"><label>Ordner<select name="folder">{documentFolders.map((folder) => <option key={folder} value={folder}>{folder}</option>)}</select></label><label>Titel<input name="title" required /></label><label>Dateiname<input name="fileName" /></label><label>Datei URL<input name="fileUrl" /></label><label>MIME Typ<input name="mimeType" placeholder="application/pdf" /></label></div><div className="choice-group"><span>Sichtbar für</span><div className="tag-row">{(["coach", "teamAdmin", "clubAdmin", "admin"] as UserRole[]).map((role) => <label className="toggle-row" key={role}>{roleLabel[role]}<input name="visibleForRoles" type="checkbox" value={role} defaultChecked /></label>)}</div></div><button className="save-button" type="submit" disabled={!canEditClubAdministration}>Dokument speichern</button></form>
       <div className="club-card-list">{documents.length ? documents.map((document) => <article className="user-admin-card" key={document.id}><strong>{document.title}</strong><span>{document.folder} - {document.fileName || "Metadaten"}</span><small>{document.fileUrl || "Upload vorbereitet, Storage-Bucket folgt."}</small></article>) : <p className="empty-state">Noch keine Dokumente vorhanden.</p>}</div>
     </section>
   );
@@ -445,7 +454,7 @@ export function ClubPortalView({ data, user, onDataChange }: ClubPortalViewProps
   const messagesView = (
     <section className="section-block">
       <div className="section-heading"><div><p className="eyebrow">Verein</p><h3>Nachrichten</h3></div></div>
-      <form className="entry-form" onSubmit={upsertMessage}><div className="form-grid"><label>Empfänger<select name="audience">{audiences.map((audience) => <option key={audience} value={audience}>{audienceLabel[audience]}</option>)}</select></label><label>Gruppe<select name="groupId"><option value="">Keine Gruppe</option>{clubGroups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select></label><label>Titel<input name="title" required /></label></div><label>Nachricht<textarea name="body" rows={4} required /></label><button className="save-button" type="submit">Nachricht speichern</button></form>
+      <form className="entry-form" onSubmit={upsertMessage}><div className="form-grid"><label>Sportler<select name="recipientUserId"><option value="">Sportler auswählen</option>{clubAthletes.map((athlete) => <option key={athlete.id} value={athlete.id}>{athlete.name}</option>)}</select></label><label>Empfänger<select name="audience">{audiences.map((audience) => <option key={audience} value={audience}>{audienceLabel[audience]}</option>)}</select></label><label>Gruppe<select name="groupId"><option value="">Keine Gruppe</option>{clubGroups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select></label><label>Titel<input name="title" required /></label></div><label>Nachricht<textarea name="body" rows={4} required /></label><button className="save-button" type="submit">Nachricht speichern</button></form>
       <div className="club-card-list">{messages.length ? messages.map((item) => <article className="user-admin-card" key={item.id}><strong>{item.title}</strong><span>{audienceLabel[item.audience]} - {item.createdAt.slice(0, 10)}</span><small>{item.body}</small></article>) : <p className="empty-state">Noch keine Vereinsnachrichten vorhanden.</p>}</div>
     </section>
   );
@@ -455,7 +464,7 @@ export function ClubPortalView({ data, user, onDataChange }: ClubPortalViewProps
       <div className="section-heading"><div><p className="eyebrow">Verein</p><h3>Einstellungen</h3></div></div>
       <form className="entry-form" onSubmit={upsertSettings}>
         <div className="form-grid"><label>Logo URL<input name="logoUrl" defaultValue={settings.logoUrl} /></label><label>Primärfarbe<input name="primaryColor" type="color" defaultValue={settings.primaryColor} /></label><label>Sekundärfarbe<input name="secondaryColor" type="color" defaultValue={settings.secondaryColor} /></label><label>Homepage<input name="homepage" defaultValue={settings.homepage} /></label><label>Ansprechpartner<input name="contactName" defaultValue={settings.contactName} /></label><label>Kontakt-E-Mail<input name="contactEmail" type="email" defaultValue={settings.contactEmail} /></label><label>Vereinsnummer<input name="clubNumber" defaultValue={settings.clubNumber} /></label></div>
-        <label>Adresse<textarea name="address" rows={3} defaultValue={settings.address} /></label><label>Impressum<textarea name="imprint" rows={4} defaultValue={settings.imprint} /></label><button className="save-button" type="submit">Einstellungen speichern</button>
+        <label>Adresse<textarea name="address" rows={3} defaultValue={settings.address} /></label><label>Impressum<textarea name="imprint" rows={4} defaultValue={settings.imprint} /></label><button className="save-button" type="submit" disabled={!canEditClubAdministration}>Einstellungen speichern</button>
       </form>
     </section>
   );

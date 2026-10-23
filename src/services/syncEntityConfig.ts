@@ -185,7 +185,7 @@ const syncEntityConfigs: Record<string, SyncEntityConfig> = {
 export const getSyncEntityConfig = (table: string): SyncEntityConfig => syncEntityConfigs[table] ?? {
   table,
   primaryKey: "id",
-  conflictKey: table === "club_settings" ? "club_id" : "id",
+  conflictKey: "id",
   updatedAtField: "updated_at",
   supportsSoftDelete: false,
   mergeStrategy: "serverWins",
